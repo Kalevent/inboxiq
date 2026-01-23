@@ -19,11 +19,11 @@ on:
 concurrency: inbox
 
 env:
-  AWS_REGION: us-west-2
-  ECR_REGISTRY: 094985084741.dkr.ecr.us-west-2.amazonaws.com
-  ECR_REPO: inboxiq
-  EKS_CLUSTER: inboxiq-eks
-  KUBE_NAMESPACE: kaley
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  ECR_REPO: ${{ secrets.ECR_REPO }}
+  EKS_CLUSTER: ${{ secrets.EKS_CLUSTER }}
+  KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
 
 permissions:
   id-token: write
