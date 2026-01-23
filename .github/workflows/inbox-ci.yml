@@ -24,6 +24,7 @@ env:
   ECR_REPO: ${{ secrets.ECR_REPO }}
   EKS_CLUSTER: ${{ secrets.EKS_CLUSTER }}
   KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE }}
+  HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
 
 permissions:
   id-token: write
@@ -89,6 +90,14 @@ jobs:
           kubectl rollout status deploy/inboxiq -n "${KUBE_NAMESPACE}"
           kubectl rollout status deploy/inboxiq-celery-inbox-worker -n "${KUBE_NAMESPACE}"
           kubectl rollout status deploy/inboxiq-celery-inbox-beat -n "${KUBE_NAMESPACE}"
+
+      - name: Post-deploy health check
+        run: |
+          if [ -z "${HEALTHCHECK_URL}" ]; then
+            echo "HEALTHCHECK_URL not set; skipping."
+            exit 0
+          fi
+          curl -fsS "${HEALTHCHECK_URL}" > /dev/null
 
       - name: Verify deployed images
         run: |
