@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Newsletter drafts</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <main class="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-6">
+
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <p class="text-sm text-indigo-200 uppercase tracking-wide">Publishing</p>
+        <h1 class="text-2xl font-semibold text-slate-100 mt-1">Newsletter draft list</h1>
+        <p class="text-sm text-slate-400">
+          Review newsletter/whitepaper campaigns. Drafts stay private; publish only after human review.
+        </p>
+      </div>
+
+      {% set c = counts or {} %}
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full sm:w-auto">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 shadow-lg shadow-slate-900/30">
+          <div class="text-xs text-slate-400">Queued</div>
+          <div class="text-xl font-semibold">{{ c.get('queued', 0) }}</div>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 shadow-lg shadow-slate-900/30">
+          <div class="text-xs text-slate-400">Generating</div>
+          <div class="text-xl font-semibold">{{ c.get('generating', 0) }}</div>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 shadow-lg shadow-slate-900/30">
+          <div class="text-xs text-slate-400">Ready</div>
+          <div class="text-xl font-semibold">{{ c.get('ready', 0) }}</div>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 shadow-lg shadow-slate-900/30">
+          <div class="text-xs text-slate-400">Published</div>
+          <div class="text-xl font-semibold">{{ c.get('published', 0) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 shadow-lg shadow-slate-900/30 p-4">
+      <form method="get" class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Status</label>
+            {% set selected_status = request.args.get('status', 'all') if request is defined else 'all' %}
+            <select name="status"
+                    class="input-dark w-full rounded-xl bg-slate-950/40 border border-slate-800 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+              <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
+              <option value="queued" {% if selected_status == 'queued' %}selected{% endif %}>Queued</option>
+              <option value="generating" {% if selected_status == 'generating' %}selected{% endif %}>Generating</option>
+              <option value="ready" {% if selected_status == 'ready' %}selected{% endif %}>Ready</option>
+              <option value="published" {% if selected_status == 'published' %}selected{% endif %}>Published</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Search</label>
+            {% set q = request.args.get('q', '') if request is defined else '' %}
+            <input name="q" value="{{ q }}" placeholder="Title or audience…"
+                   class="input-dark w-full rounded-xl bg-slate-950/40 border border-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Sort</label>
+            {% set sort = request.args.get('sort', 'newest') if request is defined else 'newest' %}
+            <select name="sort"
+                    class="input-dark w-full rounded-xl bg-slate-950/40 border border-slate-800 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+              <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest first</option>
+              <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button type="submit"
+                  class="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 shadow">
+            Apply
+          </button>
+          <a href="{{ request.path if request is defined else '#' }}"
+             class="rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm px-4 py-2 border border-slate-700">
+            Reset
+          </a>
+        </div>
+      </form>
+    </section>
+
+    <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70 shadow-lg shadow-slate-900/30">
+      <table class="min-w-full text-sm text-slate-100">
+        <thead class="bg-slate-900/90 border-b border-slate-800">
+          <tr>
+            <th class="px-4 py-3 text-left">Campaign</th>
+            <th class="px-4 py-3 text-left">Audience</th>
+            <th class="px-4 py-3 text-left">Status</th>
+            <th class="px-4 py-3 text-left">ID</th>
+            <th class="px-4 py-3 text-left">Created</th>
+            <th class="px-4 py-3 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for draft in drafts %}
+          <tr class="border-b border-slate-800/60 hover:bg-slate-950/20">
+            <td class="px-4 py-3">
+              <div class="font-medium text-slate-100">{{ draft.campaign_title or 'Untitled campaign' }}</div>
+              {% set brief = (draft.brief_json or {}).get('brief') %}
+              {% if brief %}
+                <div class="text-xs text-slate-400 mt-1 line-clamp-2">{{ brief }}</div>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-slate-300">
+              {{ draft.audience or '—' }}
+            </td>
+            <td class="px-4 py-3">
+              {% set s = draft.status or 'queued' %}
+              <span class="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs border
+                {% if s == 'published' %}
+                  bg-emerald-500/10 text-emerald-200 border-emerald-400/40
+                {% elif s == 'ready' %}
+                  bg-indigo-500/10 text-indigo-200 border-indigo-400/40
+                {% elif s == 'generating' %}
+                  bg-yellow-500/10 text-yellow-200 border-yellow-400/40
+                {% elif s == 'queued' %}
+                  bg-slate-500/10 text-slate-200 border-slate-400/40
+                {% else %}
+                  bg-slate-500/10 text-slate-200 border-slate-400/40
+                {% endif %}
+              ">
+                {{ s|capitalize }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-slate-300">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono text-slate-400 break-all">{{ draft.id }}</span>
+                <button type="button"
+                        class="text-[11px] px-2 py-1 rounded-lg border border-slate-700 text-slate-200 hover:bg-slate-800"
+                        data-copy-id="{{ draft.id }}">
+                  Copy
+                </button>
+              </div>
+            </td>
+            <td class="px-4 py-3 text-slate-300">
+              {% if draft.created_at %}
+                {{ draft.created_at.strftime('%Y-%m-%d %H:%M') }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap gap-2 items-center">
+                <a href="/publishing/preview/{{ draft.id }}"
+                   class="text-indigo-300 hover:text-indigo-100 text-sm"
+                   target="_blank" rel="noopener">
+                  Preview
+                </a>
+
+                {% if s == 'ready' %}
+                  <form method="post" action="/publishing/newsletter/publish/{{ draft.id }}" class="inline">
+                    {{ csrf_token() if csrf_token is defined }}
+                    <button type="submit"
+                            class="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-2 shadow">
+                      Publish
+                    </button>
+                  </form>
+                {% elif s == 'published' %}
+                  <span class="text-xs text-emerald-300">Published</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="px-4 py-10 text-center text-slate-400">
+              No drafts found for the selected filters.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="text-xs text-slate-500">
+      Tip: ready drafts include rendered HTML. Keep feedback in the brief to document why revisions were made.
+    </div>
+
+  </main>
+
+  <script>
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-copy-id]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-copy-id') || '';
+      if (!id) return;
+      navigator.clipboard.writeText(id).then(() => {
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1200);
+      }).catch(() => {
+        btn.textContent = 'Error';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1200);
+      });
+    });
+  </script>
+</body>
+</html>

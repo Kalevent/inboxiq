@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Team settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Team settings</div>
+          </div>
+        </div>
+        <nav class="flex items-center gap-3 text-sm text-slate-300">
+          <a href="/dashboard" class="px-3 py-1.5 rounded-full border border-slate-700 bg-slate-900/60 hover:bg-slate-800">
+            ← Dashboard
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main (IMPORTANT: visible margins come from this container + card) -->
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <!-- Outer container: creates visible left/right breathing space -->
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-10 lg:py-14">
+
+        <!-- Inner surface card: makes margins visually obvious -->
+        <div class="max-w-3xl mx-auto rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-8 shadow-2xl shadow-indigo-500/15 relative overflow-hidden">
+          <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-20 bottom-0 h-48 w-48 rounded-full bg-fuchsia-500/5 blur-3xl pointer-events-none"></div>
+
+          <!-- Page header -->
+          <div class="space-y-3 mb-8">
+            <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+              Team • Invite teammates
+            </p>
+            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Invite a teammate</h1>
+            <p class="text-slate-300 text-sm max-w-2xl">
+              Send an activation link to add someone to your workspace. Seat limits are enforced automatically.
+            </p>
+          </div>
+
+          <!-- Invite card -->
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-6">
+            <form id="inviteForm" class="space-y-4">
+              <div>
+                <label for="inviteEmail" class="text-sm text-slate-200">Teammate email</label>
+                <input
+                  id="inviteEmail"
+                  name="inviteEmail"
+                  type="email"
+                  required
+                  class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30 input-dark"
+                  placeholder="teammate@company.com"
+                  autocomplete="email"
+                />
+              </div>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <button
+                  id="inviteButton"
+                  type="submit"
+                  class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Send invite
+                </button>
+
+                <span class="text-xs text-slate-400">
+                  We’ll email an activation link. You can also copy it below for dev/testing.
+                </span>
+              </div>
+            </form>
+
+            <div id="inviteStatus" class="text-sm text-slate-200 hidden"></div>
+            <div id="activationLink" class="text-xs text-slate-300 hidden see_url_box"></div>
+
+            <div class="border-t border-slate-800 pt-4">
+              <div class="text-sm font-semibold text-slate-100 mb-2">How it works</div>
+              <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex gap-2"><span class="text-indigo-300">•</span>We create the user stub and reserve a seat in your workspace.</li>
+                <li class="flex gap-2"><span class="text-indigo-300">•</span>We email an activation link so they can set a password.</li>
+                <li class="flex gap-2"><span class="text-indigo-300">•</span>Seat limits are enforced; you’ll see an error if the workspace is full.</li>
+                <li class="flex gap-2"><span class="text-indigo-300">•</span>You can copy the activation link below for quick sharing in dev.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Help card -->
+          <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+            <div class="text-sm font-semibold text-slate-100 mb-2">Need a walkthrough?</div>
+            <p class="text-sm text-slate-300 mb-3">
+              Read the short guide on inviting teammates and seat limits.
+            </p>
+            <a href="/docs/invite_teammates" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+              Open invite guide →
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950/80">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 text-sm text-slate-400 flex items-center justify-between">
+        <span>InboxIQ by Kalevent</span>
+        <span class="space-x-3">
+          <a href="/privacy" class="hover:text-slate-200">Privacy</a>
+          <a href="/terms" class="hover:text-slate-200">Terms</a>
+        </span>
+      </div>
+      {% include 'partials/feedback_footer.html' %}
+    </footer>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
+  <script src="{{ url_for('static', filename='settings/js/settings_team.js') }}"></script>
+</body>
+</html>

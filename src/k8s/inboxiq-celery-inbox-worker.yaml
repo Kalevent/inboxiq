@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inboxiq-celery-inbox-worker
+  namespace: kaley
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inboxiq-celery-inbox-worker
+  template:
+    metadata:
+      labels:
+        app: inboxiq-celery-inbox-worker
+    spec:
+      containers:
+        - name: inbox-worker
+          image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
+          imagePullPolicy: IfNotPresent
+          command: ["celery"]
+          args: ["-A", "src.celery_inboxiq.celery", "worker", "-Q", "inbox", "-l", "info"]
+          env:
+            - name: APP_ENV
+              value: "production"
+          envFrom:
+            - secretRef:
+                name: inboxiq-env
+            - configMapRef:
+                name: inboxiq-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi

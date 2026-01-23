@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Settings</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 text-sm text-slate-200">
+          <a href="{{ url_for('dashboard_home') }}" class="px-3 py-1.5 rounded-full border border-slate-700 hover:bg-slate-800">
+            ← Dashboard
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-10 lg:py-14">
+
+        <!-- Page Title -->
+        <div class="mb-6">
+          <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+            Settings
+          </p>
+          <h1 class="text-2xl md:text-3xl font-semibold tracking-tight mt-2">Workspace settings</h1>
+          <p class="text-sm text-slate-300 mt-2 max-w-3xl">
+            Manage your team, profile, billing, security, and integrations. Changes here affect how InboxIQ operates across your workspace.
+          </p>
+        </div>
+
+        <!-- Layout: sidebar + content -->
+        <div class="settings-layout grid gap-6">
+
+          <!-- Sidebar -->
+          <aside class="settings-sidebar rounded-3xl border border-slate-800 bg-slate-900/50 p-3 lg:p-4 h-fit">
+            <nav class="space-y-2 text-sm">
+
+              <a href="{{ url_for('settings.settings_page', tab='team') }}"
+                 class="flex items-center justify-between px-3 py-2 rounded-xl border
+                 {% if active_tab == 'team' %}border-indigo-400/40 bg-indigo-500/10 text-indigo-100{% else %}border-transparent hover:border-slate-700 hover:bg-slate-900/60 text-slate-200{% endif %}">
+                <span>Team</span>
+                <span class="text-xs text-slate-400">{% if active_tab == 'team' %}Active{% endif %}</span>
+              </a>
+
+              <a href="{{ url_for('settings.settings_page', tab='profile') }}"
+                 class="flex items-center justify-between px-3 py-2 rounded-xl border
+                 {% if active_tab == 'profile' %}border-indigo-400/40 bg-indigo-500/10 text-indigo-100{% else %}border-transparent hover:border-slate-700 hover:bg-slate-900/60 text-slate-200{% endif %}">
+                <span>Profile</span>
+                <span class="text-xs text-slate-400">{% if active_tab == 'profile' %}Active{% endif %}</span>
+              </a>
+
+              <a href="{{ url_for('settings.settings_page', tab='billing') }}"
+                 class="flex items-center justify-between px-3 py-2 rounded-xl border
+                 {% if active_tab == 'billing' %}border-indigo-400/40 bg-indigo-500/10 text-indigo-100{% else %}border-transparent hover:border-slate-700 hover:bg-slate-900/60 text-slate-200{% endif %}">
+                <span>Billing</span>
+                <span class="text-xs text-slate-400">{% if active_tab == 'billing' %}Active{% endif %}</span>
+              </a>
+
+              <a href="{{ url_for('settings.settings_page', tab='security') }}"
+                 class="flex items-center justify-between px-3 py-2 rounded-xl border
+                 {% if active_tab == 'security' %}border-indigo-400/40 bg-indigo-500/10 text-indigo-100{% else %}border-transparent hover:border-slate-700 hover:bg-slate-900/60 text-slate-200{% endif %}">
+                <span>Security</span>
+                <span class="text-xs text-slate-400">{% if active_tab == 'security' %}Active{% endif %}</span>
+              </a>
+
+              <a href="{{ url_for('settings.settings_page', tab='integrations') }}"
+                 class="flex items-center justify-between px-3 py-2 rounded-xl border
+                 {% if active_tab == 'integrations' %}border-indigo-400/40 bg-indigo-500/10 text-indigo-100{% else %}border-transparent hover:border-slate-700 hover:bg-slate-900/60 text-slate-200{% endif %}">
+                <span>Integrations</span>
+                <span class="text-xs text-slate-400">{% if active_tab == 'integrations' %}Active{% endif %}</span>
+              </a>
+
+          </nav>
+
+          <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-400">
+            Tip: Keep “Integrations” configured so InboxIQ can ingest messages reliably.
+          </div>
+        </aside>
+
+        <!-- Content panel -->
+          <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-8 shadow-2xl shadow-indigo-500/10 relative overflow-hidden">
+            <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-24 bottom-0 h-52 w-52 rounded-full bg-fuchsia-500/5 blur-3xl pointer-events-none"></div>
+
+            {% if account_id %}
+              <div class="mb-4 flex justify-end">
+                <span class="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950/50 px-3 py-1 text-xs text-slate-200">
+                  Workspace ID: <span class="font-mono text-indigo-200">{{ account_id }}</span>
+                </span>
+              </div>
+            {% endif %}
+
+            {% if active_tab == 'team' %}
+              {% if team_view == 'invite' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+                    Team • Invite
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Invite teammates</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Add teammates with activation links. This panel is not wired yet; use Roles & access for now.
+                  </p>
+                </div>
+                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                  <p class="text-sm text-slate-300">Invitations will be managed here when the flow is connected.</p>
+                  <p class="text-xs text-slate-400">Until then, add teammates via your existing user creation path and set roles in Roles & access.</p>
+                  <div class="flex items-center gap-3">
+                    <button class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white" disabled>
+                      Coming soon
+                    </button>
+                    <a href="{{ url_for('settings.team_roles_page') }}" class="text-sm text-indigo-200 hover:text-white">
+                      Go to roles →
+                    </a>
+                    <a href="{{ url_for('settings.settings_page', tab='team') }}" class="text-sm text-indigo-200 hover:text-white">
+                      ← Back to team
+                    </a>
+                  </div>
+                </div>
+              {% elif team_view == 'roles' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+                    Team • Roles & access
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Roles & access</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Assign roles to teammates. Owners/admins only.
+                  </p>
+                </div>
+                <div class="mt-6 space-y-4">
+                  <div class="grid settings-2col md:grid-cols-2 gap-4">
+                    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-2">
+                      <div class="text-sm font-semibold text-slate-100">Roles & permissions</div>
+                      <p class="text-xs text-slate-400">Predefined roles cover billing, security, tickets, and read-only access.</p>
+                      <div class="space-y-2 text-xs text-slate-200">
+                        {% for role in roles %}
+                          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                            <div class="flex justify-between items-center gap-2">
+                              <span class="font-semibold text-slate-100">{{ role.label }}</span>
+                              <span class="text-[11px] px-2 py-1 rounded-full border border-indigo-400/30 bg-indigo-500/10 text-indigo-100 uppercase tracking-wide">{{ role.key }}</span>
+                            </div>
+                            <ul class="mt-2 space-y-1">
+                              {% for perm in role.permissions %}
+                                <li class="flex gap-2 text-slate-300 text-xs">
+                                  <span class="text-indigo-300">•</span>{{ perm }}
+                                </li>
+                              {% endfor %}
+                            </ul>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-3">
+                      <div class="text-sm font-semibold text-slate-100">Assignments</div>
+                      <p class="text-xs text-slate-400">Shift roles without touching billing or security scripts.</p>
+                      <div id="roleStatus" class="hidden text-xs px-3 py-2 rounded-xl border"></div>
+                      {% if members %}
+                        <div class="overflow-hidden rounded-xl border border-slate-800">
+                          <table class="min-w-full divide-y divide-slate-800 text-sm">
+                            <thead class="bg-slate-900/80 text-slate-300">
+                              <tr>
+                                <th class="px-4 py-3 text-left font-semibold">Member</th>
+                                <th class="px-4 py-3 text-left font-semibold">Role</th>
+                              </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800 bg-slate-950/40">
+                              {% for member in members %}
+                                <tr class="hover:bg-slate-900/40 transition">
+                                  <td class="px-4 py-3">
+                                    <div class="text-slate-100">{{ member.email }}</div>
+                                    <div class="text-xs text-slate-500">User ID: {{ member.id }}</div>
+                                  </td>
+                                  <td class="px-4 py-3">
+                                    <select
+                                      class="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                                      data-role-select
+                                      data-user-id="{{ member.id }}"
+                                      data-email="{{ member.email }}"
+                                      data-current-role="{{ member.role }}"
+                                    >
+                                      {% for role in roles %}
+                                        <option value="{{ role.key }}" {% if role.key == member.role %}selected{% endif %}>{{ role.label }}</option>
+                                      {% endfor %}
+                                    </select>
+                                  </td>
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      {% else %}
+                        <p class="text-sm text-slate-300">No teammates listed yet.</p>
+                      {% endif %}
+                      <div class="flex items-center gap-3">
+                        <a href="{{ url_for('settings.settings_page', tab='team') }}" class="text-sm text-indigo-200 hover:text-white">
+                          ← Back to team
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <script>
+                  window.RolesPage = {
+                    roles: {{ roles|tojson }},
+                    csrfToken: "{{ csrf_token or '' }}"
+                  };
+                </script>
+              {% else %}
+                <div class="space-y-3">
+                  <h2 class="text-xl font-semibold">Team</h2>
+                  <p class="text-sm text-slate-300">
+                    Invite teammates, manage seats, and assign who can access InboxIQ and tickets.
+                  </p>
+                </div>
+
+                <div class="mt-6 grid settings-2col md:grid-cols-2 gap-4">
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <div class="text-sm font-semibold text-slate-100">Invite teammates</div>
+                    <p class="text-sm text-slate-300 mt-2">Add someone to your workspace with an activation link.</p>
+                    <a href="{{ url_for('settings.team_invite_page') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                      Invite a teammate →
+                    </a>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <div class="text-sm font-semibold text-slate-100">Roles & access</div>
+                    <p class="text-sm text-slate-300 mt-2">Control who can view tickets, administer settings, or manage integrations.</p>
+                    <a href="{{ url_for('settings.team_roles_page') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                      Manage roles →
+                    </a>
+                  </div>
+                </div>
+              {% endif %}
+
+            {% elif active_tab == 'profile' %}
+              <div class="space-y-3">
+                <h2 class="text-xl font-semibold">Profile</h2>
+                <p class="text-sm text-slate-300">
+                  Update your personal details, notification preferences, and avatar.
+                </p>
+              </div>
+
+              <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
+                <div class="grid settings-2col md:grid-cols-2 gap-3">
+                  <label class="text-xs text-slate-300 space-y-1 block">
+                    <span>Display name</span>
+                    <input
+                      type="text"
+                      name="display_name"
+                      autocomplete="name"
+                      class="w-full rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 input-dark"
+                      value="{{ current_user.name if current_user else '' }}"
+                    />
+                  </label>
+                  <label class="text-xs text-slate-300 space-y-1 block">
+                    <span>Email</span>
+                    <input
+                      type="email"
+                      name="email"
+                      autocomplete="email"
+                      class="w-full rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 input-dark"
+                      value="{{ current_user.email if current_user else '' }}"
+                      disabled
+                    />
+                  </label>
+                </div>
+
+                <div class="flex items-center justify-between gap-3">
+                  <label class="text-xs text-slate-300 inline-flex items-center gap-2">
+                    <input type="checkbox" class="accent-indigo-500" checked />
+                    Email me about important ticket escalations
+                  </label>
+                  <button class="rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+                    Save profile
+                  </button>
+                </div>
+              </div>
+
+            {% elif active_tab == 'billing' %}
+              {% if billing_view == 'plan' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+                    Billing • Plan
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Current plan</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Review and change your subscription. Hook this panel to your billing provider.
+                  </p>
+                </div>
+                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                  <p class="text-sm text-slate-300">Plan details will appear here.</p>
+                  <p class="text-xs text-slate-400">Wire to your billing API to show plan, seats, and update controls.</p>
+                  <div class="flex items-center gap-3">
+                    <button class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white" disabled>
+                      Coming soon
+                    </button>
+                    <a href="{{ url_for('settings.settings_page', tab='billing') }}" class="text-sm text-indigo-200 hover:text-white">
+                      ← Back to billing
+                    </a>
+                  </div>
+                </div>
+              {% elif billing_view == 'invoices' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+                    Billing • Invoices
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Invoices</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Download invoices and view payment history. Connect this to your billing provider export.
+                  </p>
+                </div>
+                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                  <p class="text-sm text-slate-300">No invoices to display yet.</p>
+                  <p class="text-xs text-slate-400">Query your billing system here and render invoice links.</p>
+                  <div class="flex items-center gap-3">
+                    <button class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white" disabled>
+                      Coming soon
+                    </button>
+                    <a href="{{ url_for('settings.settings_page', tab='billing') }}" class="text-sm text-indigo-200 hover:text-white">
+                      ← Back to billing
+                    </a>
+                  </div>
+                </div>
+              {% else %}
+                <div class="space-y-3">
+                  <h2 class="text-xl font-semibold">Billing</h2>
+                  <p class="text-sm text-slate-300">
+                    Manage your plan, invoices, and seat limits.
+                  </p>
+                </div>
+
+                <div class="mt-6 grid settings-2col md:grid-cols-2 gap-4">
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <div class="text-sm font-semibold text-slate-100">Current plan</div>
+                    <p class="text-sm text-slate-300 mt-2">
+                      {{ plan_name or "Pro" }} · Seats used: {{ seats_used or 1 }} / {{ seats_limit or 3 }}
+                    </p>
+                    <a href="{{ url_for('settings.billing_plan') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                      Manage plan →
+                    </a>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <div class="text-sm font-semibold text-slate-100">Invoices</div>
+                    <p class="text-sm text-slate-300 mt-2">Download invoices and view payment history.</p>
+                    <a href="{{ url_for('settings.billing_invoices') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                      View invoices →
+                    </a>
+                  </div>
+                </div>
+              {% endif %}
+
+            {% elif active_tab == 'security' %}
+              {% if security_view == 'passkeys' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+                    Security • Passkeys
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Passkeys</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Register and manage passkeys for passwordless sign-in.
+                  </p>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                  <div id="passkeyStatus" class="hidden text-xs px-3 py-2 rounded-xl border"></div>
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="text-sm font-semibold text-slate-100">Your passkeys</div>
+                        <p class="text-xs text-slate-400">Hardware or platform keys bound to this account.</p>
+                      </div>
+                      <button id="registerPasskey" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+                        Register passkey
+                      </button>
+                    </div>
+                    {% if passkeys %}
+                      <ul id="passkeyList" class="space-y-2">
+                        {% for p in passkeys %}
+                          <li class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm">
+                            <span class="text-slate-100">{{ p.label or 'Passkey' }}</span>
+                            <span class="text-xs text-slate-500">{{ p.created_at }}</span>
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    {% else %}
+                      <p class="text-sm text-slate-300">No passkeys are registered yet.</p>
+                      <ul id="passkeyList" class="hidden"></ul>
+                    {% endif %}
+                    <a href="{{ url_for('settings.settings_page', tab='security') }}" class="text-sm text-indigo-200 hover:text-white">
+                      ← Back to security
+                    </a>
+                  </div>
+                </div>
+              {% elif security_view == 'password' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+                    Security • Password & Login
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Password & login</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Manage password updates and session controls. Placeholder until the flow is connected.
+                  </p>
+                </div>
+
+                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                  <p class="text-sm text-slate-300">Password updates will live here.</p>
+                  <p class="text-xs text-slate-400">Wire to your auth backend to handle password resets and session revocation.</p>
+                  <div class="flex items-center gap-3">
+                    <button class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white" disabled>
+                      Coming soon
+                    </button>
+                    <a href="{{ url_for('settings.settings_page', tab='security') }}" class="text-sm text-indigo-200 hover:text-white">
+                      ← Back to security
+                    </a>
+                  </div>
+                </div>
+              {% elif security_view == 'audit' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+                    Security • Audit log
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Audit log</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    View changes to tickets, roles, and integrations. Placeholder until audit events are exposed.
+                  </p>
+                </div>
+
+                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                  <p class="text-sm text-slate-300">No audit events to display yet.</p>
+                  <p class="text-xs text-slate-400">Feed this panel with your audit table or log aggregator when ready.</p>
+                  <div class="flex items-center gap-3">
+                    <button class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white" disabled>
+                      Coming soon
+                    </button>
+                    <a href="{{ url_for('settings.settings_page', tab='security') }}" class="text-sm text-indigo-200 hover:text-white">
+                      ← Back to security
+                    </a>
+                  </div>
+                </div>
+              {% elif security_view == '2fa' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+                    Security • Two-factor auth
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Two-factor authentication</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Enable 2FA with an authenticator app (TOTP).
+                  </p>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                  <div id="totpStatus" class="hidden text-xs px-3 py-2 rounded-xl border"></div>
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                    <div class="text-sm font-semibold text-slate-100">Set up TOTP</div>
+                    <p class="text-xs text-slate-400">Add this secret to your authenticator app, then enter the 6-digit code.</p>
+                    <div class="flex flex-col gap-2">
+                      <div class="text-sm text-indigo-100 font-mono bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2" id="totpSecret">
+                        {% if totp_devices and totp_devices[0].is_verified() %}Enabled{% endif %}
+                      </div>
+                      <div class="flex items-center gap-3 flex-wrap text-xs text-slate-300">
+                        <input type="hidden" id="totpDeviceId" value="">
+                        <input type="hidden" id="totpUri" value="">
+                        <a id="totpLink" href="#" class="text-indigo-200 hover:text-white underline" target="_blank" rel="noopener">Open in authenticator</a>
+                        <button id="totpCopy" class="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-1 text-xs font-semibold text-slate-100 hover:bg-slate-900">
+                          Copy secret
+                        </button>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-3 flex-wrap">
+                      <button id="totpStart" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+                        Start setup
+                      </button>
+                      <input id="totpCode" type="text" placeholder="Enter code" class="w-36 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                      <button id="totpVerify" class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">
+                        Verify code
+                      </button>
+                      <button id="totpDisable" class="inline-flex items-center gap-2 rounded-xl bg-rose-500 hover:bg-rose-400 px-4 py-2 text-sm font-semibold text-white">
+                        Disable 2FA
+                      </button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <a href="{{ url_for('settings.settings_page', tab='security') }}" class="text-sm text-indigo-200 hover:text-white">
+                        ← Back to security
+                      </a>
+                    </div>
+                  </div>
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-2">
+                    <div class="text-sm font-semibold text-slate-100">Existing devices</div>
+                    {% if totp_devices %}
+                      <ul class="text-sm text-slate-200 space-y-1">
+                        {% for d in totp_devices %}
+                          <li class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2">
+                            <span>TOTP device</span>
+                            <span class="text-xs text-slate-500">
+                              {% if d.is_verified() %}Verified{% else %}Pending{% endif %}
+                            </span>
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    {% else %}
+                      <p class="text-xs text-slate-400">No 2FA devices yet.</p>
+                    {% endif %}
+                  </div>
+                </div>
+              {% else %}
+                <div class="space-y-3">
+                  <h2 class="text-xl font-semibold">Security</h2>
+                  <p class="text-sm text-slate-300">
+                    Control authentication settings and audit key actions.
+                  </p>
+                </div>
+
+                <div class="mt-6 grid settings-2col md:grid-cols-2 gap-4">
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <div class="text-sm font-semibold text-slate-100">Password & login</div>
+                    <p class="text-sm text-slate-300 mt-2">Change password and manage login sessions.</p>
+                    <a href="{{ url_for('settings.settings_password') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                      Update password →
+                    </a>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <div class="text-sm font-semibold text-slate-100">Audit log</div>
+                    <p class="text-sm text-slate-300 mt-2">View changes to tickets, roles, and integrations.</p>
+                    <a href="{{ url_for('settings.settings_audit') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                      View audit log →
+                    </a>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <div class="text-sm font-semibold text-slate-100">Passkeys</div>
+                    <p class="text-sm text-slate-300 mt-2">Add hardware or platform passkeys for passwordless login.</p>
+                    <a href="{{ url_for('settings.settings_passkeys') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                      Manage passkeys →
+                    </a>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <div class="text-sm font-semibold text-slate-100">Two-factor auth</div>
+                    <p class="text-sm text-slate-300 mt-2">Enable 2FA with authenticator apps or SMS backup codes.</p>
+                    <a href="{{ url_for('settings.settings_2fa') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                      Configure 2FA →
+                    </a>
+                  </div>
+                </div>
+              {% endif %}
+
+            {% elif active_tab == 'integrations' %}
+              {% if integrations_view == 'webhooks' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+                    Integrations • Webhooks
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Webhook / API intake</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Send messages into InboxIQ from custom systems (forms, chat widgets, CRMs). Use tokens to authorize intake.
+                  </p>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-2">
+                    <div class="text-sm font-semibold text-slate-100">Endpoint</div>
+                    <div class="text-sm text-slate-200 font-mono bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2">
+                      POST {{ request.url_root.rstrip('/') }}/api/v1/intake
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-2">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <div class="text-sm font-semibold text-slate-100">Auth</div>
+                        <ul class="text-sm text-slate-300 list-disc list-inside space-y-1">
+                          <li><code class="font-mono text-indigo-200">X-Intake-Token</code> header (per-account token generated below; stored hashed).</li>
+                          <li>Or logged-in JWT (for in-app usage).</li>
+                        </ul>
+                        <div class="text-xs text-slate-400">
+                          Status: {% if intake_token_set %}<span class="text-emerald-300">active tokens exist</span>{% else %}<span class="text-amber-300">no active tokens</span>{% endif %}.
+                        </div>
+                      </div>
+                      {% if not api_allowed %}
+                        <div class="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-100 max-w-xs">
+                          API/webhooks require Business plan or active trial. Contact sales to upgrade.
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                    <div class="text-sm font-semibold text-slate-100">Example payloads</div>
+                    <pre class="text-xs text-slate-200 bg-slate-950/60 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
+{
+  "subject": "Contact us: integration question",
+  "body": "How do we connect our internal CRM to InboxIQ?",
+  "source": "form"
+}
+                    </pre>
+                    <pre class="text-xs text-slate-200 bg-slate-950/60 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
+{
+  "subject": "Chat handoff: billing issue",
+  "body": "User: I was double-charged...\nBot: Let me check...\nUser: please escalate.",
+  "source": "chat"
+}
+                    </pre>
+                    <pre class="text-xs text-slate-200 bg-slate-950/60 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
+{
+  "subject": "CRM: escalated lead responded angrily",
+  "body": "Lead ABC replied: \"Why was I charged again?\"",
+  "source": "crm",
+  "provider_thread_url": "https://crm.example.com/leads/abc"
+}
+                    </pre>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                    <div class="text-sm font-semibold text-slate-100">Sample curl</div>
+                    <pre class="text-xs text-slate-200 bg-slate-950/60 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
+curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
+  -H "X-Intake-Token: $INBOXIQ_INTAKE_TOKEN" \
+  -H "X-Timestamp: $(date +%s)" \
+  -H "X-Signature: <hmac-sha256-of-timestamp.body>" \
+  -H "Content-Type: application/json" \
+  -d '{ "subject": "Contact us", "body": "question", "source": "form" }'
+                    </pre>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                    <div class="text-sm font-semibold text-slate-100">Manage tokens (per account)</div>
+                    <form method="post" class="flex flex-col sm:flex-row gap-3 items-start sm:items-center" {% if not api_allowed %}aria-disabled="true" onsubmit="return false;"{% endif %}>
+                      <input type="hidden" name="action" value="generate" />
+                      <label class="w-full sm:w-auto">
+                        <span class="text-xs text-slate-400">Label (optional)</span>
+                        <input name="label" type="text" class="w-full sm:w-56 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" placeholder="e.g., Form backend" />
+                      </label>
+                      <label class="w-full sm:w-auto">
+                        <span class="text-xs text-slate-400">Allowed IPs (comma separated, optional)</span>
+                        <input name="allowed_ips" type="text" class="w-full sm:w-72 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" placeholder="e.g., 10.0.0.1, 203.0.113.5" />
+                      </label>
+                      <label class="w-full sm:w-auto">
+                        <span class="text-xs text-slate-400">Expires at (UTC, optional)</span>
+                        <input name="expires_at" type="datetime-local" class="w-full sm:w-56 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                      </label>
+                      <button type="submit" class="inline-flex items-center gap-2 rounded-xl btn-primary px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30" {% if not api_allowed %}disabled{% endif %}>
+                        Generate new token
+                      </button>
+                    </form>
+                    {% if new_token %}
+                      <div class="text-xs text-amber-200">
+                        Copy this token now (shown only once):<br>
+                        <code class="text-[11px] bg-slate-950/60 border border-slate-800 rounded px-2 py-1 inline-block mt-1">{{ new_token }}</code>
+                      </div>
+                    {% endif %}
+                    <div class="text-xs text-slate-300">
+                      Active tokens:
+                      {% if tokens and tokens|length > 0 %}
+                        <ul class="mt-2 space-y-1">
+                          {% for t in tokens %}
+                            <li class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2">
+                              <div class="flex flex-col text-slate-100">
+                                <span>{{ t.label or 'Intake token' }}</span>
+                                {% if t.allowed_ips and t.allowed_ips|length > 0 %}
+                                  <span class="text-slate-500">IPs: {{ t.allowed_ips|join(', ') }}</span>
+                                {% endif %}
+                                {% if t.expires_at %}
+                                  <span class="text-slate-500">Expires: {{ t.expires_at }}</span>
+                                {% endif %}
+                              </div>
+                              <span class="text-xs text-slate-500">ID: {{ t.id }}</span>
+                            </li>
+                          {% endfor %}
+                        </ul>
+                      {% else %}
+                        <div class="text-slate-500 mt-1">None yet.</div>
+                      {% endif %}
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="text-sm text-indigo-200 hover:text-white">
+                        ← Back to integrations
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              {% else %}
+                <div class="space-y-3">
+                  <h2 class="text-xl font-semibold">Integrations</h2>
+                  <p class="text-sm text-slate-300">
+                    Connect inbox providers so InboxIQ can ingest support emails and perform first-line triage.
+                  </p>
+                </div>
+
+                <div class="mt-6 grid settings-2col md:grid-cols-2 gap-4">
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <div class="text-sm font-semibold text-slate-100">Gmail / Google Workspace</div>
+                    <p class="text-sm text-slate-300 mt-2">Connect Gmail to enable polling and triage.</p>
+                    <div class="mt-4 flex gap-2">
+                      <a href="/integrations/google/connect" class="cta-pill-gmail">
+                        Connect Gmail
+                      </a>
+                      <a href="/integrations/google/manage" class="rounded-xl border border-slate-700 bg-slate-950/40 hover:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200">
+                        Manage
+                      </a>
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <div class="text-sm font-semibold text-slate-100">Microsoft Outlook</div>
+                    <p class="text-sm text-slate-300 mt-2">Connect Outlook to ingest and triage support emails.</p>
+                    <div class="mt-4 flex gap-2">
+                      <a href="/integrations/microsoft/connect" class="cta-pill-outlook">
+                        Connect Outlook
+                      </a>
+                      <a href="/integrations/microsoft/manage" class="rounded-xl border border-slate-700 bg-slate-950/40 hover:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200">
+                        Manage
+                      </a>
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2 settings-span-2">
+                    <div class="text-sm font-semibold text-slate-100">Webhook / API</div>
+                    <p class="text-sm text-slate-300 mt-2">
+                      Send messages into InboxIQ from custom systems (forms, chat widgets, CRMs). Useful for consolidating support intake.
+                    </p>
+                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                      <a href="{{ url_for('settings.integrations_webhooks') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                        Configure webhooks →
+                      </a>
+                      <a href="/docs/intake_api" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white">
+                        View Intake API docs
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+
+            {% else %}
+              <div class="space-y-2">
+                <h2 class="text-xl font-semibold">Settings</h2>
+                <p class="text-sm text-slate-300">Choose a section from the left.</p>
+              </div>
+            {% endif %}
+
+          </section>
+
+        </div>
+      </div>
+    </main>
+
+    {% if team_view == 'roles' %}
+      <script src="{{ url_for('static', filename='settings/js/settings_roles.js') }}"></script>
+    {% endif %}
+    {% if active_tab == 'security' %}
+      <script src="{{ url_for('static', filename='settings/js/security.js') }}"></script>
+    {% endif %}
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950/80">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 text-sm text-slate-400 flex items-center justify-between">
+        <span>InboxIQ by Kalevent</span>
+        <span class="space-x-3">
+          <a href="/privacy" class="hover:text-slate-200">Privacy</a>
+          <a href="/terms" class="hover:text-slate-200">Terms</a>
+        </span>
+      </div>
+      {% include 'partials/feedback_footer.html' %}
+    </footer>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
+</body>
+</html>

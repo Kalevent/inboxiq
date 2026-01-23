@@ -1,0 +1,2 @@
+"""InboxIQ minimal app package."""
+

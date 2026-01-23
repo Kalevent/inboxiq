@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Roles & Access</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Roles & access</div>
+          </div>
+        </div>
+        <nav class="flex items-center gap-3 text-sm text-slate-300">
+          <a href="/dashboard" class="px-3 py-1.5 rounded-full border border-slate-700 bg-slate-900/60 hover:bg-slate-800">
+            ← Dashboard
+          </a>
+          <a href="{{ url_for('settings.settings_page', tab='team') }}" class="px-3 py-1.5 rounded-full border border-slate-700 bg-slate-900/60 hover:bg-slate-800">
+            Settings
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-10 lg:py-14">
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-8 shadow-2xl shadow-indigo-500/15 relative overflow-hidden">
+          <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-20 bottom-0 h-48 w-48 rounded-full bg-fuchsia-500/5 blur-3xl pointer-events-none"></div>
+
+          <div class="space-y-3 mb-8">
+            <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+              Team • Roles & access
+            </p>
+            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Role-based access control</h1>
+            <p class="text-slate-300 text-sm max-w-3xl">
+              Gold-standard RBAC with least-privilege defaults. Owners/admins can tune assignments; every workspace keeps at least one owner.
+            </p>
+          </div>
+
+          <div class="grid gap-6 lg:grid-cols-3">
+
+            <!-- Role definitions -->
+            <section class="lg:col-span-2 space-y-3">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-sm font-semibold text-slate-100">Roles & permissions</div>
+                  <p class="text-xs text-slate-400">Predefined roles cover billing, security, tickets, and read-only access.</p>
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-4">
+                {% for role in roles %}
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-3 shadow-lg shadow-slate-950/30">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <div class="text-sm font-semibold text-slate-100">{{ role.label }}</div>
+                        <p class="text-xs text-slate-400 mt-1">{{ role.description }}</p>
+                      </div>
+                      <span class="text-[11px] px-2 py-1 rounded-full border border-indigo-400/30 bg-indigo-500/10 text-indigo-100 uppercase tracking-wide">{{ role.key }}</span>
+                    </div>
+                    <ul class="space-y-2">
+                      {% for perm in role.permissions %}
+                        <li class="flex gap-2 text-xs text-slate-300">
+                          <span class="text-indigo-300">•</span>{{ perm }}
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endfor %}
+              </div>
+            </section>
+
+            <!-- Guardrails -->
+            <section class="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 space-y-3 shadow-lg shadow-amber-500/20">
+              <div class="text-sm font-semibold text-amber-100">Guardrails</div>
+              <ul class="space-y-2 text-xs text-amber-50/80">
+                <li class="flex gap-2"><span class="text-amber-200">•</span>Keep at least one owner per workspace.</li>
+                <li class="flex gap-2"><span class="text-amber-200">•</span>Only owners/admins can change roles.</li>
+                <li class="flex gap-2"><span class="text-amber-200">•</span>Billing-only users cannot see tickets.</li>
+                <li class="flex gap-2"><span class="text-amber-200">•</span>Viewer is read-only—no risky actions.</li>
+                <li class="flex gap-2"><span class="text-amber-200">•</span>Document exceptions in the audit log.</li>
+              </ul>
+            </section>
+          </div>
+
+          <div class="mt-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30">
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <div class="text-sm font-semibold text-slate-100">Assignments</div>
+                <p class="text-xs text-slate-400">Shift roles without touching billing or security scripts.</p>
+              </div>
+              <a href="{{ url_for('settings.team_invite_page') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                Invite teammate →
+              </a>
+            </div>
+
+            <div id="roleStatus" class="hidden text-xs px-3 py-2 rounded-xl border"></div>
+
+            {% if members %}
+              <div class="overflow-hidden rounded-xl border border-slate-800">
+                <table class="min-w-full divide-y divide-slate-800 text-sm">
+                  <thead class="bg-slate-900/80 text-slate-300">
+                    <tr>
+                      <th class="px-4 py-3 text-left font-semibold">Member</th>
+                      <th class="px-4 py-3 text-left font-semibold">Role</th>
+                      <th class="px-4 py-3 text-left font-semibold">Joined</th>
+                      <th class="px-4 py-3 text-left font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800 bg-slate-950/40">
+                    {% for member in members %}
+                      <tr class="hover:bg-slate-900/40 transition">
+                        <td class="px-4 py-3">
+                          <div class="text-slate-100">{{ member.email }}</div>
+                          <div class="text-xs text-slate-500">User ID: {{ member.id }}</div>
+                        </td>
+                        <td class="px-4 py-3">
+                          <select
+                            class="w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                            data-role-select
+                            data-user-id="{{ member.id }}"
+                            data-email="{{ member.email }}"
+                            data-current-role="{{ member.role }}"
+                          >
+                            {% for role in roles %}
+                              <option value="{{ role.key }}" {% if role.key == member.role %}selected{% endif %}>{{ role.label }}</option>
+                            {% endfor %}
+                          </select>
+                        </td>
+                        <td class="px-4 py-3 text-slate-300">
+                          {{ member.created_at or "—" }}
+                        </td>
+                        <td class="px-4 py-3">
+                          <p class="text-xs text-slate-400">Owner/admin only. Changes apply immediately.</p>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="rounded-xl border border-slate-800 bg-slate-950/50 p-5 text-sm text-slate-300">
+                No teammates yet. <a class="text-indigo-200 hover:text-white font-semibold" href="{{ url_for('settings.team_invite_page') }}">Invite someone</a> to assign roles.
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6">
+            <div class="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <div class="text-sm font-semibold text-slate-100">Audit-friendly notes</div>
+                <p class="text-xs text-slate-400">Use this guidance until a dedicated audit log is wired.</p>
+              </div>
+            </div>
+            <ul class="space-y-2 text-sm text-slate-300">
+              <li class="flex gap-2"><span class="text-indigo-300">•</span>Log role changes in your ticketing system or shared doc.</li>
+              <li class="flex gap-2"><span class="text-indigo-300">•</span>Rotate owners/admins when staff changes or incidents occur.</li>
+              <li class="flex gap-2"><span class="text-indigo-300">•</span>Review seats monthly; downgrade inactive accounts to viewer.</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <footer class="border-t border-slate-800 bg-slate-950/80">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 text-sm text-slate-400 flex items-center justify-between">
+        <span>InboxIQ by Kalevent</span>
+        <span class="space-x-3">
+          <a href="/privacy" class="hover:text-slate-200">Privacy</a>
+          <a href="/terms" class="hover:text-slate-200">Terms</a>
+        </span>
+      </div>
+      {% include 'partials/feedback_footer.html' %}
+    </footer>
+
+  </div>
+
+  <script>
+    window.RolesPage = {
+      members: {{ members | tojson }},
+      roles: {{ roles | tojson }},
+      csrfToken: "{{ csrf_token_value }}",
+    };
+  </script>
+  <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
+  <script src="{{ url_for('static', filename='settings/js/settings_roles.js') }}"></script>
+</body>
+</html>

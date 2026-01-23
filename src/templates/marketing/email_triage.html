@@ -1,0 +1,196 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}AI Email Triage Software | InboxIQ{% endblock %}
+{% block meta_description %}
+InboxIQ automates email triage with AI—classifies, prioritises urgency, assigns ownership, and routes emails to the right workflow so your team focuses on actionable work.
+{% endblock %}
+{% block canonical %}{{ url_for('email_triage', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-12">
+  <header class="space-y-4">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      InboxIQ • Email Triage
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      AI-Powered Email Triage for Modern Teams
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed">
+      InboxIQ removes manual triage before humans touch the inbox. It classifies incoming emails, prioritises urgency,
+      assigns ownership, and routes each message to the right workflow—so your team only sees actionable work.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        Start with InboxIQ
+      </a>
+      <a href="#how-it-works" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        See how it works
+      </a>
+    </div>
+  </header>
+
+  <section class="grid lg:grid-cols-2 gap-8 marketing-section">
+    <div class="marketing-card space-y-4">
+      <h2 class="text-2xl font-semibold text-white">What Is Email Triage?</h2>
+      <p class="text-slate-200 leading-relaxed">
+        Email triage quickly sorts incoming emails so the most important messages are handled first. A good triage process answers four questions:
+      </p>
+      <ul class="space-y-2 text-slate-200 leading-relaxed list-disc list-inside">
+        <li><strong>Intent</strong> — what is this email about? (support, sales, billing, onboarding, feedback)</li>
+        <li><strong>Urgency</strong> — how urgent is it? (low, normal, urgent, critical)</li>
+        <li><strong>Ownership</strong> — who should handle it? (person/team/queue)</li>
+        <li><strong>Next step</strong> — what should happen now? (ticket, task, notification, auto-handle)</li>
+      </ul>
+    </div>
+    <div class="marketing-card space-y-4">
+      <h2 class="text-2xl font-semibold text-white">Why Manual Triage Breaks</h2>
+      <ul class="space-y-2 text-slate-200 leading-relaxed list-disc list-inside">
+        <li>Urgent emails buried under low-priority requests</li>
+        <li>Slow response times and missed SLAs</li>
+        <li>Inconsistent routing and unclear ownership</li>
+        <li>Duplicated work when multiple people reply</li>
+        <li>Constant context switching and inbox anxiety</li>
+      </ul>
+      <p class="text-slate-200 leading-relaxed">
+        InboxIQ stops the chaos at the first step: <strong>classification and routing</strong>.
+      </p>
+    </div>
+  </section>
+
+  <section class="grid lg:grid-cols-2 gap-8 marketing-section">
+    <div class="marketing-card space-y-3">
+      <h2 class="text-2xl font-semibold text-white">How InboxIQ Automates Triage</h2>
+      <ul class="space-y-2 text-slate-200 leading-relaxed list-disc list-inside">
+        <li><strong>Classification</strong> — tags emails by intent (support, billing, onboarding, feedback, cancellations, sales, etc.)</li>
+        <li><strong>Priority & urgency</strong> — highlights time-sensitive issues and escalations</li>
+        <li><strong>Ownership</strong> — assigns an owner or team based on rules and context</li>
+        <li><strong>Routing</strong> — triggers the right workflow (ticket, task, notification, follow-up)</li>
+        <li><strong>Summaries</strong> — quick summary and suggested next step</li>
+      </ul>
+      <p class="text-slate-200 leading-relaxed">Start simple, then evolve rules as your workflows mature.</p>
+    </div>
+    <div class="marketing-card space-y-3">
+      <h2 class="text-2xl font-semibold text-white">Use Cases</h2>
+      <div class="space-y-2 text-slate-200 leading-relaxed">
+        <p><strong>Customer Support</strong> — route issues to the right queue and escalate urgent messages.</p>
+        <p><strong>Sales & Lead Response</strong> — identify high-intent emails and assign follow-ups automatically.</p>
+        <p><strong>Operations & Admin</strong> — sort internal requests, route approvals, and convert emails into trackable tasks.</p>
+        <p><strong>Shared Inboxes</strong> — reduce collisions, clarify ownership, and keep the team aligned on what’s handled.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-card space-y-4 marketing-section">
+    <h2 class="text-2xl font-semibold text-white">What You Get with InboxIQ</h2>
+    <ul class="space-y-2 text-slate-200 leading-relaxed list-disc list-inside">
+      <li>Intent-based classification and tagging</li>
+      <li>Priority / urgency detection</li>
+      <li>Ownership assignment</li>
+      <li>Workflow routing and automation triggers</li>
+      <li>Human-readable summaries</li>
+      <li>Audit trail of actions (what happened and why)</li>
+      <li>Configurable rules so behaviour matches your business</li>
+    </ul>
+  </section>
+
+  <section id="how-it-works" class="marketing-card space-y-4 marketing-section">
+    <h2 class="text-2xl font-semibold text-white">How It Works</h2>
+    <ol class="space-y-3 text-slate-200 leading-relaxed list-decimal list-inside">
+      <li><strong>Connect your inbox</strong> — bring in inbound emails from your shared mailbox or monitored inbox.</li>
+      <li><strong>Define categories and routing</strong> — start with a small set of categories and simple routing rules.</li>
+      <li><strong>InboxIQ triages automatically</strong> — every email is classified, prioritised, assigned, and routed.</li>
+      <li><strong>Your team works the right queue</strong> — humans focus on what needs attention; everything else is organised or automated.</li>
+    </ol>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Email Triage FAQ</h2>
+    <div class="grid md:grid-cols-2 gap-4 text-slate-200 leading-relaxed">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">What’s the difference between email triage and a helpdesk?</h3>
+        <p>Email triage is the sorting and routing step. A helpdesk manages tickets and conversations. InboxIQ automates triage so your helpdesk (or workflow system) receives cleaner, structured inputs.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Can InboxIQ route emails to different teams?</h3>
+        <p>Yes. Route by category, urgency, sender, keywords, or other rules so messages land with the right owner.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Does this work for sales emails too?</h3>
+        <p>Yes. InboxIQ can classify lead intent, highlight urgency, and assign follow-ups so you respond faster.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">How do I start if I don’t have a perfect taxonomy?</h3>
+        <p>Start small: 5–8 categories (Support, Billing, Sales, Onboarding, Feedback, Cancellations, Ops). Refine based on real inbox patterns.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-indigo-600 text-white rounded-2xl p-8 space-y-3 marketing-section">
+    <h2 class="text-2xl font-semibold">Stop Losing Time to Manual Triage</h2>
+    <p class="text-indigo-100">InboxIQ gives your inbox a structured front door—so urgent work gets handled first and routine work gets automated.</p>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition">
+        Get started with InboxIQ
+      </a>
+      <a href="#how-it-works" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-indigo-200 text-white font-semibold hover:bg-indigo-500/70 transition">
+        See how it works
+      </a>
+    </div>
+  </section>
+
+  <section class="pt-2 border-t border-slate-800/60 marketing-section">
+    <h2 class="sr-only">Related resources</h2>
+    <ul class="flex flex-wrap gap-3 text-sm text-slate-300">
+      <li><a class="hover:text-indigo-300 underline underline-offset-4" href="{{ url_for('playbook') }}">Why manual triage fails at scale</a></li>
+      <li><a class="hover:text-indigo-300 underline underline-offset-4" href="{{ url_for('playbook') }}">Unified pre-human triage model</a></li>
+      <li><a class="hover:text-indigo-300" href="{{ url_for('ai_email_triage') }}">AI email triage</a></li>
+      <li><a class="hover:text-indigo-300" href="{{ url_for('shared_inbox') }}">Shared inbox</a></li>
+      <li><a class="hover:text-indigo-300" href="{{ url_for('support_automation') }}">Support automation</a></li>
+      <li><a class="hover:text-indigo-300" href="{{ url_for('docs.docs_page', doc_name='intake_api') }}">Intake API</a></li>
+      <li><a class="hover:text-indigo-300" href="{{ url_for('contact') }}">Contact</a></li>
+    </ul>
+  </section>
+
+  <!-- SEO FAQ schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What’s the difference between email triage and a helpdesk?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Email triage is the sorting and routing step. A helpdesk manages tickets and conversations. InboxIQ focuses on automating triage so your helpdesk (or workflow system) receives cleaner, structured inputs."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can InboxIQ route emails to different teams?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. You can route by category, urgency, sender, keywords, or other rules so messages land with the right owner."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does this work for sales emails too?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. InboxIQ can classify lead intent, highlight urgency, and assign follow-ups so you respond faster."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I start if I don’t have a perfect taxonomy?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Start small: 5–8 categories (Support, Billing, Sales, Onboarding, Feedback, Cancellations, Ops). Refine based on real inbox patterns."
+        }
+      }
+    ]
+  }
+  </script>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{
+  "InboxIQ": {
+    "Colors": {
+      "Background": "#020617",
+      "Surface": "#0F172A",
+      "SurfaceSoft": "#1E293B",
+      "BorderDefault": "#1E293B",
+      "BorderStrong": "#334155",
+      "Primary": "#6366F1",
+      "PrimaryHover": "#818CF8",
+      "Accent": "#A855F7",
+      "Success": "#34D399",
+      "Warning": "#FBBF24",
+      "Danger": "#FB7185"
+    }
+  }
+}

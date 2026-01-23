@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr><td align="center">
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="width:640px;max-width:100%;">
+          <tr><td style="padding:16px;font-family:Arial, sans-serif;font-size:12px;color:#4b5563;">
+            {{ preheader }}
+          </td></tr>
+          <tr><td style="padding:24px 16px;text-align:center;font-family:Arial, sans-serif;">
+            <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7280;">{{ hero.kicker }}</div>
+            <h1 style="margin:8px 0 16px 0;font-size:28px;line-height:1.2;color:#111827;">{{ hero.headline }}</h1>
+            <a href="{{ hero.cta_url }}" style="display:inline-block;padding:12px 18px;background:#111827;color:#ffffff;text-decoration:none;border-radius:6px;">{{ hero.cta_text }}</a>
+          </td></tr>
+          {% if resource is defined %}
+          <tr><td style="padding:16px 16px 0 16px;font-family:Arial, sans-serif;color:#111827;">
+            <div style="font-size:14px;letter-spacing:0.5px;text-transform:uppercase;color:#6b7280;">{{ resource.kicker|default('Resource') }}</div>
+            <h2 style="font-size:20px;margin:6px 0 8px 0;color:#0f172a;">{{ resource.title }}</h2>
+            <p style="margin:0 0 10px 0;font-size:14px;line-height:1.5;color:#111827;">{{ resource.summary }}</p>
+            <a href="{{ resource.url }}" style="display:inline-block;padding:10px 14px;background:#111827;color:#ffffff;text-decoration:none;border-radius:6px;">{{ resource.cta_text|default('Watch the 2-min Loom') }}</a>
+          </td></tr>
+          {% endif %}
+          {% for s in sections %}
+          <tr><td style="padding:16px;font-family:Arial, sans-serif;color:#111827;">
+            <h2 style="font-size:18px;margin:0 0 8px 0;">{{ s.title }}</h2>
+            <div>{{ s.html|safe }}</div>
+          </td></tr>
+          {% endfor %}
+          {% if copilot_sop_guide_url is defined or copilot_sop_guide_title is defined %}
+          <tr><td style="padding:20px 16px;background:#f4f5f7;font-family:Arial, sans-serif;color:#111827;border-left:4px solid #111827;">
+            <strong style="display:block;margin-bottom:6px;">{{ copilot_sop_guide_title|default('New: SOP-to-Copilot Guide') }}</strong>
+            <p style="margin:0 0 8px 0;font-size:14px;line-height:1.5;">
+              Give your teams a step-by-step walkthrough for publishing SOPs, binding them to copilots, and seeing CRM-sync'd activity logs.
+            </p>
+            <a href="{{ copilot_sop_guide_url|default('https://127.0.0.1:8000/en-gb/mcp/docs/copilot_sop_enablement') }}"
+               style="font-size:14px;color:#111827;text-decoration:underline;">Read the Copilot SOP Enablement Guide →</a>
+          </td></tr>
+          {% endif %}
+          <tr><td style="padding:24px;text-align:center;font-family:Arial, sans-serif;">
+            <h2 style="margin:0 0 12px 0;font-size:20px;">{{ cta_block.headline }}</h2>
+            <a href="{{ cta_block.cta_url }}" style="display:inline-block;padding:12px 18px;background:#111827;color:#ffffff;text-decoration:none;border-radius:6px;">{{ cta_block.cta_text }}</a>
+          </td></tr>
+          <tr><td style="padding:24px;font-family:Arial, sans-serif;font-size:12px;color:#6b7280;text-align:center;">
+            {{ footer.company }} • {{ footer.address }} •
+            <a href="{{ footer.unsubscribe_url }}" style="color:#6b7280;">Unsubscribe</a><br/>
+            {{ footer.legal }}
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Feedback · {{ feedback.id }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Feedback</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 text-sm text-slate-200">
+          <a href="{{ url_for('dashboard_home') }}" class="px-3 py-1.5 rounded-full border border-slate-700 hover:bg-slate-800">
+            ← Back to dashboard
+          </a>
+          {% if linked_ticket %}
+            <a href="{{ url_for('ticket_detail', ticket_id=linked_ticket.id) }}" class="px-3 py-1.5 rounded-full bg-slate-900/70 border border-slate-700 hover:bg-slate-800">
+              Open linked ticket ↗
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 py-10 lg:py-14 space-y-6">
+
+        <!-- Feedback summary -->
+        <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-7 shadow-2xl shadow-indigo-500/15 relative overflow-hidden">
+          <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-24 bottom-0 h-52 w-52 rounded-full bg-fuchsia-500/5 blur-3xl pointer-events-none"></div>
+
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-200 border border-slate-700">Feedback</span>
+              <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border border-slate-700 bg-slate-900/60 text-slate-200">
+                Source: {{ feedback.source or 'feedback' }}
+              </span>
+              {% if feedback.action_required %}
+                {% if feedback.action_required == 'true' %}
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-100 border border-emerald-500/30">
+                    Action required
+                  </span>
+                {% elif feedback.action_required == 'optional' %}
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-100 border border-amber-500/30">
+                    Optional follow-up
+                  </span>
+                {% else %}
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700/30 text-slate-300 border border-slate-700">
+                    Auto-handled
+                  </span>
+                {% endif %}
+              {% endif %}
+            </div>
+
+            <div class="space-y-1">
+              <h1 class="text-2xl md:text-3xl font-semibold text-white leading-tight break-words">
+                {{ decision.get("summary") or feedback.message or "Feedback" }}
+              </h1>
+              <div class="text-xs text-slate-400">
+                ID: <span class="text-slate-200">{{ feedback.id }}</span>
+                {% if feedback.created_at %} · Created: <span class="text-slate-200">{{ feedback.created_at }}</span>{% endif %}
+                {% if feedback.urgency %} · Urgency: <span class="text-slate-200">{{ feedback.urgency }}</span>{% endif %}
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/65 p-4 space-y-3">
+              <div>
+                <div class="text-xs uppercase tracking-wide text-slate-400">Message</div>
+                <div class="mt-1 text-sm text-slate-100 whitespace-pre-wrap">{{ feedback.message }}</div>
+              </div>
+              {% if feedback.context %}
+              <div>
+                <div class="text-xs uppercase tracking-wide text-slate-400">Context</div>
+                <div class="mt-1 text-sm text-slate-200 whitespace-pre-wrap">{{ feedback.context }}</div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+
+        <!-- Decision + metadata -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900/55 p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="text-sm font-semibold text-slate-100">AI decision</div>
+              <div class="text-xs text-slate-500">Why InboxIQ handled this</div>
+            </div>
+            <div class="text-sm text-slate-100">
+              {{ decision.get("ai_reason") or "Feedback auto-handled unless action_required is true." }}
+            </div>
+            <div class="text-xs text-slate-400 flex flex-wrap gap-3">
+              <span>Category: <span class="text-slate-200">{{ decision.get("category") or "feedback" }}</span></span>
+              <span>·</span>
+              <span>Intent: <span class="text-slate-200">{{ decision.get("intent") or "feedback" }}</span></span>
+              <span>·</span>
+              <span>Priority: <span class="text-slate-200">{{ decision.get("priority") or "P2" }}</span></span>
+              <span>·</span>
+              <span>Sentiment: <span class="text-slate-200">{{ decision.get("sentiment") or "neutral" }}</span></span>
+            </div>
+            {% if decision.get("decision_trace") %}
+              <div class="mt-2 text-[11px] text-slate-500">
+                Trace: {{ decision.get("decision_trace") }}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/55 p-5 space-y-3">
+            <div class="text-sm font-semibold text-slate-100">Linked ticket</div>
+            {% if linked_ticket %}
+              <div class="text-sm text-slate-200">Ticket ID: {{ linked_ticket.id }}</div>
+              <div class="text-xs text-slate-400">Status: {{ linked_ticket.status }}</div>
+              <a href="{{ url_for('ticket_detail', ticket_id=linked_ticket.id) }}" class="text-indigo-300 hover:text-indigo-200 text-sm underline underline-offset-2">
+                View ticket
+              </a>
+            {% else %}
+              <div class="text-xs text-slate-400">No ticket created (action_required was not true).</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/55 p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-sm font-semibold text-slate-100">Extracted metadata</div>
+            <div class="text-xs text-slate-500">Entities, sentiment, context</div>
+          </div>
+          <pre class="text-xs text-slate-200 bg-slate-950/60 rounded-xl border border-slate-800 p-3 overflow-x-auto">{{ metadata | tojson(indent=2) }}</pre>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+</body>
+</html>

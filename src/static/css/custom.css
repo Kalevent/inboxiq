@@ -1,0 +1,670 @@
+:root {
+  --text-h1-size: 40px;
+  --text-h1-line: 48px;
+  --text-h2-size: 28px;
+  --text-h2-line: 36px;
+  --text-h3-size: 18px;
+  --text-h3-line: 26px;
+  --text-body-size: 14px;
+  --text-body-line: 22px;
+  --text-body-sm-size: 12px;
+  --text-body-sm-line: 18px;
+  --text-button-size: 14px;
+  --text-button-line: 18px;
+}
+
+.cta-input {
+  color: #0f172a;
+  font-weight: 700;
+  background-color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.cta-input::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
+.cta-input:focus {
+  outline: none;
+}
+
+.cta-input:-webkit-autofill,
+.cta-input:-webkit-autofill:focus,
+.cta-input:-webkit-autofill:hover {
+  -webkit-text-fill-color: #0f172a;
+  box-shadow: 0 0 0px 1000px #ffffff inset;
+  font-weight: 700;
+}
+
+/* Dark-form input styling to prevent Chrome autofill from painting a white background over dark UIs */
+.input-dark {
+  color: #e2e8f0; /* slate-200 */
+  background-color: rgba(15, 23, 42, 0.6); /* slate-950/60 */
+  border-color: #334155; /* slate-700 */
+  caret-color: #e2e8f0;
+}
+
+.input-dark::placeholder {
+  color: #94a3b8; /* slate-400 */
+}
+
+.input-dark:focus {
+  outline: none;
+}
+
+.input-dark:-webkit-autofill,
+.input-dark:-webkit-autofill:focus,
+.input-dark:-webkit-autofill:hover {
+  -webkit-text-fill-color: #e2e8f0;
+  box-shadow: 0 0 0px 1000px rgba(15, 23, 42, 0.6) inset;
+  caret-color: #e2e8f0;
+}
+
+/* Modal helpers (CSP-safe: toggle classes, not inline styles) */
+.modal-hidden {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+.modal-visible {
+  display: flex !important;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+/* Force consistent sizing on dashboard header avatar since some Tailwind height classes are purged */
+.dashboard-avatar {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+/* User menu on dashboard header */
+.dashboard-user-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 4000;
+  width: 11rem;
+  min-width: 11rem;
+  background: rgba(15, 23, 42, 0.95); /* slate-900-ish */
+  border: 1px solid rgba(30, 41, 59, 0.9);
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.25);
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.dashboard-user-menu__header {
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom: 1px solid rgba(30, 41, 59, 0.7);
+}
+
+.dashboard-user-menu__eyebrow {
+  font-size: 11px;
+  color: #94a3b8; /* slate-400 */
+}
+
+.dashboard-user-menu__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0; /* slate-200 */
+}
+
+.dashboard-user-menu__list {
+  padding: 6px 0;
+}
+
+.dashboard-user-menu__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #e2e8f0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.dashboard-user-menu__item:hover,
+.dashboard-user-menu__item:focus {
+  background: rgba(99, 102, 241, 0.18);
+  color: #ffffff;
+  outline: none;
+}
+
+.dashboard-user-menu__item--danger {
+  color: #fecdd3; /* rose-200 */
+}
+
+.dashboard-user-menu__item--danger:hover,
+.dashboard-user-menu__item--danger:focus {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fff;
+}
+
+/* Keep the dashboard header above content so dropdown stacks correctly */
+.dashboard-header {
+  position: relative;
+  z-index: 3000;
+}
+
+/* Landing header + dropdown stacking to prevent overlap with hero content */
+.landing-header {
+  position: relative;
+  z-index: 4000;
+}
+.landing-menu-wrap {
+  position: relative;
+  z-index: 5000;
+}
+.landing-menu {
+  position: absolute;
+  z-index: 6000;
+}
+
+/* Marketing pages: align with dark app theme and responsive gutters */
+.marketing-body {
+  background:
+    radial-gradient(120% 120% at 20% 20%, rgba(99, 102, 241, 0.14), transparent 42%),
+    radial-gradient(90% 90% at 80% 5%, rgba(236, 72, 153, 0.12), transparent 36%),
+    linear-gradient(180deg, #0b1224 0%, #0f172a 50%, #0b1224 100%);
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+.marketing-shell {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+@media (min-width: 640px) {
+  .marketing-shell {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .marketing-shell {
+  padding-left: 2rem;
+  padding-right: 2rem;
+  }
+}
+.marketing-header {
+  position: sticky;
+  top: 0;
+  z-index: 2000;
+}
+.marketing-nav {
+  display: flex;
+  gap: 24px;
+}
+.marketing-nav a {
+  color: #cbd5e1;
+  transition: color 0.15s ease;
+}
+.marketing-nav a:hover {
+  color: #fff;
+}
+.marketing-header .cta-group {
+  display: flex;
+  gap: 14px;
+  margin-left: 18px;
+}
+.marketing-footer {
+  margin-top: 3rem;
+}
+.marketing-main {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+.playbook-hero {
+  margin-bottom: 2.5rem;
+}
+.playbook-hero .cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+  margin-bottom: 24px;
+}
+.marketing-section {
+  margin-bottom: 2.5rem;
+}
+.marketing-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 20px 45px -20px rgba(15, 23, 42, 0.7);
+}
+.marketing-kicker {
+  color: #a5b4fc;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.marketing-title {
+  color: #fff;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.marketing-subtitle {
+  color: #cbd5e1;
+}
+/* Dashboard metric cards grid: 4-up on wide screens, gracefully wrapping */
+.dashboard-metrics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* CTA pills for Gmail/Outlook to match prototype even if Tailwind purge removes utilities */
+.cta-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  transition: background-color 0.15s ease;
+}
+.cta-pill--gmail {
+  background: #10b981; /* emerald-500 */
+}
+.cta-pill--gmail:hover {
+  background: #34d399; /* emerald-400 */
+}
+.cta-pill--outlook {
+  background: #3b82f6; /* blue-500 */
+}
+.cta-pill--outlook:hover {
+  background: #60a5fa; /* blue-400 */
+}
+
+/* Share card tweaks to match prototype spacing and CTA */
+.share-card textarea {
+  min-height: 120px;
+}
+.submit-testimonial-btn {
+  min-width: 150px;
+}
+.share-card-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.badge-primary {
+  background: rgba(52, 211, 153, 0.15); /* emerald tint */
+  border-color: rgba(52, 211, 153, 0.45);
+  color: #a7f3d0;
+}
+
+.badge-optional {
+  background: rgba(250, 204, 21, 0.14); /* amber tint */
+  border-color: rgba(250, 204, 21, 0.4);
+  color: #fde68a;
+}
+
+.badge-priority {
+  background: rgba(255, 255, 255, 0.04);
+}
+.badge-priority-p0 {
+  border-color: rgba(248, 113, 113, 0.5);
+  color: #fecdd3;
+  background: rgba(248, 113, 113, 0.12);
+}
+.badge-priority-p1 {
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #fcd34d;
+  background: rgba(251, 191, 36, 0.12);
+}
+.badge-priority-p2 {
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #e2e8f0;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+/* Primary CTA style to match dashboard purple */
+.btn-primary {
+  background: #7666ff !important;
+  border: 1px solid #7666ff !important;
+  color: #ffffff !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-primary:hover {
+  background: #9184ff !important;
+  border-color: #9184ff !important;
+}
+.btn-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(118, 102, 255, 0.25);
+}
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+@media (min-width: 768px) {
+  .share-card-grid {
+    grid-template-columns: minmax(0, 1fr) 288px;
+    align-items: start;
+  }
+  .share-card-right {
+    justify-self: end;
+    text-align: right;
+  }
+  .share-card-actions {
+    justify-content: flex-end;
+  }
+  .share-card-consent {
+    justify-content: flex-end;
+  }
+}
+
+/* Banner styling tweak to brighten the border like the prototype */
+.banner-success {
+  border-color: rgba(16, 185, 129, 0.8); /* emerald-500-ish */
+  background: rgba(16, 185, 129, 0.1);
+  color: #d1fae5; /* emerald-100 */
+}
+
+/* Blog layout tuning */
+.blog-article {
+  max-width: 900px;
+}
+
+.blog-card {
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.blog-hero {
+  position: relative;
+  height: clamp(180px, 22vw, 320px);
+  min-height: 180px;
+  margin-bottom: 2.25rem; /* ensure clear gap before body */
+  overflow: hidden; /* keep the image from spilling into the body on wide screens */
+}
+
+.blog-body-wrap {
+  margin-top: 2rem; /* secondary gap to guarantee separation on all viewports */
+  padding-bottom: 1.5rem; /* prevent content overlapping a tall inline image */
+  position: relative;
+  z-index: 1;
+}
+
+.hero-spacer {
+  height: 2.25rem;
+}
+@media (min-width: 768px) {
+  .hero-spacer {
+    height: 3rem;
+  }
+}
+
+.blog-body {
+  margin: 0 auto;
+  color: #e2e8f0;
+  font-size: 0.9375rem; /* closer to text-sm/base blend used on home */
+  line-height: 1.6;
+}
+
+.blog-body,
+.blog-body.prose,
+.blog-body .prose {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  max-width: none;
+}
+
+.blog-body > *:first-child,
+.blog-body.prose > *:first-child,
+.blog-body .prose > *:first-child {
+  margin-top: 0;
+}
+
+.blog-heading {
+  font-size: var(--text-h1-size);
+  line-height: var(--text-h1-line);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.blog-subheading {
+  font-size: var(--text-h2-size);
+  line-height: var(--text-h2-line);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.blog-card-title {
+  font-size: var(--text-h3-size);
+  line-height: var(--text-h3-line);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.blog-body-text,
+.blog-body p {
+  margin: 0 0 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+}
+
+.blog-body.prose p,
+.blog-body .prose p,
+.blog-body section p {
+  margin: 0 0 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.blog-body h1 {
+  font-size: var(--text-h1-size);
+  line-height: var(--text-h1-line);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.blog-body h2,
+.blog-body h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.45rem;
+}
+
+.blog-body.prose h2,
+.blog-body .prose h2,
+.blog-body section h2 {
+  margin-top: 1rem;
+  margin-bottom: 0.45rem;
+  font-size: var(--text-h2-size);
+  line-height: var(--text-h2-line);
+  font-weight: 600;
+}
+
+.blog-body.prose h3,
+.blog-body .prose h3,
+.blog-body section h3 {
+  margin-top: 0.85rem;
+  margin-bottom: 0.35rem;
+  font-size: var(--text-h3-size);
+  line-height: var(--text-h3-line);
+  font-weight: 600;
+}
+
+.blog-body h2 {
+  font-size: var(--text-h2-size);
+  line-height: var(--text-h2-line);
+  font-weight: 600;
+}
+
+.blog-body h3 {
+  font-size: var(--text-h3-size);
+  line-height: var(--text-h3-line);
+  font-weight: 600;
+}
+
+.blog-meta {
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-sm-line);
+}
+
+.blog-button-text {
+  font-size: var(--text-button-size);
+  line-height: var(--text-button-line);
+  font-weight: 600;
+}
+
+.blog-body ul,
+.blog-body ol {
+  margin: 0 0 0.6rem 1.1rem;
+  padding-left: 0.8rem;
+}
+
+.blog-body.prose ul,
+.blog-body.prose ol,
+.blog-body .prose ul,
+.blog-body .prose ol,
+.blog-body section ul,
+.blog-body section ol {
+  margin: 0 0 0.6rem 1.1rem;
+  padding-left: 0.9rem;
+}
+
+.blog-body li {
+  margin-bottom: 0.2rem;
+  line-height: 1.6;
+}
+
+.blog-body.prose li,
+.blog-body .prose li,
+.blog-body section li {
+  margin-bottom: 0.15rem;
+  line-height: 1.6;
+}
+
+.blog-body strong {
+  color: #ffffff;
+}
+
+.blog-body a {
+  color: #c7d2fe;
+}
+
+@media (max-width: 768px) {
+  .blog-article {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .blog-body {
+    max-width: 100%;
+  }
+  .blog-body ul,
+  .blog-body ol {
+    margin-left: 0.8rem;
+  }
+}
+
+/* Settings layout: enforce two-column shell even if Tailwind purge drops arbitrary grid utilities */
+.settings-layout {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .settings-layout {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+  .settings-sidebar {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
+/* Two-column sections fallback (ensures multi-column cards without Tailwind utilities) */
+.settings-2col {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .settings-2col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Span helpers for settings grid when Tailwind col-span utilities are purged */
+@media (min-width: 768px) {
+  .settings-span-2 {
+    grid-column: span 2;
+  }
+}
+
+/* Integrations CTA pills to keep prototype colors even if utilities are purged */
+.cta-pill-gmail {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  background-color: #10b981; /* emerald-500 */
+  border: 1px solid rgba(16, 185, 129, 0.6);
+}
+.cta-pill-gmail:hover {
+  background-color: #34d399; /* emerald-400 */
+  border-color: rgba(52, 211, 153, 0.7);
+}
+
+.cta-pill-outlook {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  background-color: #2563eb; /* blue-600 */
+  border: 1px solid rgba(37, 99, 235, 0.65);
+}
+.cta-pill-outlook:hover {
+  background-color: #3b82f6; /* blue-500 */
+  border-color: rgba(59, 130, 246, 0.75);
+}

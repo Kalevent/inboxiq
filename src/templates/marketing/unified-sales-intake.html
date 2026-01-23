@@ -1,0 +1,123 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Unified Sales Intake: Faster SLAs and Cleaner Handoffs | Kalevent{% endblock %}
+{% block meta_description %}
+Unified sales intake playbook to detect intent before CRM assignment, suppress spam, improve lead response SLAs, and route high-intent leads instantly.
+{% endblock %}
+{% block canonical %}{{ url_for('playbook_sales', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-18">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      InboxIQ Playbook • Unified Sales Intake
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Unified Sales Intake: Detect Intent Before CRM Assignment
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      Spam, bots, and low-intent form fills bury the leads that matter. A unified sales intake layer classifies every submission, detects urgency, and routes high-intent leads instantly—before they ever hit your CRM.
+    </p>
+    <div class="cta-row mt-2 mb-8">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        See the InboxIQ demo
+      </a>
+      <a href="{{ url_for('playbook') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Unified support triage pillar
+      </a>
+    </div>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Why Manual Sales Intake Breaks</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Lead response SLAs slip</h3>
+        <p class="text-slate-200 leading-relaxed">Reps see high-intent leads after delays because everything looks the same in the inbox or CRM queue.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Spam overwhelms routing</h3>
+        <p class="text-slate-200 leading-relaxed">Bots and noise drain SDR attention, hiding buyers ready to talk.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Ownership gets fuzzy</h3>
+        <p class="text-slate-200 leading-relaxed">Duplicated forms create conflicting assignments with no audit trail.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">What Is Unified Sales Intake?</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Intent detection before CRM</h3>
+        <p class="text-slate-200 leading-relaxed">Classify leads by persona, product fit, and urgency before they ever create a record.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Spam and noise suppression</h3>
+        <p class="text-slate-200 leading-relaxed">Filter bots, low-intent spam, and duplicates automatically.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Instant routing with audit</h3>
+        <p class="text-slate-200 leading-relaxed">Assign owners and queues with a clear rationale and log every decision.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works" class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">How Unified Sales Intake Works</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Connect forms, chat, and inboxes</h3>
+        <p class="text-slate-200 leading-relaxed">Route website forms, chat transcripts, and inbound sales@ into one intake layer.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Define intent and urgency rules</h3>
+        <p class="text-slate-200 leading-relaxed">Score for product fit, buying signals, and timing. Tag spam on arrival.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Assign and notify instantly</h3>
+        <p class="text-slate-200 leading-relaxed">Hot leads route to owners with SLA timers; low-intent records stay suppressed.</p>
+      </div>
+    </div>
+    <p class="text-slate-200 leading-relaxed">Result: faster speed-to-lead, cleaner CRM data, and fewer wasted touches.</p>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Outcomes Sales Leaders Care About</h2>
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Lead SLAs stay green</h3>
+        <p class="text-slate-200 leading-relaxed">Urgent signals jump queues automatically.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Cleaner CRM, fewer dupes</h3>
+        <p class="text-slate-200 leading-relaxed">Deduplication before creation keeps reporting accurate.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Better rep focus</h3>
+        <p class="text-slate-200 leading-relaxed">Reps work qualified, prioritised leads—not spam.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Auditable routing</h3>
+        <p class="text-slate-200 leading-relaxed">Know why each lead was routed, suppressed, or escalated.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-card space-y-4 marketing-section">
+    <h2 class="text-2xl font-semibold text-white">Implementing Unified Sales Intake with InboxIQ</h2>
+    <p class="text-slate-200 leading-relaxed">
+      InboxIQ applies unified intake to sales: classify intent, detect urgency, suppress spam, and assign owners instantly with full audit trails.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        See the unified intake demo
+      </a>
+      <a href="{{ url_for('playbook') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Back to support triage pillar
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}

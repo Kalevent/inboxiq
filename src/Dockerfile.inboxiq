@@ -1,0 +1,57 @@
+
+# --- builder ---
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /usr/src
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential gcc libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /usr/src/.venv
+ENV PATH="/usr/src/.venv/bin:$PATH"
+
+COPY src/requirements-inboxiq.lock.txt /usr/src/requirements-inboxiq.lock.txt
+RUN pip install --no-cache-dir --no-compile -r /usr/src/requirements-inboxiq.lock.txt
+
+# --- runtime ---
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    WORKDIR=/usr/src \
+    PATH="/usr/src/.venv/bin:$PATH" \
+    FLASK_APP=src.manage:app \
+    PYTHONPATH=/usr/src
+
+WORKDIR /usr/src
+
+# Create non-root user
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+# Copy venv from builder
+COPY --from=builder /usr/src/.venv /usr/src/.venv
+
+# Copy application
+COPY src /usr/src/src
+
+# Fix ownership
+RUN chown -R appuser:appgroup /usr/src
+
+USER appuser
+
+# Default command: gunicorn serving the app factory
+CMD [ "gunicorn", "-b", "0.0.0.0:8000", "src.app:create_app()" ]
+
+
+#  aws eks update-kubeconfig --name inboxiq-eks --region us-west-2
+
+# docker build -f src/Dockerfile.inboxiq -t inboxiq:latest .
+# Or 
+# docker buildx build --platform linux/amd64 -f src/Dockerfile.inboxiq -t kalevent1/inboxiq:latest --push .
+# docker run --env-file .env -p 8000:8000 inboxiq:latest

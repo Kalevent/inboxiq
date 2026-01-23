@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Your AI Support Agent</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
+    crossorigin="anonymous"
+  />
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/custom.css', v='landing-menu-1') }}"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cookie-consent.css') }}">
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+    <header class="landing-header border-b border-slate-800 bg-slate-950/80 backdrop-blur relative z-30" style="z-index: 7000;">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-2 hover:opacity-90">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">
+            KI
+          </div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – AI Support Agent</div>
+          </div>
+        </a>
+        <nav class="hidden md:flex items-center gap-6 text-sm text-slate-300">
+          <div class="landing-menu-wrap group" style="position: relative; z-index: 8000;">
+            <button data-dropdown="solutions-header" class="inline-flex items-center gap-1 hover:text-white focus:outline-none">
+              <span>Solutions</span>
+              <span class="text-[10px] text-slate-400">▼</span>
+            </button>
+            <div data-dropdown-menu="solutions-header" class="landing-menu absolute left-0 mt-2 hidden min-w-[200px] rounded-lg border border-slate-800 bg-slate-900 shadow-lg backdrop-blur group-hover:block group-focus-within:block z-50" style="z-index: 9000;">
+              <a href="/ai-email-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">AI Email Triage</a>
+              <a href="/email-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Email Triage Automation</a>
+              <a href="/shared-inbox" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Shared Inbox</a>
+              <a href="/support-automation" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Support Automation</a>
+            </div>
+          </div>
+          <a href="#feature" class="hover:text-white">Features</a>
+          <a href="#benefits" class="hover:text-white">Benefits</a>
+          <a href="#testimonials" class="hover:text-white">Testimonials</a>
+          <a href="#pricing" class="hover:text-white">Pricing</a>
+          <a href="#roi" class="hover:text-white">ROI</a>
+          {% if current_user.is_authenticated %}
+            <a href="/upgrade" class="hover:text-indigo-200 font-semibold">Upgrade</a>
+          {% endif %}
+        </nav>
+        <div class="flex items-center gap-3">
+          <a href="/login" class="hidden sm:inline-flex text-sm px-3 py-1.5 rounded-full border border-slate-600 text-slate-200 hover:bg-slate-800">
+            Log in
+          </a>
+          <a href="#cta" class="inline-flex text-sm px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 font-semibold">
+            Start Free Trial
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="relative overflow-hidden border-b border-slate-800">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-fuchsia-500/5 to-slate-900/60 pointer-events-none"></div>
+        <div class="max-w-6xl mx-auto px-4 py-16 lg:py-24 relative z-10 grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <span class="inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-200 mb-4">
+              New • InboxIQ by Kalevent
+            </span>
+            <h1 class="text-3xl md:text-5xl font-semibold tracking-tight mb-4">
+              Your AI Support Agent<br />
+              <span class="text-indigo-300">Removing Manual Triage Before Humans Touch the Inbox</span>
+            </h1>
+            <p class="text-slate-300 text-sm md:text-base max-w-xl mb-6">
+              InboxIQ reads every customer email, decides what matters, prioritises urgency, assigns ownership, and surfaces only actionable work — so your team focuses on solving problems, not sorting messages.
+            </p>
+
+            <ul class="flex flex-wrap gap-3 text-xs text-slate-300 mb-6">
+              <li class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/70 border border-slate-700">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> 7-day free trial
+              </li>
+              <li class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/70 border border-slate-700">
+                No credit card required
+              </li>
+              <li class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/70 border border-slate-700">
+                Works with Gmail, Outlook & custom domains
+              </li>
+            </ul>
+
+            <div class="flex flex-wrap items-center gap-4 mb-4">
+              <a href="#cta" class="inline-flex items-center justify-center px-5 py-3 rounded-full bg-indigo-500 hover:bg-indigo-400 font-semibold text-sm">
+                Start Free Trial →
+              </a>
+              <a href="#demo" class="inline-flex items-center gap-2 text-sm text-slate-200 hover:text-white">
+                ▶ Watch 60s demo
+              </a>
+            </div>
+            <p class="text-xs text-slate-500">
+              Get your AI Support Agent running in under 60 seconds.
+            </p>
+            <div class="mt-4 flex flex-wrap items-center gap-4 text-[13px] text-indigo-200">
+              <a class="inline-flex items-center gap-1 hover:text-white underline underline-offset-4" href="{{ url_for('playbook') }}">
+                Why manual triage fails at scale
+              </a>
+              <a class="inline-flex items-center gap-1 hover:text-white underline underline-offset-4" href="{{ url_for('playbook') }}">
+                Unified pre-human triage model
+              </a>
+            </div>
+          </div>
+
+          <div class="relative">
+            <div class="absolute -inset-6 bg-indigo-500/10 blur-3xl rounded-full"></div>
+            <div class="relative bg-slate-900/80 border border-slate-700 rounded-2xl shadow-2xl shadow-indigo-500/15 p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="h-2 w-2 rounded-full bg-red-500"></div>
+                  <div class="h-2 w-2 rounded-full bg-amber-400"></div>
+                  <div class="h-2 w-2 rounded-full bg-emerald-400"></div>
+                </div>
+                <div class="text-xs text-slate-400">InboxIQ – Live Triage</div>
+              </div>
+
+              <div class="space-y-3 text-xs">
+                <div class="bg-slate-900 rounded-xl p-3 border border-slate-700/70">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="font-semibold text-slate-100">New email from John Doe</span>
+                    <span class="text-[10px] text-slate-400">2s ago</span>
+                  </div>
+                  <p class="text-slate-300 text-[11px]">
+                    “Hi, I’ve been charged twice this month and can’t access my invoices...”
+                  </p>
+                  <div class="mt-2 flex flex-wrap gap-2 text-[10px]">
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-200 border border-amber-500/40">
+                      Billing issue
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-200 border border-rose-500/40">
+                      High priority
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200">
+                      Sentiment: Frustrated
+                    </span>
+                  </div>
+                </div>
+
+                <div class="bg-slate-900/80 rounded-xl p-3 border border-emerald-500/40">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="font-semibold text-emerald-200">Ticket created · #8831</span>
+                    <span class="text-[10px] text-emerald-300">InboxIQ</span>
+                  </div>
+                  <dl class="grid grid-cols-2 gap-2 text-[11px]">
+                    <div>
+                      <dt class="text-slate-400">Category</dt>
+                      <dd class="text-slate-100">Billing</dd>
+                    </div>
+                    <div>
+                      <dt class="text-slate-400">Priority</dt>
+                      <dd class="text-rose-300">High</dd>
+                    </div>
+                    <div>
+                      <dt class="text-slate-400">Assigned to</dt>
+                      <dd class="text-slate-100">Billing Team</dd>
+                    </div>
+                    <div>
+                      <dt class="text-slate-400">SLA</dt>
+                      <dd class="text-slate-100">2 hours</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 mt-3">
+                  <div class="bg-slate-900/70 rounded-xl p-2 text-[11px] border border-slate-700">
+                    <div class="text-slate-400">Triage time</div>
+                    <div class="text-slate-100 font-semibold">0.4s</div>
+                  </div>
+                  <div class="bg-slate-900/70 rounded-xl p-2 text-[11px] border border-slate-700">
+                    <div class="text-slate-400">Emails/day</div>
+                    <div class="text-slate-100 font-semibold">1,250</div>
+                  </div>
+                  <div class="bg-slate-900/70 rounded-xl p-2 text-[11px] border border-slate-700">
+                    <div class="text-slate-400">Missed</div>
+                    <div class="text-emerald-300 font-semibold">0</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="feature" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16 grid lg:grid-cols-2 gap-10 items-start">
+          <div>
+            <h2 class="text-xl md:text-2xl font-semibold mb-3">
+              One Core Feature<br />
+              <span class="text-indigo-300">First-Line AI Support Agent (Manual Triage Eliminated)</span>
+            </h2>
+            <p class="text-sm text-slate-300 mb-4 max-w-lg">
+              InboxIQ replaces the first layer of customer support work.
+            </p>
+            <p class="text-sm text-slate-400 mb-6 max-w-lg">
+              It reads every incoming email, understands intent and urgency, decides whether action is required, and turns only actionable issues into pre-prioritised, pre-assigned work — before a human ever sees the inbox.
+            </p>
+            <ul class="space-y-2 text-sm text-slate-200">
+              <li class="flex gap-2">
+                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                No inbox scanning.
+              </li>
+              <li class="flex gap-2">
+                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                No manual triage.
+              </li>
+              <li class="flex gap-2">
+                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                No decision fatigue.
+              </li>
+            </ul>
+          </div>
+          <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+            <h3 class="text-sm font-semibold text-slate-100 mb-3">How it works in 3 steps</h3>
+            <ol class="space-y-4 text-sm text-slate-300">
+              <li class="flex gap-3">
+                <span class="font-semibold text-indigo-300">1.</span>
+                <div class="space-y-1">
+                  <div class="font-semibold text-slate-100">Connect your support inbox</div>
+                  <p>Connect Gmail, Outlook, or a custom domain in a few clicks. InboxIQ starts reading incoming emails immediately — no workflow setup required.</p>
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <span class="font-semibold text-indigo-300">2.</span>
+                <div class="space-y-1">
+                  <div class="font-semibold text-slate-100">InboxIQ acts as a first-line support agent</div>
+                  <p>InboxIQ reads every email, understands intent and urgency, decides whether action is required, and assigns ownership automatically — before a human ever sees the inbox.</p>
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <span class="font-semibold text-indigo-300">3.</span>
+                <div class="space-y-1">
+                  <div class="font-semibold text-slate-100">Humans handle only actionable work</div>
+                  <p>Only pre-prioritised, owned tickets reach your team. Informational messages and noise are auto-handled, so humans focus on solving real problems.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section id="benefits" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16">
+          <h2 class="text-xl md:text-2xl font-semibold mb-6">
+            Three big benefits for your support team
+          </h2>
+          <div class="grid md:grid-cols-3 gap-6">
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+              <h3 class="font-semibold mb-2 text-slate-100 text-sm">1. 80% faster response time</h3>
+              <p class="text-xs text-slate-300">
+                Remove manual triage from your workflow. Your agents start their day with a clean, prioritised queue of tickets ready to answer.
+              </p>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+              <h3 class="font-semibold mb-2 text-slate-100 text-sm">2. Zero missed messages</h3>
+              <p class="text-xs text-slate-300">
+                Every incoming email becomes a trackable ticket. SLAs are easier to meet, and nothing gets buried in a shared inbox ever again.
+              </p>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+              <h3 class="font-semibold mb-2 text-slate-100 text-sm">3. Scale without hiring</h3>
+              <p class="text-xs text-slate-300">
+                As your email volume grows, InboxIQ scales with you. You add customers, not headcount. Support leaders love the predictable cost.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="testimonials" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16">
+          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+            <h2 class="text-xl md:text-2xl font-semibold">Teams already trust InboxIQ</h2>
+            <p class="text-xs text-slate-400 max-w-md">
+              Real teams are saving hours each week with InboxIQ—here are a few of their stories.
+            </p>
+          </div>
+          <div class="grid md:grid-cols-3 gap-6 text-sm">
+            <figure class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5 flex flex-col justify-between">
+              <blockquote class="text-slate-200 mb-4">
+                “InboxIQ cut our support workload in half within the first week. Our team finally focuses on solving issues, not triaging emails.”
+              </blockquote>
+              <figcaption class="text-xs text-slate-400">
+                — Sarah M., COO of HealthFlow Clinics
+              </figcaption>
+            </figure>
+            <figure class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5 flex flex-col justify-between">
+              <blockquote class="text-slate-200 mb-4">
+                “We used to drown in shared inboxes. Now everything routes into clean tickets with priorities. Our customers notice the difference.”
+              </blockquote>
+              <figcaption class="text-xs text-slate-400">
+                — Jake L., Founder @ QuickServe
+              </figcaption>
+            </figure>
+            <figure class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5 flex flex-col justify-between">
+              <blockquote class="text-slate-200 mb-4">
+                “Response times dropped, CSAT went up, and our team isn’t burnt out anymore. InboxIQ paid for itself almost immediately.”
+              </blockquote>
+              <figcaption class="text-xs text-slate-400">
+                — Maria S., Customer Success Lead @ Finlytics
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16">
+          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+            <div>
+              <h2 class="text-xl md:text-2xl font-semibold mb-2">Simple, transparent pricing</h2>
+              <p class="text-xs text-slate-400 max-w-md">
+                Start free for 7 days. Upgrade only when InboxIQ is saving your team serious time and money.
+              </p>
+            </div>
+            <p class="text-xs text-slate-400">
+              All plans include: automatic triage, ticket creation, and sentiment detection.
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-6 text-sm">
+            <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-5 flex flex-col">
+              <div class="mb-4">
+                <h3 class="font-semibold text-slate-100 mb-1 text-sm">Free Trial</h3>
+                <p class="text-xs text-slate-400">Full access · 7 days</p>
+              </div>
+              <div class="mb-4">
+                <span class="text-2xl font-semibold text-slate-100">£0</span>
+                <span class="text-xs text-slate-400"> / 7 days</span>
+              </div>
+              <ul class="space-y-2 text-xs text-slate-300 mb-4">
+                <li>✔ No credit card required</li>
+                <li>✔ All Pro features included</li>
+                <li>✔ Up to 1,000 AI actions</li>
+              </ul>
+              <a href="#cta" class="mt-auto inline-flex justify-center px-3 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold">
+                Start Free Trial
+              </a>
+            </div>
+
+            <div class="bg-indigo-900/40 border border-indigo-400 rounded-2xl p-5 flex flex-col relative">
+              <div class="absolute -top-3 right-4 px-2 py-0.5 rounded-full bg-amber-400 text-[10px] font-semibold text-slate-950">
+                Most Popular
+              </div>
+              <div class="mb-4">
+                <h3 class="font-semibold text-slate-50 mb-1 text-sm">Pro</h3>
+                <p class="text-xs text-slate-300">For small teams and startups</p>
+              </div>
+              <div class="mb-4">
+                <span class="text-2xl font-semibold text-slate-50">£29</span>
+                <span class="text-xs text-slate-300"> / month per inbox</span>
+              </div>
+              <ul class="space-y-2 text-xs text-slate-100 mb-4">
+                <li>✔ Automatic email triage</li>
+                <li>✔ AI ticket creation</li>
+                <li>✔ Custom categories & routing</li>
+                <li>✔ Sentiment analysis</li>
+                <li>✔ Up to 3,000 AI actions/month</li>
+              </ul>
+              <a href="#cta" class="mt-auto inline-flex justify-center px-3 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 text-xs font-semibold">
+                Start with Pro
+              </a>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-5 flex flex-col">
+              <div class="mb-4">
+                <h3 class="font-semibold text-slate-100 mb-1 text-sm">Business</h3>
+                <p class="text-xs text-slate-400">For growing support teams</p>
+              </div>
+              <div class="mb-4">
+                <span class="text-2xl font-semibold text-slate-100">£99</span>
+                <span class="text-xs text-slate-400"> / month per inbox</span>
+              </div>
+              <ul class="space-y-2 text-xs text-slate-300 mb-4">
+                <li>✔ Everything in Pro</li>
+                <li>✔ Up to 15,000 AI actions/month</li>
+                <li>✔ Multi-agent routing</li>
+                <li>✔ Team analytics & SLA alerts</li>
+                <li>✔ API access & priority support</li>
+              </ul>
+              <a href="#cta" class="mt-auto inline-flex justify-center px-3 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold">
+                Talk to sales
+              </a>
+            </div>
+          </div>
+
+          <div class="mt-6 text-xs text-slate-400">
+            Need custom volumes, multiple inboxes or compliance requirements? <span class="text-indigo-300 underline">Contact us for Enterprise pricing.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="roi" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16 grid lg:grid-cols-2 gap-10 items-start">
+          <div>
+            <h2 class="text-xl md:text-2xl font-semibold mb-3">Estimate your ROI in 30 seconds</h2>
+            <p class="text-sm text-slate-300 mb-4 max-w-md">
+              See how much time and money your team can save each month by letting InboxIQ handle repetitive triage work.
+            </p>
+            <p class="text-xs text-slate-500 max-w-md">
+              This calculator uses a simple model based on your email volume, the time spent triaging each email, and your team’s hourly cost.
+            </p>
+          </div>
+
+          <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-5 text-sm">
+            <div class="grid gap-4 mb-5">
+              <div>
+                <label for="emailsPerMonth" class="block text-xs text-slate-300 mb-1">Support emails per month</label>
+                <input
+                  id="emailsPerMonth"
+                  type="number"
+                  class="w-full rounded-md bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="e.g. 2000"
+                />
+              </div>
+              <div>
+                <label for="minutesPerEmail" class="block text-xs text-slate-300 mb-1">Minutes spent triaging each email</label>
+                <input
+                  id="minutesPerEmail"
+                  type="number"
+                  step="0.1"
+                  class="w-full rounded-md bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Default: 2"
+                />
+              </div>
+              <div>
+                <label for="hourlyRate" class="block text-xs text-slate-300 mb-1">Average team cost per hour (£)</label>
+                <input
+                  id="hourlyRate"
+                  type="number"
+                  step="1"
+                  class="w-full rounded-md bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Default: 20"
+                />
+              </div>
+            </div>
+
+            <button
+              id="roiButton"
+              class="w-full inline-flex justify-center px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 text-xs font-semibold mb-4"
+            >
+              Calculate ROI
+            </button>
+
+            <div id="roiResults" class="text-xs text-slate-200 space-y-2">
+              <p class="text-slate-400">Fill in your numbers and click “Calculate ROI”.</p>
+            </div>
+
+            <p class="mt-4 text-[10px] text-slate-500">
+              * Calculation assumes InboxIQ reduces triage time by 80% and compares savings against the Pro plan (£29/month per inbox).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="demo" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16 grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <h2 class="text-xl md:text-2xl font-semibold mb-3">
+              See InboxIQ in action in 60 seconds
+            </h2>
+            <p class="text-sm text-slate-300 mb-4 max-w-md">
+              This short demo shows how InboxIQ acts as a first-line AI support agent — reading incoming emails, deciding whether action is required, prioritising urgency, assigning ownership, and surfacing only actionable work to your team.
+            </p>
+            <ul class="space-y-2 text-xs text-slate-300">
+              <li>✔ InboxIQ reads and understands every email</li>
+              <li>✔ Decides what requires human action (and what doesn’t)</li>
+              <li>✔ Prioritises and assigns issues automatically</li>
+              <li>✔ Humans start with a clean, actionable work queue</li>
+            </ul>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-4 flex items-center justify-center">
+            <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-700">
+              <button class="flex flex-col items-center justify-center gap-3">
+                <div class="h-14 w-14 rounded-full bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/40">
+                  <span class="ml-1 border-l-[10px] border-l-white border-y-[7px] border-y-transparent"></span>
+                </div>
+                <span class="text-xs text-slate-300">Play demo video</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="cta" class="bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">
+        <div class="max-w-6xl mx-auto px-4 py-10 text-center text-sm space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold mb-2 text-white">Ready to give your support team an AI upgrade?</h2>
+            <p class="text-slate-100 mb-2 max-w-2xl mx-auto">
+              Start your 7-day free trial of InboxIQ. No credit card required. Enter your work email to get an activation link.
+            </p>
+            <p class="text-xs text-indigo-100">We’ll email you to confirm, set a password, and sign in to your workspace.</p>
+          </div>
+
+          <form id="ctaForm" class="max-w-3xl mx-auto grid sm:grid-cols-[1.3fr,1.3fr,0.8fr,0.9fr] gap-3 text-left">
+            <div>
+              <label for="ctaEmail" class="text-xs text-indigo-100">Work email</label>
+              <input
+                id="ctaEmail"
+                name="email"
+                type="email"
+                required
+                autocomplete="off"
+                class="cta-input mt-1 w-full rounded-full border bg-white px-4 py-3 text-base font-semibold placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-white/80"
+                placeholder="you@company.com"
+              />
+            </div>
+            <div>
+              <label for="ctaAccountName" class="text-xs text-indigo-100">Account name</label>
+              <input
+                id="ctaAccountName"
+                name="account_name"
+                type="text"
+                required
+                autocomplete="organization"
+                class="cta-input mt-1 w-full rounded-full border bg-white px-4 py-3 text-base font-semibold placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-white/80"
+                placeholder="Acme Support"
+              />
+            </div>
+            <div>
+              <label for="ctaSeats" class="text-xs text-indigo-100">Seats</label>
+              <input
+                id="ctaSeats"
+                name="seats"
+                type="number"
+                min="1"
+                inputmode="numeric"
+                required
+                class="cta-input mt-1 w-full rounded-full border bg-white px-4 py-3 text-base font-semibold placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-white/80"
+                placeholder="3"
+              />
+            </div>
+            <div class="flex items-end">
+              <button
+                id="ctaButton"
+                type="submit"
+                class="w-full inline-flex items-center justify-center rounded-full bg-white text-indigo-700 font-semibold text-sm px-6 py-3 hover:bg-indigo-50 transition disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                Start Free Trial →
+              </button>
+            </div>
+          </form>
+
+          <div id="ctaStatus" class="hidden max-w-3xl mx-auto text-left text-sm text-white rounded-2xl border border-white/30 bg-white/10 px-4 py-3"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-slate-800 bg-slate-950">
+      <div class="max-w-6xl mx-auto px-4 py-8 flex flex-col gap-4 text-[11px] text-slate-400">
+        <div class="flex flex-col md:flex-row items-center md:items-start justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+            <div>
+              <div class="font-semibold text-slate-100 text-sm">Kalevent · InboxIQ</div>
+              <div class="text-slate-500 text-[11px]">AI support automation for customer email</div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 text-slate-300">
+            <span class="hidden md:inline text-slate-400">Connect with us on social media:</span>
+            <div class="flex items-center gap-3 text-base">
+              <a href="https://www.facebook.com/Inboxiq/" target="_blank" rel="noopener" aria-label="Facebook" class="hover:text-white"><i class="fab fa-facebook-f"></i></a>
+              <a href="https://x.com/kaleventHQ" target="_blank" rel="noopener" aria-label="X (Twitter)" class="hover:text-white"><i class="fab fa-twitter"></i></a>
+              <a href="https://www.instagram.com/kaleventcanvas/" target="_blank" rel="noopener" aria-label="Instagram" class="hover:text-white"><i class="fab fa-instagram"></i></a>
+              <a href="https://www.linkedin.com/company/kalevent/" target="_blank" rel="noopener" aria-label="LinkedIn" class="hover:text-white"><i class="fab fa-linkedin-in"></i></a>
+              <a href="https://www.youtube.com/@InboxIQ" target="_blank" rel="noopener" aria-label="YouTube" class="hover:text-white"><i class="fab fa-youtube"></i></a>
+              <a href="https://www.reddit.com/user/InboxiqHQ/" target="_blank" rel="noopener" aria-label="Reddit" class="hover:text-white"><i class="fab fa-reddit"></i></a>
+              <a href="https://wa.me/447593092262?text=Hi%20Kalevent%20team" target="_blank" rel="noopener" aria-label="WhatsApp" class="hover:text-white"><i class="fab fa-whatsapp"></i></a>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3 text-slate-400">
+          <div class="flex flex-wrap items-center gap-3">
+            <span>© <span id="yearSpan"></span> Kalevent · InboxIQ</span>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <div class="landing-menu-wrap group" style="position: relative; z-index: 8000;">
+              <button data-dropdown="solutions-footer" class="inline-flex items-center gap-1 hover:text-white focus:outline-none">
+                <span>Solutions</span>
+                <span class="text-[10px] text-slate-500">▼</span>
+              </button>
+              <div data-dropdown-menu="solutions-footer" class="landing-menu absolute left-0 mt-2 hidden min-w-[200px] rounded-lg border border-slate-800 bg-slate-900 shadow-lg backdrop-blur group-hover:block group-focus-within:block z-50">
+                <a href="/ai-email-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">AI Email Triage</a>
+                <a href="/email-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Email Triage Automation</a>
+                <a href="/shared-inbox" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Shared Inbox</a>
+                <a href="/support-automation" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Support Automation</a>
+              </div>
+            </div>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('docs.docs_index') }}" class="hover:text-white">Documentation</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('blog.blog_index') }}" class="hover:text-white">Blog</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('privacy') }}" class="hover:text-white">Privacy</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('terms') }}" class="hover:text-white">Terms</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('contact') }}" class="hover:text-white">Contact</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('privacy') }}#cookies" class="hover:text-white">Cookies</a>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 text-slate-300 text-[11px]">
+            <span class="text-slate-500">Connect:</span>
+            <a href="https://www.facebook.com/InboxiqHQ/" target="_blank" rel="noopener" class="hover:text-white">Facebook</a>
+            <a href="https://x.com/kaleventHQ" target="_blank" rel="noopener" class="hover:text-white">X</a>
+            <a href="https://www.linkedin.com/company/inboxiq-ai/" target="_blank" rel="noopener" class="hover:text-white">LinkedIn</a>
+            <a href="https://www.youtube.com/@InboxiqHQ" target="_blank" rel="noopener" class="hover:text-white">YouTube</a>
+            <a href="https://www.reddit.com/user/CivilBerry1660/" target="_blank" rel="noopener" class="hover:text-white">Reddit</a>
+            <a href="https://wa.me/447593092262?text=Hi%20Kalevent%20team" target="_blank" rel="noopener" class="hover:text-white">WhatsApp</a>
+          </div>
+          <div class="text-[10px] text-slate-500"></div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/landing.js', v='landing-menu-4') }}"></script>
+  <script src="{{ url_for('static', filename='js/cookie-consent.js') }}"></script>
+</body>
+</html>

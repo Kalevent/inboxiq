@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact · Kalevent / InboxIQ</title>
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="{{ url_for('root') }}" class="flex items-center gap-2 hover:opacity-90">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – AI Support Agent</div>
+          </div>
+        </a>
+        <a href="{{ url_for('login_page') }}" class="hidden sm:inline-flex text-xs px-3 py-1.5 rounded-full border border-slate-700 text-slate-200 hover:bg-slate-800">
+          Log in
+        </a>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
+        <div class="mb-8">
+          <p class="text-xs uppercase tracking-[0.2em] text-indigo-300/80 mb-3">Contact</p>
+          <h1 class="text-3xl sm:text-4xl font-semibold text-white tracking-tight">We’re here to help</h1>
+          <p class="text-slate-300 mt-3 max-w-2xl text-sm sm:text-base">
+            Reach out for support, sales, or general questions. We typically respond within one business day.
+          </p>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/10 p-6 sm:p-8">
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+              <div>
+                <div class="text-sm text-slate-400">Email</div>
+                <a class="text-lg font-semibold text-indigo-200 hover:text-white" href="mailto:support@kalevent.com">
+                  support@kalevent.com
+                </a>
+              </div>
+              <div>
+                <div class="text-sm text-slate-400">Address</div>
+                <p class="text-slate-200 text-sm leading-relaxed">
+                  Kalevent Limited<br />
+                  Company Number 15288801<br />
+                  Future Space UWE North Gate, Filton Road, Bristol BS34 8RB
+                </p>
+              </div>
+              <div>
+                <div class="text-sm text-slate-400 mb-1">Other channels</div>
+                <div class="flex flex-wrap gap-3 text-sm text-indigo-200">
+                  <a href="https://x.com/kaleventHQ" target="_blank" rel="noopener" class="hover:text-white">X</a>
+                  <a href="https://www.linkedin.com/company/kalevent/" target="_blank" rel="noopener" class="hover:text-white">LinkedIn</a>
+                  <a href="https://wa.me/447593092262?text=Hi%20Kalevent%20team" target="_blank" rel="noopener" class="hover:text-white">WhatsApp</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-4">
+              <div class="text-sm text-slate-300">
+                For product questions, onboarding, or enterprise requests, email us and include your workspace name for a faster response.
+              </div>
+              <ul class="space-y-2 text-sm text-slate-200">
+                <li class="flex gap-2">
+                  <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                  Support hours: Monday–Friday, 9am–6pm UK time
+                </li>
+                <li class="flex gap-2">
+                  <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                  Expected response: within one business day
+                </li>
+                <li class="flex gap-2">
+                  <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                  If urgent, include “Priority” in your subject line
+                </li>
+              </ul>
+              <div class="text-xs text-slate-500">
+                We never share your contact details or conversation history outside of Kalevent.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

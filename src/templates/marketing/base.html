@@ -1,0 +1,69 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>{% block title %}Kalevent{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}{% endblock %}">
+  <link rel="canonical" href="{% block canonical %}{{ request.url }}{% endblock %}">
+
+  <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ self.meta_description() }}{% endblock %}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.url }}">
+
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
+    crossorigin="anonymous"
+  >
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cookie-consent.css') }}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="marketing-body antialiased">
+  <div class="min-h-screen flex flex-col">
+    <header class="marketing-header border-b border-slate-800/10 bg-slate-950/70 backdrop-blur">
+      <div class="marketing-shell flex items-center justify-between py-4">
+        <a href="/" class="flex items-center gap-2 font-semibold text-lg text-white hover:text-indigo-100">
+          <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500 text-white">KI</span>
+          <span>Kalevent</span>
+        </a>
+        <div class="flex items-center gap-5 text-sm text-slate-200">
+          <nav class="hidden md:flex marketing-nav mr-5">
+            <a class="px-1" href="{{ url_for('email_triage') }}">Email Triage</a>
+            <a class="px-1" href="{{ url_for('ai_email_triage') }}">AI Email Triage</a>
+            <a class="px-1" href="{{ url_for('shared_inbox') }}">Shared Inbox</a>
+            <a class="px-1" href="{{ url_for('support_automation') }}">Support Automation</a>
+          </nav>
+          <div class="cta-group items-center ml-8">
+            <a href="{{ url_for('login_page') }}" class="text-slate-200 hover:text-white pl-3">Log in</a>
+            <a href="{{ url_for('login_page') }}" class="px-3 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-400 shadow-lg shadow-indigo-500/30">Get started</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 marketing-main">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="marketing-footer border-t border-slate-800/10 bg-slate-950/80 text-slate-300">
+      <div class="marketing-shell py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <span class="text-slate-400">&copy; 2024 Kalevent. All rights reserved.</span>
+        <div class="flex items-center gap-4 text-sm">
+          <a href="/privacy" class="hover:text-white">Privacy</a>
+          <a href="/terms" class="hover:text-white">Terms</a>
+          <a href="mailto:support@kalevent.com" class="hover:text-white">Contact</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

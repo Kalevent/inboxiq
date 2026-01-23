@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">
+            KI
+          </div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – AI Support Agent</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 text-sm text-slate-200">
+          <a href="/onboarding" class="px-3 py-1.5 rounded-full border border-slate-700 hover:bg-slate-800">← Back to setup</a>
+          <a href="/upgrade" class="inline-flex items-center gap-1 rounded-full btn-primary text-white px-3 py-1.5 font-semibold shadow-lg shadow-indigo-500/30">
+            Upgrade
+          </a>
+
+          <div class="relative z-[9999]">
+            <button type="button" id="userMenuBtn" class="flex items-center gap-2 rounded-full bg-slate-900/70 border border-slate-700 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+              <div class="dashboard-avatar shrink-0 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500/80 to-fuchsia-500/80 border border-slate-700">
+                <img src="{{ avatar_url }}" alt="User avatar" class="h-full w-full object-cover">
+              </div>
+              <span class="inline-block max-w-[200px] truncate text-sm text-slate-100">
+                {{
+                  current_user.account.name
+                  if current_user and current_user.account and current_user.account.name
+                  else current_user.email if current_user else ""
+                }}
+              </span>
+              <span class="text-slate-200 text-xs">&#9662;</span>
+            </button>
+
+            <div id="userMenu" class="dashboard-user-menu hidden">
+              <div class="dashboard-user-menu__header">
+                <div class="dashboard-user-menu__eyebrow">Signed in</div>
+              <div class="dashboard-user-menu__title truncate">{{ current_user.email if current_user else "" }}</div>
+            </div>
+            <div class="dashboard-user-menu__list">
+              <a href="{{ url_for('settings.settings_page', tab='team') }}" class="dashboard-user-menu__item">Settings</a>
+              {% if has_admin_access %}
+              <a href="/admin" class="dashboard-user-menu__item">Admin</a>
+              {% endif %}
+              <a href="/dashboard" class="dashboard-user-menu__item">Dashboard</a>
+              <a href="/docs" class="dashboard-user-menu__item">Help</a>
+                <form id="logoutForm" action="/auth/logout" method="post">
+                  <button type="submit" class="dashboard-user-menu__item dashboard-user-menu__item--danger">Log out</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 py-10 lg:py-14">
+
+        <div class="rounded-3xl border border-slate-800 bg-slate-950/85 p-6 lg:p-7 shadow-lg shadow-slate-950/30 relative overflow-hidden">
+          {% if not connection_email %}
+          <div class="mb-4 rounded-xl border border-indigo-500/60 bg-indigo-500/10 px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div class="space-y-1">
+              <p class="text-sm font-semibold text-slate-100">Finish setup to train InboxIQ</p>
+              <p class="text-xs text-slate-300">
+                Complete the onboarding checklist so intent and sentiment stay accurate. Connect an inbox and review configuration.
+              </p>
+            </div>
+            <a
+              href="/onboarding"
+              class="inline-flex items-center gap-2 rounded-full btn-primary text-white text-sm font-semibold px-4 py-2"
+            >
+              Finish setup →
+            </a>
+          </div>
+          {% endif %}
+
+          {% if banner_first_batch or triaged_count is not none %}
+          <div class="mb-4 rounded-xl border border-emerald-400/60 bg-emerald-500/10 px-3 py-2 text-sm banner-success">
+            🎯 Triaged {{ triaged_count or 0 }} emails! InboxIQ eliminated manual triage and surfaced actionable work.
+          </div>
+          {% endif %}
+
+          <div class="mb-5 space-y-2">
+            <p class="text-sm font-semibold text-slate-100">InboxIQ is acting as your first-line support agent.</p>
+            <p class="text-xs text-slate-300">
+              It reads customer emails, decides what needs action, prioritises urgency, assigns ownership, and filters out noise — so humans start with clarity, not an inbox.
+            </p>
+            <div class="flex flex-wrap items-center gap-4 text-sm text-slate-100">
+              <div class="flex items-center gap-4">
+                <button id="connectGmailBtn" class="cta-pill cta-pill--gmail">
+                  Connect Gmail
+                </button>
+                <button id="connectOutlookBtn" class="cta-pill cta-pill--outlook">
+                  Connect Outlook
+                </button>
+              </div>
+              <div id="connectStatus" class="text-xs text-amber-200" data-connection-id="{{ connection_id or '' }}">
+                {% if connection_status %}
+                  Connected {{ connection_provider or '' }}{% if connection_email %} • {{ connection_email }}{% endif %}
+                {% else %}
+                  Authentication error. Please reconnect your inbox.
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/55 p-4 mb-6">
+            {% if connection_email %}
+            <div class="flex items-center justify-between gap-6 flex-wrap">
+              <div>
+                <p class="text-sm font-semibold text-slate-100">Connected inbox</p>
+                <p class="text-xs text-slate-400">
+                  {{ connection_email }} • {{ connection_provider|default("unknown")|title }} (status: {{ connection_status|default("unknown") }})
+                </p>
+
+                <p id="lastPollLine" class="text-[11px] text-slate-500 mt-1">
+                  {% if last_poll_at %}
+                    Last poll: {{ last_poll_at }}{% if last_poll_status %} ({{ last_poll_status }}){% endif %}{% if last_poll_error %} • Error: {{ last_poll_error }}{% endif %}
+                  {% else %}
+                    Last poll: not yet polled
+                  {% endif %}
+                </p>
+
+                <div class="mt-2 flex items-center gap-2">
+                  <button id="pollNowBtn" class="inline-flex items-center gap-2 rounded-full btn-primary text-white text-[11px] font-semibold px-3 py-1.5">
+                    Poll now
+                  </button>
+                  <span id="pollStatus" class="text-[11px] text-slate-400 hidden"></span>
+                </div>
+              </div>
+
+              <div class="text-right">
+                <a href="/onboarding#inbox" class="text-xs text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Manage connection</a>
+              </div>
+            </div>
+            {% else %}
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-semibold text-slate-100">No inbox connected</p>
+                <p class="text-xs text-slate-400">Connect Gmail or Outlook to start polling and triaging emails.</p>
+              </div>
+              <div class="text-right">
+                <a href="/onboarding#inbox" class="text-xs text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Connect inbox</a>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="rounded-xl border border-slate-800 bg-slate-900/55 p-4 mb-4">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <p class="text-sm font-semibold text-slate-100">Send a test email</p>
+                <p class="text-xs text-slate-400">Validate the flow now—use the sample inbox or send from your own address.</p>
+
+                {% if last_poll_status and last_poll_status != "never" %}
+                  <p class="text-[11px] text-slate-500 mt-1">
+                    Last poll:
+                    <span class="font-semibold text-slate-200">{{ last_poll_status }}</span>
+                    {% if last_poll_at %} at {{ last_poll_at }}{% endif %}
+                    {% if last_poll_counts %}
+                      • created {{ last_poll_counts.created or 0 }}, dupes {{ last_poll_counts.duplicates or 0 }}, errors {{ last_poll_counts.errors or 0 }}
+                    {% endif %}
+                    {% if last_poll_error %} • Error: {{ last_poll_error }}{% endif %}
+                  </p>
+                {% elif last_poll_status == "never" %}
+                  <p class="text-[11px] text-slate-500 mt-1">Waiting for first successful poll…</p>
+                {% endif %}
+              </div>
+
+              <div class="flex items-center gap-2">
+                <input
+                  id="testEmailInput"
+                  type="email"
+                  class="w-48 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                  placeholder="your inbox address"
+                />
+                <button
+                  id="sendTestEmailBtn"
+                  type="button"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-xl btn-primary text-sm font-semibold text-white transition"
+                >
+                  Send test email →
+                </button>
+              </div>
+            </div>
+
+            <div id="testEmailStatus" class="hidden mt-3 text-xs rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-slate-200"></div>
+          </div>
+
+          <div class="rounded-xl border border-slate-800 bg-slate-900/55 p-5 mb-6 share-card">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <div class="space-y-1">
+                <p class="text-sm font-semibold text-slate-100 leading-tight">Share your feedback</p>
+                <p class="text-xs text-slate-400 leading-snug">Submit a short testimonial (only available to active customers).</p>
+              </div>
+            </div>
+
+            <div class="share-card-grid text-sm">
+              <div class="space-y-2">
+                <label class="text-xs text-slate-300">Your message</label>
+                <textarea id="testimonialMessage" rows="4" class="w-full rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-3 text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" placeholder="How has InboxIQ helped you?"></textarea>
+              </div>
+
+              <div class="share-card-right space-y-2 flex flex-col h-full">
+                <div class="w-full space-y-2">
+                  <label class="text-xs text-slate-300 block">Rating</label>
+                  <select id="testimonialRating" class="w-full rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Good</option>
+                    <option value="3">3 - OK</option>
+                    <option value="2">2 - Poor</option>
+                    <option value="1">1 - Bad</option>
+                  </select>
+                  <label class="share-card-consent inline-flex items-center gap-2 text-xs text-slate-300">
+                    <input id="testimonialConsent" type="checkbox" class="rounded border-slate-700 bg-slate-900 text-indigo-500" />
+                    OK to use publicly
+                  </label>
+                </div>
+                <div class="share-card-actions pt-1 mt-auto w-full flex">
+                  <button id="submitTestimonialBtn" class="cta-pill cta-pill--gmail submit-testimonial-btn">
+                    Submit testimonial
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="testimonialStatus" class="hidden mt-3 text-xs rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-200"></div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div class="flex flex-col gap-1 min-w-0">
+              <h3 class="text-lg font-semibold text-slate-50 leading-tight">Today’s impact</h3>
+              <p class="text-sm text-slate-400 leading-snug">
+                These metrics reflect your selected scope. Default is <span class="text-slate-100 font-semibold">Today</span>.
+              </p>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-400 shrink-0 whitespace-nowrap leading-none">
+              <span>Scope</span>
+              <select
+                id="impactScope"
+                class="h-10 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+              >
+                <option value="today" {% if scope == "today" %}selected{% endif %}>Today</option>
+                <option value="last_24_hours" {% if scope == "last_24_hours" %}selected{% endif %}>Last 24 hours</option>
+                <option value="last_7_days" {% if scope == "last_7_days" %}selected{% endif %}>Last 7 days</option>
+                <option value="all_time" {% if scope == "all_time" %}selected{% endif %}>All time</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dashboard-metrics mb-6">
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">ACTIONABLE SURFACED</p>
+              <p id="metricActionable" class="text-3xl font-semibold text-slate-50">{{ actionable_today or 0 }}</p>
+              <p class="text-[11px] text-slate-400">Humans should handle these</p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">AUTO-HANDLED</p>
+              <p id="metricAutoHandled" class="text-3xl font-semibold text-slate-50">{{ auto_handled_today or 0 }}</p>
+              <p class="text-[11px] text-slate-400">No human action required</p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">TRIAGE ELIMINATED</p>
+              <p id="metricEliminated" class="text-3xl font-semibold text-slate-50">{{ triage_eliminated_pct or 0 }}%</p>
+              <p class="text-[11px] text-slate-400">Manual decisions avoided</p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">MISSED EMAILS</p>
+              <p id="metricMissed" class="text-3xl font-semibold text-slate-50">{{ missed_emails or 0 }}</p>
+              <p class="text-[11px] text-slate-400">Past 24 hours</p>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <div class="flex items-end justify-between flex-wrap gap-4 mb-3">
+              <div>
+                <h2 class="text-sm font-semibold text-slate-100">Work queue</h2>
+                <p class="text-xs text-slate-400">
+                  Humans should live in <span class="text-slate-200 font-semibold">Action Required</span>. Auto-handled stays collapsed by default.
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <label class="inline-flex items-center gap-2 text-xs text-slate-200 px-3 py-2 rounded-lg border border-slate-800 bg-slate-900/40">
+                  <input id="showActionOnly" type="checkbox" checked class="accent-indigo-500" />
+                  Show Action Required only
+                </label>
+              </div>
+            </div>
+
+            <div class="dashboard-metrics mb-5">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                <p class="text-sm font-semibold text-slate-200">Action Required</p>
+                <p id="metricActionRequired" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ action_required_count or 0 }}</p>
+                <p class="mt-2 text-sm text-slate-400 leading-snug">InboxIQ decided these need attention</p>
+              </div>
+
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                <p class="text-sm font-semibold text-slate-200">Optional Follow-up</p>
+                <p id="metricOptional" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ optional_count or 0 }}</p>
+                <p class="mt-2 text-sm text-slate-400 leading-snug">Not blocking — review if capacity</p>
+              </div>
+
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                <p class="text-sm font-semibold text-slate-200">Auto-handled</p>
+                <p id="metricAutoHandledQueue" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ auto_handled_count or 0 }}</p>
+                <p class="mt-2 text-sm text-slate-400 leading-snug">Filtered (no human action required)</p>
+              </div>
+            </div>
+
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/30 overflow-hidden mb-4">
+              <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <div class="font-semibold text-slate-100">
+                    Action Required <span id="actionRequiredCount" class="text-slate-400 font-normal">({{ action_required_count or 0 }})</span>
+                  </div>
+                  <div class="text-xs text-slate-400">InboxIQ decided these need human attention</div>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-300">
+                  <input
+                    id="actionSearchInput"
+                    type="text"
+                    placeholder="Search subject/body..."
+                    class="w-48 md:w-56 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                  />
+                  <select
+                    id="actionPriorityFilter"
+                    class="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                  >
+                    <option value="">Filter: All</option>
+                    <option value="P0">Priority: P0</option>
+                    <option value="P1">Priority: P1</option>
+                    <option value="P2">Priority: P2</option>
+                  </select>
+                  <span class="text-slate-500 whitespace-nowrap">Sorted by priority</span>
+                </div>
+              </div>
+
+              <div id="actionRequiredList" class="space-y-3 p-4">
+                {% if action_required_tickets and action_required_tickets|length > 0 %}
+                  {% for t in action_required_tickets %}
+                  <div
+                    class="rounded-2xl border border-slate-800 bg-slate-900/40 px-5 py-4 hover:bg-slate-900/50 transition action-card"
+                    data-priority="{{ (t.priority or 'P2')|upper }}"
+                    data-text="{{ (t.subject ~ ' ' ~ (t.category or '') ~ ' ' ~ (t.intent or '') ~ ' ' ~ (t.sentiment or ''))|lower }}"
+                  >
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
+                      <div class="min-w-0 space-y-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="badge-pill badge-priority badge-priority-{{ (t.priority or 'P2')|lower }}">
+                            {{ t.priority or 'P2' }}
+                          </span>
+                          <span class="badge-pill badge-primary">Action Required</span>
+                          <div class="font-semibold text-slate-50 truncate">{{ t.subject or 'Untitled ticket' }}</div>
+                        </div>
+
+                        <div class="text-xs text-slate-400 flex flex-wrap gap-2">
+                          <span>Category: <span class="text-slate-200">{{ t.category or 'general' }}</span></span>
+                          <span>·</span>
+                          <span>Intent: <span class="text-slate-200">{{ t.intent or 'unknown' }}</span></span>
+                          <span>·</span>
+                          <span>Sentiment: <span class="text-slate-200">{{ t.sentiment or 'neutral' }}</span></span>
+                          {% if t.provider %}<span>·</span><span>Provider: <span class="text-slate-200">{{ t.provider }}</span></span>{% endif %}
+                        </div>
+
+                        <div class="text-sm text-slate-100">
+                          <span class="font-semibold text-slate-50">AI decision:</span>
+                          {{ t.ai_reason or 'Action required — customer needs help.' }}
+                        </div>
+                      </div>
+
+                      <div class="shrink-0 text-xs text-slate-300 flex flex-col gap-1 items-end text-right">
+                        <div>Assigned: <span class="text-slate-50 font-semibold">{{ t.owner or 'Support' }}</span></div>
+                        <div>SLA: <span class="text-slate-50 font-semibold">{{ t.sla or t.due_at or '—' }}</span></div>
+                        <a href="{{ t.url or '#' }}" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Open ticket</a>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="px-5 py-4 text-sm text-slate-400 rounded-xl border border-slate-800 bg-slate-900/30">
+                    No actionable tickets right now. InboxIQ will surface work here when action is required.
+                  </div>
+                {% endif %}
+              </div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/20 overflow-hidden mb-4">
+              <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+                <div>
+                  <div class="font-semibold text-slate-100">
+                    Optional Follow-up <span class="text-slate-400 font-normal">({{ optional_count or 0 }})</span>
+                  </div>
+                  <div class="text-xs text-slate-400">InboxIQ is unsure — review if needed</div>
+                </div>
+                <button class="text-xs px-3 py-1.5 rounded-lg border border-slate-700/80 bg-slate-900/70 text-slate-100 hover:bg-slate-800">
+                  Review
+                </button>
+              </div>
+
+              <div id="optionalList" class="space-y-3 p-4">
+                {% if optional_tickets and optional_tickets|length > 0 %}
+                  {% for t in optional_tickets %}
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/35 px-5 py-4 hover:bg-slate-900/45 transition">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
+                      <div class="min-w-0 space-y-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="badge-pill badge-priority badge-priority-{{ (t.priority or 'P2')|lower }}">
+                            {{ t.priority or 'P2' }}
+                          </span>
+                          <span class="badge-pill badge-optional">Optional</span>
+                          <div class="font-semibold text-slate-50 truncate">{{ t.subject or 'Untitled ticket' }}</div>
+                        </div>
+
+                        <div class="text-xs text-slate-400 flex flex-wrap gap-2">
+                          <span>Category: <span class="text-slate-200">{{ t.category or 'general' }}</span></span>
+                          <span>·</span>
+                          <span>Intent: <span class="text-slate-200">{{ t.intent or 'unknown' }}</span></span>
+                          <span>·</span>
+                          <span>Sentiment: <span class="text-slate-200">{{ t.sentiment or 'neutral' }}</span></span>
+                        </div>
+
+                        <div class="text-sm text-slate-100">
+                          <span class="font-semibold text-slate-50">AI decision:</span>
+                          {{ t.ai_reason or 'Optional — not blocking, follow up if capacity.' }}
+                        </div>
+                      </div>
+
+                      <div class="shrink-0 text-xs text-slate-300 flex flex-col gap-1 items-end text-right">
+                        <div>Assigned: <span class="text-slate-50 font-semibold">{{ t.owner or 'Support' }}</span></div>
+                        <div>Due: <span class="text-slate-50 font-semibold">{{ t.due_at or '—' }}</span></div>
+                        <a href="{{ t.url or '#' }}" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Open ticket</a>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="px-5 py-4 text-sm text-slate-400 rounded-xl border border-slate-800 bg-slate-900/25">
+                    No optional follow-ups right now.
+                  </div>
+                {% endif %}
+              </div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/10 overflow-hidden">
+              <details>
+                <summary class="px-4 py-3 cursor-pointer select-none flex items-center justify-between border-b border-slate-800 hover:bg-slate-900/20">
+                  <div>
+                    <div class="font-semibold text-slate-100">
+                      Auto-handled <span class="text-slate-400 font-normal">(email + feedback)</span>
+                    </div>
+                    <div class="text-xs text-slate-400">Filtered out — no human action required (collapsed by default)</div>
+                  </div>
+                  <span class="text-xs text-slate-500">Click to expand</span>
+                </summary>
+
+                <div class="divide-y divide-slate-800">
+                  <div class="px-4 py-3 bg-slate-900/20 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-300 border border-slate-700">Email</span>
+                      <div class="text-sm text-slate-200 font-semibold">Auto-handled (Email)</div>
+                    </div>
+                    <span class="text-xs text-slate-500">Source: connected inboxes</span>
+                  </div>
+                  <div id="autoHandledEmailList" class="divide-y divide-slate-800"></div>
+
+                  <div class="px-4 py-3 bg-slate-900/20 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-300 border border-slate-700">Feedback</span>
+                      <div class="text-sm text-slate-200 font-semibold">Auto-handled (Feedback)</div>
+                    </div>
+                    <span class="text-xs text-slate-500">Source: in-app feedback / API</span>
+                  </div>
+                  <div id="autoHandledFeedbackList" class="divide-y divide-slate-800"></div>
+                </div>
+              </details>
+            </section>
+
+          </div>
+
+          <div class="mt-6 space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+              <div class="text-sm font-semibold text-slate-100">Search all tickets (advanced)</div>
+              <form id="ticketSearchForm" class="flex flex-wrap gap-2 text-xs">
+                <input id="ticketSearchQuery" type="text" placeholder="Search subject/body" class="w-40 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                <select id="ticketStatus" class="rounded-lg border border-slate-800 bg-slate-900/70 px-2 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                  <option value="">Status</option>
+                  <option value="new">New</option>
+                  <option value="needs_review">Needs review</option>
+                  <option value="closed">Closed</option>
+                </select>
+                <select id="ticketCategory" class="rounded-lg border border-slate-800 bg-slate-900/70 px-2 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                  <option value="">Category</option>
+                  <option value="billing">Billing</option>
+                  <option value="bug">Bug</option>
+                  <option value="refund">Refund</option>
+                  <option value="general">General</option>
+                </select>
+                <select id="ticketPriority" class="rounded-lg border border-slate-800 bg-slate-900/70 px-2 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                  <option value="">Priority</option>
+                  <option value="P0">P0</option>
+                  <option value="P1">P1</option>
+                  <option value="P2">P2</option>
+                </select>
+                <input id="ticketAfter" type="date" class="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                <input id="ticketBefore" type="date" class="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus-border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                <button type="submit" class="rounded-lg btn-primary text-white px-3 py-2 font-semibold shadow shadow-indigo-500/30">
+                  Search
+                </button>
+              </form>
+            </div>
+
+            <div id="ticketSearchStatus" class="hidden text-xs rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-200"></div>
+
+            <div id="ticketResults" class="space-y-2">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-4 text-sm text-slate-200">
+                Search across all time ranges and queues. This is your full ticket history.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <footer class="border-t border-slate-800 bg-slate-950/85">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-[11px] text-slate-500">
+          <div>© 2025 Kalevent · InboxIQ</div>
+          <div class="text-slate-400">Showing today’s work queue · Search for full history.</div>
+        </div>
+        {% include 'partials/feedback_footer.html' %}
+      </footer>
+    </main>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dashboard_welcome.js') }}"></script>
+</body>
+</html>

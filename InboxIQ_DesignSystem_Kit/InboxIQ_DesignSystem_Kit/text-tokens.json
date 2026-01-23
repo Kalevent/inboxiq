@@ -1,0 +1,34 @@
+{
+  "Typography": {
+    "H1": {
+      "size": 40,
+      "lineHeight": 48,
+      "weight": "SemiBold"
+    },
+    "H2": {
+      "size": 28,
+      "lineHeight": 36,
+      "weight": "SemiBold"
+    },
+    "H3": {
+      "size": 18,
+      "lineHeight": 26,
+      "weight": "SemiBold"
+    },
+    "Body": {
+      "size": 14,
+      "lineHeight": 22,
+      "weight": "Regular"
+    },
+    "BodySmall": {
+      "size": 12,
+      "lineHeight": 18,
+      "weight": "Regular"
+    },
+    "Button": {
+      "size": 14,
+      "lineHeight": 18,
+      "weight": "SemiBold"
+    }
+  }
+}

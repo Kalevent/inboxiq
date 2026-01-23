@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Draft Preview · {{ post.title }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <main class="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-6">
+    <div class="p-3 bg-yellow-500/10 border border-yellow-500/40 text-yellow-100 rounded">
+      <strong>Draft preview:</strong> visible to authenticated users only. Status: {{ post.status|default("draft") }}.
+    </div>
+
+    <header class="space-y-2">
+      <p class="text-xs uppercase tracking-wide text-indigo-200">InboxIQ Blog · Draft</p>
+      <h1 class="text-3xl sm:text-4xl font-semibold text-slate-50 leading-tight">{{ post.title }}</h1>
+      <p class="text-sm text-slate-400">Audience: {{ post.audience or "N/A" }}</p>
+    </header>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-lg shadow-slate-900/30 space-y-4">
+      {% if rendered_html %}
+        <article class="prose prose-invert max-w-none">
+          {{ rendered_html|safe }}
+        </article>
+      {% elif markdown %}
+        {% set fallback_html = markdown|replace('\r\n', '\n')|replace('\n\n', '</p><p>')|replace('\n', '<br>') %}
+        <article class="prose prose-invert max-w-none">
+          <p>{{ fallback_html|safe }}</p>
+        </article>
+      {% else %}
+        <article class="prose prose-invert max-w-none">
+          <p class="text-slate-300">No draft body available.</p>
+        </article>
+      {% endif %}
+    </section>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-lg shadow-slate-900/20 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-indigo-200">Reviewer toolbox</p>
+          <p class="text-sm text-slate-300">Capture feedback for the AI agent and flag missing essentials.</p>
+        </div>
+        <button id="copyFeedback" type="button" class="inline-flex items-center gap-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+          Copy feedback JSON
+        </button>
+      </div>
+      <div class="grid md:grid-cols-2 gap-4">
+        <label class="space-y-1 text-sm text-slate-200">
+          <span>Title</span>
+          <input id="fbTitle" type="text" autocomplete="off" class="input-dark w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-50" value="{{ post.title }}">
+        </label>
+        <label class="space-y-1 text-sm text-slate-200">
+          <span>Subtitle / Lede</span>
+          <input id="fbSubtitle" type="text" autocomplete="off" class="input-dark w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-50" value="{{ post.subtitle or '' }}">
+        </label>
+        <label class="space-y-1 text-sm text-slate-200">
+          <span>Audience</span>
+          <input id="fbAudience" type="text" autocomplete="off" class="input-dark w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-50" value="{{ post.audience or '' }}">
+        </label>
+        <label class="space-y-1 text-sm text-slate-200">
+          <span>Call to action</span>
+          <input id="fbCta" type="text" autocomplete="off" class="input-dark w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-50" value="{{ post.cta or '' }}">
+        </label>
+        <label class="space-y-1 text-sm text-slate-200 md:col-span-2">
+          <span>Tags (comma-separated)</span>
+          <input id="fbTags" type="text" autocomplete="off" class="input-dark w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-50" value="{{ (post.tags or [])|join(', ') }}">
+        </label>
+        <label class="space-y-1 text-sm text-slate-200 md:col-span-2">
+          <span>Summary / Notes to AI</span>
+          <textarea id="fbNotes" rows="4" class="input-dark w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-50" placeholder="List missing sections, weak points, links to add, tone adjustments, etc."></textarea>
+        </label>
+      </div>
+      <div class="space-y-2">
+        <label class="text-xs text-slate-400">Feedback JSON (manual copy fallback)</label>
+        {% set initial_payload = {
+          "title": post.title,
+          "subtitle": post.subtitle or "",
+          "audience": post.audience or "",
+          "cta": post.cta or "",
+          "tags": (post.tags or []),
+          "notes": "",
+          "draft_id": post.id,
+          "status": post.status or "draft",
+          "slug": post.slug
+        } %}
+        <textarea
+          id="fbJsonPreview"
+          rows="6"
+          readonly
+          data-draft-id="{{ post.id }}"
+          data-draft-status="{{ post.status or 'draft' }}"
+          data-slug="{{ post.slug }}"
+          class="input-dark w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs text-slate-100"
+        >{{ initial_payload | tojson(indent=2) }}</textarea>
+        <p id="fbStatus" class="text-xs text-slate-400" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/blog_draft_preview.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Basic Python ignores
+__pycache__/
+**/__pycache__/
+*.pyc
+**/*.pyc
+*.pyo
+*.pyd
+
+# Env files are provided via secrets, not baked
+.env
+.env.*
+
+# Local virtualenvs
+.venv
+
+# Instances/runtime artifacts
+instance
+k8s/inboxiq-config.yaml
+README.md

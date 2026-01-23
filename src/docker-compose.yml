@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: inboxiq
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inboxiq"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ..
+      dockerfile: src/Dockerfile.inboxiq
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/inboxiq
+      REDIS_URL: redis://:supersecret@redis:6379/0
+      FLASK_APP: src.manage:app
+      SECRET_KEY: supersecret
+      JWT_SECRET_KEY: supersecret
+      CELERY_BROKER_URL: redis://:supersecret@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:supersecret@redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--requirepass", "supersecret", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "changeme", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+
+  worker:
+    build:
+      context: ..
+      dockerfile: src/Dockerfile.inboxiq
+    command: ["celery", "-A", "src.celery_inboxiq.celery", "worker", "--loglevel=info", "--queues=inbox,billing,leads"]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/inboxiq
+      REDIS_URL: redis://:supersecret@redis:6379/0
+      FLASK_APP: src.manage:app
+      SECRET_KEY: supersecret
+      JWT_SECRET_KEY: supersecret
+      CELERY_BROKER_URL: redis://:supersecret@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:supersecret@redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  beat:
+    build:
+      context: ..
+      dockerfile: src/Dockerfile.inboxiq
+    command: ["celery", "-A", "src.celery_inboxiq.celery", "beat", "--loglevel=info", "--schedule=/tmp/celerybeat-schedule"]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/inboxiq
+      REDIS_URL: redis://:supersecret@redis:6379/0
+      FLASK_APP: src.manage:app
+      SECRET_KEY: supersecret
+      JWT_SECRET_KEY: supersecret
+      CELERY_BROKER_URL: redis://:supersecret@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:supersecret@redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  db_data:
+  redis_data:

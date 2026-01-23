@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blog review queue</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <main class="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <p class="text-sm text-indigo-200 uppercase tracking-wide">Publishing</p>
+        <h1 class="text-2xl font-semibold text-slate-100 mt-1">Blog review queue</h1>
+        <p class="text-sm text-slate-400">
+          Drafts are reviewed by humans. Approved drafts can be published by an AI agent only after approval.
+        </p>
+      </div>
+
+      <!-- Quick stats (if counts missing, derive from posts to avoid zeros) -->
+      {% set c = counts if counts is defined else {} %}
+      {% if (not c) and posts is defined %}
+        {% set ns = namespace(in_review=0, needs_revision=0, approved=0) %}
+        {% for p in posts %}
+          {% if p.status == 'in_review' %}
+            {% set ns.in_review = ns.in_review + 1 %}
+          {% elif p.status == 'needs_revision' %}
+            {% set ns.needs_revision = ns.needs_revision + 1 %}
+          {% elif p.status == 'approved' %}
+            {% set ns.approved = ns.approved + 1 %}
+          {% endif %}
+        {% endfor %}
+        {% set c = {'in_review': ns.in_review, 'needs_revision': ns.needs_revision, 'approved': ns.approved} %}
+      {% endif %}
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full sm:w-auto">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 shadow-lg shadow-slate-900/30">
+          <div class="text-xs text-slate-400">In review</div>
+          <div class="text-xl font-semibold">{{ c.get('in_review', 0) }}</div>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 shadow-lg shadow-slate-900/30">
+          <div class="text-xs text-slate-400">Needs revision</div>
+          <div class="text-xl font-semibold">{{ c.get('needs_revision', 0) }}</div>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3 shadow-lg shadow-slate-900/30 col-span-2 sm:col-span-1">
+          <div class="text-xs text-slate-400">Approved</div>
+          <div class="text-xl font-semibold">{{ c.get('approved', 0) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 shadow-lg shadow-slate-900/30 p-4">
+      <form method="get" class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Status</label>
+            {% set selected_status = request.args.get('status', 'all') if request is defined else 'all' %}
+            <select name="status"
+                    autocomplete="off"
+                    class="input-dark w-full rounded-xl bg-slate-950/40 border border-slate-800 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+              <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
+              <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>Draft</option>
+              <option value="in_review" {% if selected_status == 'in_review' %}selected{% endif %}>In review</option>
+              <option value="needs_revision" {% if selected_status == 'needs_revision' %}selected{% endif %}>Needs revision</option>
+              <option value="approved" {% if selected_status == 'approved' %}selected{% endif %}>Approved</option>
+              <option value="published" {% if selected_status == 'published' %}selected{% endif %}>Published</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Search</label>
+            {% set q = request.args.get('q', '') if request is defined else '' %}
+            <input name="q" value="{{ q }}" placeholder="Title or slug…"
+                   autocomplete="off"
+                   class="input-dark w-full rounded-xl bg-slate-950/40 border border-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Sort</label>
+            {% set sort = request.args.get('sort', 'newest') if request is defined else 'newest' %}
+            <select name="sort"
+                    autocomplete="off"
+                    class="input-dark w-full rounded-xl bg-slate-950/40 border border-slate-800 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+              <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest first</option>
+              <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option>
+              <option value="waiting_longest" {% if sort == 'waiting_longest' %}selected{% endif %}>Waiting longest</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button type="submit"
+                  class="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 shadow">
+            Apply
+          </button>
+          <a href="{{ request.path if request is defined else '#' }}"
+             class="rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm px-4 py-2 border border-slate-700">
+            Reset
+          </a>
+        </div>
+      </form>
+    </section>
+
+    <!-- Table -->
+    <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70 shadow-lg shadow-slate-900/30">
+      <table class="min-w-full text-sm text-slate-100">
+        <thead class="bg-slate-900/90 border-b border-slate-800">
+          <tr>
+            <th class="px-4 py-3 text-left">Title</th>
+            <th class="px-4 py-3 text-left">Workflow</th>
+            <th class="px-4 py-3 text-left">Slug</th>
+            <th class="px-4 py-3 text-left">ID</th>
+            <th class="px-4 py-3 text-left">Version</th>
+            <th class="px-4 py-3 text-left">Updated</th>
+            <th class="px-4 py-3 text-left">Last reviewed</th>
+            <th class="px-4 py-3 text-left">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for post in posts %}
+          <tr class="border-b border-slate-800/60 hover:bg-slate-950/20">
+
+            <td class="px-4 py-3">
+              <div class="font-medium text-slate-100">{{ post.title }}</div>
+              {% if post.summary %}
+                <div class="text-xs text-slate-400 mt-1 line-clamp-2">{{ post.summary }}</div>
+              {% endif %}
+            </td>
+
+            <!-- Workflow badge -->
+            <td class="px-4 py-3">
+              {% set s = post.status %}
+              <span class="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs border
+                {% if s == 'published' %}
+                  bg-emerald-500/10 text-emerald-200 border-emerald-400/40
+                {% elif s == 'approved' %}
+                  bg-indigo-500/10 text-indigo-200 border-indigo-400/40
+                {% elif s == 'needs_revision' %}
+                  bg-rose-500/10 text-rose-200 border-rose-400/40
+                {% elif s == 'in_review' %}
+                  bg-yellow-500/10 text-yellow-200 border-yellow-400/40
+                {% else %}
+                  bg-slate-500/10 text-slate-200 border-slate-400/40
+                {% endif %}
+              ">
+                {% if s == 'published' %}Published
+                {% elif s == 'approved' %}Approved
+                {% elif s == 'needs_revision' %}Needs revision
+                {% elif s == 'in_review' %}In review
+                {% else %}Draft{% endif %}
+              </span>
+
+              {% if post.risk_flag %}
+                <div class="mt-2">
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs border bg-orange-500/10 text-orange-200 border-orange-400/40">
+                    Risk: {{ post.risk_flag }}
+                  </span>
+                </div>
+              {% endif %}
+            </td>
+
+            <td class="px-4 py-3 text-slate-300">{{ post.slug }}</td>
+
+            <!-- ID with copy helper -->
+            <td class="px-4 py-3 text-slate-300">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono text-slate-400 break-all">{{ post.id }}</span>
+                <button type="button"
+                        class="text-[11px] px-2 py-1 rounded-lg border border-slate-700 text-slate-200 hover:bg-slate-800"
+                        data-copy-id="{{ post.id }}">
+                  Copy
+                </button>
+              </div>
+            </td>
+
+            <td class="px-4 py-3 text-slate-300">
+              {% if post.revision_number is defined and post.revision_number %}
+                v{{ post.revision_number }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <td class="px-4 py-3 text-slate-300">
+              {% if post.updated_at %}{{ post.updated_at }}{% else %}—{% endif %}
+            </td>
+
+            <td class="px-4 py-3 text-slate-300">
+              {% if post.last_reviewed_at %}{{ post.last_reviewed_at }}{% else %}—{% endif %}
+            </td>
+
+            <!-- Actions -->
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap gap-2 items-center">
+
+                <!-- Always allow preview -->
+                <a href="/publishing/blog/draft/{{ post.id }}"
+                   class="text-indigo-300 hover:text-indigo-100 text-sm"
+                   target="_blank" rel="noopener">
+                  Preview
+                </a>
+
+                <!-- Review button for queue states -->
+                {% if post.status in ['in_review', 'needs_revision', 'draft'] %}
+                  <a href="/publishing/blog/review/{{ post.id }}"
+                     class="rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs px-3 py-2 border border-slate-700">
+                    Review
+                  </a>
+                {% endif %}
+
+                <!-- Submit for review -->
+                {% if post.status == 'draft' %}
+                  <form method="post" action="/publishing/blog/{{ post.id }}/submit" class="inline">
+                    {{ csrf_token() if csrf_token is defined }}
+                    <button type="submit"
+                            class="rounded-xl bg-yellow-600/90 hover:bg-yellow-500 text-white text-xs px-3 py-2 shadow">
+                      Submit
+                    </button>
+                  </form>
+                {% endif %}
+
+                <!-- Approve -->
+                {% if post.status in ['in_review', 'needs_revision'] %}
+                  <form method="post" action="/publishing/blog/{{ post.id }}/approve" class="inline">
+                    {{ csrf_token() if csrf_token is defined }}
+                    <button type="submit"
+                            class="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 shadow">
+                      Approve
+                    </button>
+                  </form>
+                {% endif %}
+
+                <!-- Publish -->
+                {% if post.status == 'approved' %}
+                  <form method="post" action="/publishing/blog/{{ post.id }}/publish" class="inline">
+                    {{ csrf_token() if csrf_token is defined }}
+                    <button type="submit"
+                            class="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-2 shadow">
+                      Publish
+                    </button>
+                  </form>
+                {% endif %}
+
+                <!-- Delete (only for unpublished drafts) -->
+                {% if post.status != 'published' %}
+                  <form method="post" action="/publishing/blog/{{ post.id }}/delete" class="inline" onsubmit="return confirm('Delete this draft?');">
+                    {{ csrf_token() if csrf_token is defined }}
+                    <button type="submit"
+                            class="rounded-xl bg-rose-600/80 hover:bg-rose-500 text-white text-xs px-3 py-2 border border-rose-400/40">
+                      Delete
+                    </button>
+                  </form>
+                {% endif %}
+
+                <!-- Public link -->
+                {% if post.status == 'published' %}
+                  <a href="/blog/{{ post.slug }}"
+                     class="rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-200 text-xs px-3 py-2 border border-emerald-400/40"
+                     target="_blank" rel="noopener">
+                    Public
+                  </a>
+                {% endif %}
+
+              </div>
+
+              <!-- Inline reviewer brief (latest) -->
+              {% if post.latest_brief %}
+                <div class="mt-3 rounded-xl border border-slate-800 bg-slate-950/30 p-3">
+                  <div class="text-xs uppercase tracking-wide text-slate-400">Latest supplementary brief</div>
+                  <p class="text-sm text-slate-200 mt-1 whitespace-pre-wrap">{{ post.latest_brief }}</p>
+                </div>
+              {% endif %}
+            </td>
+
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="px-4 py-10 text-center text-slate-400">
+              No posts found for the selected filters.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer note -->
+    <div class="text-xs text-slate-500">
+      Tip: Use <span class="text-slate-300">Review</span> to open the rubric + leave a supplementary brief. Approve only when the draft meets your publishing standard.
+    </div>
+
+  </main>
+
+  <script>
+    // Lightweight copy-to-clipboard for draft IDs.
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-copy-id]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-copy-id') || '';
+      if (!id) return;
+      navigator.clipboard.writeText(id).then(() => {
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1200);
+      }).catch(() => {
+        btn.textContent = 'Error';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1200);
+      });
+    });
+  </script>
+</body>
+</html>

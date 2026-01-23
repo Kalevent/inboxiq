@@ -1,0 +1,97 @@
+name: ci-cd
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - '.github/workflows/inbox-ci.yml'
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - '.github/workflows/inbox-ci.yml'
+  workflow_dispatch:
+
+concurrency: inbox
+
+env:
+  AWS_REGION: us-west-2
+  ECR_REGISTRY: 094985084741.dkr.ecr.us-west-2.amazonaws.com
+  ECR_REPO: inboxiq
+  EKS_CLUSTER: inboxiq-eks
+  KUBE_NAMESPACE: kaley
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'inboxiq')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_INBOX }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
+
+      - name: Verify InboxIQ lockfile
+        run: |
+          test -s src/requirements-inboxiq.lock.txt
+
+      - name: Build and push image
+        run: |
+          TAG="$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
+          IMAGE="${ECR_REGISTRY}/${ECR_REPO}:${TAG}"
+          docker buildx build \
+            --platform linux/amd64 \
+            -f src/Dockerfile.inboxiq \
+            -t "${IMAGE}" \
+            --push \
+            .
+          # Optional additional tag for convenience
+          docker buildx imagetools create -t "${ECR_REGISTRY}/${ECR_REPO}:inbox" "${IMAGE}"
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name "${EKS_CLUSTER}" --region "${AWS_REGION}"
+
+      - name: Deploy to EKS
+        env:
+          IMAGE: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ env.TAG }}
+        run: |
+          IMAGE="${ECR_REGISTRY}/${ECR_REPO}:${TAG}"
+          kubectl set image deploy/inboxiq inboxiq="${IMAGE}" -n "${KUBE_NAMESPACE}"
+          kubectl set image deploy/inboxiq-celery-inbox-worker inbox-worker="${IMAGE}" -n "${KUBE_NAMESPACE}"
+          kubectl set image deploy/inboxiq-celery-inbox-beat inbox-beat="${IMAGE}" -n "${KUBE_NAMESPACE}"
+          kubectl rollout status deploy/inboxiq -n "${KUBE_NAMESPACE}"
+          kubectl rollout status deploy/inboxiq-celery-inbox-worker -n "${KUBE_NAMESPACE}"
+          kubectl rollout status deploy/inboxiq-celery-inbox-beat -n "${KUBE_NAMESPACE}"
+
+      - name: Verify deployed images
+        run: |
+          kubectl get deploy inboxiq -n "${KUBE_NAMESPACE}" -o jsonpath='{.spec.template.spec.containers[0].image}'; echo
+          kubectl get deploy inboxiq-celery-inbox-worker -n "${KUBE_NAMESPACE}" -o jsonpath='{.spec.template.spec.containers[0].image}'; echo
+          kubectl get deploy inboxiq-celery-inbox-beat -n "${KUBE_NAMESPACE}" -o jsonpath='{.spec.template.spec.containers[0].image}'; echo

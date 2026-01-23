@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1640" height="924" viewBox="0 0 1640 924" role="img" aria-labelledby="title desc">
+  <title id="title">InboxIQ Facebook Cover</title>
+  <desc id="desc">Banner for InboxIQ with KI monogram, tagline, and key benefits on a dark gradient background.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="badge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="cta" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1640" height="924" fill="url(#bg)" rx="32"/>
+  <circle cx="1260" cy="260" r="220" fill="url(#badge)" opacity="0.12"/>
+  <circle cx="320" cy="720" r="260" fill="#0b1220" opacity="0.3"/>
+
+  <g transform="translate(180 200)">
+    <rect x="0" y="0" width="220" height="220" rx="40" fill="#0b1220" stroke="#1f2937" stroke-width="3"/>
+    <circle cx="110" cy="110" r="88" fill="url(#badge)" filter="url(#glow)"/>
+    <text x="110" y="130" text-anchor="middle" font-family="Inter, 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="58" font-weight="800" fill="#ffffff">KI</text>
+  </g>
+
+  <g transform="translate(450 220)">
+    <text x="0" y="0" font-family="Inter, 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="58" font-weight="800" fill="#e5e7eb">InboxIQ by Kalevent</text>
+    <text x="0" y="56" font-family="Inter, 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#cbd5e1">
+      Your AI Support Agent. Automatically triage emails &amp; create tickets 24/7.
+    </text>
+  </g>
+
+  <g transform="translate(450 340)" font-family="Inter, 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="24" font-weight="500" fill="#cbd5e1">
+    <text x="0" y="0">• AI customer support</text>
+    <text x="0" y="40">• Email triage &amp; ticketing automation</text>
+    <text x="0" y="80">• Sentiment &amp; SLA routing</text>
+    <text x="0" y="120">• Support analytics</text>
+    <text x="0" y="160">• Gmail / Outlook integration</text>
+  </g>
+
+  <g transform="translate(450 560)">
+    <rect x="0" y="0" width="280" height="70" rx="16" fill="url(#cta)"/>
+    <text x="140" y="44" text-anchor="middle" font-family="Inter, 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#ffffff">Start free trial →</text>
+  </g>
+</svg>

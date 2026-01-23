@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Integrations · Webhook / Intake API</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Webhook / API Intake</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 text-sm text-slate-200">
+          <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="px-3 py-1.5 rounded-full border border-slate-700 hover:bg-slate-800">
+            ← Back to Integrations
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 space-y-6">
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 lg:p-7 shadow-2xl shadow-indigo-500/15 space-y-3">
+          <h1 class="text-2xl font-semibold text-white">Configure webhook / Intake API</h1>
+          <p class="text-sm text-slate-300">
+            Use this endpoint to send forms, chat handoffs, CRM events, or internal tool requests into InboxIQ for triage.
+            Full docs: <a href="/docs/intake_api" class="text-indigo-300 hover:text-indigo-200 underline">/docs/intake_api</a>
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+            <div class="text-sm font-semibold text-slate-100">Endpoint</div>
+            <div class="text-sm text-slate-200 mt-1 font-mono bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2">
+              POST {{ request.url_root.rstrip('/') }}/api/v1/intake
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 space-y-2">
+            <div class="text-sm font-semibold text-slate-100">Auth</div>
+            <ul class="text-sm text-slate-300 list-disc list-inside space-y-1">
+              <li><code class="font-mono text-indigo-200">X-Intake-Token</code> header (per-account token generated below; stored hashed).</li>
+              <li>Or logged-in JWT (for in-app usage).</li>
+            </ul>
+            <div class="text-xs text-slate-400 mt-1">
+              Status: {% if intake_token_set %}<span class="text-emerald-300">active tokens exist</span>{% else %}<span class="text-amber-300">no active tokens</span>{% endif %}.
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <div class="text-sm font-semibold text-slate-100">Example payloads</div>
+            <pre class="text-xs text-slate-200 bg-slate-950/60 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
+{
+  "subject": "Contact us: integration question",
+  "body": "How do we connect our internal CRM to InboxIQ?",
+  "source": "form"
+}
+            </pre>
+            <pre class="text-xs text-slate-200 bg-slate-950/60 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
+{
+  "subject": "Chat handoff: billing issue",
+  "body": "User: I was double-charged...\nBot: Let me check...\nUser: please escalate.",
+  "source": "chat"
+}
+            </pre>
+            <pre class="text-xs text-slate-200 bg-slate-950/60 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
+{
+  "subject": "CRM: escalated lead responded angrily",
+  "body": "Lead ABC replied: \"Why was I charged again?\"",
+  "source": "crm",
+  "provider_thread_url": "https://crm.example.com/leads/abc"
+}
+            </pre>
+          </div>
+
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 space-y-2">
+            <div class="text-sm font-semibold text-slate-100">Sample curl</div>
+            <pre class="text-xs text-slate-200 bg-slate-950/60 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
+curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
+  -H "X-Intake-Token: $INBOXIQ_INTAKE_TOKEN" \
+  -H "X-Timestamp: $(date +%s)" \
+  -H "X-Signature: <hmac-sha256-of-timestamp.body>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": "Contact us: integration question",
+    "body": "How do we connect our internal CRM to InboxIQ?",
+    "source": "form"
+  }'
+            </pre>
+          </div>
+
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 space-y-3">
+            <div class="text-sm font-semibold text-slate-100">Manage tokens (per account)</div>
+            <form method="post" class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <input type="hidden" name="action" value="generate" />
+              <label class="w-full sm:w-auto">
+                <span class="text-xs text-slate-400">Label (optional)</span>
+                <input name="label" type="text" class="w-full sm:w-56 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" placeholder="e.g., Form backend" />
+              </label>
+              <label class="w-full sm:w-auto">
+                <span class="text-xs text-slate-400">Allowed IPs (comma separated, optional)</span>
+                <input name="allowed_ips" type="text" class="w-full sm:w-72 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" placeholder="e.g., 10.0.0.1, 203.0.113.5" />
+              </label>
+              <label class="w-full sm:w-auto">
+                <span class="text-xs text-slate-400">Expires at (UTC, optional)</span>
+                <input name="expires_at" type="datetime-local" class="w-full sm:w-56 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+              </label>
+              <button type="submit" class="inline-flex items-center gap-2 rounded-xl btn-primary px-4 py-2 text-sm font-semibold text-white shadow shadow-indigo-500/30">
+                Generate new token
+              </button>
+            </form>
+            {% if new_token %}
+              <div class="text-xs text-amber-200">
+                Copy this token now (shown only once):<br>
+                <code class="text-[11px] bg-slate-950/60 border border-slate-800 rounded px-2 py-1 inline-block mt-1">{{ new_token }}</code>
+              </div>
+            {% endif %}
+            <div class="text-xs text-slate-300">
+              Active tokens:
+              {% if tokens and tokens|length > 0 %}
+                <ul class="mt-2 space-y-1">
+                  {% for t in tokens %}
+                    <li class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div class="flex flex-col">
+                        <span>{{ t.label or 'Unnamed token' }}</span>
+                        {% if t.allowed_ips and t.allowed_ips|length > 0 %}
+                          <span class="text-slate-500">IPs: {{ t.allowed_ips|join(', ') }}</span>
+                        {% endif %}
+                        {% if t.expires_at %}
+                          <span class="text-slate-500">Expires: {{ t.expires_at }}</span>
+                        {% endif %}
+                      </div>
+                      <span class="text-slate-500">{{ t.created_at }}</span>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="text-slate-500 mt-1">None yet.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

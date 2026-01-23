@@ -1,0 +1,14 @@
+.venv-inboxiq/
+.venv/
+.env
+.env.*
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+*.log
+*.db
+instance/
+flask_session/
+src/.env
+src/.env.*

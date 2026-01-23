@@ -1,0 +1,91 @@
+/* Custom styles for Knowledge Base API Developer Guide */
+
+/* Reduce space between sidebar and content */
+.docs-main {
+    margin-left: 260px; /* Slightly reduced from the default 280px */
+}
+
+/* Adjust content wrapper to give more space to the middle section */
+.docs-content-wrapper {
+    display: flex;
+    max-width: 1400px; /* Increased from 1200px */
+    width: 100%;
+    margin: 0 auto;
+    gap: 20px; /* Add gap instead of margins */
+}
+
+/* Make the main content area wider */
+.docs-content {
+    max-width: none;
+    flex: 1;
+    padding: 2rem 2.5rem;
+}
+
+/* Adjust the TOC to be more compact and less intrusive */
+.docs-toc {
+    position: sticky;
+    top: calc(var(--doc-header-height) + 2rem);
+    height: calc(100vh - var(--doc-header-height) - 4rem);
+    overflow-y: auto;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    width: 200px; /* Reduced from 220px */
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-left: 0;
+    margin-right: 0;
+    border-left: 1px solid var(--doc-border-color);
+}
+
+/* Remove the thick border between sections */
+.docs-toc-title {
+    border-bottom: none;
+    padding-bottom: 0.25rem;
+}
+
+/* Make code blocks more readable */
+.docs-content pre {
+    background-color: #f8fafc;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+}
+
+/* Improve spacing for headings */
+.docs-content h2 {
+    margin-top: 2.5rem;
+    padding-top: 0.5rem;
+}
+
+.docs-content h3 {
+    margin-top: 1.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1280px) {
+    .docs-content-wrapper {
+        max-width: 100%;
+    }
+    
+    .docs-toc {
+        width: 180px;
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .docs-content {
+        padding: 1.5rem 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .docs-main {
+        margin-left: 0;
+    }
+    
+    .docs-content {
+        padding: 1.5rem;
+    }
+}

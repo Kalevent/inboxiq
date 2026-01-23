@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Sign in</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
+    crossorigin="anonymous"
+  />
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="{{ url_for('root') }}" class="flex items-center gap-2">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">
+            KI
+          </div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – AI Support Agent</div>
+          </div>
+        </a>
+        <nav class="flex items-center gap-3 text-sm text-slate-300">
+          <a href="/" class="px-3 py-1.5 rounded-full border border-slate-700 bg-slate-900/60 hover:bg-slate-800">← Back to site</a>
+          <a href="#workspace" class="hidden sm:inline hover:text-white">Workspace tips</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="relative overflow-hidden border-b border-slate-800">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/15 via-fuchsia-500/5 to-slate-900/60 pointer-events-none"></div>
+        <div class="absolute -left-20 top-10 h-64 w-64 bg-indigo-500/20 rounded-full blur-3xl"></div>
+        <div class="absolute -right-10 bottom-10 h-64 w-64 bg-fuchsia-500/10 rounded-full blur-3xl"></div>
+
+        <div class="max-w-6xl mx-auto px-4 py-16 lg:py-20 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <span class="inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-200 mb-4">
+              Secure multi-tenant login
+            </span>
+            <h1 class="text-3xl md:text-4xl font-semibold tracking-tight mb-4">
+              Sign in to your InboxIQ workspace
+            </h1>
+            <p class="text-slate-300 text-sm md:text-base max-w-xl mb-6">
+              Use your work email and workspace ID to sign in. Every token we issue is scoped to your workspace so teams stay isolated while sharing the same platform.
+            </p>
+
+              <div class="grid sm:grid-cols-2 gap-3 mb-6">
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-900/70 border border-slate-800">
+                  <div class="h-9 w-9 rounded-lg bg-indigo-500/20 border border-indigo-400/20 flex items-center justify-center text-indigo-200 text-sm font-semibold">
+                    MT
+                  </div>
+                  <div>
+                    <div class="text-sm font-semibold text-slate-100">Tenant aware</div>
+                    <div class="text-xs text-slate-400">Tokens carry account IDs automatically.</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-900/70 border border-slate-800">
+                  <div class="h-9 w-9 rounded-lg bg-emerald-500/15 border border-emerald-400/20 flex items-center justify-center text-emerald-200 text-sm font-semibold">
+                    2FA
+                  </div>
+                  <div>
+                    <div class="text-sm font-semibold text-slate-100">Secure sign-in</div>
+                    <div class="text-xs text-slate-400">MFA supported today; SSO available on request.</div>
+                  </div>
+                </div>
+              </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-2xl shadow-indigo-500/10">
+              <div class="flex items-center gap-3">
+                <img src="{{ url_for('static', filename='svgs/card.svg') }}" alt="InboxIQ card" class="h-14 w-14 rounded-xl border border-slate-800 bg-slate-900/70" />
+                <div>
+                  <div class="text-sm font-semibold text-slate-100">Consistent experience</div>
+                  <div class="text-xs text-slate-400">Same colors, gradients, and rounded geometry from the landing page.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="relative">
+            <div class="absolute -inset-4 bg-slate-900/50 border border-slate-800 rounded-3xl blur-3xl"></div>
+            <div class="relative bg-slate-900/80 border border-slate-800 rounded-3xl shadow-2xl shadow-indigo-500/15 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <div class="text-sm font-semibold text-slate-100">Welcome back</div>
+                  <div class="text-xs text-slate-400">Authenticate to continue to your workspace</div>
+                </div>
+                <span class="text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-200 border border-emerald-400/30">
+                  Status: Secure
+                </span>
+              </div>
+
+              <form id="loginForm" class="space-y-4" autocomplete="off">
+                <div>
+                  <label for="email" class="text-sm text-slate-200">Work email</label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    autocomplete="username"
+                    spellcheck="false"
+                    class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                    placeholder="you@company.com"
+                  />
+                </div>
+
+                <div id="workspace">
+                  <label for="workspaceId" class="text-sm text-slate-200 flex items-center justify-between">
+                    Workspace ID
+                    <span class="text-[11px] text-slate-500">Keeps login scoped per tenant</span>
+                  </label>
+                  <input
+                    id="workspaceId"
+                    name="workspaceId"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                    placeholder="e.g. 1024"
+                  />
+                </div>
+
+                <div>
+                  <label for="password" class="text-sm text-slate-200">Password</label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    autocomplete="current-password"
+                    class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                    placeholder="••••••••"
+                  />
+                  <div class="mt-2 text-xs text-indigo-300">
+                    <a href="{{ url_for('reset_page') }}" class="hover:text-indigo-200 underline underline-offset-2">Forgot your password?</a>
+                  </div>
+                </div>
+
+                <button
+                  id="loginButton"
+                  type="submit"
+                  class="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Sign in
+                </button>
+              </form>
+
+              <div id="loginStatus" class="mt-4 text-sm text-slate-300 hidden"></div>
+
+              <div class="mt-6 grid sm:grid-cols-2 gap-3 text-xs text-slate-400">
+                <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                  <div class="text-slate-200 font-semibold mb-1 text-sm">Multi-tenant guardrails</div>
+                  <p>Workspace IDs are verified server-side so tokens cannot bleed across tenants.</p>
+                </div>
+                <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                  <div class="text-slate-200 font-semibold mb-1 text-sm">Keep me signed in</div>
+                  <p>We store your token locally for API calls; clear it anytime in your browser.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>

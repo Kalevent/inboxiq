@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /admin
+Disallow: /onboarding
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /settings/
+Allow: /playbook/unified-support-triage
+Allow: /playbook/unified-sales-intake
+Allow: /playbook/unified-ops-intake
+Allow: /playbook/unified-intake-system
+Sitemap: https://kalevent.com/sitemap.xml

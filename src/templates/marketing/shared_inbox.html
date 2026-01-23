@@ -1,0 +1,162 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Shared Inbox Software for Teams | InboxIQ{% endblock %}
+{% block meta_description %}
+InboxIQ is shared inbox software that uses AI to assign ownership, prioritise urgent requests, prevent duplicate replies, and route conversations into the right workflow.
+{% endblock %}
+{% block canonical %}{{ url_for('shared_inbox', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-12">
+  <header class="space-y-4">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      InboxIQ • Shared Inbox
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Shared Inbox Software That Prevents Collisions and Keeps Work Organised
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed">
+      InboxIQ is <strong>shared inbox software</strong> for teams. It classifies incoming messages, prioritises urgency, assigns ownership, and routes each request into the right queue—so nothing important gets missed.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">Try InboxIQ</a>
+      <a href="#features" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">See shared inbox features</a>
+    </div>
+  </header>
+
+  <section class="grid lg:grid-cols-2 gap-8 marketing-section">
+    <div class="marketing-card space-y-4">
+      <h2 class="text-2xl font-semibold text-white">Why Shared Inboxes Get Messy</h2>
+      <p class="text-slate-200 leading-relaxed">
+        Shared mailboxes (support@, sales@, hello@) break down when multiple people work from the same inbox. The result is predictable:
+      </p>
+      <ul class="space-y-2 text-slate-200 leading-relaxed list-disc list-inside">
+        <li>Two people reply to the same email</li>
+        <li>Important requests get buried</li>
+        <li>Ownership is unclear (“Who is handling this?”)</li>
+        <li>Follow-ups slip through the cracks</li>
+        <li>No consistent triage or prioritisation process</li>
+      </ul>
+      <p class="text-slate-200 leading-relaxed">
+        InboxIQ fixes this at the intake step: <a class="text-indigo-300 hover:text-indigo-200" href="{{ url_for('ai_email_triage') }}">AI email triage</a> plus routing and ownership—built for teams.
+      </p>
+    </div>
+    <div class="marketing-card space-y-4" id="features">
+      <h2 class="text-2xl font-semibold text-white">Shared Inbox Features Powered by AI</h2>
+      <ul class="space-y-2 text-slate-200 leading-relaxed list-disc list-inside">
+        <li><strong>Ownership assignment</strong> so every message has a clear owner</li>
+        <li><strong>Urgency prioritisation</strong> so critical emails rise to the top</li>
+        <li><strong>Intent classification</strong> (support, sales, billing, onboarding, feedback)</li>
+        <li><strong>Routing to workflows</strong> (ticket, task, notification, follow-up)</li>
+        <li><strong>Reduced duplicate replies</strong> by clarifying what’s handled and what’s pending</li>
+        <li><strong>Summaries</strong> so anyone can understand the request in seconds</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="marketing-card space-y-4 marketing-section">
+    <h2 class="text-2xl font-semibold text-white">One Intake Brain Across Email, Forms, and Tools</h2>
+    <p class="text-slate-200 leading-relaxed">
+      InboxIQ is not just a shared inbox. It’s a unified intake layer. Any system can POST a payload to InboxIQ, and the same AI agent decides:
+    </p>
+    <ul class="space-y-2 text-slate-200 leading-relaxed list-disc list-inside">
+      <li>Does this need action?</li>
+      <li>How urgent is it?</li>
+      <li>Who should handle it?</li>
+      <li>Should it become a ticket at all?</li>
+    </ul>
+    <p class="text-slate-200 leading-relaxed">
+      Your shared inbox logic lives in one place. See webhook examples in the <a class="text-indigo-300 hover:text-indigo-200" href="{{ url_for('docs.docs_page', doc_name='intake_api') }}">Intake API docs</a>.
+      This is the foundation of <a class="text-indigo-300 hover:text-indigo-200" href="{{ url_for('support_automation') }}">support automation</a>.
+    </p>
+  </section>
+
+  <section class="marketing-card space-y-4 marketing-section">
+    <h2 class="text-2xl font-semibold text-white">Shared Inbox Use Cases</h2>
+    <div class="space-y-2 text-slate-200 leading-relaxed">
+      <p><strong>Customer Support Inbox</strong> — route issues to the right queue and prioritise urgent messages automatically.</p>
+      <p><strong>Sales Inbox</strong> — detect high-intent requests and assign follow-ups so leads don’t go cold.</p>
+      <p><strong>Operations Inbox</strong> — sort admin requests, approvals, and internal queries into structured work.</p>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Shared Inbox FAQ</h2>
+    <div class="grid md:grid-cols-2 gap-4 text-slate-200 leading-relaxed">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">What is a shared inbox?</h3>
+        <p>A shared inbox is a mailbox used by multiple people (e.g., support@). InboxIQ adds AI triage, ownership, and routing to keep it organised.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">How does InboxIQ prevent duplicate replies?</h3>
+        <p>By assigning ownership, routing to queues, and making status clear—so the team knows what’s handled and what’s pending.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Can I use InboxIQ without changing my whole stack?</h3>
+        <p>Yes. Start with triage and routing. You can integrate deeper over time with workflows and webhook intake.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Does it work with other channels?</h3>
+        <p>Yes. The same intake brain can process forms, chat transcripts, CRM events, and internal tools via webhooks.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-indigo-600 text-white rounded-2xl p-8 space-y-3 marketing-section">
+    <h2 class="text-2xl font-semibold">Make Your Shared Inbox Feel Like a Work Queue</h2>
+    <p class="text-indigo-100">InboxIQ turns inbound email into structured, prioritised work—so your team can move faster.</p>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition">
+        Get started
+      </a>
+      <a href="#features" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-indigo-200 text-white font-semibold hover:bg-indigo-500/70 transition">
+        See features
+      </a>
+    </div>
+    <p class="text-indigo-100/80 text-sm">
+      Want the end-to-end intake strategy? Read <a class="font-semibold text-white underline underline-offset-4" href="{{ url_for('playbook') }}">Why manual triage fails at scale</a> and the <a class="font-semibold text-white underline underline-offset-4" href="{{ url_for('playbook') }}">Unified pre-human triage model</a>.
+    </p>
+  </section>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is a shared inbox?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A shared inbox is a mailbox used by multiple people (e.g., support@). InboxIQ adds AI triage, ownership, and routing to keep it organised."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does InboxIQ prevent duplicate replies?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "InboxIQ assigns ownership, routes messages into queues, and clarifies status so the team knows what’s handled and what’s pending."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I use InboxIQ without changing my whole stack?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Start with triage and routing, then integrate deeper over time with workflows and webhook intake."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does it work with other channels?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. The same intake brain can process forms, chat transcripts, CRM events, and internal tools via webhooks."
+        }
+      }
+    ]
+  }
+  </script>
+</div>
+{% endblock %}

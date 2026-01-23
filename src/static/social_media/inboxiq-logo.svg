@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">InboxIQ Logo</title>
+  <desc id="desc">Square logo with KI monogram and InboxIQ wordmark on a dark gradient background.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="badge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="64" fill="url(#bg)"/>
+  <rect x="76" y="166" width="360" height="180" rx="48" fill="#0b1220" stroke="#1f2937" stroke-width="3"/>
+  <g transform="translate(116 206)">
+    <circle cx="60" cy="60" r="54" fill="url(#badge)"/>
+    <text x="60" y="72" text-anchor="middle" font-family="Inter, 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="38" font-weight="800" fill="#ffffff">KI</text>
+  </g>
+  <g transform="translate(216 206)">
+    <text x="0" y="54" font-family="Inter, 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="42" font-weight="700" fill="#e5e7eb">InboxIQ</text>
+    <text x="0" y="94" font-family="Inter, 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="#9ca3af">AI Support Agent</text>
+  </g>
+</svg>

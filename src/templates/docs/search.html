@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title or "Search Results" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='docs/css/docs.css') }}">
+</head>
+<body>
+  <div class="docs-container">
+    <aside class="docs-sidebar">
+      <div class="docs-logo">
+        <a href="{{ url_for('root') }}">
+          <img src="{{ url_for('static', filename='favicon.svg') }}" alt="InboxIQ logo">
+          <span>InboxIQ Docs</span>
+        </a>
+      </div>
+      <nav class="docs-nav">
+        <div class="docs-nav-section">
+          <div class="docs-nav-section-title">Guides</div>
+          <ul class="docs-nav-list">
+            <li class="docs-nav-item"><a class="docs-nav-link" href="{{ url_for('docs.docs_index') }}">User Guide</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link" href="{{ url_for('docs.docs_page', doc_name='users_guide') }}">InboxIQ User Guide</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link" href="{{ url_for('docs.docs_page', doc_name='service_integrations') }}">Integrations</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link" href="{{ url_for('docs.docs_page', doc_name='channel_intake_guide') }}">Channel intake guide</a></li>
+          </ul>
+        </div>
+        <div class="docs-nav-section">
+          <div class="docs-nav-section-title">Resources</div>
+          <ul class="docs-nav-list">
+            <li class="docs-nav-item"><a class="docs-nav-link active" href="{{ url_for('docs.docs_search') }}">Search</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="docs-main">
+      <header class="docs-header">
+        <div class="docs-header-left">
+          <a href="{{ url_for('root') }}" class="docs-header-logo">
+            <img src="{{ url_for('static', filename='favicon.svg') }}" alt="InboxIQ logo">
+            <span class="docs-header-title">InboxIQ Documentation</span>
+          </a>
+          <div class="docs-version-selector">
+            <span class="docs-version-link">v1.0</span>
+          </div>
+        </div>
+        <form class="docs-search" action="{{ url_for('docs.docs_search') }}" method="get">
+          <svg class="docs-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+          </svg>
+          <input class="docs-search-input" type="text" name="q" placeholder="Search InboxIQ docs" value="{{ query }}">
+        </form>
+        <div class="docs-header-right">
+          <a class="docs-header-link" href="{{ url_for('root') }}">App Home</a>
+          <a class="docs-header-link docs-sign-in" href="{{ url_for('login_page') }}">Log in</a>
+        </div>
+      </header>
+
+      <main class="docs-content">
+        <section class="docs-article">
+          <h1>{{ title or "Search Results" }}</h1>
+          {% if query %}
+            <p class="docs-search-summary">Results for "<strong>{{ query }}</strong>": {{ results|length }}</p>
+          {% endif %}
+
+          {% if results %}
+            <ul class="docs-search-results">
+              {% for result in results %}
+                <li class="docs-search-item">
+                  <a href="{{ result.url }}">
+                    <div class="docs-search-title">{{ result.title }}</div>
+                    <div class="docs-search-snippet">{{ result.snippet }}</div>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="docs-empty">No results found. Try another search term.</p>
+          {% endif %}
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

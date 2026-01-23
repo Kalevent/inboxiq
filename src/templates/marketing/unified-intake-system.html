@@ -1,0 +1,122 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Unified Intake System: One Pre-Human Triage Layer | Kalevent{% endblock %}
+{% block meta_description %}
+Unified intake system playbook that explains the umbrella model: one pre-human triage layer for support, sales, and ops—consistent intent detection, urgency, ownership, and deduplication across every channel.
+{% endblock %}
+{% block canonical %}{{ url_for('playbook_intake_system', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-18">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      InboxIQ Playbook • Unified Intake System
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Unified Intake System: One Pre-Human Triage Layer Across the Business
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      This umbrella playbook shows how a single intake system spans support, sales, and ops—so every inbound signal is classified, prioritised, and routed with the same rules before humans ever see it.
+    </p>
+    <p class="text-slate-200 leading-relaxed">
+      <strong>This playbook explains the unified support triage model.</strong> InboxIQ implements this approach across email, forms, chat, and CRM events.
+    </p>
+    <div class="cta-row mt-2 mb-8">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        See the InboxIQ demo
+      </a>
+      <a href="{{ url_for('playbook') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Unified support triage pillar
+      </a>
+    </div>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Why a Unified Intake System Matters</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Consistency across domains</h3>
+        <p class="text-slate-200 leading-relaxed">Support, sales, and ops follow the same intake logic for intent, urgency, and ownership.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Lower risk, higher speed</h3>
+        <p class="text-slate-200 leading-relaxed">Escalations surface immediately; noise is suppressed before it creates drag.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Auditability everywhere</h3>
+        <p class="text-slate-200 leading-relaxed">Every decision is logged, so leadership can see why work moved—or didn’t.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Core Components of the Unified Intake System</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Single intake layer</h3>
+        <p class="text-slate-200 leading-relaxed">Email, forms, chat, CRM events, and internal alerts flow into one triage brain.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Shared triage rules</h3>
+        <p class="text-slate-200 leading-relaxed">Intent, urgency, deduplication, and ownership apply consistently across teams.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Domain playbooks</h3>
+        <p class="text-slate-200 leading-relaxed">Each function has a playbook that links back to the pillar while targeting its own metrics.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works" class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">How the Unified Intake System Works</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Connect every intake source</h3>
+        <p class="text-slate-200 leading-relaxed">Support inboxes, sales forms and chat, ops alerts—all feed the same layer.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Define cross-team rules</h3>
+        <p class="text-slate-200 leading-relaxed">Standardise intents, severities, and ownership across functions.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Route, suppress, and escalate</h3>
+        <p class="text-slate-200 leading-relaxed">AI applies the same logic everywhere—so the right team sees the right work immediately.</p>
+      </div>
+    </div>
+    <p class="text-slate-200 leading-relaxed">This system is the parent layer above the support, sales, and ops playbooks.</p>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Linked Playbooks in the Unified Intake Family</h2>
+    <div class="grid md:grid-cols-3 gap-4 text-slate-200 leading-relaxed">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Unified Support Triage</h3>
+        <p>Category pillar for support intake. <a class="text-indigo-300 hover:text-indigo-200" href="{{ url_for('playbook') }}">Read the playbook</a>.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Unified Sales Intake</h3>
+        <p>Lead response SLAs, spam suppression, intent before CRM. <a class="text-indigo-300 hover:text-indigo-200" href="{{ url_for('playbook_sales') }}">Read the playbook</a>.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Operations Intake Automation</h3>
+        <p>Internal requests, approvals, alerts with zero loss. <a class="text-indigo-300 hover:text-indigo-200" href="{{ url_for('playbook_ops') }}">Read the playbook</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-card space-y-4 marketing-section">
+    <h2 class="text-2xl font-semibold text-white">Implementing the Unified Intake System with InboxIQ</h2>
+    <p class="text-slate-200 leading-relaxed">
+      InboxIQ runs the unified intake system across all domains: one intake brain for support, sales, and ops with full audit trails and consistent routing.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        See the unified intake demo
+      </a>
+      <a href="{{ url_for('playbook') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Support triage pillar
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ticket · {{ ticket.subject }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Ticket</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 text-sm text-slate-200">
+          <a href="{{ url_for('dashboard_home') }}" class="px-3 py-1.5 rounded-full border border-slate-700 hover:bg-slate-800">
+            ← Back to dashboard
+          </a>
+          {% if ticket.provider_thread_url %}
+            <a href="{{ ticket.provider_thread_url }}" target="_blank" rel="noreferrer"
+               class="px-3 py-1.5 rounded-full bg-slate-900/70 border border-slate-700 hover:bg-slate-800">
+              Open provider thread ↗
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 py-10 lg:py-14 space-y-6">
+
+        <!-- Top card: Ticket identity + AI decision -->
+        <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-7 shadow-2xl shadow-indigo-500/15 relative overflow-visible">
+          <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-24 bottom-0 h-52 w-52 rounded-full bg-fuchsia-500/5 blur-3xl pointer-events-none"></div>
+
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+
+            <!-- Left: Ticket headline -->
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2 mb-2">
+                <!-- Priority -->
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full
+                  {% if (ticket.priority or 'P2') == 'P0' %}bg-rose-500/15 text-rose-200 border border-rose-500/30
+                  {% elif (ticket.priority or 'P2') == 'P1' %}bg-amber-500/15 text-amber-200 border border-amber-500/30
+                  {% else %}bg-slate-700/50 text-slate-200 border border-slate-600{% endif %}">
+                  {{ ticket.priority or 'P2' }}
+                </span>
+
+                <!-- Status -->
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border border-slate-700 bg-slate-900/60 text-slate-200">
+                  {{ ticket.status|replace('_',' ')|title }}
+                </span>
+
+                <!-- Action required (if available) -->
+                {% if ticket.action_required is not none %}
+                  {% if ticket.action_required %}
+                    <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-200 border border-emerald-500/30">
+                      Action Required
+                    </span>
+                  {% else %}
+                    <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700/30 text-slate-300 border border-slate-700">
+                      Auto-handled
+                    </span>
+                  {% endif %}
+                {% endif %}
+              </div>
+
+              <h1 class="text-2xl md:text-3xl font-semibold text-white leading-tight break-words">
+                {{ ticket.subject }}
+              </h1>
+
+              <div class="mt-2 text-sm text-slate-400 break-words">
+                From: <span class="text-slate-200">{{ ticket.from_email }}</span>
+                {% if ticket.provider %} · Provider: <span class="text-slate-200">{{ ticket.provider }}</span>{% endif %}
+              </div>
+
+              <div class="mt-2 text-xs text-slate-500">
+                Created: <span class="text-slate-200">{{ ticket.created_at }}</span>
+                · Updated: <span class="text-slate-200">{{ ticket.updated_at }}</span>
+                {% if ticket.id %} · ID: <span class="text-slate-200">{{ ticket.id }}</span>{% endif %}
+              </div>
+
+              <!-- AI decision reason -->
+              <div class="mt-4 rounded-xl border border-indigo-400/30 bg-indigo-500/10 px-4 py-3">
+                <div class="text-xs text-indigo-200 font-semibold">InboxIQ decision</div>
+                <div class="mt-1 text-sm text-slate-100">
+                  {{ ticket.ai_reason or "InboxIQ classified this ticket based on intent, urgency, and context." }}
+                </div>
+                <div class="mt-2 text-[11px] text-slate-300">
+                  This is first-line triage. If you override any fields below, your feedback is stored to improve the agent.
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Quick actions -->
+            <div class="shrink-0 w-full lg:w-[360px]">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/55 p-4">
+                <div class="text-sm font-semibold text-slate-100">Quick actions</div>
+                <div class="text-xs text-slate-400 mt-1">Update status, close the ticket, or reassign.</div>
+
+                <form method="post" class="mt-4 space-y-3 ticket-form" data-form-type="quick">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+                  <label class="text-xs text-slate-300 space-y-1 block">
+                    <span>Status</span>
+                    <select name="status" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                      {% for opt in ['new','needs_review','closed'] %}
+                        <option value="{{ opt }}" {% if ticket.status == opt %}selected{% endif %}>
+                          {{ opt.replace('_',' ')|title }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </label>
+
+                  <div class="grid grid-cols-2 gap-2">
+                    <label class="text-xs text-slate-300 space-y-1 block">
+                      <span>Owner</span>
+                      <input name="owner" value="{{ ticket.owner or '' }}"
+                             class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                    </label>
+                    <label class="text-xs text-slate-300 space-y-1 block">
+                      <span>Team</span>
+                      <input name="team" value="{{ ticket.team or '' }}"
+                             class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                    </label>
+                  </div>
+
+                  <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-2 font-semibold shadow-lg shadow-indigo-500/30">
+                    Save changes
+                  </button>
+
+                  <!-- Optional: quick close -->
+                  <button name="status" value="closed" type="submit"
+                          class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-950/40 hover:bg-slate-900 text-slate-200 px-4 py-2 font-semibold">
+                    Close ticket
+                  </button>
+                </form>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Body + Human feedback + Classification editing -->
+        <section class="grid lg:grid-cols-[1.2fr,0.8fr] gap-6">
+
+          <!-- Left column -->
+          <div class="space-y-6">
+
+            <!-- Email body / preview -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/55 p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-sm font-semibold text-slate-100">Email content</div>
+                  <div class="text-xs text-slate-400">What InboxIQ read to make its decision.</div>
+                </div>
+              </div>
+
+              {% if ticket.body_preview %}
+              <div class="mt-4 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-200 whitespace-pre-line">
+                {{ ticket.body_preview }}
+              </div>
+              {% else %}
+              <div class="mt-4 text-xs text-slate-400">
+                No preview available.
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Classification override (training data) -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/55 p-5">
+              <div>
+                <div class="text-sm font-semibold text-slate-100">Human override (training feedback)</div>
+                <div class="text-xs text-slate-400">
+                  If InboxIQ got anything wrong, adjust fields below. Your changes and note will be stored as training feedback.
+                </div>
+              </div>
+
+              <form method="post" class="mt-4 space-y-4 ticket-form" data-form-type="feedback">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+
+                <div class="grid md:grid-cols-2 gap-3">
+                  <label class="text-xs text-slate-300 space-y-1 block">
+                    <span>Priority</span>
+                    <select name="priority" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                      {% for opt in ['P0','P1','P2'] %}
+                        <option value="{{ opt }}" {% if (ticket.priority or '').upper() == opt %}selected{% endif %}>{{ opt }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+
+                  <label class="text-xs text-slate-300 space-y-1 block">
+                    <span>Category</span>
+                    <input name="category" value="{{ ticket.category or '' }}"
+                           class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                  </label>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-3">
+                  <label class="text-xs text-slate-300 space-y-1 block">
+                    <span>Sentiment</span>
+                    <select name="sentiment" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                      {% for opt in ['positive','neutral','negative','frustrated'] %}
+                        <option value="{{ opt }}" {% if (ticket.sentiment or '').lower() == opt %}selected{% endif %}>{{ opt.title() }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+
+                  <label class="text-xs text-slate-300 space-y-1 block">
+                    <span>Intent</span>
+                    <input name="intent" value="{{ (ticket.decision or {}).get('intent','') }}"
+                           class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                  </label>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-3">
+                  <label class="text-xs text-slate-300 space-y-1 block">
+                    <span>Assigned to</span>
+                    <input name="assigned_to" value="{{ ticket.assigned_to or '' }}"
+                           class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                  </label>
+
+                  <label class="text-xs text-slate-300 space-y-1 block">
+                    <span>Action required?</span>
+                    <select name="action_required" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                      <option value="" {% if ticket.action_required is none %}selected{% endif %}>— (no change)</option>
+                      <option value="true" {% if ticket.action_required is sameas true %}selected{% endif %}>Yes</option>
+                      <option value="false" {% if ticket.action_required is sameas false %}selected{% endif %}>No (auto-handle)</option>
+                      <option value="optional" {% if ticket.action_required == 'optional' %}selected{% endif %}>Optional follow-up</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label class="text-xs text-slate-300 space-y-1 block">
+                  <span>Why are you changing this? (required for training)</span>
+                  <textarea name="note" rows="3"
+                            class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                            placeholder="Example: This is a delivery notification, no human action required."></textarea>
+                </label>
+
+                <div class="flex flex-wrap gap-2">
+                  <button type="submit"
+                          class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white px-5 py-2 font-semibold shadow-lg shadow-emerald-500/20">
+                    Save override + log feedback
+                  </button>
+
+                  <button type="submit" name="status" value="{{ ticket.status }}"
+                          class="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/40 hover:bg-slate-900 text-slate-200 px-5 py-2 font-semibold">
+                    Save without changing status
+                  </button>
+                </div>
+
+                <p class="text-[11px] text-slate-500">
+                  Your override and note should be stored as a JSON training example (original AI output → human corrected labels).
+                </p>
+              </form>
+            </div>
+          </div>
+
+          <!-- Right column -->
+          <aside class="space-y-6">
+
+            <!-- AI snapshot -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/55 p-5">
+              <div class="text-sm font-semibold text-slate-100">Current classification</div>
+              <div class="text-xs text-slate-400 mt-1">What InboxIQ currently believes.</div>
+
+              <dl class="mt-4 space-y-2 text-xs">
+                <div class="flex justify-between gap-3"><dt class="text-slate-400">Status</dt><dd class="text-slate-100">{{ ticket.status }}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-slate-400">Priority</dt><dd class="text-slate-100">{{ ticket.priority or 'P2' }}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-slate-400">Category</dt><dd class="text-slate-100">{{ ticket.category or 'general' }}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-slate-400">Sentiment</dt><dd class="text-slate-100">{{ ticket.sentiment or 'neutral' }}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-slate-400">Intent</dt><dd class="text-slate-100">{{ (ticket.decision or {}).get('intent','—') }}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-slate-400">Owner</dt><dd class="text-slate-100">{{ ticket.owner or '—' }}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-slate-400">Team</dt><dd class="text-slate-100">{{ ticket.team or '—' }}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-slate-400">Assigned to</dt><dd class="text-slate-100">{{ ticket.assigned_to or '—' }}</dd></div>
+                {% if ticket.action_required is not none %}
+                  <div class="flex justify-between gap-3">
+                    <dt class="text-slate-400">Action required</dt>
+                    <dd class="text-slate-100">
+                      {% if ticket.action_required is sameas true %}Yes{% elif ticket.action_required is sameas false %}No{% else %}{{ ticket.action_required }}{% endif %}
+                    </dd>
+                  </div>
+                {% endif %}
+              </dl>
+            </div>
+
+            <!-- Human intervention log -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/55 p-5">
+              <div class="text-sm font-semibold text-slate-100">Human intervention log</div>
+              <div class="text-xs text-slate-400 mt-1">Edits stored as training feedback.</div>
+
+              {% if history %}
+                <div class="mt-4 space-y-3">
+                  {% for h in history|reverse %}
+                  <div class="rounded-xl border border-slate-800 bg-slate-950/40 p-3 text-xs">
+                    <div class="flex justify-between gap-2 mb-1">
+                      <span class="font-semibold text-slate-100">{{ h.updated_by or 'Unknown' }}</span>
+                      <span class="text-slate-500">{{ h.updated_at }}</span>
+                    </div>
+                    <div class="text-slate-300">{{ h.note }}</div>
+
+                    <div class="mt-2 text-slate-400 grid grid-cols-2 gap-1">
+                      <span>Status: <span class="text-slate-200">{{ h.status }}</span></span>
+                      <span>Priority: <span class="text-slate-200">{{ h.priority }}</span></span>
+                      <span>Category: <span class="text-slate-200">{{ h.category }}</span></span>
+                      <span>Sentiment: <span class="text-slate-200">{{ h.sentiment }}</span></span>
+                      <span>Intent: <span class="text-slate-200">{{ h.intent }}</span></span>
+                      <span>Owner: <span class="text-slate-200">{{ h.owner }}</span></span>
+                      <span>Team: <span class="text-slate-200">{{ h.team }}</span></span>
+                      <span>Assigned: <span class="text-slate-200">{{ h.assigned_to }}</span></span>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p class="mt-4 text-xs text-slate-400">No human updates yet.</p>
+              {% endif %}
+            </div>
+
+            <!-- Source / debug (optional) -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/45 p-5">
+              <div class="text-sm font-semibold text-slate-100">Source metadata</div>
+              <div class="text-xs text-slate-400 mt-1">Useful for debugging and auditing.</div>
+
+              <dl class="mt-4 space-y-2 text-xs">
+                {% if ticket.message_id %}
+                  <div class="flex justify-between gap-3"><dt class="text-slate-400">Message ID</dt><dd class="text-slate-100">{{ ticket.message_id }}</dd></div>
+                {% endif %}
+                {% if ticket.thread_id %}
+                  <div class="flex justify-between gap-3"><dt class="text-slate-400">Thread ID</dt><dd class="text-slate-100">{{ ticket.thread_id }}</dd></div>
+                {% endif %}
+                {% if ticket.received_at %}
+                  <div class="flex justify-between gap-3"><dt class="text-slate-400">Received</dt><dd class="text-slate-100">{{ ticket.received_at }}</dd></div>
+                {% endif %}
+                {% if ticket.provider %}
+                  <div class="flex justify-between gap-3"><dt class="text-slate-400">Provider</dt><dd class="text-slate-100">{{ ticket.provider }}</dd></div>
+                {% endif %}
+              </dl>
+            </div>
+
+          </aside>
+        </section>
+
+      </div>
+    </main>
+
+    <footer class="border-t border-slate-800 bg-slate-950/85">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-[11px] text-slate-500">
+        <div>© 2025 Kalevent · InboxIQ</div>
+        <div class="text-slate-400">This ticket reflects InboxIQ’s first-line decision. Human overrides are logged for audit and model training.</div>
+      </div>
+      {% include 'partials/feedback_footer.html' %}
+    </footer>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
+  <script>
+    // Attach CSRF header for ticket forms to satisfy JWT cookie CSRF protection in production.
+    (function() {
+      function readCookie(name) {
+        const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return m ? decodeURIComponent(m[2]) : '';
+      }
+      const forms = document.querySelectorAll('form.ticket-form');
+      forms.forEach((form) => {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const formData = new FormData(form);
+          // Prefer csrf_access_token; fall back to csrf_refresh_token if needed.
+          const csrf = readCookie('csrf_access_token') || readCookie('csrf_refresh_token') || formData.get('csrf_token') || '';
+          const path = window.location.pathname;
+          fetch(path, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'X-CSRF-TOKEN': csrf,
+            },
+            body: new URLSearchParams(formData),
+          }).then((res) => {
+            if (res.redirected) {
+              window.location.href = res.url;
+              return;
+            }
+            if (res.ok) {
+              window.location.reload();
+            } else {
+              res.text().then((txt) => {
+                console.error('Save failed', res.status, txt);
+                alert('Save failed (' + res.status + '). Please refresh and try again.');
+              });
+            }
+          }).catch((err) => {
+            console.error('Save error', err);
+            alert('Save failed. Please refresh and try again.');
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

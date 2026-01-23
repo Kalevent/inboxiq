@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng-settings
+  namespace: kaley
+data:
+  settings.yml: |
+    use_default_settings: true
+    general:
+      instance_name: "ranger-search"
+    server:
+      port: 8080
+      bind_address: 0.0.0.0
+      base_url: "http://searxng.kaley.svc.cluster.local:8000/"
+      secret_key: "change-me-change-me-change-me"
+      limiter: false
+      public: true
+      image_proxy: false
+      method: "GET"
+      allowed_hosts:
+        - "searxng.kaley.svc.cluster.local"
+        - "localhost"
+        - "127.0.0.1"
+        - "::1"
+    ui:
+      static_use_hash: false
+    search:
+      safe_search: 0
+      autocomplete: ""
+      default_lang: "en"
+      formats:
+        - html
+        - json
+    botdetection:
+      enabled: false
+    outgoing:
+      useragent: "Mozilla/5.0 (compatible; inboxiq-search/1.0)"
+      request_timeout: 5.0
+    engines:
+      - name: duckduckgo
+        engine: duckduckgo
+        shortcut: ddg
+      - name: brave
+        engine: brave
+        shortcut: br
+      - name: wikipedia
+        engine: wikipedia
+        shortcut: wp
+    plugins: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searxng
+  namespace: kaley
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: searxng
+  template:
+    metadata:
+      labels:
+        app: searxng
+    spec:
+      containers:
+      - name: searxng
+        image: searxng/searxng:latest
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: searxng-settings
+          mountPath: /etc/searxng/settings.yml
+          subPath: settings.yml
+      volumes:
+      - name: searxng-settings
+        configMap:
+          name: searxng-settings
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: searxng
+  namespace: kaley
+spec:
+  selector:
+    app: searxng
+  ports:
+  - port: 8000
+    targetPort: 8080
+    protocol: TCP

@@ -1,0 +1,123 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Operations Intake Automation: Unified Ops Requests | Kalevent{% endblock %}
+{% block meta_description %}
+Operations intake automation playbook to centralise internal requests, approvals, and alerts with one pre-human triage layer that assigns ownership, suppresses duplicates, and keeps SLAs on track.
+{% endblock %}
+{% block canonical %}{{ url_for('playbook_ops', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-18">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      InboxIQ Playbook • Operations Intake Automation
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Operations Intake Automation: Zero Lost Requests, Clear Ownership
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      Internal requests, approvals, and alerts arrive via email, chat, and tools—then disappear. A unified ops intake layer centralises every signal, assigns ownership, and keeps an audit trail so nothing slips.
+    </p>
+    <div class="cta-row mt-2 mb-8">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        See the InboxIQ demo
+      </a>
+      <a href="{{ url_for('playbook') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Unified support triage pillar
+      </a>
+    </div>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Why Ops Intake Breaks</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Requests scatter across tools</h3>
+        <p class="text-slate-200 leading-relaxed">Email, chat, forms, and ticket tools create parallel queues with no shared logic.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Approvals stall</h3>
+        <p class="text-slate-200 leading-relaxed">Urgent approvals hide in inboxes, causing delays and operational risk.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">No audit trail</h3>
+        <p class="text-slate-200 leading-relaxed">Why something was routed, suppressed, or escalated is undocumented.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">What Is Operations Intake Automation?</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">One intake layer for internal ops</h3>
+        <p class="text-slate-200 leading-relaxed">All requests and alerts flow into a single triage brain before humans see them.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Consistent rules across channels</h3>
+        <p class="text-slate-200 leading-relaxed">Intent, urgency, and ownership apply the same way to email, chat, forms, and webhooks.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Auditable routing and suppression</h3>
+        <p class="text-slate-200 leading-relaxed">Every decision—route, suppress, escalate—is logged with rationale.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works" class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">How Unified Ops Intake Works</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Connect internal sources</h3>
+        <p class="text-slate-200 leading-relaxed">Ingest IT/HR/access requests, system alerts, and approvals via email and webhooks.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Define ownership and urgency</h3>
+        <p class="text-slate-200 leading-relaxed">Map request types to owners, SLAs, and escalation rules.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Route, suppress, and escalate</h3>
+        <p class="text-slate-200 leading-relaxed">Send critical items to the right team immediately; suppress duplicates and noise.</p>
+      </div>
+    </div>
+    <p class="text-slate-200 leading-relaxed">Outcome: zero lost requests, faster approvals, and clear accountability.</p>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Ops Outcomes You Can Measure</h2>
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">No lost requests</h3>
+        <p class="text-slate-200 leading-relaxed">Everything is captured and tagged before it hits inboxes.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Approvals move faster</h3>
+        <p class="text-slate-200 leading-relaxed">Escalations trigger immediately with SLA awareness.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Clear ownership</h3>
+        <p class="text-slate-200 leading-relaxed">Each request has a named owner and a tracked path.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit-ready trail</h3>
+        <p class="text-slate-200 leading-relaxed">Know why each item was routed, suppressed, or escalated.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-card space-y-4 marketing-section">
+    <h2 class="text-2xl font-semibold text-white">Implementing Ops Intake with InboxIQ</h2>
+    <p class="text-slate-200 leading-relaxed">
+      InboxIQ unifies ops intake: one layer to classify, prioritise, assign, and log every internal request or alert—so operations stay predictable.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        See the unified intake demo
+      </a>
+      <a href="{{ url_for('playbook') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Back to support triage pillar
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}

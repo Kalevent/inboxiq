@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Guided Setup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="/onboarding" class="flex items-center gap-2 hover:opacity-90">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">
+            KI
+          </div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – AI Support Agent</div>
+          </div>
+        </a>
+        <div class="flex items-center gap-4 text-sm text-slate-300">
+          <a href="/dashboard" class="hover:text-white">Dashboard</a>
+          <a href="/" class="hover:text-white">← Back to site</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 py-10 lg:py-14">
+        <div class="mb-6">
+          <p class="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full border border-indigo-400/40 bg-indigo-500/10 text-indigo-200">
+            Step 1 of onboarding
+          </p>
+          <h1 class="text-3xl font-semibold mt-3">Let’s set up your AI Support Agent</h1>
+          <p class="text-sm text-slate-300 mt-2 max-w-2xl">
+            Complete these steps to finish onboarding. We’ll unlock the next step after you finish the previous one.
+          </p>
+        </div>
+
+        <div class="grid gap-4">
+          <div id="step1Card" class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs text-indigo-200 font-semibold mb-1">Step 1</p>
+                <h2 class="text-lg font-semibold text-slate-50">Connect your support inbox</h2>
+                <p class="text-sm text-slate-300 mt-1">Gmail · Outlook · Custom IMAP. This unlocks routing and triage.</p>
+                <p id="step1Status" class="text-xs text-emerald-300 mt-2 hidden">Inbox connected. You can move on to categories.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="step1Badge" class="hidden text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-200 border border-emerald-400/30">Connected</span>
+                <button id="connectInboxBtn" type="button" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">
+                  Connect Inbox
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="step2Card" class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 opacity-80">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs text-slate-400 font-semibold mb-1">Step 2</p>
+                <h2 class="text-lg font-semibold text-slate-200">Choose your categories</h2>
+                <p class="text-sm text-slate-400 mt-1">Billing, Bugs, Onboarding, General — we’ll suggest defaults after inbox connect.</p>
+                <p id="step2Status" class="text-xs text-emerald-300 mt-2 hidden">Categories saved. Ready to preview AI triage.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="step2Badge" class="hidden text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-200 border border-emerald-400/30">Saved</span>
+                <button id="saveCategoriesBtn" type="button" class="px-4 py-2 rounded-xl border border-slate-700 text-sm font-semibold text-slate-200 opacity-80 cursor-not-allowed">
+                  Save categories
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="step3Card" class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 opacity-60">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs text-slate-500 font-semibold mb-1">Step 3</p>
+                <h2 class="text-lg font-semibold text-slate-300">Preview your first AI triage</h2>
+                <p class="text-sm text-slate-500 mt-1">Upload sample emails or fetch the last 5 messages to test triage.</p>
+                <p id="step3Status" class="text-xs text-emerald-300 mt-2 hidden">Triage complete. Go to dashboard →</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="step3Badge" class="hidden text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-200 border border-emerald-400/30">Completed</span>
+                <button id="runTriageBtn" type="button" class="px-4 py-2 rounded-xl border border-slate-800 text-sm font-semibold text-slate-400 opacity-60 cursor-not-allowed">
+                  Run first triage
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-500 mt-6">
+          Completing Step 1 unlocks Steps 2 and 3. We’ll guide you through each screen.
+        </p>
+        <div class="mt-6">
+          <a
+            id="goDashboardBtn"
+            href="/dashboard"
+            role="button"
+            tabindex="0"
+            class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-sm font-semibold text-white transition cursor-pointer"
+          >
+            Go to dashboard →
+          </a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Connect inbox modal -->
+  <div id="connectModal" class="fixed inset-0 z-40 items-center justify-center modal-hidden">
+    <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+    <div class="relative z-10 max-w-2xl mx-auto mt-16 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/20">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+        <div>
+          <p class="text-xs text-indigo-200 font-semibold">Step 1 · Connect inbox</p>
+          <h3 class="text-lg font-semibold text-slate-50">Choose how to connect</h3>
+        </div>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <form id="connectForm" class="p-5 space-y-4">
+        <div class="grid sm:grid-cols-3 gap-3">
+          <label class="block rounded-xl border border-slate-800 bg-slate-900/70 p-3 cursor-pointer hover:border-indigo-400/60">
+            <input type="radio" name="provider" value="gmail" class="sr-only" checked />
+            <div class="text-sm font-semibold text-slate-50">Gmail</div>
+            <p class="text-xs text-slate-400 mt-1">OAuth sign-in for Google Workspace.</p>
+          </label>
+          <label class="block rounded-xl border border-slate-800 bg-slate-900/70 p-3 cursor-pointer hover:border-indigo-400/60">
+            <input type="radio" name="provider" value="outlook" class="sr-only" />
+            <div class="text-sm font-semibold text-slate-50">Outlook / 365</div>
+            <p class="text-xs text-slate-400 mt-1">OAuth sign-in for Microsoft.</p>
+          </label>
+          <label class="block rounded-xl border border-slate-800 bg-slate-900/70 p-3 cursor-pointer hover:border-indigo-400/60">
+            <input type="radio" name="provider" value="imap" class="sr-only" />
+            <div class="text-sm font-semibold text-slate-50">Custom IMAP</div>
+            <p class="text-xs text-slate-400 mt-1">Bring any IMAP inbox.</p>
+          </label>
+        </div>
+
+        <div id="imapFields" class="space-y-3 hidden">
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-sm text-slate-200">IMAP host</label>
+              <input type="text" id="imapHost" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="imap.example.com" />
+            </div>
+            <div>
+              <label class="text-sm text-slate-200">Port</label>
+              <input type="number" id="imapPort" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="993" />
+            </div>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label class="text-sm text-slate-200">Username</label>
+              <input type="text" id="imapUser" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="you@company.com" />
+            </div>
+            <div>
+              <label class="text-sm text-slate-200">Password</label>
+              <input type="password" id="imapPass" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="••••••••" />
+            </div>
+          </div>
+        </div>
+
+        <div id="connectStatus" class="text-sm text-slate-300 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 hidden"></div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" id="cancelConnect" class="px-4 py-2 rounded-xl border border-slate-700 text-sm font-semibold text-slate-200 hover:bg-slate-800">
+            Cancel
+          </button>
+          <button type="submit" id="submitConnect" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">
+            Connect inbox
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Categories modal -->
+  <div id="categoriesModal" class="fixed inset-0 z-40 items-center justify-center modal-hidden">
+    <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+    <div class="relative z-10 max-w-2xl mx-auto mt-16 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/20">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+        <div>
+          <p class="text-xs text-indigo-200 font-semibold">Step 2 · Categories</p>
+          <h3 class="text-lg font-semibold text-slate-50">What type of messages do you get?</h3>
+          <p class="text-xs text-slate-400 mt-1">Based on similar accounts, we recommend Billing, Refunds, Technical, Complaints.</p>
+        </div>
+        <button id="closeCategories" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <form id="categoriesForm" class="p-5 space-y-4">
+        <div class="grid sm:grid-cols-2 gap-3">
+          {% set default_cats = ['Billing','Bugs','Refunds','Feature Requests','Sales Leads','Customer Complaints'] %}
+          {% for cat in default_cats %}
+          <label class="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 cursor-pointer hover:border-indigo-400/60">
+            <input type="checkbox" name="categories" value="{{ cat }}" class="h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-500" {% if cat in ['Billing','Refunds','Customer Complaints'] %}checked{% endif %}/>
+            <span class="text-sm text-slate-100">{{ cat }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div id="categoriesStatus" class="text-sm text-slate-300 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 hidden"></div>
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" id="cancelCategories" class="px-4 py-2 rounded-xl border border-slate-700 text-sm font-semibold text-slate-200 hover:bg-slate-800">Cancel</button>
+          <button type="submit" id="submitCategories" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">Save & continue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Triage modal -->
+  <div id="triageModal" class="fixed inset-0 z-40 items-center justify-center modal-hidden">
+    <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+    <div class="relative z-10 max-w-3xl mx-auto mt-16 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/20">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+        <div>
+          <p class="text-xs text-indigo-200 font-semibold">Step 3 · AI triage</p>
+          <h3 class="text-lg font-semibold text-slate-50">See your AI agent in action</h3>
+          <p class="text-xs text-slate-400 mt-1">Use last 3 emails or sample emails to preview ticketing.</p>
+        </div>
+        <button id="closeTriage" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+          <div class="text-sm font-semibold text-slate-100 mb-2">Prompt</div>
+          <ul class="text-xs text-slate-300 space-y-1">
+            <li>• Option A: Use last 3 real emails from their inbox</li>
+            <li>• Option B: Use sample emails provided by InboxIQ</li>
+          </ul>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-3 text-sm text-slate-200">
+          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <div class="font-semibold mb-2">Email #1</div>
+            <p class="text-xs text-slate-300">Category: Billing</p>
+            <p class="text-xs text-slate-300">Priority: High</p>
+            <p class="text-xs text-slate-300">Sentiment: Frustrated</p>
+            <p class="text-xs text-slate-300">Ticket created → #8831</p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <div class="font-semibold mb-2">Email #2</div>
+            <p class="text-xs text-slate-300">Category: Feature Request</p>
+            <p class="text-xs text-slate-300">Sentiment: Neutral</p>
+            <p class="text-xs text-slate-300">Ticket created → #8832</p>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+          <div class="font-semibold text-sm text-slate-100 mb-2">Before → After comparison</div>
+          <div class="grid md:grid-cols-2 gap-3 text-xs text-slate-300">
+            <div>
+              <div class="font-semibold text-slate-200">Before</div>
+              <p>Email in raw text</p>
+            </div>
+            <div>
+              <div class="font-semibold text-slate-200">After</div>
+              <p>AI-enriched ticket with metadata</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="triageStatus" class="text-sm text-emerald-200 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 hidden">
+          Triage complete! Redirecting to dashboard…
+        </div>
+
+        <div class="flex items-center justify-end gap-3">
+          <button id="runTriageConfirm" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">
+            Run triage & finish
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

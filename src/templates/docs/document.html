@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title or "Documentation" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='docs/css/docs.css') }}">
+</head>
+<body>
+  <div class="docs-container">
+    <aside class="docs-sidebar">
+{% set has_token = request.cookies.get('access_token_cookie') %}
+{% set home_link = '/dashboard' if has_token else url_for('root') %}
+      <div class="docs-logo">
+        <a href="{{ home_link }}">
+          <img src="{{ url_for('static', filename='favicon.svg') }}" alt="InboxIQ logo">
+          <span>InboxIQ Docs</span>
+        </a>
+      </div>
+      <nav class="docs-nav">
+        <div class="docs-nav-section">
+          <div class="docs-nav-section-title">Guides</div>
+          <ul class="docs-nav-list">
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='index' %}active{% endif %}" href="{{ url_for('docs.docs_index') }}">User Guide</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='users_guide' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='users_guide') }}">InboxIQ User Guide</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='inboxiq_dashboard_user_guide' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='inboxiq_dashboard_user_guide') }}">Dashboard Guide</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='invite_teammates' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='invite_teammates') }}">Invite teammates</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link" href="{{ url_for('docs.docs_page', doc_name='service_integrations') }}">Integrations</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='intake_api' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='intake_api') }}">Intake API</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='channel_intake_guide' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='channel_intake_guide') }}">Channel intake guide</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='feedback_api' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='feedback_api') }}">Feedback API</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='security_auth' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='security_auth') }}">Security (Passkeys & 2FA)</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='publishing_brief_templates' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='publishing_brief_templates') }}">Publishing brief templates</a></li>
+          </ul>
+        </div>
+        <div class="docs-nav-section">
+          <div class="docs-nav-section-title">Resources</div>
+          <ul class="docs-nav-list">
+            <li class="docs-nav-item"><a class="docs-nav-link" href="{{ url_for('docs.docs_search') }}">Search</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="docs-main">
+      <header class="docs-header">
+        <div class="docs-header-left">
+          <a href="{{ home_link }}" class="docs-header-logo">
+            <img src="{{ url_for('static', filename='favicon.svg') }}" alt="InboxIQ logo">
+            <span class="docs-header-title">InboxIQ Documentation</span>
+          </a>
+          <div class="docs-version-selector">
+            <span class="docs-version-link">v1.0</span>
+          </div>
+        </div>
+        <form class="docs-search" action="{{ url_for('docs.docs_search') }}" method="get">
+          <svg class="docs-search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+          </svg>
+          <input class="docs-search-input" type="text" name="q" placeholder="Search InboxIQ docs" value="{{ request.args.get('q', '') }}">
+        </form>
+        <div class="docs-header-right">
+          <a class="docs-header-link" href="{{ url_for('root') }}">App Home</a>
+          <a class="docs-header-link docs-sign-in" href="{{ url_for('login_page') }}">Log in</a>
+        </div>
+      </header>
+
+      <main class="docs-content">
+        <article class="docs-article">
+          <h1>{{ title or doc_name }}</h1>
+          <div class="docs-body-with-toc">
+            <div class="docs-content-body" id="docsContent">
+              {{ content }}
+            </div>
+            <aside class="docs-toc-panel">
+              <div class="docs-toc-title">On this page</div>
+              <nav id="docsTocNav" class="docs-toc-list"></nav>
+              {% if related_docs %}
+              <div class="docs-related">
+                <div class="docs-toc-title">Related</div>
+                <ul>
+                  {% for doc in related_docs %}
+                    <li><a href="{{ url_for('docs.docs_page', doc_name=doc['id']) }}">{{ doc['title'] }}</a></li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
+            </aside>
+          </div>
+        </article>
+      </main>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='docs/js/toc.js') }}"></script>
+</body>
+</html>

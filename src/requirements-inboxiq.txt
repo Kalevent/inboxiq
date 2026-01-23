@@ -1,0 +1,23 @@
+# Minimal deps for InboxIQ thin slice
+Flask==3.1.0
+Flask-SQLAlchemy==3.0.3
+Flask-Migrate==4.0.4
+psycopg2-binary==2.9.9
+gunicorn==21.2.0
+celery==5.3.6
+python-dotenv==1.2.1
+PyJWT==2.10.1
+Flask-JWT-Extended==4.6.0
+Flask-Caching==2.3.1
+redis==5.0.8
+Flask-Limiter==3.8.0
+argon2-cffi==23.1.0
+Flask-Cors==5.0.0
+bleach==6.1.0
+requests==2.32.3
+aiohttp==3.9.1
+markdown==3.7
+fastmcp==2.13.1
+stripe==11.1.1
+pyotp==2.9.0
+webauthn==1.11.1
