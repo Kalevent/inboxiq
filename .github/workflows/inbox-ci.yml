@@ -97,7 +97,17 @@ jobs:
             echo "HEALTHCHECK_URL not set; skipping."
             exit 0
           fi
-          curl -fsS "${HEALTHCHECK_URL}" > /dev/null
+          echo "Waiting for service to become healthy..."
+          for i in {1..10}; do
+            if curl -fsS "${HEALTHCHECK_URL}" > /dev/null; then
+              echo "Health check passed."
+              exit 0
+            fi
+            echo "Health check attempt ${i} failed; retrying in 10s."
+            sleep 10
+          done
+          echo "Health check failed after retries."
+          exit 1
 
       - name: Verify deployed images
         run: |
