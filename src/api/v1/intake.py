@@ -109,9 +109,11 @@ def intake():
         "from_email": from_email,
         "body": body or payload.get("summary", ""),
         "provider": provider,
+        "source": payload.get("source") or provider,
         "provider_thread_url": thread_url,
         "message_id": payload.get("message_id"),
         "received_at": payload.get("received_at"),
+        "context": payload.get("context"),
     }
 
     decision = triage_email(triage_input, account_id=account_id)

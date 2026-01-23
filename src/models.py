@@ -180,6 +180,31 @@ class TicketEmbedding(db.Model):
         }
 
 
+class TriageLabelConfig(db.Model):
+    """
+    Configurable label sets for DSPy triage (optionally account-scoped).
+    """
+    __tablename__ = "triage_label_configs"
+    __table_args__ = (db.Index("ix_triage_label_configs_account", "account_id"),)
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=True)
+    name = db.Column(db.String(128), nullable=False, default="default")
+    labels = db.Column(db.JSON, nullable=False, default=dict)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "name": self.name,
+            "labels": self.labels or {},
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 class AuthEvent(db.Model):
     """
     Authentication events: login attempts, password resets, JWT refresh failures, etc.

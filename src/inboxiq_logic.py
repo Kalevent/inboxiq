@@ -141,6 +141,11 @@ QUESTION_STARTERS = [
     "please",
     "help",
 ]
+def _env_bool(name: str, default: bool = False) -> bool:
+    val = os.getenv(name)
+    if val is None:
+        return default
+    return val.lower() in ("1", "true", "yes", "on")
 
 
 @dataclass
@@ -212,6 +217,51 @@ def _extract_last_question(text: str) -> str | None:
     parts = re.split(r"(?<=[?])\s+", text.strip())
     questions = [p for p in parts if p.strip().endswith("?")]
     return questions[-1].strip() if questions else None
+
+
+def _normalize_choice(value: str | None, allowed: list[str], default: str) -> str:
+    if not value:
+        return default
+    cleaned = str(value).strip()
+    if not cleaned:
+        return default
+    lowered = cleaned.lower()
+    for entry in allowed:
+        if lowered == str(entry).lower():
+            return str(entry)
+    return default
+
+
+def _normalize_priority(value: str | None, allowed: list[str]) -> str:
+    if not value:
+        return allowed[2] if len(allowed) > 2 else (allowed[0] if allowed else "P2")
+    cleaned = str(value).strip().upper()
+    if cleaned in [str(a).upper() for a in allowed]:
+        return cleaned
+    if cleaned in {"0", "P0", "CRITICAL", "URGENT", "HIGH"}:
+        return "P0"
+    if cleaned in {"1", "P1"}:
+        return "P1"
+    if cleaned in {"2", "P2", "MEDIUM"}:
+        return "P2"
+    if cleaned in {"3", "P3", "LOW"}:
+        return "P3"
+    return "P2"
+
+
+def _normalize_action_required(value: object | None) -> bool | str | None:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return None
+    lowered = str(value).strip().lower()
+    if lowered in ("true", "yes", "required", "action_required", "action required"):
+        return True
+    if lowered in ("false", "no", "auto", "informational", "auto_handled", "auto-handled"):
+        return False
+    if lowered in ("optional", "maybe"):
+        return "optional"
+    return None
 
 
 def _detect_intent(text: str) -> Tuple[str, List[str]]:
@@ -490,6 +540,7 @@ def normalize_email_payload(data: Dict[str, Any]) -> Dict[str, Any]:
         digest = hashlib.sha1(f"{from_email}-{subject}-{body}".encode("utf-8")).hexdigest()
         message_id = f"msg-{digest}"
     provider = data.get("provider") or data.get("source") or "unknown"
+    source = data.get("source") or data.get("provider") or "unknown"
     provider_thread_url = data.get("provider_thread_url") or data.get("thread_url")
     return {
         "subject": subject,
@@ -497,6 +548,7 @@ def normalize_email_payload(data: Dict[str, Any]) -> Dict[str, Any]:
         "body": body,
         "message_id": message_id,
         "provider": provider,
+        "source": source,
         "provider_thread_url": provider_thread_url,
         "received_at": data.get("received_at"),
     }
@@ -509,35 +561,6 @@ def triage_email(email: Dict[str, Any], account_id: int | None = None) -> Triage
     from_email = normalized.get("from_email", "").lower()
 
     override_hint = _manual_override_hint(from_email, account_id)
-    if override_hint is None and _is_promo_email(normalized["subject"], normalized["body"], from_email):
-        category = "general"
-        intent = "general"
-        priority = "P3"
-        sentiment = "neutral"
-        team = _assign_team(category)
-        owner = _assign_owner(category)
-        assigned_to = _assign_owner_name(team)
-        decision_trace = ["promo_guardrail"]
-        action_required = False
-        return TriageDecision(
-            category=category,
-            priority=priority,
-            sentiment=sentiment,
-            entities={},
-            confidence={"category": 0.6, "priority": 0.6, "sentiment": 0.4},
-            needs_review=False,
-            decision_trace=decision_trace,
-            summary=(normalized.get("snippet") or normalized.get("body") or "")[:280],
-            last_question=_extract_last_question(normalized.get("body") or ""),
-            intent=intent,
-            risk_flag=False,
-            owner=owner,
-            team=team,
-            assigned_to=assigned_to,
-            similar_feedback=[],
-            action_required=action_required,
-            ai_reason=_reason_text(action_required, "promo_guardrail"),
-        )
 
     decision_trace: List[str] = []
     similar_feedback = []
@@ -549,6 +572,99 @@ def triage_email(email: Dict[str, Any], account_id: int | None = None) -> Triage
             decision_trace.append(f"similar_feedback:{similar_feedback[0]['score']}")
     except Exception as exc:
         logging.getLogger(__name__).warning("similar feedback lookup failed: %s", exc)
+
+    if _env_bool("DSPY_ENABLED", False):
+        try:
+            from src.dspy_triage import run_dspy_triage
+            from src.triage_labels import get_triage_labels
+
+            label_config = get_triage_labels(account_id)
+            categories = label_config.get("categories", [])
+            priorities = label_config.get("priorities", [])
+            sentiments = label_config.get("sentiments", [])
+            intents = label_config.get("intents", [])
+
+            dspy_context = {"labels": label_config}
+            if similar_feedback:
+                dspy_context["similar_feedback"] = similar_feedback[:1]
+            extra_context = email.get("context") or email.get("metadata") or email.get("payload_context")
+            if extra_context:
+                dspy_context["payload_context"] = extra_context
+
+            dspy_result = run_dspy_triage(normalized, context=dspy_context or None, labels=label_config)
+            decision_trace.append("dspy")
+
+            category = _normalize_choice(dspy_result.get("category"), categories, (categories[0] if categories else "general"))
+            priority = _normalize_priority(dspy_result.get("priority"), priorities)
+            sentiment = _normalize_choice(dspy_result.get("sentiment"), sentiments, (sentiments[0] if sentiments else "neutral"))
+            intent = _normalize_choice(dspy_result.get("intent"), intents, (intents[0] if intents else "general"))
+            action_required = _normalize_action_required(dspy_result.get("action_required"))
+            ai_reason = (dspy_result.get("ai_reason") or "").strip() or None
+
+            team = (dspy_result.get("team") or "").strip() or None
+            owner = (dspy_result.get("owner") or "").strip() or None
+            assigned_to = (dspy_result.get("assigned_to") or "").strip() or None
+
+            if override_hint:
+                category = override_hint.get("category") or category
+                intent = override_hint.get("intent") or intent
+                priority = override_hint.get("priority") or priority
+                sentiment = override_hint.get("sentiment") or sentiment
+                decision_trace.append(f"manual_override_hint:{override_hint.get('source')}")
+
+            is_vip = any(v in from_email for v in VIP_EMAILS) if VIP_EMAILS else False
+            if is_vip:
+                decision_trace.append("vip_sender")
+                priority = "P0"
+
+            if not team:
+                team = _assign_team(intent or category)
+            if not owner:
+                owner = _assign_owner(category)
+            if not assigned_to:
+                assigned_to = _assign_owner_name(team)
+
+            action_required_override = override_hint.get("action_required") if override_hint else None
+            if action_required_override is not None:
+                action_required = action_required_override
+                decision_trace.append("manual_override_action_required")
+
+            if action_required is None:
+                action_required = "optional"
+                decision_trace.append("dspy_action_required_missing")
+
+            risk_flag = priority == "P0" or sentiment == "negative" or is_vip
+            entities = _extract_entities(normalized["body"])
+            if entities.get("order_ids"):
+                decision_trace.append(f"order_ids:{','.join(entities['order_ids'])}")
+            if entities.get("customer_ids"):
+                decision_trace.append(f"customer_ids:{','.join(entities['customer_ids'])}")
+
+            confidence = {"category": 0.55, "priority": 0.55, "sentiment": 0.55}
+            needs_review = False if action_required is not None else True
+
+            return TriageDecision(
+                category=category,
+                priority=priority,
+                sentiment=sentiment,
+                entities=entities,
+                confidence=confidence,
+                needs_review=needs_review,
+                decision_trace=decision_trace,
+                summary=(normalized.get("snippet") or normalized.get("body") or "")[:280],
+                last_question=_extract_last_question(normalized.get("body") or ""),
+                intent=intent,
+                risk_flag=risk_flag,
+                owner=owner,
+                team=team,
+                assigned_to=assigned_to,
+                similar_feedback=similar_feedback,
+                action_required=action_required,
+                ai_reason=ai_reason or _reason_text(action_required, "dspy"),
+            )
+        except Exception as exc:
+            logging.getLogger(__name__).warning("dspy triage failed, falling back: %s", exc)
+            decision_trace.append("dspy_failed")
 
     category, cat_conf, cat_hits = _classify_category(text)
     if cat_hits:

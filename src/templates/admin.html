@@ -145,6 +145,38 @@
 
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
               <div class="flex items-center justify-between mb-2">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">DSPy Eval</h2>
+                  <p class="text-xs text-slate-400">Manual overrides evaluation snapshot.</p>
+                </div>
+              </div>
+              <ul id="dspyEval" class="text-sm text-slate-200 space-y-1"></ul>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 md:col-span-2">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Triage Labels</h2>
+                  <p class="text-xs text-slate-400">Configure DSPy label sets without redeploys.</p>
+                </div>
+                <button
+                  id="saveTriageLabelsBtn"
+                  class="inline-flex items-center gap-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-sm font-semibold text-white"
+                >
+                  Save labels
+                </button>
+              </div>
+              <div id="triageLabelsStatus" class="text-xs text-slate-300 mb-2 hidden"></div>
+              <textarea
+                id="triageLabelsInput"
+                class="w-full min-h-[200px] rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs text-slate-100 font-mono"
+                spellcheck="false"
+              ></textarea>
+              <p class="text-xs text-slate-400 mt-2">JSON with keys: categories, priorities, sentiments, intents, action_required, teams.</p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div class="flex items-center justify-between mb-2">
                 <h2 class="text-lg font-semibold text-slate-100">Blog / SEO</h2>
               </div>
               <ul id="blogMetrics" class="text-sm text-slate-200 space-y-1"></ul>

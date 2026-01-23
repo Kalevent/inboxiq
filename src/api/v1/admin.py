@@ -6,7 +6,7 @@ from sqlalchemy import func, desc, or_, cast, text
 
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import User, Account, Ticket, InboxConnection, Lead
+from src.models import User, Account, Ticket, InboxConnection, Lead, TriageLabelConfig
 from src.api.v1.testimonials import generate_testimonial_token
 from src.billing.emailing import _send_email
 
@@ -500,6 +500,72 @@ def admin_lead_sourcing():
             "avg_read_time_minutes": float(avg_read_time) if avg_read_time else None,
         }
     )
+
+
+@v1.route("/admin/dspy-eval", methods=["GET"])
+@jwt_required()
+def admin_dspy_eval():
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+    try:
+        from src.dspy_eval import evaluate
+
+        limit = min(max(int(request.args.get("limit", 200)), 1), 500)
+        account_id = request.args.get("account_id")
+        account_val = int(account_id) if account_id else None
+        metrics = evaluate(limit=limit, account_id=account_val)
+        return jsonify({"metrics": metrics, "limit": limit, "account_id": account_val})
+    except Exception as exc:
+        current_app.logger.exception("admin_dspy_eval_failed", exc_info=exc)
+        return jsonify({"error": "admin_dspy_eval_failed"}), 200
+
+
+@v1.route("/admin/triage-labels", methods=["GET", "POST"])
+@jwt_required()
+def admin_triage_labels():
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    if request.method == "GET":
+        account_id = request.args.get("account_id")
+        account_val = int(account_id) if account_id else None
+        try:
+            query = TriageLabelConfig.query
+            if account_val is not None:
+                cfg = (
+                    query.filter(TriageLabelConfig.account_id == account_val)
+                    .order_by(TriageLabelConfig.updated_at.desc())
+                    .first()
+                )
+                if cfg:
+                    return jsonify({"config": cfg.to_dict()})
+            global_cfg = (
+                query.filter(TriageLabelConfig.account_id.is_(None))
+                .order_by(TriageLabelConfig.updated_at.desc())
+                .first()
+            )
+            if global_cfg:
+                return jsonify({"config": global_cfg.to_dict()})
+        except Exception as exc:
+            current_app.logger.warning("triage labels unavailable: %s", exc)
+        return jsonify({"config": None})
+
+    payload = request.get_json(silent=True) or {}
+    labels = payload.get("labels")
+    if not isinstance(labels, dict):
+        return jsonify({"error": "labels_required"}), 400
+    account_id = payload.get("account_id")
+    account_val = int(account_id) if account_id is not None else None
+    name = (payload.get("name") or "default").strip()[:128] or "default"
+
+    try:
+        from src.triage_labels import save_triage_labels
+
+        return jsonify({"config": save_triage_labels(account_val, labels, name=name)})
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.warning("triage labels save failed: %s", exc)
+        return jsonify({"error": "triage_labels_storage_unavailable"}), 503
 
 
 @v1.route("/admin/actions/invite-testimonial", methods=["POST"])

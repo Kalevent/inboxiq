@@ -15,7 +15,7 @@ argon2-cffi==23.1.0
 Flask-Cors==5.0.0
 bleach==6.1.0
 requests==2.32.3
-aiohttp==3.9.1
+aiohttp==3.13.3
 markdown==3.7
 fastmcp==2.13.1
 stripe==11.1.1

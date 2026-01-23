@@ -1,6 +1,7 @@
 # Channel Intake Guide (Hotline, Outlook, Facebook)
 
-How customers can send voice, email, and social messages into InboxIQ using the existing Intake API or the shim—no app changes required.
+Unified support intake means InboxIQ accepts support requests from any channel—email, IVR/phone, chat, forms, social messages, and CRM events—and normalizes them into one triage pipeline with consistent dedupe, routing, and SLA handling.
+This guide shows how to connect those channels using the Intake API or the shim—no app changes required.
 
 ## Principles (must-follow)
 - Use a stable `message_id` + `provider` per platform event to dedupe (e.g., call SID, FB message ID).

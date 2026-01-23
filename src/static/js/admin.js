@@ -15,15 +15,22 @@ function renderList(id, items) {
   });
 }
 
+function formatPct(value) {
+  if (value === null || value === undefined) return "n/a";
+  return `${Math.round(value * 100)}%`;
+}
+
 async function loadAdmin() {
   try {
-    const [adoption, tickets, integrations, billing, security, agentHealth, blogMetrics, leadSourcing] = await Promise.all([
+    const [adoption, tickets, integrations, billing, security, agentHealth, dspyEval, triageLabels, blogMetrics, leadSourcing] = await Promise.all([
       fetchJSON("/api/v1/admin/adoption"),
       fetchJSON("/api/v1/admin/tickets"),
       fetchJSON("/api/v1/admin/integrations"),
       fetchJSON("/api/v1/admin/billing"),
       fetchJSON("/api/v1/admin/security"),
       fetchJSON("/api/v1/admin/agent-health"),
+      fetchJSON("/api/v1/admin/dspy-eval?limit=50"),
+      fetchJSON("/api/v1/admin/triage-labels").catch(() => ({ config: { labels: {} } })),
       fetchJSON("/api/v1/admin/blog-metrics"),
       fetchJSON("/api/v1/admin/lead-sourcing"),
     ]);
@@ -63,6 +70,18 @@ async function loadAdmin() {
       `Timeouts: ${agentHealth.timeouts || 0}`,
       `Avg latency: ${agentHealth.avg_latency_ms ? `${Math.round(agentHealth.avg_latency_ms)} ms` : "n/a"}`,
     ]);
+    renderList("dspyEval", [
+      `Category acc: ${formatPct(dspyEval.metrics?.category_acc)}`,
+      `Priority acc: ${formatPct(dspyEval.metrics?.priority_acc)}`,
+      `Sentiment acc: ${formatPct(dspyEval.metrics?.sentiment_acc)}`,
+      `Intent acc: ${formatPct(dspyEval.metrics?.intent_acc)}`,
+      `Action required acc: ${formatPct(dspyEval.metrics?.action_required_acc)}`,
+      `Sample size: ${dspyEval.limit ?? "n/a"}`,
+    ]);
+    const labelsInput = document.getElementById("triageLabelsInput");
+    if (labelsInput) {
+      labelsInput.value = JSON.stringify(triageLabels.config?.labels || {}, null, 2);
+    }
     renderList("blogMetrics", [
       `Published posts: ${blogMetrics.published_posts ?? 0}/${blogMetrics.total_posts ?? 0}`,
       `Avg word count: ${blogMetrics.avg_word_count ? Math.round(blogMetrics.avg_word_count) : "n/a"}`,
@@ -152,6 +171,36 @@ document.getElementById("refreshEmbeddingsBtn")?.addEventListener("click", async
     }
     if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
     if (statusEl) statusEl.textContent = data.message || "Refreshed embeddings";
+  } catch (err) {
+    if (statusEl) statusEl.textContent = `Error: ${err.message}`;
+  }
+});
+
+document.getElementById("saveTriageLabelsBtn")?.addEventListener("click", async () => {
+  const input = document.getElementById("triageLabelsInput");
+  const statusEl = document.getElementById("triageLabelsStatus");
+  if (!input) return;
+  if (statusEl) {
+    statusEl.classList.remove("hidden");
+    statusEl.textContent = "Saving...";
+  }
+  let labels = null;
+  try {
+    labels = JSON.parse(input.value || "{}");
+  } catch (err) {
+    if (statusEl) statusEl.textContent = "Invalid JSON.";
+    return;
+  }
+  try {
+    const res = await fetch("/api/v1/admin/triage-labels", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ labels }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Save failed");
+    if (statusEl) statusEl.textContent = "Saved.";
   } catch (err) {
     if (statusEl) statusEl.textContent = `Error: ${err.message}`;
   }
