@@ -79,6 +79,55 @@ jobs:
         run: |
           aws eks update-kubeconfig --name "${EKS_CLUSTER}" --region "${AWS_REGION}"
 
+      - name: Run migrations
+        env:
+          IMAGE: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ env.TAG }}
+        run: |
+          set -e
+          MIGRATE_NAME="inboxiq-migrate-${TAG}"
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: ${MIGRATE_NAME}
+            namespace: ${KUBE_NAMESPACE}
+          spec:
+            restartPolicy: Never
+            containers:
+              - name: migrate
+                image: ${IMAGE}
+                command: ["/bin/sh","-lc"]
+                args: ["export FLASK_APP=src.manage:app; /usr/src/.venv/bin/python -m flask db upgrade -d src/migrations"]
+                env:
+                  - name: APP_ENV
+                    value: "production"
+                  - name: DATABASE_URL
+                    valueFrom:
+                      secretKeyRef:
+                        name: inboxiq-env
+                        key: DATABASE_URL
+                envFrom:
+                  - secretRef:
+                      name: inboxiq-env
+                  - configMapRef:
+                      name: inboxiq-config
+                resources:
+                  requests:
+                    memory: "512Mi"
+                    cpu: "100m"
+                  limits:
+                    memory: "1Gi"
+                    cpu: "500m"
+          EOF
+          if ! kubectl wait --for=condition=Succeeded pod/${MIGRATE_NAME} -n "${KUBE_NAMESPACE}" --timeout=600s; then
+            kubectl logs -n "${KUBE_NAMESPACE}" pod/${MIGRATE_NAME} || true
+            kubectl describe pod -n "${KUBE_NAMESPACE}" ${MIGRATE_NAME} || true
+            kubectl delete pod/${MIGRATE_NAME} -n "${KUBE_NAMESPACE}" --ignore-not-found
+            exit 1
+          fi
+          kubectl logs -n "${KUBE_NAMESPACE}" pod/${MIGRATE_NAME}
+          kubectl delete pod/${MIGRATE_NAME} -n "${KUBE_NAMESPACE}" --ignore-not-found
+
       - name: Deploy to EKS
         env:
           IMAGE: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ env.TAG }}
