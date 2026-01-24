@@ -9,7 +9,7 @@ from flask import Blueprint, current_app, jsonify, redirect, request, url_for
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from src.api.v1 import v1
-from src.models import InboxConnection
+from src.models import InboxConnection, User
 from src.extensions import db
 
 
@@ -51,20 +51,25 @@ def _decode_id_token_raw(id_token: str) -> dict:
 
 
 def _store_connection(provider: str, email_address: str, access_token: str, refresh_token: str | None, user_id: int | None):
+    resolved_user_id = user_id
     account_id = None
-    try:
-        from src.models import User
+    if resolved_user_id:
+        u = User.query.get(resolved_user_id)
+        account_id = getattr(u, "account_id", None)
+    else:
+        # Fallback: match the OAuth email to an existing user.
+        user = User.query.filter(User.email.ilike(email_address)).first()
+        if user:
+            resolved_user_id = user.id
+            account_id = user.account_id
 
-        if user_id:
-            u = User.query.get(user_id)
-            account_id = getattr(u, "account_id", None)
-    except Exception:
-        account_id = None
+    if not resolved_user_id:
+        raise RuntimeError("login_required")
 
-    conn = InboxConnection.query.filter_by(user_id=user_id, provider=provider).first()
+    conn = InboxConnection.query.filter_by(user_id=resolved_user_id, provider=provider).first()
     if not conn:
         conn = InboxConnection(
-            user_id=user_id or 0,
+            user_id=resolved_user_id,
             account_id=account_id,
             provider=provider,
             email_address=email_address,
@@ -131,6 +136,10 @@ def google_callback():
     refresh_token = tok.get("refresh_token")
     user_id = get_jwt_identity()
     _store_connection("gmail", email, access_token, refresh_token, user_id)
+    try:
+        _store_connection("gmail", email, access_token, refresh_token, user_id)
+    except RuntimeError:
+        return redirect(url_for("login_page", next=url_for("dashboard_home")))
     return redirect(url_for("dashboard_home"))
 
 
@@ -181,5 +190,8 @@ def outlook_callback():
     access_token = tok.get("access_token")
     refresh_token = tok.get("refresh_token")
     user_id = get_jwt_identity()
-    _store_connection("outlook", email, access_token, refresh_token, user_id)
+    try:
+        _store_connection("outlook", email, access_token, refresh_token, user_id)
+    except RuntimeError:
+        return redirect(url_for("login_page", next=url_for("dashboard_home")))
     return redirect(url_for("dashboard_home"))
