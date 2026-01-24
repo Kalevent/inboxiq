@@ -15,6 +15,11 @@ on:
       - 'src/**'
       - '.github/workflows/inbox-ci.yml'
   workflow_dispatch:
+    inputs:
+      run_migrations:
+        description: "Force run migrations"
+        required: false
+        default: "false"
 
 concurrency: inbox
 
@@ -37,6 +42,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Detect migration changes
+        id: migrations
+        run: |
+          set -e
+          CHANGED=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ inputs.run_migrations }}" = "true" ]; then
+              CHANGED=true
+            fi
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+            DIFF=$(git diff --name-only "$BASE" "$HEAD" -- src/migrations/versions || true)
+            if [ -n "$DIFF" ]; then
+              CHANGED=true
+            fi
+          else
+            git fetch --no-tags --prune --depth=2 origin "${{ github.ref }}"
+            DIFF=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- src/migrations/versions || true)
+            if [ -n "$DIFF" ]; then
+              CHANGED=true
+            fi
+          fi
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -80,6 +110,7 @@ jobs:
           aws eks update-kubeconfig --name "${EKS_CLUSTER}" --region "${AWS_REGION}"
 
       - name: Run migrations
+        if: steps.migrations.outputs.changed == 'true'
         env:
           IMAGE: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ env.TAG }}
         run: |
