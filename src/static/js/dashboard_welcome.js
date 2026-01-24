@@ -612,7 +612,12 @@
         pollStatus.textContent = 'Polling inbox...';
       }
       try {
-        const resp = await fetch('/api/v1/inboxiq/poll/mine', { method: 'POST', credentials: 'include' });
+        const csrf = getCookie('csrf_access_token') || getCookie('csrf_refresh_token');
+        const resp = await fetch('/api/v1/inboxiq/poll/mine', {
+          method: 'POST',
+          credentials: 'include',
+          headers: csrf ? { 'X-CSRF-TOKEN': csrf } : {},
+        });
         const contentType = resp.headers.get('content-type') || '';
         const data = contentType.includes('application/json') ? await resp.json() : {};
         if (!resp.ok) throw new Error(data.error || data.message || `HTTP ${resp.status}`);

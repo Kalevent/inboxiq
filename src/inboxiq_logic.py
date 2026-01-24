@@ -320,31 +320,31 @@ def triage_email(email: Dict[str, Any], account_id: int | None = None) -> Triage
             decision_trace.append("vip_sender")
             priority = "P0"
 
-            if not team:
-                team = _assign_team(intent or category)
-            if not owner:
-                owner = _assign_owner(category)
-            if not assigned_to:
-                assigned_to = _assign_owner_name(team)
+        if not team:
+            team = _assign_team(intent or category)
+        if not owner:
+            owner = _assign_owner(category)
+        if not assigned_to:
+            assigned_to = _assign_owner_name(team)
 
-            action_required_override = override_hint.get("action_required") if override_hint else None
-            if action_required_override is not None:
-                action_required = action_required_override
-                decision_trace.append("manual_override_action_required")
+        action_required_override = override_hint.get("action_required") if override_hint else None
+        if action_required_override is not None:
+            action_required = action_required_override
+            decision_trace.append("manual_override_action_required")
 
-            if action_required is None:
-                action_required = "optional"
-                decision_trace.append("dspy_action_required_missing")
+        if action_required is None:
+            action_required = "optional"
+            decision_trace.append("dspy_action_required_missing")
 
-            risk_flag = priority == "P0" or sentiment == "negative" or is_vip
-            entities = _extract_entities(normalized["body"])
-            if entities.get("order_ids"):
-                decision_trace.append(f"order_ids:{','.join(entities['order_ids'])}")
-            if entities.get("customer_ids"):
-                decision_trace.append(f"customer_ids:{','.join(entities['customer_ids'])}")
+        risk_flag = priority == "P0" or sentiment == "negative" or is_vip
+        entities = _extract_entities(normalized["body"])
+        if entities.get("order_ids"):
+            decision_trace.append(f"order_ids:{','.join(entities['order_ids'])}")
+        if entities.get("customer_ids"):
+            decision_trace.append(f"customer_ids:{','.join(entities['customer_ids'])}")
 
-            confidence = {"category": 0.55, "priority": 0.55, "sentiment": 0.55}
-            needs_review = False if action_required is not None else True
+        confidence = {"category": 0.55, "priority": 0.55, "sentiment": 0.55}
+        needs_review = False if action_required is not None else True
 
         return TriageDecision(
             category=category,
