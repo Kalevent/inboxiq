@@ -271,6 +271,9 @@
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
+.dashboard-metrics > div {
+  min-height: 128px;
+}
 
 /* CTA pills for Gmail/Outlook to match prototype even if Tailwind purge removes utilities */
 .cta-pill {

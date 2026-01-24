@@ -318,6 +318,9 @@
     const aiReason = item.ai_reason || (kind === 'auto' ? 'Informational / auto-handled.' : 'Action required — customer needs help.');
     const owner = item.owner || 'Support';
     const sla = item.sla || item.due_at || '—';
+    const openThreadLink = item.provider_url
+      ? `<a href="${item.provider_url}" target="_blank" rel="noreferrer" class="text-slate-400 hover:text-slate-300 underline">Open thread</a>`
+      : '';
     const actionBadge =
       kind === 'auto'
         ? `<span class="${badgeClass}">${badge}</span>`
@@ -381,11 +384,12 @@
               ${aiReason}
             </div>
           </div>
-          <div class="shrink-0 text-xs text-slate-300 flex flex-col gap-1 items-end text-right">
-            <div>Assigned: <span class="text-slate-50 font-semibold">${owner}</span></div>
-            <div>SLA: <span class="text-slate-50 font-semibold">${sla}</span></div>
-            <a href="${item.url || '#'}" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Open ticket</a>
-          </div>
+            <div class="shrink-0 text-xs text-slate-300 flex flex-col gap-1 items-end text-right">
+              <div>Assigned: <span class="text-slate-50 font-semibold">${owner}</span></div>
+              <div>SLA: <span class="text-slate-50 font-semibold">${sla}</span></div>
+              <a href="${item.url || '#'}" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Open ticket</a>
+              ${openThreadLink}
+            </div>
         </div>
       </div>
     `;
