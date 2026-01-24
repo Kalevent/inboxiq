@@ -119,7 +119,7 @@ jobs:
                     memory: "1Gi"
                     cpu: "500m"
           EOF
-          if ! kubectl wait --for=condition=Succeeded pod/${MIGRATE_NAME} -n "${KUBE_NAMESPACE}" --timeout=600s; then
+          if ! kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/${MIGRATE_NAME} -n "${KUBE_NAMESPACE}" --timeout=600s; then
             kubectl logs -n "${KUBE_NAMESPACE}" pod/${MIGRATE_NAME} || true
             kubectl describe pod -n "${KUBE_NAMESPACE}" ${MIGRATE_NAME} || true
             kubectl delete pod/${MIGRATE_NAME} -n "${KUBE_NAMESPACE}" --ignore-not-found
