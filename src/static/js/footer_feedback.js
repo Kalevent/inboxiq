@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const openBtn = document.getElementById("openFeedbackModal");
   const closeBtn = document.getElementById("closeFeedbackModal");
   const inlineStatus = document.getElementById("footerFeedbackStatusLink");
-  if (!form || !modal || !openBtn || !closeBtn) return;
+  if (!form) return;
 
   const messageEl = document.getElementById("footerFeedbackMessage");
   const contextEl = document.getElementById("footerFeedbackContext");
@@ -12,7 +12,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("footerFeedbackStatus");
   const submitBtn = document.getElementById("footerFeedbackSubmit");
 
+  const hasModal = modal && openBtn && closeBtn;
   const showModal = () => {
+    if (!hasModal) return;
     // Ensure modal is at document body level so it sits above all content.
     if (modal.parentElement !== document.body) {
       document.body.appendChild(modal);
@@ -23,24 +25,27 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflow = "hidden";
   };
   const hideModal = () => {
+    if (!hasModal) return;
     modal.classList.add("hidden");
     modal.style.display = "none";
     modal.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
   };
 
-  openBtn.addEventListener("click", () => {
-    inlineStatus?.classList.add("hidden");
-    showModal();
-    // Keep focus near the textarea for quick input.
-    setTimeout(() => {
-      messageEl?.focus();
-    }, 50);
-  });
-  closeBtn.addEventListener("click", hideModal);
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) hideModal();
-  });
+  if (hasModal) {
+    openBtn.addEventListener("click", () => {
+      inlineStatus?.classList.add("hidden");
+      showModal();
+      // Keep focus near the textarea for quick input.
+      setTimeout(() => {
+        messageEl?.focus();
+      }, 50);
+    });
+    closeBtn.addEventListener("click", hideModal);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) hideModal();
+    });
+  }
 
   const showStatus = (text, tone = "muted", target = "modal") => {
     const el = target === "link" ? inlineStatus : statusEl;
@@ -94,7 +99,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (messageEl) messageEl.value = "";
       if (contextEl) contextEl.value = "";
       if (ratingEl) ratingEl.value = "3";
-      setTimeout(() => hideModal(), 600);
+      if (hasModal) {
+        setTimeout(() => hideModal(), 600);
+      }
     } catch (err) {
       showStatus(err.message || "Unable to send feedback right now.", "error");
       showStatus("Send failed", "error", "link");

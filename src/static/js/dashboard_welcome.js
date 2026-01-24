@@ -16,6 +16,8 @@
   const lastPollLine = document.getElementById('lastPollLine');
   const dashboardTabs = Array.from(document.querySelectorAll('[data-dashboard-section]'));
   const dashboardPanels = Array.from(document.querySelectorAll('[data-dashboard-section-panel]'));
+  const feedbackTabs = Array.from(document.querySelectorAll('[data-feedback-section]'));
+  const feedbackPanels = Array.from(document.querySelectorAll('[data-feedback-panel]'));
 
   const getCookie = (name) => {
     return document.cookie
@@ -206,6 +208,30 @@
     dashboardTabs.forEach((btn) => {
       btn.addEventListener('click', () => {
         setActiveDashboardTab(btn.dataset.dashboardSection);
+      });
+    });
+  }
+
+  function setActiveFeedbackTab(target) {
+    feedbackTabs.forEach((btn) => {
+      const isActive = btn.dataset.feedbackSection === target;
+      btn.classList.toggle('bg-slate-900/80', isActive);
+      btn.classList.toggle('text-slate-100', isActive);
+      btn.classList.toggle('bg-slate-900/40', !isActive);
+      btn.classList.toggle('text-slate-300', !isActive);
+    });
+    feedbackPanels.forEach((panel) => {
+      panel.classList.toggle('hidden', panel.dataset.feedbackPanel !== target);
+    });
+  }
+
+  if (feedbackTabs.length && feedbackPanels.length) {
+    const defaultFeedback = 'testimonial';
+    const initialFeedback = feedbackTabs.find((btn) => btn.dataset.feedbackSection === defaultFeedback);
+    if (initialFeedback) setActiveFeedbackTab(defaultFeedback);
+    feedbackTabs.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setActiveFeedbackTab(btn.dataset.feedbackSection);
       });
     });
   }
