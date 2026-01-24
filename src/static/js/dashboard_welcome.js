@@ -14,6 +14,8 @@
   const pollNowBtn = document.getElementById('pollNowBtn');
   const pollStatus = document.getElementById('pollStatus');
   const lastPollLine = document.getElementById('lastPollLine');
+  const dashboardTabs = Array.from(document.querySelectorAll('[data-dashboard-section]'));
+  const dashboardPanels = Array.from(document.querySelectorAll('[data-dashboard-section-panel]'));
 
   const getCookie = (name) => {
     return document.cookie
@@ -183,6 +185,30 @@
     }
   }
   refreshLastPoll();
+
+  function setActiveDashboardTab(target) {
+    dashboardTabs.forEach((btn) => {
+      const isActive = btn.dataset.dashboardSection === target;
+      btn.classList.toggle('bg-slate-900/80', isActive);
+      btn.classList.toggle('text-slate-100', isActive);
+      btn.classList.toggle('bg-slate-900/40', !isActive);
+      btn.classList.toggle('text-slate-300', !isActive);
+    });
+    dashboardPanels.forEach((panel) => {
+      panel.classList.toggle('hidden', panel.dataset.dashboardSectionPanel !== target);
+    });
+  }
+
+  if (dashboardTabs.length && dashboardPanels.length) {
+    const defaultTab = 'connections';
+    const initial = dashboardTabs.find((btn) => btn.dataset.dashboardSection === defaultTab);
+    if (initial) setActiveDashboardTab(defaultTab);
+    dashboardTabs.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setActiveDashboardTab(btn.dataset.dashboardSection);
+      });
+    });
+  }
 
   if (pollNowBtn) {
     pollNowBtn.addEventListener('click', async () => {
