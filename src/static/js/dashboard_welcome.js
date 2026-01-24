@@ -164,6 +164,10 @@
         if (lp.last_poll_status) text += ` (${lp.last_poll_status})`;
         if (lp.last_poll_error) text += ` • Error: ${lp.last_poll_error}`;
         lastPollLine.textContent = text;
+      } else if (lp.last_poll_status && lp.last_poll_status !== 'never') {
+        let text = `Last poll: ${lp.last_poll_status}`;
+        if (lp.last_poll_error) text += ` • Error: ${lp.last_poll_error}`;
+        lastPollLine.textContent = text;
       }
       const badge = document.getElementById('pollHealthBadge');
       if (badge) {
@@ -234,13 +238,15 @@
   const actionCountSpan = document.getElementById('actionRequiredCount');
   const impactScope = document.getElementById('impactScope');
   const showActionOnlyToggle = document.getElementById('showActionOnly');
+  const actionOnlyHint = document.getElementById('actionOnlyHint');
   const actionRequiredList = document.getElementById('actionRequiredList');
   const optionalList = document.getElementById('optionalList');
   const autoHandledEmailList = document.getElementById('autoHandledEmailList');
   const autoHandledFeedbackList = document.getElementById('autoHandledFeedbackList');
   const metricActionRequired = document.getElementById('metricActionRequired');
   const metricOptional = document.getElementById('metricOptional');
-  const metricAutoHandledQueue = document.getElementById('metricAutoHandledQueue');
+  const metricAutoHandledEmail = document.getElementById('metricAutoHandledEmail');
+  const metricAutoHandledOther = document.getElementById('metricAutoHandledOther');
   const metricActionable = document.getElementById('metricActionable');
   const metricAutoHandled = document.getElementById('metricAutoHandled');
   const metricEliminated = document.getElementById('metricEliminated');
@@ -262,6 +268,11 @@
     loadDashboardData();
   }
 
+  function updateActionOnlyHint() {
+    if (!actionOnlyHint || !showActionOnlyToggle) return;
+    actionOnlyHint.classList.toggle('hidden', !showActionOnlyToggle.checked);
+  }
+
   if (actionSearchInput) {
     actionSearchInput.addEventListener('input', () => {
       applyActionFilters();
@@ -274,13 +285,17 @@
     impactScope.addEventListener('change', loadDashboardData);
   }
   if (showActionOnlyToggle) {
-    showActionOnlyToggle.addEventListener('change', loadDashboardData);
+    showActionOnlyToggle.addEventListener('change', () => {
+      updateActionOnlyHint();
+      loadDashboardData();
+    });
   }
 
   function updateMetrics(counts = {}) {
     if (metricActionRequired) metricActionRequired.textContent = counts.action_required ?? 0;
     if (metricOptional) metricOptional.textContent = counts.optional ?? 0;
-    if (metricAutoHandledQueue) metricAutoHandledQueue.textContent = counts.auto_handled ?? 0;
+    if (metricAutoHandledEmail) metricAutoHandledEmail.textContent = counts.auto_handled_email ?? 0;
+    if (metricAutoHandledOther) metricAutoHandledOther.textContent = counts.auto_handled_other ?? 0;
     if (metricActionable) metricActionable.textContent = counts.actionable_surfaced ?? 0;
     if (metricAutoHandled) metricAutoHandled.textContent = counts.auto_handled_metric ?? 0;
     if (metricEliminated) metricEliminated.textContent = `${counts.triage_eliminated_pct ?? 0}%`;
@@ -411,6 +426,8 @@
       console.warn('dashboard data fetch failed', err);
     }
   }
+
+  updateActionOnlyHint();
 
   function renderTicketCards(items) {
     if (!ticketResults) return;

@@ -304,6 +304,9 @@
                   <input id="showActionOnly" type="checkbox" checked class="accent-indigo-500" />
                   Show Action Required only
                 </label>
+                <span id="actionOnlyHint" class="hidden text-[11px] text-slate-400">
+                  Auto-handled and Optional follow-up are hidden by this filter.
+                </span>
               </div>
             </div>
 
@@ -321,9 +324,15 @@
               </div>
 
               <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-                <p class="text-sm font-semibold text-slate-200">Auto-handled</p>
-                <p id="metricAutoHandledQueue" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ auto_handled_count or 0 }}</p>
-                <p class="mt-2 text-sm text-slate-400 leading-snug">Filtered (no human action required)</p>
+                <p class="text-sm font-semibold text-slate-200">Auto-handled (Email)</p>
+                <p id="metricAutoHandledEmail" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ auto_handled_email_count or 0 }}</p>
+                <p class="mt-2 text-sm text-slate-400 leading-snug">Email triage — no human action required</p>
+              </div>
+
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                <p class="text-sm font-semibold text-slate-200">Auto-handled (Other)</p>
+                <p id="metricAutoHandledOther" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ auto_handled_other_count or 0 }}</p>
+                <p class="mt-2 text-sm text-slate-400 leading-snug">Voice, chat, forms, CRM, social</p>
               </div>
             </div>
 

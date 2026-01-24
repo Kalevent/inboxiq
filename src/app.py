@@ -326,8 +326,13 @@ def create_app() -> Flask:
     last_poll_status = (last_connection.metadata_json or {}).get("last_poll_status") if last_connection else None
     last_poll_error = (last_connection.metadata_json or {}).get("last_poll_error") if last_connection else None
     last_poll_counts = (last_connection.metadata_json or {}).get("last_poll_counts") if last_connection else None
-    # Fallback: if counts exist but last_poll timestamp is missing, use updated_at as a best-effort display.
-    if not last_poll and last_poll_counts and last_connection and last_connection.updated_at:
+    # Fallback: if counts or status exist but timestamp is missing, use updated_at as best-effort display.
+    if (
+      not last_poll
+      and last_connection
+      and last_connection.updated_at
+      and (last_poll_counts or (last_poll_status and last_poll_status != "never"))
+    ):
       last_poll = last_connection.updated_at.isoformat()
     connection_provider = getattr(last_connection, "provider", None)
     connection_email = getattr(last_connection, "email_address", None)
@@ -425,6 +430,26 @@ def create_app() -> Flask:
     action_required_count = len(action_required_tickets)
     optional_count = len(optional_tickets)
     auto_handled_count = len(auto_handled_items)
+    email_providers = {
+      "gmail",
+      "outlook",
+      "imap",
+      "email",
+      "google",
+      "gsuite",
+      "google_oauth",
+      "ms_graph",
+      "microsoft",
+      "office365",
+      "exchange",
+      "ews",
+      "smtp",
+    }
+    auto_handled_email_count = sum(
+      1 for t in auto_handled_items
+      if (t.get("provider") or "").lower() in email_providers
+    )
+    auto_handled_other_count = auto_handled_count - auto_handled_email_count
     total_for_metrics = action_required_count + optional_count + auto_handled_count
     triage_eliminated_pct = round((auto_handled_count / total_for_metrics) * 100, 1) if total_for_metrics else 0.0
     actionable_today = action_required_count
@@ -442,7 +467,8 @@ def create_app() -> Flask:
       auto_handled_items=auto_handled_items,
       action_required_count=action_required_count,
       optional_count=optional_count,
-      auto_handled_count=auto_handled_count,
+      auto_handled_email_count=auto_handled_email_count,
+      auto_handled_other_count=auto_handled_other_count,
       actionable_today=actionable_today,
       auto_handled_today=auto_handled_today,
       triage_eliminated_pct=triage_eliminated_pct,

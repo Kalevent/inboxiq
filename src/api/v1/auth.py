@@ -75,6 +75,8 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
             email_address=email_address,
         )
         db.session.add(conn)
+    elif account_id and not conn.account_id:
+        conn.account_id = account_id
 
     conn.access_token = access_token
     if refresh_token:
@@ -135,7 +137,6 @@ def google_callback():
     access_token = tok.get("access_token")
     refresh_token = tok.get("refresh_token")
     user_id = get_jwt_identity()
-    _store_connection("gmail", email, access_token, refresh_token, user_id)
     try:
         _store_connection("gmail", email, access_token, refresh_token, user_id)
     except RuntimeError:

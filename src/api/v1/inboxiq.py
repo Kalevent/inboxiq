@@ -418,6 +418,27 @@ def dashboard_data():
         optional_items = []
         auto_items = []
 
+    email_providers = {
+        "gmail",
+        "outlook",
+        "imap",
+        "email",
+        "google",
+        "gsuite",
+        "google_oauth",
+        "ms_graph",
+        "microsoft",
+        "office365",
+        "exchange",
+        "ews",
+        "smtp",
+    }
+    auto_email_count = sum(
+        1 for item in auto_items
+        if (item.get("provider") or "").lower() in email_providers
+    )
+    auto_other_count = len(auto_items) - auto_email_count
+
     return jsonify(
         {
             "scope": scope,
@@ -425,6 +446,8 @@ def dashboard_data():
                 "action_required": actionable,
                 "optional": len(optional_items),
                 "auto_handled": len(auto_items),
+                "auto_handled_email": auto_email_count,
+                "auto_handled_other": auto_other_count,
                 "auto_handled_feedback": len(auto_feedback_items),
                 "actionable_surfaced": actionable,
                 "auto_handled_metric": auto_count,
@@ -853,17 +876,31 @@ def poll_inbox_service(connection_id: str, user_id: int | None = None):
 @jwt_required()
 def get_my_connection():
     user_id = get_jwt_identity()
-    conn = (
-        InboxConnection.query.filter_by(user_id=user_id, status="connected")
-        .order_by(InboxConnection.updated_at.desc())
-        .first()
-    )
+    account_id = _get_account_id(user_id)
+    conn = None
+    if account_id:
+        conn = (
+            InboxConnection.query.filter_by(account_id=account_id, status="connected")
+            .order_by(InboxConnection.updated_at.desc())
+            .first()
+        )
+    if not conn:
+        conn = (
+            InboxConnection.query.filter_by(user_id=user_id, status="connected")
+            .order_by(InboxConnection.updated_at.desc())
+            .first()
+        )
     if not conn:
         return jsonify({"error": "No connected inbox found"}), 404
+    if account_id and not conn.account_id:
+        conn.account_id = account_id
+        db.session.commit()
     meta = conn.metadata_json or {}
     last_poll_at = meta.get("last_poll_at")
     last_poll_status = meta.get("last_poll_status")
     last_poll_error = meta.get("last_poll_error")
+    if not last_poll_at and last_poll_status and last_poll_status != "never" and conn.updated_at:
+        last_poll_at = conn.updated_at.isoformat()
     poll_health = {"status": "unknown"}
     try:
         stale_minutes = int(os.getenv("INBOXIQ_POLL_STALE_MINUTES", "30"))
