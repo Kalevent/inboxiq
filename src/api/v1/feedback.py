@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify, request, current_app
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from src.api.v1 import v1
@@ -40,7 +40,11 @@ def submit_feedback():
         "provider": "feedback",
         "source": "feedback",
     }
-    decision = triage_email(triage_input)
+    try:
+        decision = triage_email(triage_input)
+    except Exception as exc:
+        current_app.logger.warning("triage failed in feedback: %s", exc)
+        return jsonify({"error": "triage_failed", "message": str(exc)}), 503
 
     action_required = decision.action_required
     action_required_str = "true" if action_required is True else ("false" if action_required is False else "optional")

@@ -123,7 +123,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
       1) normalize payload
       2) dedupe on message_id+provider
       3) invoke agents (intake/enrich/triage)
-      4) persist ticket with agent or heuristic decision
+      4) persist ticket with agent + LLM triage decision
     """
     email_payload = (payload or {}).get("email") or (payload or {})
     account_id = (payload or {}).get("account_id")
@@ -153,32 +153,20 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         except self.MaxRetriesExceededError:
             logging.getLogger(__name__).exception("agent pipeline failed after retries")
 
-    # Use agent decision if present; fall back to heuristics to ensure fields are populated.
-    heuristics = triage_email(normalized, account_id=account_id)
+    decision = triage_email(normalized, account_id=account_id)
     agent_decision = None
     if agent_result:
         agent_decision = agent_result.get("decision") or agent_result.get("triage") or {}
 
-    def _pick(key: str, default: str) -> str:
-        if isinstance(agent_decision, dict):
-            val = agent_decision.get(key)
-            if isinstance(val, str) and val:
-                return val
-        return default
-
-    category = _pick("category", heuristics.category)
-    priority = _pick("priority", heuristics.priority)
-    sentiment = _pick("sentiment", heuristics.sentiment)
-    needs_review = heuristics.needs_review or False
-    action_required = None
-    if isinstance(agent_decision, dict):
-        action_required = agent_decision.get("action_required")
-    if action_required is None:
-        action_required = heuristics.action_required
+    category = decision.category
+    priority = decision.priority
+    sentiment = decision.sentiment
+    needs_review = decision.needs_review or False
+    action_required = decision.action_required
 
     decision_record = {
         "agent": agent_decision,
-        "heuristics": heuristics.to_dict(),
+        "llm": decision.to_dict(),
         "agent_pipeline": agent_result,
         "action_required": action_required,
     }
@@ -198,7 +186,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         category=category,
         priority=priority,
         sentiment=sentiment,
-        entities=heuristics.entities,
+        entities=decision.entities,
         status=status,
         message_id=normalized.get("message_id"),
         provider=normalized.get("provider"),

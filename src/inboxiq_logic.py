@@ -8,139 +8,10 @@ import re
 import os
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 import logging
 
-# Keyword heuristics for cheap classification before any heavier model
-CATEGORY_KEYWORDS = {
-    "billing": ["invoice", "charge", "billing", "payment", "refund", "receipt", "credit card", "upgrade"],
-    "bug": ["error", "issue", "bug", "crash", "fail", "broken", "not working", "does not work", "stacktrace"],
-    "refund": ["refund", "chargeback", "cancel order", "cancel my order", "return", "money back"],
-    "general": ["question", "help", "support", "info", "information", "guidance", "how do i"],
-}
-
-# Workload-suppression keywords mapped from the decision brief (auto-handled / FYI).
-ACTION_FALSE_KEYWORDS = [
-    "delivered",
-    "delivery confirmation",
-    "delivery has failed",
-    "undeliverable",
-    "mailer-daemon",
-    "mail delivery subsystem",
-    "bounce",
-    "read receipt",
-    "access granted",
-    "account created",
-    "subscription confirmed",
-    "password reset",
-    "plan has been updated",
-    "system notification",
-    "newsletter",
-    "product announcement",
-    "promotional",
-    "sales follow up",
-    "sales follow-up",
-    "duplicate",
-    "following up",
-    "resolved",
-    "status update",
-    "confirmation",
-    "receipt",
-    "calendar invite",
-    "calendar update",
-    "meeting invite",
-    "ics",
-    "out of office",
-    "ooo",
-    "automatic reply",
-    "auto-reply",
-    "auto response",
-]
-
-# Guardrail triggers that should always be surfaced (decision brief safety rules).
-ACTION_TRUE_KEYWORDS = [
-    "billing",
-    "invoice",
-    "payment",
-    "refund",
-    "chargeback",
-    "access",
-    "login",
-    "outage",
-    "cannot login",
-    "can't login",
-    "error",
-    "bug",
-    "issue",
-]
-
-SENTIMENT_KEYWORDS = {
-    "negative": ["angry", "frustrated", "upset", "unhappy", "terrible", "worst", "cancel", "complaint", "disappointed"],
-    "positive": ["love", "great", "thanks", "amazing", "appreciate", "happy"],
-}
-
-PRIORITY_KEYWORDS = {
-    "P0": ["urgent", "asap", "immediately", "outage", "down", "cannot login", "can't login", "critical", "breach"],
-    "P1": ["soon", "priority", "important", "please resolve", "follow up"],
-}
-
-INTENT_KEYWORDS = {
-    "billing": CATEGORY_KEYWORDS["billing"],
-    "incident": ["outage", "down", "cannot login", "can't login", "incident", "breach"],
-    "bug": CATEGORY_KEYWORDS["bug"],
-    "feature": ["feature", "roadmap", "request", "would like", "could you add", "new capability"],
-    "how_to": ["how do i", "how to", "guide", "instructions", "walkthrough"],
-    "general": CATEGORY_KEYWORDS["general"],
-}
-
 VIP_EMAILS = [e.strip().lower() for e in os.getenv("INBOXIQ_VIP_EMAILS", "").split(",") if e.strip()]
-PROMO_KEYWORDS = [
-    "sale",
-    "% off",
-    "percent off",
-    "discount",
-    "deal",
-    "offer",
-    "promo",
-    "promotion",
-    "clearance",
-    "flash sale",
-    "ends tonight",
-    "last chance",
-    "save up to",
-    "save $",
-]
-PROMO_SENDER_TAGS = [
-    "newsletter",
-    "mailer",
-    "mailchimp",
-    "sendgrid",
-    "campaign",
-    "promo",
-    "offers",
-    "deals",
-    "marketing",
-    "noreply",
-    "no-reply",
-    "bounce",
-]
-QUESTION_STARTERS = [
-    "who",
-    "what",
-    "when",
-    "where",
-    "why",
-    "how",
-    "can you",
-    "could you",
-    "would you",
-    "is it",
-    "are you",
-    "do you",
-    "did you",
-    "please",
-    "help",
-]
 def _env_bool(name: str, default: bool = False) -> bool:
     val = os.getenv(name)
     if val is None:
@@ -188,11 +59,6 @@ class TriageDecision:
             "action_required": self.action_required,
             "ai_reason": self.ai_reason,
         }
-
-
-def _score_keywords(text: str, keywords: List[str]) -> Tuple[int, List[str]]:
-    hits = [kw for kw in keywords if kw in text]
-    return len(hits), hits
 
 
 def _extract_entities(text: str) -> Dict[str, Any]:
@@ -264,15 +130,6 @@ def _normalize_action_required(value: object | None) -> bool | str | None:
     return None
 
 
-def _detect_intent(text: str) -> Tuple[str, List[str]]:
-    best = ("general", [])
-    for intent, keywords in INTENT_KEYWORDS.items():
-        hits = [kw for kw in keywords if kw in text]
-        if hits and len(hits) > len(best[1]):
-            best = (intent, hits)
-    return best
-
-
 def _assign_owner(category: str) -> str:
     mapping = {
         "billing": "Billing Team",
@@ -309,46 +166,6 @@ def _assign_owner_name(team: str) -> str:
     return mapping.get(team, "support-queue")
 
 
-def _classify_category(text: str) -> Tuple[str, float, List[str]]:
-    best = ("general", 0, [])
-    for cat, keywords in CATEGORY_KEYWORDS.items():
-        score, hits = _score_keywords(text, keywords)
-        if score > best[1]:
-            best = (cat, score, hits)
-    cat, score, hits = best
-    confidence = min(1.0, 0.2 + (score * 0.15))
-    return cat, confidence, hits
-
-
-def _classify_sentiment(text: str) -> Tuple[str, float, List[str]]:
-    best = ("neutral", 0, [])
-    for sentiment, keywords in SENTIMENT_KEYWORDS.items():
-        score, hits = _score_keywords(text, keywords)
-        if score > best[1]:
-            best = (sentiment, score, hits)
-    sentiment, score, hits = best
-    confidence = min(1.0, 0.25 + (score * 0.2)) if sentiment != "neutral" else 0.4
-    return sentiment, confidence, hits
-
-
-def _classify_priority(text: str, sentiment: str, category: str) -> Tuple[str, float, List[str]]:
-    base_priority = "P1"
-    trace_hits: List[str] = []
-    for priority, keywords in PRIORITY_KEYWORDS.items():
-        score, hits = _score_keywords(text, keywords)
-        if score and priority == "P0":
-            return "P0", min(1.0, 0.4 + (score * 0.2)), hits
-        if score and priority == "P1":
-            trace_hits.extend(hits)
-            base_priority = "P1"
-    if sentiment == "negative" and category in ("billing", "bug", "refund"):
-        trace_hits.append("negative_sentiment_escalation")
-        return "P0", 0.55, trace_hits
-    if category == "general" and sentiment == "neutral" and not trace_hits:
-        return "P2", 0.45, trace_hits
-    return base_priority, 0.5 if trace_hits else 0.35, trace_hits
-
-
 def compute_due_at(priority: str) -> datetime | None:
     """
     Simple SLA mapping to a due_at timestamp.
@@ -360,69 +177,6 @@ def compute_due_at(priority: str) -> datetime | None:
     if priority == "P1":
         return now + timedelta(hours=4)
     return now + timedelta(hours=24)
-
-
-def _strip_quoted_reply(body: str) -> str:
-    """
-    Remove common quoted/replied sections to detect emails with no new content.
-    """
-    if not body:
-        return ""
-    lines = body.splitlines()
-    filtered = []
-    for line in lines:
-        lower = line.lower().strip()
-        if lower.startswith(">"):
-            continue
-        if lower.startswith("on ") and " wrote:" in lower:
-            continue
-        if lower.startswith("from:"):
-            continue
-        if "-----original message-----" in lower:
-            continue
-        filtered.append(line)
-    return "\n".join(filtered).strip()
-
-
-def _has_meaningful_new_content(body: str) -> bool:
-    stripped = _strip_quoted_reply(body)
-    # Treat very short residual content as lacking new info.
-    return len(stripped) >= 40
-
-
-def _is_bulk_sender(email: str) -> bool:
-    lower = (email or "").lower()
-    return any(tag in lower for tag in PROMO_SENDER_TAGS)
-
-
-def _is_promo_email(subject: str, body: str, from_email: str) -> bool:
-    text = f"{subject} {body}".lower()
-    hits = [kw for kw in PROMO_KEYWORDS if kw in text]
-    if not hits:
-        return False
-    return _is_bulk_sender(from_email) or "unsubscribe" in text or len(hits) >= 2
-
-
-def _looks_like_marketing(subject: str, body: str, from_email: str) -> bool:
-    text = f"{subject} {body}".lower()
-    if _is_promo_email(subject, body, from_email):
-        return True
-    if _is_bulk_sender(from_email) and any(tag in text for tag in ("unsubscribe", "newsletter", "view in browser", "manage preferences")):
-        return True
-    return False
-
-
-def _looks_like_human_question(text: str, from_email: str) -> bool:
-    if "?" not in text:
-        return False
-    if _is_bulk_sender(from_email):
-        return False
-    parts = re.split(r"(?<=[?])\s+", text.strip())
-    questions = [p.strip() for p in parts if p.strip().endswith("?")]
-    if not questions:
-        return False
-    candidate = questions[-1].lower()
-    return any(candidate.startswith(starter) for starter in QUESTION_STARTERS)
 
 
 def _manual_override_hint(from_email: str, account_id: int | None = None) -> Dict[str, Any] | None:
@@ -469,58 +223,6 @@ def _manual_override_hint(from_email: str, account_id: int | None = None) -> Dic
     }
 
 
-def _decide_action_required(
-    text: str,
-    sentiment: str,
-    intent: str,
-    priority: str,
-    subject: str | None = None,
-    from_email: str | None = None,
-    body: str | None = None,
-) -> Tuple[bool | str, str]:
-    """
-    Explicit action_required decision following the InboxIQ decision brief.
-    Returns (action_required, reason).
-    """
-    lowered = text.lower()
-    body = body or ""
-    from_email = (from_email or "").lower()
-
-    subject = subject or ""
-    if _looks_like_marketing(subject, body, from_email):
-        return False, "marketing_auto_handled"
-    if _looks_like_human_question(lowered, from_email):
-        return True, "question_detected"
-    if sentiment == "negative":
-        return True, "negative_sentiment_guardrail"
-    if any(kw in lowered for kw in ACTION_TRUE_KEYWORDS):
-        return True, "high_risk_keyword"
-
-    # Structured non-work cases: out-of-office, bounces, calendars, noreply with no ask, no new content.
-    if any(kw in lowered for kw in ("out of office", "ooo", "automatic reply", "auto-reply", "auto response")):
-        return False, "out_of_office_autoreply"
-    if any(kw in lowered for kw in ("delivery has failed", "undeliverable", "mailer-daemon", "delivery failure notice", "mail delivery subsystem")):
-        return False, "delivery_failure"
-    if any(kw in lowered for kw in ("calendar invite", "calendar update", "meeting invite", "event invitation", "ics")):
-        return False, "calendar_invite"
-    if from_email and any(tag in from_email for tag in ("noreply", "no-reply", "donotreply")) and "?" not in lowered and sentiment == "neutral":
-        return False, "noreply_informational"
-    if not _has_meaningful_new_content(body) and "?" not in lowered and sentiment != "negative":
-        return False, "no_new_content"
-
-    if any(kw in lowered for kw in ACTION_FALSE_KEYWORDS) and "?" not in lowered:
-        return False, "informational_auto_handled"
-
-    if priority == "P2" and sentiment == "neutral" and intent == "general":
-        return False, "neutral_low_priority"
-
-    # Ambiguous / low-urgency fallback
-    if priority == "P2":
-        return "optional", "ambiguous_optional_follow_up"
-
-    return True, "default_actionable"
-
-
 def _reason_text(action_required: bool | str, reason: str) -> str:
     if action_required is True:
         return "Action required — customer needs help." if reason == "default_actionable" else f"Action required ({reason.replace('_', ' ')})."
@@ -557,7 +259,6 @@ def normalize_email_payload(data: Dict[str, Any]) -> Dict[str, Any]:
 def triage_email(email: Dict[str, Any], account_id: int | None = None) -> TriageDecision:
     normalized = normalize_email_payload(email)
     account_id = account_id or email.get("account_id")
-    text = f"{normalized['subject']}\n{normalized['body']}".lower()
     from_email = normalized.get("from_email", "").lower()
 
     override_hint = _manual_override_hint(from_email, account_id)
@@ -573,49 +274,51 @@ def triage_email(email: Dict[str, Any], account_id: int | None = None) -> Triage
     except Exception as exc:
         logging.getLogger(__name__).warning("similar feedback lookup failed: %s", exc)
 
-    if _env_bool("DSPY_ENABLED", False):
-        try:
-            from src.dspy_triage import run_dspy_triage
-            from src.triage_labels import get_triage_labels
+    if not _env_bool("DSPY_ENABLED", False):
+        raise RuntimeError("DSPy triage is required. Set DSPY_ENABLED=1 and configure a model.")
 
-            label_config = get_triage_labels(account_id)
-            categories = label_config.get("categories", [])
-            priorities = label_config.get("priorities", [])
-            sentiments = label_config.get("sentiments", [])
-            intents = label_config.get("intents", [])
+    try:
+        from src.dspy_triage import run_dspy_triage
+        from src.triage_labels import get_triage_labels
 
-            dspy_context = {"labels": label_config}
-            if similar_feedback:
-                dspy_context["similar_feedback"] = similar_feedback[:1]
-            extra_context = email.get("context") or email.get("metadata") or email.get("payload_context")
-            if extra_context:
-                dspy_context["payload_context"] = extra_context
+        label_config = get_triage_labels(account_id)
+        categories = label_config.get("categories", [])
+        priorities = label_config.get("priorities", [])
+        sentiments = label_config.get("sentiments", [])
+        intents = label_config.get("intents", [])
 
-            dspy_result = run_dspy_triage(normalized, context=dspy_context or None, labels=label_config)
-            decision_trace.append("dspy")
+        dspy_context = {"labels": label_config}
+        if similar_feedback:
+            dspy_context["similar_feedback"] = similar_feedback[:1]
+        extra_context = email.get("context") or email.get("metadata") or email.get("payload_context")
+        if extra_context:
+            dspy_context["payload_context"] = extra_context
 
-            category = _normalize_choice(dspy_result.get("category"), categories, (categories[0] if categories else "general"))
-            priority = _normalize_priority(dspy_result.get("priority"), priorities)
-            sentiment = _normalize_choice(dspy_result.get("sentiment"), sentiments, (sentiments[0] if sentiments else "neutral"))
-            intent = _normalize_choice(dspy_result.get("intent"), intents, (intents[0] if intents else "general"))
-            action_required = _normalize_action_required(dspy_result.get("action_required"))
-            ai_reason = (dspy_result.get("ai_reason") or "").strip() or None
+        dspy_result = run_dspy_triage(normalized, context=dspy_context or None, labels=label_config)
+        decision_trace.append("dspy")
 
-            team = (dspy_result.get("team") or "").strip() or None
-            owner = (dspy_result.get("owner") or "").strip() or None
-            assigned_to = (dspy_result.get("assigned_to") or "").strip() or None
+        category = _normalize_choice(dspy_result.get("category"), categories, (categories[0] if categories else "general"))
+        priority = _normalize_priority(dspy_result.get("priority"), priorities)
+        sentiment = _normalize_choice(dspy_result.get("sentiment"), sentiments, (sentiments[0] if sentiments else "neutral"))
+        intent = _normalize_choice(dspy_result.get("intent"), intents, (intents[0] if intents else "general"))
+        action_required = _normalize_action_required(dspy_result.get("action_required"))
+        ai_reason = (dspy_result.get("ai_reason") or "").strip() or None
 
-            if override_hint:
-                category = override_hint.get("category") or category
-                intent = override_hint.get("intent") or intent
-                priority = override_hint.get("priority") or priority
-                sentiment = override_hint.get("sentiment") or sentiment
-                decision_trace.append(f"manual_override_hint:{override_hint.get('source')}")
+        team = (dspy_result.get("team") or "").strip() or None
+        owner = (dspy_result.get("owner") or "").strip() or None
+        assigned_to = (dspy_result.get("assigned_to") or "").strip() or None
 
-            is_vip = any(v in from_email for v in VIP_EMAILS) if VIP_EMAILS else False
-            if is_vip:
-                decision_trace.append("vip_sender")
-                priority = "P0"
+        if override_hint:
+            category = override_hint.get("category") or category
+            intent = override_hint.get("intent") or intent
+            priority = override_hint.get("priority") or priority
+            sentiment = override_hint.get("sentiment") or sentiment
+            decision_trace.append(f"manual_override_hint:{override_hint.get('source')}")
+
+        is_vip = any(v in from_email for v in VIP_EMAILS) if VIP_EMAILS else False
+        if is_vip:
+            decision_trace.append("vip_sender")
+            priority = "P0"
 
             if not team:
                 team = _assign_team(intent or category)
@@ -643,113 +346,30 @@ def triage_email(email: Dict[str, Any], account_id: int | None = None) -> Triage
             confidence = {"category": 0.55, "priority": 0.55, "sentiment": 0.55}
             needs_review = False if action_required is not None else True
 
-            return TriageDecision(
-                category=category,
-                priority=priority,
-                sentiment=sentiment,
-                entities=entities,
-                confidence=confidence,
-                needs_review=needs_review,
-                decision_trace=decision_trace,
-                summary=(normalized.get("snippet") or normalized.get("body") or "")[:280],
-                last_question=_extract_last_question(normalized.get("body") or ""),
-                intent=intent,
-                risk_flag=risk_flag,
-                owner=owner,
-                team=team,
-                assigned_to=assigned_to,
-                similar_feedback=similar_feedback,
-                action_required=action_required,
-                ai_reason=ai_reason or _reason_text(action_required, "dspy"),
-            )
-        except Exception as exc:
-            logging.getLogger(__name__).warning("dspy triage failed, falling back: %s", exc)
-            decision_trace.append("dspy_failed")
+        return TriageDecision(
+            category=category,
+            priority=priority,
+            sentiment=sentiment,
+            entities=entities,
+            confidence=confidence,
+            needs_review=needs_review,
+            decision_trace=decision_trace,
+            summary=(normalized.get("snippet") or normalized.get("body") or "")[:280],
+            last_question=_extract_last_question(normalized.get("body") or ""),
+            intent=intent,
+            risk_flag=risk_flag,
+            owner=owner,
+            team=team,
+            assigned_to=assigned_to,
+            similar_feedback=similar_feedback,
+            action_required=action_required,
+            ai_reason=ai_reason or _reason_text(action_required, "dspy"),
+        )
+    except Exception as exc:
+        logging.getLogger(__name__).warning("dspy triage failed: %s", exc)
+        raise RuntimeError("DSPy triage failed.") from exc
 
-    category, cat_conf, cat_hits = _classify_category(text)
-    if cat_hits:
-        decision_trace.append(f"category_hits:{','.join(cat_hits)}")
-    sentiment, sent_conf, sent_hits = _classify_sentiment(text)
-    if sent_hits:
-        decision_trace.append(f"sentiment_hits:{','.join(sent_hits)}")
-    priority, pri_conf, pri_hits = _classify_priority(text, sentiment, category)
-    if pri_hits:
-        decision_trace.append(f"priority_hits:{','.join(pri_hits)}")
-
-    entities = _extract_entities(normalized["body"])
-    if entities.get("order_ids"):
-        decision_trace.append(f"order_ids:{','.join(entities['order_ids'])}")
-    if entities.get("customer_ids"):
-        decision_trace.append(f"customer_ids:{','.join(entities['customer_ids'])}")
-
-    intent, intent_hits = _detect_intent(text)
-    if intent_hits:
-        decision_trace.append(f"intent_hits:{','.join(intent_hits)}")
-
-    # VIP detection
-    is_vip = any(v in from_email for v in VIP_EMAILS) if VIP_EMAILS else False
-    if is_vip:
-        decision_trace.append("vip_sender")
-        priority = "P0"
-
-    if override_hint:
-        category = override_hint.get("category") or category
-        intent = override_hint.get("intent") or intent
-        priority = override_hint.get("priority") or priority
-        sentiment = override_hint.get("sentiment") or sentiment
-        decision_trace.append(f"manual_override_hint:{override_hint.get('source')}")
-
-    risk_flag = priority == "P0" or sentiment == "negative" or is_vip
-    owner = override_hint.get("owner") if override_hint else None
-    team = override_hint.get("team") if override_hint else None
-    assigned_to = override_hint.get("assigned_to") if override_hint else None
-    if not team:
-        team = _assign_team(intent or category)
-    if not owner:
-        owner = _assign_owner(category)
-    if not assigned_to:
-        assigned_to = _assign_owner_name(team)
-
-    needs_review = bool(cat_conf < 0.35 or pri_conf < 0.35)
-    confidence = {
-        "category": round(cat_conf, 2),
-        "priority": round(pri_conf, 2),
-        "sentiment": round(sent_conf, 2),
-    }
-    action_required_override = override_hint.get("action_required") if override_hint else None
-    action_required, action_reason = _decide_action_required(
-        text,
-        sentiment,
-        intent,
-        priority,
-        subject=normalized.get("subject"),
-        from_email=from_email,
-        body=normalized.get("body"),
-    )
-    if action_required_override is not None:
-        action_required = action_required_override
-        action_reason = "manual_override_hint"
-    decision_trace.append(f"action_required:{action_required}")
-
-    return TriageDecision(
-        category=category,
-        priority=priority,
-        sentiment=sentiment,
-        entities=entities,
-        confidence=confidence,
-        needs_review=needs_review,
-        decision_trace=decision_trace,
-        summary=(normalized.get("snippet") or normalized.get("body") or "")[:280],
-        last_question=_extract_last_question(normalized.get("body") or ""),
-        intent=intent,
-        risk_flag=risk_flag,
-        owner=owner,
-        team=team,
-        assigned_to=assigned_to,
-        similar_feedback=similar_feedback,
-        action_required=action_required,
-        ai_reason=_reason_text(action_required, action_reason),
-    )
+    raise RuntimeError("DSPy triage required and did not complete.")
 
 
 def sample_messages() -> List[Dict[str, str]]:

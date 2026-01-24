@@ -126,7 +126,12 @@ def triage():
             results.append({"status": "duplicate", "ticket": existing.to_dict()})
             continue
 
-        decision = triage_email(normalized)
+        try:
+            decision = triage_email(normalized)
+        except Exception as exc:
+            summary["errors"] += 1
+            results.append({"error": "triage_failed", "message": str(exc), "payload": raw_email})
+            continue
         # Apply feedback-based overrides for identical subjects that were manually corrected.
         try:
             lower_subject = normalized["subject"].strip().lower()
@@ -681,7 +686,12 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
         if existing:
             duplicates += 1
             continue
-        decision = triage_email(normalized)
+        try:
+            decision = triage_email(normalized)
+        except Exception as exc:
+            errors += 1
+            current_app.logger.warning("triage failed during poll: %s", exc)
+            continue
         redacted_body = _build_body_preview(normalized.get("body") or "")
         due_at = compute_due_at(decision.priority)
         ticket_record = Ticket(

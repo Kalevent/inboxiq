@@ -5,6 +5,12 @@
 - Env: `export FLASK_APP=src.manage:app`
 - Local DB: Postgres 15 via compose (`docker compose -f src/docker-compose.yml up -d db`)
 
+## LLM triage requirement
+All triage paths require DSPy/LLM. Set:
+- `DSPY_ENABLED=1`
+- `DSPY_USE_OPENAI=1`
+- `DSPY_MODEL=gpt-4o-mini` (or your preferred model)
+
 ## Local run (no Docker)
 ```bash
 source .venv-inboxiq/bin/activate

@@ -26,7 +26,7 @@ def add(a: int, b: int) -> int:
 @mcp.tool()
 def triage_email_ticket(subject: str, body: str, from_email: str = "", message_id: str | None = None, provider: str = "mcp") -> dict:
     """
-    Run InboxIQ heuristics against an email payload and return the decision.
+    Run InboxIQ LLM triage against an email payload and return the decision.
     """
     payload = {
         "subject": subject,
