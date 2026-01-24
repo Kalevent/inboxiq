@@ -138,6 +138,7 @@ jobs:
           kubectl set image deploy/inboxiq-celery-inbox-beat inbox-beat="${IMAGE}" -n "${KUBE_NAMESPACE}"
           kubectl rollout status deploy/inboxiq -n "${KUBE_NAMESPACE}"
           kubectl rollout status deploy/inboxiq-celery-inbox-worker -n "${KUBE_NAMESPACE}"
+          kubectl scale deploy/inboxiq-celery-inbox-beat -n "${KUBE_NAMESPACE}" --replicas=1
           kubectl rollout status deploy/inboxiq-celery-inbox-beat -n "${KUBE_NAMESPACE}"
 
       - name: Post-deploy health check

@@ -861,15 +861,48 @@ def get_my_connection():
     if not conn:
         return jsonify({"error": "No connected inbox found"}), 404
     meta = conn.metadata_json or {}
+    last_poll_at = meta.get("last_poll_at")
+    last_poll_status = meta.get("last_poll_status")
+    last_poll_error = meta.get("last_poll_error")
+    poll_health = {"status": "unknown"}
+    try:
+        stale_minutes = int(os.getenv("INBOXIQ_POLL_STALE_MINUTES", "30"))
+    except Exception:
+        stale_minutes = 30
+    if not last_poll_at:
+        poll_health = {"status": "never", "stale_minutes": stale_minutes}
+    else:
+        ts = None
+        try:
+            ts_raw = str(last_poll_at)
+            if ts_raw.endswith("Z"):
+                ts_raw = ts_raw[:-1] + "+00:00"
+            ts = datetime.fromisoformat(ts_raw)
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+        except Exception:
+            ts = None
+        if last_poll_status == "error" or last_poll_error:
+            poll_health = {"status": "error", "stale_minutes": stale_minutes}
+        elif ts:
+            age_min = (datetime.now(timezone.utc) - ts).total_seconds() / 60.0
+            poll_health = {
+                "status": "stale" if age_min > stale_minutes else "ok",
+                "age_minutes": round(age_min, 1),
+                "stale_minutes": stale_minutes,
+            }
+        else:
+            poll_health = {"status": "unknown", "stale_minutes": stale_minutes}
     return jsonify(
         {
             "connection": conn.to_dict(),
             "last_poll": {
-                "last_poll_at": meta.get("last_poll_at"),
-                "last_poll_status": meta.get("last_poll_status"),
-                "last_poll_error": meta.get("last_poll_error"),
+                "last_poll_at": last_poll_at,
+                "last_poll_status": last_poll_status,
+                "last_poll_error": last_poll_error,
                 "last_poll_counts": meta.get("last_poll_counts"),
             },
+            "poll_health": poll_health,
         }
     )
 

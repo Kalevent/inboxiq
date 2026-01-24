@@ -158,11 +158,21 @@
       const data = await resp.json();
       if (!resp.ok) return;
       const lp = data.last_poll || {};
+      const health = data.poll_health || {};
       if (lp.last_poll_at) {
         let text = `Last poll: ${lp.last_poll_at}`;
         if (lp.last_poll_status) text += ` (${lp.last_poll_status})`;
         if (lp.last_poll_error) text += ` • Error: ${lp.last_poll_error}`;
         lastPollLine.textContent = text;
+      }
+      const badge = document.getElementById('pollHealthBadge');
+      if (badge) {
+        const status = health.status || 'unknown';
+        badge.textContent = status === 'ok' ? 'healthy' : status;
+        badge.className = 'text-slate-400';
+        if (status === 'ok') badge.className = 'text-emerald-300';
+        else if (status === 'stale') badge.className = 'text-amber-300';
+        else if (status === 'error') badge.className = 'text-rose-300';
       }
     } catch (err) {
       // silent
