@@ -284,6 +284,7 @@ def _ticket_view(t: Ticket) -> dict:
     needs_review = bool(decision.get("needs_review") or (t.status == "needs_review"))
     auto_flag = bool(decision.get("auto_handled") or (t.status == "auto_handled"))
     risk_flag = bool(decision.get("risk_flag"))
+    provider = (t.provider or decision.get("provider") or "email").lower()
 
     def _ai_reason(decision: dict, fallback: str) -> str:
         return decision.get("ai_reason") or decision.get("reason") or fallback
@@ -291,6 +292,22 @@ def _ticket_view(t: Ticket) -> dict:
     def _sla_display(priority_val: str | None) -> str:
         mapping = {"P0": "2h", "P1": "4h", "P2": "24h"}
         return mapping.get((priority_val or "").upper(), "24h")
+
+    def _infer_use_case() -> str:
+        hint = (decision.get("use_case") or "").lower()
+        if hint:
+            return hint
+        category = (t.category or decision.get("category") or "").lower()
+        intent = (decision.get("intent") or "").lower()
+        subject = (t.subject or "").lower()
+        tokens = f"{category} {intent} {subject}"
+        if any(term in tokens for term in ("claim", "claims", "insurance")):
+            return "claims"
+        if any(term in tokens for term in ("hr", "people", "payroll", "benefits")):
+            return "hr"
+        if any(term in tokens for term in ("finance", "billing", "invoice", "refund", "payment")):
+            return "finance"
+        return "support"
 
     if action_required is None and auto_flag:
         action_required = False
@@ -304,6 +321,45 @@ def _ticket_view(t: Ticket) -> dict:
     if t.status == "optional":
         action_required = "optional"
 
+    def _channel_from_provider(provider_val: str) -> str:
+        email_providers = {
+            "gmail",
+            "outlook",
+            "imap",
+            "email",
+            "google",
+            "gsuite",
+            "google_oauth",
+            "ms_graph",
+            "microsoft",
+            "office365",
+            "exchange",
+            "ews",
+            "smtp",
+        }
+        if provider_val in email_providers:
+            return "email"
+        if provider_val in {"feedback"}:
+            return "feedback"
+        if provider_val in {"web", "form", "forms"}:
+            return "form"
+        if provider_val in {"chat", "intercom", "slack"}:
+            return "chat"
+        if provider_val in {"crm", "hubspot", "salesforce"}:
+            return "crm"
+        if provider_val in {"api", "webhook"}:
+            return "api"
+        return "other"
+
+    if action_required is True:
+        decision_outcome = "action_required"
+    elif action_required == "optional":
+        decision_outcome = "needs_review"
+    elif action_required is False:
+        decision_outcome = "auto_handled"
+    else:
+        decision_outcome = "action_required"
+
     view = {
         "id": t.id,
         "priority": priority,
@@ -311,15 +367,24 @@ def _ticket_view(t: Ticket) -> dict:
         "category": t.category or decision.get("category") or "general",
         "intent": decision.get("intent") or "general",
         "sentiment": sentiment or "neutral",
-        "provider": t.provider or decision.get("provider"),
+        "provider": provider,
+        "channel": _channel_from_provider(provider),
         "ai_reason": _ai_reason(decision, "Action required — customer needs help."),
         "owner": t.owner or decision.get("owner") or "Support",
+        "team": t.team or decision.get("team"),
+        "assigned_to": t.assigned_to or decision.get("assigned_to"),
         "due_at": t.due_at.isoformat() if t.due_at else None,
         "sla": _sla_display(priority),
         "url": url_for("ticket_detail", ticket_id=t.id),
         "provider_url": t.provider_thread_url or decision.get("url"),
         "action_required": action_required,
         "status": t.status,
+        "use_case": _infer_use_case(),
+        "decision_type": decision.get("decision_type") or "triage",
+        "decision_outcome": decision_outcome,
+        "confidence": decision.get("confidence"),
+        "decision_trace": decision.get("decision_trace") or [],
+        "risk_flag": risk_flag,
     }
     return view
 
@@ -339,6 +404,8 @@ def dashboard_data():
     priority = (request.args.get("priority") or "").upper()
     q = (request.args.get("q") or "").strip()
     action_only = request.args.get("action_only", "true").lower() != "false"
+    use_case_filter = (request.args.get("use_case") or "").strip().lower()
+    channel_filter = (request.args.get("channel") or "").strip().lower()
 
     query = Ticket.query.filter(Ticket.account_id == account_id)
     if created_after:
@@ -358,12 +425,30 @@ def dashboard_data():
     query = query.order_by(_priority_order(), Ticket.created_at.desc())
 
     all_tickets = query.limit(200).all()
+    now = datetime.now(timezone.utc)
+
+    decision_minutes = []
+    sla_risk_count = 0
+    for t in all_tickets:
+        if t.created_at:
+            end_time = t.updated_at or t.created_at
+            delta = (end_time - t.created_at).total_seconds() / 60
+            if delta >= 0:
+                decision_minutes.append(delta)
+        if t.due_at and t.due_at <= now + timedelta(hours=1) and t.status not in ("auto_handled",):
+            sla_risk_count += 1
 
     action_required_items = []
     optional_items = []
     auto_items = []
     for t in all_tickets:
         view = _ticket_view(t)
+        if use_case_filter and use_case_filter != "all":
+            if (view.get("use_case") or "").lower() != use_case_filter:
+                continue
+        if channel_filter and channel_filter != "all":
+            if (view.get("channel") or "").lower() != channel_filter:
+                continue
         action_required = view.get("action_required")
         needs_review = bool((t.decision or {}).get("needs_review") or (t.status == "needs_review"))
         risk_flag = bool((t.decision or {}).get("risk_flag"))
@@ -403,7 +488,14 @@ def dashboard_data():
                 "team": decision.get("team") or "Product",
                 "assigned_to": decision.get("assigned_to"),
                 "provider": "feedback",
+                "channel": "feedback",
                 "action_required": False if fb.action_required == "false" else "optional",
+                "decision_type": decision.get("decision_type") or "feedback",
+                "decision_outcome": "auto_handled" if fb.action_required == "false" else "needs_review",
+                "confidence": decision.get("confidence"),
+                "decision_trace": decision.get("decision_trace") or [],
+                "use_case": decision.get("use_case") or "feedback",
+                "risk_flag": bool(decision.get("risk_flag")),
                 "url": f"/feedback/{fb.id}",
                 "source": "feedback",
             }
@@ -439,6 +531,8 @@ def dashboard_data():
     )
     auto_other_count = len(auto_items) - auto_email_count
 
+    avg_decision_minutes = round(sum(decision_minutes) / len(decision_minutes), 1) if decision_minutes else 0
+
     return jsonify(
         {
             "scope": scope,
@@ -453,6 +547,8 @@ def dashboard_data():
                 "auto_handled_metric": auto_count,
                 "triage_eliminated_pct": eliminated_pct,
                 "missed_emails": 0,
+                "decision_time_avg_minutes": avg_decision_minutes,
+                "sla_risk_count": sla_risk_count,
             },
             "action_required": action_required_items,
             "optional": optional_items,

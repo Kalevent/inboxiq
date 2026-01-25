@@ -19,7 +19,7 @@
           </div>
           <div>
             <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
-            <div class="text-xs text-slate-400">InboxIQ – AI Support Agent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Decision Engine</div>
           </div>
         </div>
 
@@ -90,22 +90,22 @@
           <div class="mb-6 flex flex-wrap items-center gap-2 text-xs">
             <button data-dashboard-section="connections" class="dashboard-tab rounded-full border border-slate-800 bg-slate-900/80 px-4 py-2 text-slate-100">Connections</button>
             <button data-dashboard-section="feedback" class="dashboard-tab rounded-full border border-slate-800 bg-slate-900/40 px-4 py-2 text-slate-300">Feedback</button>
-            <button data-dashboard-section="impact" class="dashboard-tab rounded-full border border-slate-800 bg-slate-900/40 px-4 py-2 text-slate-300">Today's impact</button>
+            <button data-dashboard-section="impact" class="dashboard-tab rounded-full border border-slate-800 bg-slate-900/40 px-4 py-2 text-slate-300">Decision outcomes</button>
             <button data-dashboard-section="search" class="dashboard-tab rounded-full border border-slate-800 bg-slate-900/40 px-4 py-2 text-slate-300">Search</button>
           </div>
 
           <section data-dashboard-section-panel="connections">
             {% if banner_first_batch or triaged_count is not none %}
             <div class="mb-4 rounded-xl border border-emerald-400/60 bg-emerald-500/10 px-3 py-2 text-sm banner-success">
-              🎯 Triaged {{ triaged_count or 0 }} emails! InboxIQ eliminated manual triage and surfaced actionable work.
+              🎯 Processed {{ triaged_count or 0 }} decisions! InboxIQ eliminated manual triage and surfaced actionable work.
             </div>
             {% endif %}
 
             <div class="mb-5 space-y-2">
-              <p class="text-sm font-semibold text-slate-100">InboxIQ is acting as your first-line support agent.</p>
-              <p class="text-xs text-slate-300">
-                It reads customer emails, decides what needs action, prioritises urgency, assigns ownership, and filters out noise — so humans start with clarity, not an inbox.
-              </p>
+            <p class="text-sm font-semibold text-slate-100">InboxIQ is your decision engine.</p>
+            <p class="text-xs text-slate-300">
+              It reads inbound signals across channels, decides what needs action, prioritises urgency, assigns ownership, and filters out noise — so teams act with clarity, not chaos.
+            </p>
               <div class="flex flex-wrap items-center gap-4 text-sm text-slate-100">
                 <div class="flex items-center gap-4">
                   <button id="connectGmailBtn" class="cta-pill cta-pill--gmail">
@@ -332,7 +332,7 @@
 
           <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
             <div class="flex flex-col gap-1 min-w-0">
-              <h3 class="text-lg font-semibold text-slate-50 leading-tight">Today’s impact</h3>
+              <h3 class="text-lg font-semibold text-slate-50 leading-tight">Decision outcomes</h3>
               <p class="text-sm text-slate-400 leading-snug">
                 These metrics reflect your selected scope. Default is <span class="text-slate-100 font-semibold">Today</span>.
               </p>
@@ -353,40 +353,60 @@
 
           <div class="dashboard-metrics mb-6">
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">ACTIONABLE SURFACED</p>
-              <p id="metricActionable" class="text-3xl font-semibold text-slate-50">{{ actionable_today or 0 }}</p>
-              <p class="text-[11px] text-slate-400">Humans should handle these</p>
+              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">DECISIONS PROCESSED</p>
+              <p id="metricDecisionTotal" class="text-3xl font-semibold text-slate-50">{{ (action_required_count or 0) + (optional_count or 0) + (auto_handled_other_count or 0) }}</p>
+              <p class="text-[11px] text-slate-400">Total decisions in scope</p>
             </div>
 
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">AUTO-HANDLED</p>
-              <p id="metricAutoHandled" class="text-3xl font-semibold text-slate-50">{{ auto_handled_today or 0 }}</p>
-              <p class="text-[11px] text-slate-400">No human action required</p>
+              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">ESCALATED</p>
+              <p id="metricEscalated" class="text-3xl font-semibold text-slate-50">{{ action_required_count or 0 }}</p>
+              <p class="text-[11px] text-slate-400">Human action required</p>
             </div>
 
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">TRIAGE ELIMINATED</p>
-              <p id="metricEliminated" class="text-3xl font-semibold text-slate-50">{{ triage_eliminated_pct or 0 }}%</p>
-              <p class="text-[11px] text-slate-400">Manual decisions avoided</p>
+              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">NEEDS REVIEW</p>
+              <p id="metricNeedsReview" class="text-3xl font-semibold text-slate-50">{{ optional_count or 0 }}</p>
+              <p class="text-[11px] text-slate-400">Optional follow-up</p>
             </div>
 
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">MISSED EMAILS</p>
-              <p id="metricMissed" class="text-3xl font-semibold text-slate-50">{{ missed_emails or 0 }}</p>
-              <p class="text-[11px] text-slate-400">Past 24 hours</p>
+              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">AUTO-HANDLED RATE</p>
+              <p id="metricAutoHandledRate" class="text-3xl font-semibold text-slate-50">{{ triage_eliminated_pct or 0 }}%</p>
+              <p class="text-[11px] text-slate-400">Noise reduced</p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">AVG DECISION TIME</p>
+              <p id="metricDecisionTime" class="text-3xl font-semibold text-slate-50">{{ decision_time_avg_minutes or 0 }}m</p>
+              <p class="text-[11px] text-slate-400">Time to triage</p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">SLA AT RISK</p>
+              <p id="metricSlaRisk" class="text-3xl font-semibold text-slate-50">{{ sla_risk_count or 0 }}</p>
+              <p class="text-[11px] text-slate-400">Due in next hour</p>
             </div>
           </div>
 
           <div class="mb-6">
             <div class="flex items-end justify-between flex-wrap gap-4 mb-3">
               <div>
-                <h2 class="text-sm font-semibold text-slate-100">Work queue</h2>
+                <h2 class="text-sm font-semibold text-slate-100">Decision queue</h2>
                 <p class="text-xs text-slate-400">
                   Humans should live in <span class="text-slate-200 font-semibold">Action Required</span>. Auto-handled stays collapsed by default.
                 </p>
               </div>
 
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                  <span class="text-slate-400">Use case</span>
+                  <button data-use-case="all" class="use-case-tab rounded-full border border-indigo-400 bg-indigo-500/20 px-3 py-1.5 text-indigo-100">All</button>
+                  <button data-use-case="support" class="use-case-tab rounded-full border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-slate-300">Support</button>
+                  <button data-use-case="claims" class="use-case-tab rounded-full border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-slate-300">Claims</button>
+                  <button data-use-case="hr" class="use-case-tab rounded-full border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-slate-300">HR</button>
+                  <button data-use-case="finance" class="use-case-tab rounded-full border border-slate-800 bg-slate-900/40 px-3 py-1.5 text-slate-300">Finance</button>
+                </div>
                 <label class="inline-flex items-center gap-2 text-xs text-slate-200 px-3 py-2 rounded-lg border border-slate-800 bg-slate-900/40">
                   <input id="showActionOnly" type="checkbox" checked class="accent-indigo-500" />
                   Show Action Required only
@@ -394,6 +414,18 @@
                 <span id="actionOnlyHint" class="hidden text-[11px] text-slate-400">
                   Auto-handled and Optional follow-up are hidden by this filter.
                 </span>
+                <select
+                  id="channelFilter"
+                  class="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                >
+                  <option value="all">All channels</option>
+                  <option value="email">Email</option>
+                  <option value="form">Form</option>
+                  <option value="chat">Chat</option>
+                  <option value="crm">CRM</option>
+                  <option value="api">API</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
             </div>
 
@@ -401,25 +433,19 @@
               <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <p class="text-sm font-semibold text-slate-200">Action Required</p>
                 <p id="metricActionRequired" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ action_required_count or 0 }}</p>
-                <p class="mt-2 text-sm text-slate-400 leading-snug">InboxIQ decided these need attention</p>
+                <p class="mt-2 text-sm text-slate-400 leading-snug">Decisions needing human action</p>
               </div>
 
               <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <p class="text-sm font-semibold text-slate-200">Optional Follow-up</p>
                 <p id="metricOptional" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ optional_count or 0 }}</p>
-                <p class="mt-2 text-sm text-slate-400 leading-snug">Not blocking — review if capacity</p>
+                <p class="mt-2 text-sm text-slate-400 leading-snug">Needs review — not blocking</p>
               </div>
 
               <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-                <p class="text-sm font-semibold text-slate-200">Auto-handled (Email)</p>
-                <p id="metricAutoHandledEmail" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ auto_handled_email_count or 0 }}</p>
-                <p class="mt-2 text-sm text-slate-400 leading-snug">Email triage — no human action required</p>
-              </div>
-
-              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-                <p class="text-sm font-semibold text-slate-200">Auto-handled (Other)</p>
-                <p id="metricAutoHandledOther" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ auto_handled_other_count or 0 }}</p>
-                <p class="mt-2 text-sm text-slate-400 leading-snug">Voice, chat, forms, CRM, social</p>
+                <p class="text-sm font-semibold text-slate-200">Auto-handled</p>
+                <p id="metricAutoHandledQueue" class="mt-2 text-4xl md:text-5xl font-semibold text-white leading-none tracking-tight">{{ auto_handled_other_count or 0 }}</p>
+                <p class="mt-2 text-sm text-slate-400 leading-snug">Auto-handled (noise filtered)</p>
               </div>
             </div>
 
@@ -429,13 +455,13 @@
                   <div class="font-semibold text-slate-100">
                     Action Required <span id="actionRequiredCount" class="text-slate-400 font-normal">({{ action_required_count or 0 }})</span>
                   </div>
-                  <div class="text-xs text-slate-400">InboxIQ decided these need human attention</div>
+                  <div class="text-xs text-slate-400">Why this decision? See evidence and audit trail below.</div>
                 </div>
                 <div class="flex items-center gap-2 text-xs text-slate-300">
                   <input
                     id="actionSearchInput"
                     type="text"
-                    placeholder="Search subject/body..."
+                    placeholder="Search decisions..."
                     class="w-48 md:w-56 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
                   />
                   <select
@@ -458,6 +484,8 @@
                     class="rounded-2xl border border-slate-800 bg-slate-900/40 px-5 py-4 hover:bg-slate-900/50 transition action-card"
                     data-priority="{{ (t.priority or 'P2')|upper }}"
                     data-text="{{ (t.subject ~ ' ' ~ (t.category or '') ~ ' ' ~ (t.intent or '') ~ ' ' ~ (t.sentiment or ''))|lower }}"
+                    data-use-case="{{ (t.use_case or 'support')|lower }}"
+                    data-channel="{{ (t.channel or 'email')|lower }}"
                   >
                     <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
                       <div class="min-w-0 space-y-2">
@@ -470,22 +498,30 @@
                         </div>
 
                         <div class="text-xs text-slate-400 flex flex-wrap gap-2">
-                          <span>Category: <span class="text-slate-200">{{ t.category or 'general' }}</span></span>
+                          <span>Use case: <span class="text-slate-200">{{ t.use_case or 'support' }}</span></span>
                           <span>·</span>
-                          <span>Intent: <span class="text-slate-200">{{ t.intent or 'unknown' }}</span></span>
+                          <span>Channel: <span class="text-slate-200">{{ t.channel or 'email' }}</span></span>
                           <span>·</span>
-                          <span>Sentiment: <span class="text-slate-200">{{ t.sentiment or 'neutral' }}</span></span>
-                          {% if t.provider %}<span>·</span><span>Provider: <span class="text-slate-200">{{ t.provider }}</span></span>{% endif %}
+                          <span>Decision: <span class="text-slate-200">{{ t.decision_type or 'triage' }}</span></span>
+                          <span>·</span>
+                          <span>Risk: <span class="text-slate-200">{% if t.risk_flag %}flagged{% else %}none{% endif %}</span></span>
                         </div>
 
                         <div class="text-sm text-slate-100">
-                          <span class="font-semibold text-slate-50">AI decision:</span>
+                          <span class="font-semibold text-slate-50">Why this decision:</span>
                           {{ t.ai_reason or 'Action required — customer needs help.' }}
                         </div>
+                        {% if t.decision_trace %}
+                        <div class="text-xs text-slate-400">
+                          <span class="font-semibold text-slate-300">Audit trail:</span>
+                          {{ t.decision_trace|join(", ") }}
+                        </div>
+                        {% endif %}
                       </div>
 
                       <div class="shrink-0 text-xs text-slate-300 flex flex-col gap-1 items-end text-right">
-                        <div>Assigned: <span class="text-slate-50 font-semibold">{{ t.owner or 'Support' }}</span></div>
+                        <div>Owner: <span class="text-slate-50 font-semibold">{{ t.owner or 'Support' }}</span></div>
+                        {% if t.team %}<div>Team: <span class="text-slate-50 font-semibold">{{ t.team }}</span></div>{% endif %}
                         <div>SLA: <span class="text-slate-50 font-semibold">{{ t.sla or t.due_at or '—' }}</span></div>
                         <a href="{{ t.url or '#' }}" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Open ticket</a>
                       </div>
@@ -516,7 +552,11 @@
               <div id="optionalList" class="space-y-3 p-4">
                 {% if optional_tickets and optional_tickets|length > 0 %}
                   {% for t in optional_tickets %}
-                  <div class="rounded-2xl border border-slate-800 bg-slate-900/35 px-5 py-4 hover:bg-slate-900/45 transition">
+                  <div
+                    class="rounded-2xl border border-slate-800 bg-slate-900/35 px-5 py-4 hover:bg-slate-900/45 transition"
+                    data-use-case="{{ (t.use_case or 'support')|lower }}"
+                    data-channel="{{ (t.channel or 'email')|lower }}"
+                  >
                     <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
                       <div class="min-w-0 space-y-2">
                         <div class="flex flex-wrap items-center gap-2">
@@ -528,21 +568,30 @@
                         </div>
 
                         <div class="text-xs text-slate-400 flex flex-wrap gap-2">
-                          <span>Category: <span class="text-slate-200">{{ t.category or 'general' }}</span></span>
+                          <span>Use case: <span class="text-slate-200">{{ t.use_case or 'support' }}</span></span>
                           <span>·</span>
-                          <span>Intent: <span class="text-slate-200">{{ t.intent or 'unknown' }}</span></span>
+                          <span>Channel: <span class="text-slate-200">{{ t.channel or 'email' }}</span></span>
                           <span>·</span>
-                          <span>Sentiment: <span class="text-slate-200">{{ t.sentiment or 'neutral' }}</span></span>
+                          <span>Decision: <span class="text-slate-200">{{ t.decision_type or 'triage' }}</span></span>
+                          <span>·</span>
+                          <span>Risk: <span class="text-slate-200">{% if t.risk_flag %}flagged{% else %}none{% endif %}</span></span>
                         </div>
 
                         <div class="text-sm text-slate-100">
-                          <span class="font-semibold text-slate-50">AI decision:</span>
+                          <span class="font-semibold text-slate-50">Why this decision:</span>
                           {{ t.ai_reason or 'Optional — not blocking, follow up if capacity.' }}
                         </div>
+                        {% if t.decision_trace %}
+                        <div class="text-xs text-slate-400">
+                          <span class="font-semibold text-slate-300">Audit trail:</span>
+                          {{ t.decision_trace|join(", ") }}
+                        </div>
+                        {% endif %}
                       </div>
 
                       <div class="shrink-0 text-xs text-slate-300 flex flex-col gap-1 items-end text-right">
-                        <div>Assigned: <span class="text-slate-50 font-semibold">{{ t.owner or 'Support' }}</span></div>
+                        <div>Owner: <span class="text-slate-50 font-semibold">{{ t.owner or 'Support' }}</span></div>
+                        {% if t.team %}<div>Team: <span class="text-slate-50 font-semibold">{{ t.team }}</span></div>{% endif %}
                         <div>Due: <span class="text-slate-50 font-semibold">{{ t.due_at or '—' }}</span></div>
                         <a href="{{ t.url or '#' }}" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Open ticket</a>
                       </div>
@@ -562,7 +611,7 @@
                 <summary class="px-4 py-3 cursor-pointer select-none flex items-center justify-between border-b border-slate-800 hover:bg-slate-900/20">
                   <div>
                     <div class="font-semibold text-slate-100">
-                      Auto-handled <span class="text-slate-400 font-normal">(email + feedback)</span>
+                      Auto-handled <span class="text-slate-400 font-normal">(decisions)</span>
                     </div>
                     <div class="text-xs text-slate-400">Filtered out — no human action required (collapsed by default)</div>
                   </div>
@@ -598,9 +647,9 @@
           <section data-dashboard-section-panel="search" class="hidden">
           <div class="mt-6 space-y-3">
             <div class="flex items-center justify-between flex-wrap gap-3">
-              <div class="text-sm font-semibold text-slate-100">Search all tickets (advanced)</div>
+              <div class="text-sm font-semibold text-slate-100">Search all decisions (advanced)</div>
               <form id="ticketSearchForm" class="flex flex-wrap gap-2 text-xs">
-                <input id="ticketSearchQuery" type="text" placeholder="Search subject/body" class="w-40 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                <input id="ticketSearchQuery" type="text" placeholder="Search decisions" class="w-40 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
                 <select id="ticketStatus" class="rounded-lg border border-slate-800 bg-slate-900/70 px-2 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
                   <option value="">Status</option>
                   <option value="new">New</option>
@@ -632,7 +681,7 @@
 
             <div id="ticketResults" class="space-y-2">
               <div class="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-4 text-sm text-slate-200">
-                Search across all time ranges and queues. This is your full ticket history.
+                Search across all time ranges and queues. This is your full decision history.
               </div>
             </div>
           </div>

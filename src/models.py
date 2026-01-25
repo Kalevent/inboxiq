@@ -120,6 +120,64 @@ class Ticket(db.Model):
         self.decision = decision
 
     def to_dict(self) -> dict:
+        decision = self.decision or {}
+        provider = (self.provider or decision.get("provider") or "email").lower()
+        def _channel_from_provider(provider_val: str) -> str:
+            email_providers = {
+                "gmail",
+                "outlook",
+                "imap",
+                "email",
+                "google",
+                "gsuite",
+                "google_oauth",
+                "ms_graph",
+                "microsoft",
+                "office365",
+                "exchange",
+                "ews",
+                "smtp",
+            }
+            if provider_val in email_providers:
+                return "email"
+            if provider_val in {"feedback"}:
+                return "feedback"
+            if provider_val in {"web", "form", "forms"}:
+                return "form"
+            if provider_val in {"chat", "intercom", "slack"}:
+                return "chat"
+            if provider_val in {"crm", "hubspot", "salesforce"}:
+                return "crm"
+            if provider_val in {"api", "webhook"}:
+                return "api"
+            return "other"
+
+        def _infer_use_case() -> str:
+            hint = (decision.get("use_case") or "").lower()
+            if hint:
+                return hint
+            category = (self.category or decision.get("category") or "").lower()
+            intent = (decision.get("intent") or "").lower()
+            subject = (self.subject or "").lower()
+            tokens = f"{category} {intent} {subject}"
+            if any(term in tokens for term in ("claim", "claims", "insurance")):
+                return "claims"
+            if any(term in tokens for term in ("hr", "people", "payroll", "benefits")):
+                return "hr"
+            if any(term in tokens for term in ("finance", "billing", "invoice", "refund", "payment")):
+                return "finance"
+            return "support"
+
+        def _decision_outcome() -> str:
+            action_required = self.action_required
+            if action_required is True:
+                return "action_required"
+            if action_required == "optional":
+                return "needs_review"
+            if action_required is False:
+                return "auto_handled"
+            return "action_required"
+
         return {
             "id": self.id,
             "account_uid": None,
@@ -133,19 +191,25 @@ class Ticket(db.Model):
             "entities": self.entities or {},
             "status": self.status,
             "message_id": self.message_id,
-            "provider": self.provider,
+            "provider": provider,
             "provider_thread_url": self.provider_thread_url,
-            "decision": self.decision or {},
+            "decision": decision,
             "manual_override": self.manual_override,
             "override_metadata": self.override_metadata or {},
             "due_at": self.due_at.isoformat() if self.due_at else None,
             "summary": self.summary,
             "last_question": self.last_question,
-            "intent": (self.decision or {}).get("intent"),
-            "risk_flag": (self.decision or {}).get("risk_flag"),
-            "owner": self.owner or (self.decision or {}).get("owner"),
-            "team": self.team or (self.decision or {}).get("team"),
+            "intent": decision.get("intent"),
+            "risk_flag": decision.get("risk_flag"),
+            "owner": self.owner or decision.get("owner"),
+            "team": self.team or decision.get("team"),
             "assigned_to": self.assigned_to,
+            "channel": _channel_from_provider(provider),
+            "use_case": _infer_use_case(),
+            "decision_type": decision.get("decision_type") or "triage",
+            "decision_outcome": _decision_outcome(),
+            "confidence": decision.get("confidence"),
+            "decision_trace": decision.get("decision_trace") or [],
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "action_required": self.action_required,

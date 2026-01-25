@@ -10,6 +10,11 @@ Targets:
 - Success rate >= 95%
 - Error rate <= 5%
 
+Decision-centric scope:
+- InboxIQ is a decision engine, not an auto-reply system.
+- DSPy is used to standardize and optimize *decisions* (route, priority, escalation, action_required).
+- Email is just one channel; the same decision layer applies to forms, chat, CRM, APIs, and industry-specific intake (claims, HR, finance).
+
 ## Table of contents
 1. Canonical case object
 2. DSPy signatures

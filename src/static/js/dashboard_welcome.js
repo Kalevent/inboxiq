@@ -297,12 +297,16 @@
   const autoHandledFeedbackList = document.getElementById('autoHandledFeedbackList');
   const metricActionRequired = document.getElementById('metricActionRequired');
   const metricOptional = document.getElementById('metricOptional');
-  const metricAutoHandledEmail = document.getElementById('metricAutoHandledEmail');
-  const metricAutoHandledOther = document.getElementById('metricAutoHandledOther');
-  const metricActionable = document.getElementById('metricActionable');
-  const metricAutoHandled = document.getElementById('metricAutoHandled');
-  const metricEliminated = document.getElementById('metricEliminated');
-  const metricMissed = document.getElementById('metricMissed');
+  const metricAutoHandledQueue = document.getElementById('metricAutoHandledQueue');
+  const metricDecisionTotal = document.getElementById('metricDecisionTotal');
+  const metricEscalated = document.getElementById('metricEscalated');
+  const metricNeedsReview = document.getElementById('metricNeedsReview');
+  const metricAutoHandledRate = document.getElementById('metricAutoHandledRate');
+  const metricDecisionTime = document.getElementById('metricDecisionTime');
+  const metricSlaRisk = document.getElementById('metricSlaRisk');
+  const useCaseTabs = Array.from(document.querySelectorAll('.use-case-tab'));
+  const channelFilter = document.getElementById('channelFilter');
+  let activeUseCase = 'all';
 
   function setTicketStatus(kind, msg) {
     if (!ticketStatus) return;
@@ -342,20 +346,76 @@
       loadDashboardData();
     });
   }
+  if (channelFilter) {
+    channelFilter.addEventListener('change', loadDashboardData);
+  }
+  if (useCaseTabs.length) {
+    const setActiveUseCase = (useCase, shouldLoad = true) => {
+      activeUseCase = useCase || 'all';
+      useCaseTabs.forEach((tab) => {
+        const isActive = tab.dataset.useCase === activeUseCase;
+        tab.classList.toggle('bg-indigo-500/20', isActive);
+        tab.classList.toggle('border-indigo-400', isActive);
+        tab.classList.toggle('text-indigo-100', isActive);
+        tab.classList.toggle('bg-slate-900/40', !isActive);
+        tab.classList.toggle('border-slate-800', !isActive);
+        tab.classList.toggle('text-slate-300', !isActive);
+      });
+      if (shouldLoad) loadDashboardData();
+    };
+
+    useCaseTabs.forEach((btn) => {
+      btn.addEventListener('click', () => setActiveUseCase(btn.dataset.useCase || 'all'));
+    });
+    // Set default so the active CTA is clearly highlighted on load.
+    setActiveUseCase('all', false);
+  }
 
   function updateMetrics(counts = {}) {
     if (metricActionRequired) metricActionRequired.textContent = counts.action_required ?? 0;
     if (metricOptional) metricOptional.textContent = counts.optional ?? 0;
-    if (metricAutoHandledEmail) metricAutoHandledEmail.textContent = counts.auto_handled_email ?? 0;
-    if (metricAutoHandledOther) metricAutoHandledOther.textContent = counts.auto_handled_other ?? 0;
-    if (metricActionable) metricActionable.textContent = counts.actionable_surfaced ?? 0;
-    if (metricAutoHandled) metricAutoHandled.textContent = counts.auto_handled_metric ?? 0;
-    if (metricEliminated) metricEliminated.textContent = `${counts.triage_eliminated_pct ?? 0}%`;
-    if (metricMissed) metricMissed.textContent = counts.missed_emails ?? 0;
+    if (metricAutoHandledQueue) metricAutoHandledQueue.textContent = counts.auto_handled ?? 0;
+    const total =
+      (counts.action_required ?? 0) +
+      (counts.optional ?? 0) +
+      (counts.auto_handled ?? 0) +
+      (counts.auto_handled_feedback ?? 0);
+    if (metricDecisionTotal) metricDecisionTotal.textContent = total;
+    if (metricEscalated) metricEscalated.textContent = counts.action_required ?? 0;
+    if (metricNeedsReview) metricNeedsReview.textContent = counts.optional ?? 0;
+    if (metricAutoHandledRate) metricAutoHandledRate.textContent = `${counts.triage_eliminated_pct ?? 0}%`;
+    if (metricDecisionTime) metricDecisionTime.textContent = `${counts.decision_time_avg_minutes ?? 0}m`;
+    if (metricSlaRisk) metricSlaRisk.textContent = counts.sla_risk_count ?? 0;
     if (actionCountSpan) actionCountSpan.textContent = `(${counts.action_required ?? 0})`;
   }
 
+  function normalizeValue(val, fallback) {
+    return (val || fallback || '').toString().toLowerCase();
+  }
+
   function buildQueueCard(item, kind = 'action') {
+    const useCase = normalizeValue(item.use_case, 'support');
+    const channel = normalizeValue(item.channel, 'email');
+    const decisionType = item.decision_type || 'triage';
+    const decisionOutcome =
+      item.decision_outcome ||
+      (kind === 'action' ? 'action_required' : kind === 'optional' ? 'needs_review' : 'auto_handled');
+    const decisionOutcomeLabel =
+      decisionOutcome === 'auto_handled'
+        ? 'Auto-handled'
+        : decisionOutcome === 'needs_review'
+        ? 'Needs review'
+        : 'Action Required';
+    const confidence =
+      typeof item.confidence === 'number'
+        ? `${Math.round(item.confidence * 100)}%`
+        : item.confidence && typeof item.confidence === 'object'
+        ? '—'
+        : '—';
+    const trace = Array.isArray(item.decision_trace) && item.decision_trace.length
+      ? item.decision_trace.join(', ')
+      : '';
+
     const badge = kind === 'action' ? 'Action Required' : kind === 'optional' ? 'Optional' : 'INFO';
     const badgeClass =
       kind === 'action'
@@ -365,26 +425,24 @@
         : 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-300 border border-slate-700';
     const priority = (item.priority || 'P2').toUpperCase();
     const priorityBadge = `<span class="badge-pill badge-priority badge-priority-${priority.toLowerCase()}">${priority}</span>`;
-    const subject = item.subject || 'Ticket';
+    const subject = item.subject || 'Decision';
     const provider = item.provider ? `<span>·</span><span>Provider: <span class="text-slate-200">${item.provider}</span></span>` : '';
     const aiReason = item.ai_reason || (kind === 'auto' ? 'Informational / auto-handled.' : 'Action required — customer needs help.');
     const owner = item.owner || 'Support';
+    const team = item.team ? `Team: <span class="text-slate-300 font-semibold">${item.team}</span>` : '';
     const sla = item.sla || item.due_at || '—';
     const openThreadLink = item.provider_url
-      ? `<a href="${item.provider_url}" target="_blank" rel="noreferrer" class="text-slate-400 hover:text-slate-300 underline">Open thread</a>`
+      ? `<a href="${item.provider_url}" target="_blank" rel="noreferrer" class="text-slate-400 hover:text-slate-300 underline">Open source</a>`
       : '';
     const actionBadge =
       kind === 'auto'
         ? `<span class="${badgeClass}">${badge}</span>`
         : `<span class="badge-pill ${badgeClass}">${badge}</span>`;
-    const optionalMeta =
-      kind === 'optional'
-        ? `<div class="text-xs text-slate-400 flex flex-wrap gap-2"><span>Category: <span class="text-slate-200">${item.category || 'general'}</span></span><span>·</span><span>Intent: <span class="text-slate-200">${item.intent || 'unknown'}</span></span><span>·</span><span>Sentiment: <span class="text-slate-200">${item.sentiment || 'neutral'}</span></span></div>`
-        : '';
+    const risk = item.risk_flag ? 'flagged' : 'none';
 
     if (kind === 'auto') {
       return `
-        <div class="p-4 bg-slate-950/40">
+        <div class="p-4 bg-slate-950/40" data-use-case="${useCase}" data-channel="${channel}">
           <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
@@ -392,16 +450,19 @@
                 <div class="font-semibold text-slate-200 truncate">${subject}</div>
               </div>
               <div class="text-xs text-slate-500 mt-1">
-                Type: <span class="text-slate-300">${item.category || 'informational'}</span>
-                · Action required: <span class="text-slate-300">no</span>
+                Use case: <span class="text-slate-300">${useCase}</span>
+                · Channel: <span class="text-slate-300">${channel}</span>
+                · Decision: <span class="text-slate-300">${decisionType}</span>
               </div>
               <div class="text-xs text-slate-400 mt-2">
-                <span class="font-semibold">Why auto-handled:</span>
+                <span class="font-semibold">Why this decision:</span>
                 ${aiReason}
               </div>
+              ${trace ? `<div class="text-xs text-slate-500 mt-1"><span class="font-semibold">Audit trail:</span> ${trace}</div>` : ''}
             </div>
             <div class="shrink-0 text-xs text-slate-500 flex flex-col gap-1 items-end text-right">
               <div>Owner: <span class="text-slate-300 font-semibold">${owner}</span></div>
+              ${team ? `<div>${team}</div>` : ''}
               <div>SLA: <span class="text-slate-300 font-semibold">${sla}</span></div>
               <a href="${item.url || '#'}" class="text-slate-400 hover:text-slate-300 underline">View</a>
             </div>
@@ -415,6 +476,8 @@
         class="rounded-2xl border border-slate-800 bg-slate-900/40 px-5 py-4 hover:bg-slate-900/50 transition action-card"
         data-priority="${priority}"
         data-text="${(subject + ' ' + (item.category || '') + ' ' + (item.intent || '') + ' ' + (item.sentiment || '')).toLowerCase()}"
+        data-use-case="${useCase}"
+        data-channel="${channel}"
       >
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
           <div class="min-w-0 space-y-2">
@@ -423,22 +486,29 @@
               ${actionBadge}
               <div class="font-semibold text-slate-50 truncate">${subject}</div>
             </div>
-            ${optionalMeta || `<div class="text-xs text-slate-400 flex flex-wrap gap-2">
-              <span>Category: <span class="text-slate-200">${item.category || 'general'}</span></span>
+            <div class="text-xs text-slate-400 flex flex-wrap gap-2">
+              <span>Use case: <span class="text-slate-200">${useCase}</span></span>
               <span>·</span>
-              <span>Intent: <span class="text-slate-200">${item.intent || 'unknown'}</span></span>
+              <span>Channel: <span class="text-slate-200">${channel}</span></span>
               <span>·</span>
-              <span>Sentiment: <span class="text-slate-200">${item.sentiment || 'neutral'}</span></span>
+              <span>Decision: <span class="text-slate-200">${decisionType}</span></span>
+              <span>·</span>
+              <span>Outcome: <span class="text-slate-200">${decisionOutcomeLabel}</span></span>
+              <span>·</span>
+              <span>Risk: <span class="text-slate-200">${risk}</span></span>
               ${provider}
-            </div>`}
+            </div>
             <div class="text-sm text-slate-100">
-              <span class="font-semibold text-slate-50">AI decision:</span>
+              <span class="font-semibold text-slate-50">Why this decision:</span>
               ${aiReason}
             </div>
+            ${trace ? `<div class="text-xs text-slate-400"><span class="font-semibold text-slate-300">Audit trail:</span> ${trace}</div>` : ''}
           </div>
             <div class="shrink-0 text-xs text-slate-300 flex flex-col gap-1 items-end text-right">
               <div>Assigned: <span class="text-slate-50 font-semibold">${owner}</span></div>
+              ${item.team ? `<div>Team: <span class="text-slate-50 font-semibold">${item.team}</span></div>` : ''}
               <div>SLA: <span class="text-slate-50 font-semibold">${sla}</span></div>
+              <div>Confidence: <span class="text-slate-50 font-semibold">${confidence}</span></div>
               <a href="${item.url || '#'}" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Open ticket</a>
               ${openThreadLink}
             </div>
@@ -468,16 +538,29 @@
     if (actionPriorityFilter?.value) params.set('priority', actionPriorityFilter.value);
     if (actionSearchInput?.value) params.set('q', actionSearchInput.value.trim());
     if (showActionOnlyToggle && !showActionOnlyToggle.checked) params.set('action_only', 'false');
+    if (activeUseCase && activeUseCase !== 'all') params.set('use_case', activeUseCase);
+    if (channelFilter?.value && channelFilter.value !== 'all') params.set('channel', channelFilter.value);
 
     try {
       const resp = await fetch(`/api/v1/inboxiq/dashboard-data?${params.toString()}`, { credentials: 'include' });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'Unable to load dashboard data');
       updateMetrics(data.counts || {});
-      renderList(actionRequiredList, data.action_required || [], 'action');
-      renderList(optionalList, data.optional || [], 'optional');
-      renderList(autoHandledEmailList, data.auto_handled || [], 'auto');
-      renderList(autoHandledFeedbackList, data.auto_handled_feedback || [], 'auto');
+      const useCaseFilter = activeUseCase || 'all';
+      const channelValue = channelFilter?.value || 'all';
+      const filterItems = (items = []) => {
+        return items.filter((item) => {
+          const itemUseCase = normalizeValue(item.use_case, 'support');
+          const itemChannel = normalizeValue(item.channel, 'email');
+          if (useCaseFilter !== 'all' && itemUseCase !== useCaseFilter) return false;
+          if (channelValue !== 'all' && itemChannel !== channelValue) return false;
+          return true;
+        });
+      };
+      renderList(actionRequiredList, filterItems(data.action_required || []), 'action');
+      renderList(optionalList, filterItems(data.optional || []), 'optional');
+      renderList(autoHandledEmailList, filterItems(data.auto_handled || []), 'auto');
+      renderList(autoHandledFeedbackList, filterItems(data.auto_handled_feedback || []), 'auto');
     } catch (err) {
       console.warn('dashboard data fetch failed', err);
     }
@@ -502,7 +585,7 @@
         ? `<span class="text-[11px] text-slate-400 font-mono">ID: ${ticketId}</span>`
         : '';
       const threadLink = t.provider_thread_url
-        ? `<a class="text-indigo-300 hover:text-indigo-200 text-[11px]" href="${t.provider_thread_url}" target="_blank" rel="noreferrer">Open thread</a>`
+        ? `<a class="text-indigo-300 hover:text-indigo-200 text-[11px]" href="${t.provider_thread_url}" target="_blank" rel="noreferrer">Open source</a>`
         : '';
       const lastQuestion = t.last_question
         ? `<div class="text-[11px] text-slate-400 mt-1"><span class="text-slate-500">Last question:</span> ${t.last_question}</div>`
@@ -516,10 +599,21 @@
       const bodyPreview = bodyText
         ? `<div class="text-[11px] text-slate-400 mt-1 line-clamp-3">${bodyText}</div>`
         : '';
-      const intent = t.intent ? `<div class="text-[11px] text-slate-400">Intent: ${t.intent}</div>` : '';
+      const decisionType = t.decision_type ? `<div class="text-[11px] text-slate-400">Decision: ${t.decision_type}</div>` : '';
+      const decisionOutcome = t.decision_outcome ? `<div class="text-[11px] text-slate-400">Outcome: ${t.decision_outcome}</div>` : '';
+      const confidence =
+        typeof t.confidence === 'number'
+          ? `<div class="text-[11px] text-slate-400">Confidence: ${Math.round(t.confidence * 100)}%</div>`
+          : t.confidence
+          ? `<div class="text-[11px] text-slate-400">Confidence: —</div>`
+          : '';
       const owner = t.owner ? `<div class="text-[11px] text-slate-400">Owner: ${t.owner}</div>` : '';
       const assignedTo = t.assigned_to ? `<div class="text-[11px] text-slate-400">Assigned to: ${t.assigned_to}</div>` : '';
       const team = t.team ? `<div class="text-[11px] text-slate-400">Team: ${t.team}</div>` : '';
+      const auditTrail = Array.isArray(t.decision_trace) && t.decision_trace.length
+        ? `<div class="text-[11px] text-slate-400">Audit trail: ${t.decision_trace.join(', ')}</div>`
+        : '';
+      const aiReason = t.ai_reason ? `<div class="text-[11px] text-slate-400">Why: ${t.ai_reason}</div>` : '';
       const risk = t.risk_flag ? '<span class="ml-1 px-2 py-[2px] rounded-full bg-amber-500/10 text-amber-200 text-[10px]">risk</span>' : '';
       const card = document.createElement('div');
       card.className = 'rounded-xl border border-slate-800 bg-slate-900/70 p-3 text-xs text-slate-200';
@@ -532,17 +626,21 @@
           <span class="text-[11px] text-slate-400">${created}</span>
         </div>
         <div class="grid grid-cols-2 gap-2">
-          <div><span class="text-slate-400">Category:</span> ${t.category || '-'}</div>
+          <div><span class="text-slate-400">Use case:</span> ${t.use_case || 'support'}</div>
+          <div><span class="text-slate-400">Channel:</span> ${t.channel || 'email'}</div>
           <div><span class="text-slate-400">Priority:</span> ${t.priority || '-'}</div>
-          <div><span class="text-slate-400">Sentiment:</span> ${t.sentiment || '-'}</div>
-          <div><span class="text-slate-400">Provider:</span> ${t.provider || 'n/a'}</div>
+          <div><span class="text-slate-400">Risk:</span> ${t.risk_flag ? 'flagged' : 'none'}</div>
           <div><span class="text-slate-400">Due:</span> ${dueAt || 'n/a'} ${breachSoon ? '<span class="ml-1 px-2 py-[2px] rounded-full bg-rose-500/10 text-rose-200 text-[10px]">breach soon</span>' : ''}</div>
           <div>${threadLink}</div>
         </div>
-        ${intent}
+        ${decisionType}
+        ${decisionOutcome}
+        ${confidence}
         ${team}
         ${owner}
         ${assignedTo}
+        ${aiReason}
+        ${auditTrail}
         ${bodyPreview}
         ${summary}
         ${lastQuestion}
