@@ -314,14 +314,35 @@ def create_app() -> Flask:
     total_tickets = Ticket.query.filter_by(account_id=account_id).count()
     triaged_count = total_tickets
     missed = 0  # placeholder metric; adjust when inbox polling is wired
-    last_connection = (
-      InboxConnection.query.filter_by(account_id=account_id)
-      .order_by(InboxConnection.updated_at.desc())
-      .first()
-      or InboxConnection.query.filter_by(user_id=user.id)
-      .order_by(InboxConnection.updated_at.desc())
-      .first()
-    )
+    def _pick_connection(connections):
+      if not connections:
+        return None
+      def _poll_ts(conn):
+        meta = conn.metadata_json or {}
+        ts = meta.get("last_poll_at")
+        if not ts:
+          return None
+        try:
+          ts_raw = str(ts)
+          if ts_raw.endswith("Z"):
+            ts_raw = ts_raw[:-1] + "+00:00"
+          parsed = datetime.fromisoformat(ts_raw)
+          if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+          return parsed
+        except Exception:
+          return None
+      # Prefer latest poll timestamp; fall back to updated_at.
+      return max(
+        connections,
+        key=lambda c: (_poll_ts(c) or datetime.min.replace(tzinfo=timezone.utc), c.updated_at or datetime.min.replace(tzinfo=timezone.utc)),
+      )
+
+    account_connections = InboxConnection.query.filter_by(account_id=account_id, status="connected").all()
+    last_connection = _pick_connection(account_connections)
+    if not last_connection:
+      user_connections = InboxConnection.query.filter_by(user_id=user.id, status="connected").all()
+      last_connection = _pick_connection(user_connections)
     last_poll = (last_connection.metadata_json or {}).get("last_poll_at") if last_connection else None
     last_poll_status = (last_connection.metadata_json or {}).get("last_poll_status") if last_connection else None
     last_poll_error = (last_connection.metadata_json or {}).get("last_poll_error") if last_connection else None

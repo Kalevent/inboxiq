@@ -877,18 +877,37 @@ def poll_inbox_service(connection_id: str, user_id: int | None = None):
 def get_my_connection():
     user_id = get_jwt_identity()
     account_id = _get_account_id(user_id)
+    def _pick_connection(connections):
+        if not connections:
+            return None
+        def _poll_ts(conn):
+            meta = conn.metadata_json or {}
+            ts = meta.get("last_poll_at")
+            if not ts:
+                return None
+            try:
+                ts_raw = str(ts)
+                if ts_raw.endswith("Z"):
+                    ts_raw = ts_raw[:-1] + "+00:00"
+                parsed = datetime.fromisoformat(ts_raw)
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=timezone.utc)
+                return parsed
+            except Exception:
+                return None
+        return max(
+            connections,
+            key=lambda c: (_poll_ts(c) or datetime.min.replace(tzinfo=timezone.utc), c.updated_at or datetime.min.replace(tzinfo=timezone.utc)),
+        )
+
     conn = None
     if account_id:
-        conn = (
-            InboxConnection.query.filter_by(account_id=account_id, status="connected")
-            .order_by(InboxConnection.updated_at.desc())
-            .first()
+        conn = _pick_connection(
+            InboxConnection.query.filter_by(account_id=account_id, status="connected").all()
         )
     if not conn:
-        conn = (
-            InboxConnection.query.filter_by(user_id=user_id, status="connected")
-            .order_by(InboxConnection.updated_at.desc())
-            .first()
+        conn = _pick_connection(
+            InboxConnection.query.filter_by(user_id=user_id, status="connected").all()
         )
     if not conn:
         return jsonify({"error": "No connected inbox found"}), 404
