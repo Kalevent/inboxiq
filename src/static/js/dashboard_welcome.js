@@ -191,9 +191,11 @@
   function setActiveDashboardTab(target) {
     dashboardTabs.forEach((btn) => {
       const isActive = btn.dataset.dashboardSection === target;
-      btn.classList.toggle('bg-slate-900/80', isActive);
-      btn.classList.toggle('text-slate-100', isActive);
+      btn.classList.toggle('bg-indigo-500/20', isActive);
+      btn.classList.toggle('border-indigo-400', isActive);
+      btn.classList.toggle('text-indigo-100', isActive);
       btn.classList.toggle('bg-slate-900/40', !isActive);
+      btn.classList.toggle('border-slate-800', !isActive);
       btn.classList.toggle('text-slate-300', !isActive);
     });
     dashboardPanels.forEach((panel) => {
@@ -215,9 +217,11 @@
   function setActiveFeedbackTab(target) {
     feedbackTabs.forEach((btn) => {
       const isActive = btn.dataset.feedbackSection === target;
-      btn.classList.toggle('bg-slate-900/80', isActive);
-      btn.classList.toggle('text-slate-100', isActive);
+      btn.classList.toggle('bg-indigo-500/20', isActive);
+      btn.classList.toggle('border-indigo-400', isActive);
+      btn.classList.toggle('text-indigo-100', isActive);
       btn.classList.toggle('bg-slate-900/40', !isActive);
+      btn.classList.toggle('border-slate-800', !isActive);
       btn.classList.toggle('text-slate-300', !isActive);
     });
     feedbackPanels.forEach((panel) => {
