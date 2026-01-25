@@ -16,7 +16,7 @@ from dspy.teleprompt import BootstrapFewShot
 
 from src.app import create_app
 from src.models import Ticket
-from src.dspy_triage import build_triage_module, _format_payload
+from src.dspy_triage import build_triage_module, _format_payload, _configure_dspy, _save_compiled_module
 from src.triage_labels import get_triage_labels
 
 
@@ -66,33 +66,55 @@ def _metric(gold: dspy.Example, pred: dspy.Example) -> bool:
     )
 
 
+def train_from_overrides(
+    account_id: int | None,
+    labels: Dict[str, Any],
+    dspy_instance: Any,
+    model_id: str,
+    limit: int,
+    min_samples: int,
+) -> Dict[str, Any]:
+    query = Ticket.query.filter(Ticket.manual_override.is_(True))
+    if account_id is not None:
+        query = query.filter(Ticket.account_id == account_id)
+    samples = query.order_by(Ticket.updated_at.desc()).limit(limit).all()
+    if len(samples) < min_samples:
+        return {"status": "skipped", "reason": "insufficient_samples", "count": len(samples)}
+
+    trainset = [_example_from_ticket(t, labels) for t in samples]
+    module = build_triage_module(dspy_instance, labels)
+
+    optimizer = BootstrapFewShot(metric=_metric)
+    compiled = optimizer.compile(module, trainset=trainset)
+
+    artifact_path = _save_compiled_module(dspy_instance, compiled, model_id, account_id)
+    return {"status": "compiled", "count": len(samples), "artifact_path": artifact_path}
+
+
 def main() -> None:
+    _, model_id, dspy_instance = _configure_dspy()
     app = create_app()
     with app.app_context():
         limit = int(os.getenv("DSPY_TRAIN_LIMIT", "200"))
+        min_samples = int(os.getenv("DSPY_TRAIN_MIN_SAMPLES", "20"))
         account_id = os.getenv("DSPY_TRAIN_ACCOUNT_ID")
         account_val = int(account_id) if account_id else None
         labels = get_triage_labels(account_val)
 
-        query = Ticket.query.filter(Ticket.manual_override.is_(True))
-        if account_val:
-            query = query.filter(Ticket.account_id == account_val)
-        samples = query.order_by(Ticket.updated_at.desc()).limit(limit).all()
-        if not samples:
-            print("No manual override samples found.")
+        result = train_from_overrides(
+            account_id=account_val,
+            labels=labels,
+            dspy_instance=dspy_instance,
+            model_id=model_id,
+            limit=limit,
+            min_samples=min_samples,
+        )
+        if result["status"] != "compiled":
+            print(f"Skipping compile: {result}")
             return
 
-        trainset = [_example_from_ticket(t, labels) for t in samples]
-        module = build_triage_module(dspy, labels)
-
-        optimizer = BootstrapFewShot(metric=_metric)
-        compiled = optimizer.compile(module, trainset=trainset)
         print("BootstrapFewShot compile complete.")
-
-        # Quick sanity check on the first sample
-        test = trainset[0]
-        pred = compiled(content=test.content)
-        print("Sample prediction:", pred)
+        print(f"Saved compiled module: {result['artifact_path']}")
 
 
 if __name__ == "__main__":

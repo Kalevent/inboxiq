@@ -294,7 +294,7 @@ def triage_email(email: Dict[str, Any], account_id: int | None = None) -> Triage
         if extra_context:
             dspy_context["payload_context"] = extra_context
 
-        dspy_result = run_dspy_triage(normalized, context=dspy_context or None, labels=label_config)
+        dspy_result = run_dspy_triage(normalized, context=dspy_context or None, labels=label_config, account_id=account_id)
         decision_trace.append("dspy")
 
         category = _normalize_choice(dspy_result.get("category"), categories, (categories[0] if categories else "general"))

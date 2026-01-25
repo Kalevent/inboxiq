@@ -4,6 +4,9 @@ DSPy integration scaffolding for InboxIQ triage.
 from __future__ import annotations
 
 import os
+import pickle
+import re
+import logging
 from typing import Any, Dict
 
 
@@ -14,7 +17,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return val.lower() in ("1", "true", "yes", "on")
 
 
-def _configure_dspy() -> tuple[str, Any]:
+def _configure_dspy() -> tuple[str, str, Any]:
     try:
         import dspy  # type: ignore
     except Exception as exc:  # pragma: no cover - depends on optional dep
@@ -23,18 +26,80 @@ def _configure_dspy() -> tuple[str, Any]:
         ) from exc
 
     model = os.getenv("DSPY_MODEL", "gpt-4o-mini")
-    if _env_bool("DSPY_USE_OPENAI", True):
+    provider = os.getenv("DSPY_PROVIDER")
+    if provider:
+        provider = provider.strip().lower()
+    else:
+        if _env_bool("DSPY_USE_ANTHROPIC", False):
+            provider = "anthropic"
+        elif _env_bool("DSPY_USE_GEMINI", False):
+            provider = "gemini"
+        else:
+            provider = "openai"
+
+    if provider == "openai":
         try:
             model_id = model if "/" in model else f"openai/{model}"
             lm = dspy.LM(model=model_id, max_tokens=300, temperature=0.2)
         except Exception as exc:
             raise RuntimeError("Failed to configure DSPy OpenAI backend.") from exc
+    elif provider == "anthropic":
+        try:
+            model_id = model if "/" in model else f"anthropic/{model}"
+            lm = dspy.LM(model=model_id, max_tokens=300, temperature=0.2)
+        except Exception as exc:
+            raise RuntimeError("Failed to configure DSPy Anthropic backend.") from exc
+    elif provider in {"gemini", "google"}:
+        try:
+            prefix = "google" if provider in {"gemini", "google"} else provider
+            model_id = model if "/" in model else f"{prefix}/{model}"
+            lm = dspy.LM(model=model_id, max_tokens=300, temperature=0.2)
+        except Exception as exc:
+            raise RuntimeError("Failed to configure DSPy Gemini backend.") from exc
     else:
-        raise RuntimeError("DSPy backend not configured. Set DSPY_USE_OPENAI=1 or add another backend.")
+        raise RuntimeError("DSPy backend not configured. Set DSPY_PROVIDER or DSPY_USE_OPENAI=1/DSPY_USE_ANTHROPIC=1/DSPY_USE_GEMINI=1.")
 
     if getattr(dspy.settings, "lm", None) is None:
         dspy.settings.configure(lm=lm)
-    return model, dspy
+    return model, model_id, dspy
+
+
+def _compiled_dir() -> str:
+    return os.path.abspath(os.getenv("DSPY_COMPILED_DIR", os.path.join(os.path.dirname(__file__), "..", ".dspy")))
+
+
+def _compiled_artifact_path(model_id: str, account_id: int | None = None) -> str:
+    safe_key = re.sub(r"[^a-zA-Z0-9_.-]+", "_", model_id)
+    if account_id is None:
+        return os.path.join(_compiled_dir(), f"triage-{safe_key}.pkl")
+    return os.path.join(_compiled_dir(), f"triage-{safe_key}-acct{account_id}.pkl")
+
+
+def _load_compiled_module(dspy: Any, model_id: str, account_id: int | None = None) -> Any | None:
+    if not _env_bool("DSPY_COMPILED_ENABLED", True):
+        return None
+    path = _compiled_artifact_path(model_id, account_id)
+    if not os.path.exists(path):
+        return None
+    try:
+        if hasattr(dspy, "load"):
+            return dspy.load(path)
+        with open(path, "rb") as handle:
+            return pickle.load(handle)
+    except Exception as exc:
+        logging.getLogger(__name__).warning("failed to load DSPy compiled module: %s", exc)
+        return None
+
+
+def _save_compiled_module(dspy: Any, module: Any, model_id: str, account_id: int | None = None) -> str:
+    path = _compiled_artifact_path(model_id, account_id)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if hasattr(dspy, "save"):
+        dspy.save(module, path)
+    else:
+        with open(path, "wb") as handle:
+            pickle.dump(module, handle)
+    return path
 
 
 def _format_payload(payload: Dict[str, Any], context: Dict[str, Any] | None) -> str:
@@ -92,15 +157,20 @@ def build_triage_module(dspy: Any, label_config: Dict[str, Any]) -> Any:
     return TriageModule()
 
 
-def run_dspy_triage(payload: Dict[str, Any], context: Dict[str, Any] | None = None, labels: Dict[str, Any] | None = None) -> Dict[str, Any]:
+def run_dspy_triage(
+    payload: Dict[str, Any],
+    context: Dict[str, Any] | None = None,
+    labels: Dict[str, Any] | None = None,
+    account_id: int | None = None,
+) -> Dict[str, Any]:
     """
     Return a structured triage hint using DSPy when enabled.
     """
-    model, dspy = _configure_dspy()
+    model, model_id, dspy = _configure_dspy()
     label_config = labels or {}
 
     prompt_payload = _format_payload(payload, context)
-    module = build_triage_module(dspy, label_config)
+    module = _load_compiled_module(dspy, model_id, account_id) or build_triage_module(dspy, label_config)
     result = module(content=prompt_payload)
 
     content = {

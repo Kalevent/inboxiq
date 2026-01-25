@@ -70,6 +70,31 @@ kubectl apply -f src/k8s/job-migrate.yaml
 kubectl logs -f job/inboxiq-migrate -n kaley
 ```
 
+## DSPy training automation (Celery)
+Enable per-tenant DSPy compilation without manual runs by turning on the Celery beat job.
+
+Required env/config:
+- `DSPY_TRAIN_AUTOMATION=1`
+- `DSPY_TRAIN_SCHEDULE_HOUR=3` (UTC)
+- `DSPY_TRAIN_SCHEDULE_MINUTE=0`
+- `DSPY_TRAIN_LOOKBACK_DAYS=30`
+- `DSPY_TRAIN_MIN_SAMPLES=20`
+- `DSPY_TRAIN_LIMIT=200`
+- `DSPY_TRAIN_MAX_ACCOUNTS=0` (0 = no cap)
+- `DSPY_TRAIN_PROVIDERS=openai,anthropic,gemini` (optional; defaults to current `DSPY_PROVIDER`)
+- `DSPY_TRAIN_MODEL_OPENAI=gpt-4o-mini` (optional overrides per provider)
+- `DSPY_TRAIN_MODEL_ANTHROPIC=claude-3-5-sonnet`
+- `DSPY_TRAIN_MODEL_GEMINI=gemini-1.5-pro`
+
+Verification:
+```bash
+# Check Celery beat is scheduling the task
+kubectl logs -n kaley deploy/inboxiq-celery-inbox-beat | rg "dspy_train_overrides"
+
+# Check artifacts exist
+kubectl exec -n kaley deploy/inboxiq -- ls -la /app/inboxiq/.dspy
+```
+
 ## Seed published blog posts (cluster-only)
 Use this to upsert all published fallback blog posts in production. Runs inside the cluster so it can reach RDS and use secret/config env.
 ```bash

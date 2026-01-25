@@ -1,5 +1,7 @@
 # DSPy Implementation for Unified Support Agent
 
+DSPy is a library used to automate and optimize prompts in complex AI systems.
+
 This document outlines a DSPy program design that supports unified intake across
 voice, social, email, forms, chat, and CRM events. It also includes evaluation
 schema, deployment notes, and labeling guidance aligned to current targets.
@@ -116,7 +118,9 @@ class EscalationDecisionSig(dspy.Signature):
     """)
 ```
 
-### E) DraftReply
+### E) DraftReply (optional)
+
+InboxIQ is decision‑centric. DraftReply is optional and off by default; include it only if a team explicitly wants draft assistance (not auto‑reply).
 
 ```python
 class DraftReplySig(dspy.Signature):
@@ -256,6 +260,21 @@ optimizer = BootstrapFewShot(metric=support_metric, max_bootstrapped_demos=4)
 compiled_program = optimizer.compile(UnifiedSupportProgram(), trainset=trainset)
 ```
 
+### D) Operationalizing manual overrides (InboxIQ-specific)
+
+This is the recommended path when misclassifications happen in production (e.g., marketing email marked `action_required=true`).
+
+Workflow:
+1. Collect corrections in the UI (mark **Need fix**) so `manual_override=True` is stored on the ticket.
+2. Compile a new DSPy module from those overrides:
+   - `inboxiq/src/dspy_train.py` uses manual overrides as examples and runs `BootstrapFewShot`.
+3. Load the compiled module at runtime in the triage entrypoint (see `inboxiq/src/dspy_triage.py` or `src/dspy_triage.py`).
+
+Notes:
+- Start with account-scoped training to avoid cross-tenant label leakage.
+- Persist the compiled module (e.g., serialize to disk or object store) and load it on startup to avoid compiling on every request.
+- Keep a fallback path to the base module if compiled artifacts are missing or stale.
+
 ---
 
 ## 6) Cross-channel usage
@@ -269,6 +288,18 @@ You do not need separate prompts per channel:
 The adaptive behavior comes from:
 - Periodically recompiling with new labeled outcomes
 - Using `SelectWorkflow` + `EscalationDecision` as the core decision points
+
+## 6.5) Decision-engine use cases (decision-first, no auto-reply)
+
+InboxIQ is intentionally decision-centric. These are strong fits where teams need routing, risk flags, and auditable decisions — not auto-reply:
+- Insurance claims triage: completeness checks, urgency, fraud signals, route to adjuster tier.
+- Healthcare prior-auth/referrals: missing info detection, urgency, route to clinical admin.
+- HR case routing: categorize issue type, risk flag, assign policy owner.
+- AP/Finance exceptions: invoice mismatches, priority escalation, route to AP.
+- Legal intake: matter type, conflicts flags, risk level, assign to counsel.
+- Vendor risk reviews: missing documents, risk scoring, route to compliance.
+- Trust & Safety disputes: dispute type classification, evidence needed, route to T&S.
+- Customer escalation triage: churn risk, sentiment flag, exec escalation routing.
 
 ---
 
@@ -348,10 +379,14 @@ Target quality:
 
 ### Required env vars (current levels)
 - `DSPY_ENABLED=1`
-- `DSPY_USE_OPENAI=1`
-- `DSPY_MODEL=gpt-4o-mini`
+- `DSPY_PROVIDER=openai|anthropic|gemini` (default: `openai`)
+- `DSPY_USE_OPENAI=1` (legacy; optional when `DSPY_PROVIDER` is set)
+- `DSPY_USE_ANTHROPIC=1` (legacy; optional when `DSPY_PROVIDER` is set)
+- `DSPY_USE_GEMINI=1` (legacy; optional when `DSPY_PROVIDER` is set)
+- `DSPY_MODEL=gpt-4o-mini` (or any provider model name)
 - `OPENAI_API_KEY=...`
 - `INBOXIQ_POLL_STALE_MINUTES=30` (optional, defaults to 30)
+- `DSPY_COMPILED_DIR=...` (optional; defaults to `inboxiq/.dspy`)
 
 ### Eval run
 
@@ -365,6 +400,29 @@ python src/dspy_eval.py
 - Weekly for early-stage (fast iteration)
 - Monthly once accuracy is stable
 - On-demand after major label changes or workflow updates
+
+### Compiled artifacts (where they live)
+Compiled modules are stored per model and per account:
+- Global: `inboxiq/.dspy/triage-<model_id>.pkl`
+- Account-scoped: `inboxiq/.dspy/triage-<model_id>-acct<ACCOUNT_ID>.pkl`
+
+Use `DSPY_COMPILED_DIR` to change the directory. Artifacts are not overwritten across providers; switching from OpenAI → Anthropic/Gemini creates a new file for that model.
+
+### Operational checklist (do not skip)
+1. Collect overrides (mark **Need fix**) so `manual_override=True` is recorded.
+2. Run training for each account and backend:
+   - `DSPY_PROVIDER=openai DSPY_MODEL=gpt-4o-mini DSPY_TRAIN_ACCOUNT_ID=<id> python inboxiq/src/dspy_train.py`
+   - `DSPY_PROVIDER=anthropic DSPY_MODEL=claude-3-5-sonnet DSPY_TRAIN_ACCOUNT_ID=<id> python inboxiq/src/dspy_train.py`
+   - `DSPY_PROVIDER=gemini DSPY_MODEL=gemini-1.5-pro DSPY_TRAIN_ACCOUNT_ID=<id> python inboxiq/src/dspy_train.py`
+3. Verify artifacts exist in `inboxiq/.dspy/` (or `DSPY_COMPILED_DIR`).
+
+### Should this be part of the upgrade?
+Yes, if you are seeing recurring “wrong action_required” flags in real traffic. The manual-override→compile→load loop is the smallest, measurable upgrade that:
+- Turns corrections into training data automatically.
+- Improves consistency without reintroducing hand-written prompts.
+- Keeps the system auditable (you can trace outcomes to override samples).
+
+If you’re still at very low volume (few overrides per week), defer this until you have at least 50–100 high-quality overrides so the compiled module has enough signal.
 
 ---
 

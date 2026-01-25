@@ -4,13 +4,17 @@ Does not pull in legacy schedules or tasks.
 """
 import os
 import re
+from datetime import datetime, timedelta, timezone
 from celery import Celery
 from celery.schedules import crontab
 from src.app import create_app
 from src.agent_worker import process_email_with_agents
 from src.inboxiq_logic import normalize_email_payload, triage_email
 from src.extensions import db
-from src.models import Ticket, InboxConnection
+from src.models import Ticket, InboxConnection, Account
+from src.triage_labels import get_triage_labels
+from src.dspy_train import train_from_overrides
+from src.dspy_triage import _configure_dspy
 import logging
 
 BODY_PREVIEW_LIMIT = 240
@@ -31,6 +35,9 @@ def make_celery(app) -> Celery:
     sourcing_queries = [q.strip() for q in (os.getenv("LEAD_SOURCING_QUERIES") or "").split("|") if q.strip()]
     sourcing_max_results = int(os.getenv("LEAD_SOURCING_MAX_RESULTS", "5") or "5")
     sourcing_send_probe = _parse_bool(os.getenv("LEAD_SOURCING_SEND_PROBE"), False)
+    dspy_train_enabled = _parse_bool(os.getenv("DSPY_TRAIN_AUTOMATION"), False)
+    dspy_train_hour = int(os.getenv("DSPY_TRAIN_SCHEDULE_HOUR", "3"))
+    dspy_train_minute = int(os.getenv("DSPY_TRAIN_SCHEDULE_MINUTE", "0"))
 
     celery_app.conf.update(
         task_serializer="json",
@@ -70,6 +77,17 @@ def make_celery(app) -> Celery:
                     }
                 }
                 if sourcing_agent and sourcing_queries
+                else {}
+            ),
+            **(
+                {
+                    "dspy_train_overrides_daily": {
+                        "task": "inboxiq.train_dspy_overrides",
+                        "schedule": crontab(hour=dspy_train_hour, minute=dspy_train_minute),
+                        "options": {"queue": "inbox"},
+                    }
+                }
+                if dspy_train_enabled
                 else {}
             ),
         },
@@ -235,3 +253,87 @@ def poll_connections_task(self):
             errors += 1
             logging.getLogger(__name__).warning("poll failed for connection %s: %s", conn.id, exc)
     return {"polled": polled, "errors": errors}
+
+
+def _env_list(name: str) -> list[str]:
+    raw = os.getenv(name) or ""
+    return [entry.strip() for entry in raw.split(",") if entry.strip()]
+
+
+@celery.task(
+    name="inboxiq.train_dspy_overrides",
+    bind=True,
+    max_retries=0,
+    queue="inbox",
+)
+def train_dspy_overrides_task(self) -> dict:
+    """
+    Compile DSPy triage modules from manual overrides, per tenant.
+    Uses env-configured providers/models and saves compiled artifacts to DSPY_COMPILED_DIR.
+    """
+    limit = int(os.getenv("DSPY_TRAIN_LIMIT", "200"))
+    min_samples = int(os.getenv("DSPY_TRAIN_MIN_SAMPLES", "20"))
+    max_accounts = int(os.getenv("DSPY_TRAIN_MAX_ACCOUNTS", "0") or "0")
+    lookback_days = int(os.getenv("DSPY_TRAIN_LOOKBACK_DAYS", "30"))
+    account_ids = _env_list("DSPY_TRAIN_ACCOUNT_IDS")
+    include_global = os.getenv("DSPY_TRAIN_GLOBAL", "0").lower() in ("1", "true", "yes", "on")
+
+    providers = _env_list("DSPY_TRAIN_PROVIDERS")
+    if not providers:
+        current = (os.getenv("DSPY_PROVIDER") or "").strip().lower() or "openai"
+        providers = [current]
+
+    results: dict[str, list[dict]] = {}
+    original_provider = os.getenv("DSPY_PROVIDER")
+    original_model = os.getenv("DSPY_MODEL")
+
+    try:
+        if not account_ids:
+            cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+            q = (
+                db.session.query(Ticket.account_id)
+                .filter(Ticket.manual_override.is_(True), Ticket.account_id.isnot(None))
+                .filter(Ticket.updated_at >= cutoff)
+                .distinct()
+            )
+            if max_accounts > 0:
+                q = q.limit(max_accounts)
+            account_ids = [str(row[0]) for row in q.all()]
+        if include_global:
+            account_ids.append("global")
+
+        for provider in providers:
+            provider_key = provider.strip().lower()
+            model_override = os.getenv(f"DSPY_TRAIN_MODEL_{provider_key.upper()}")
+            model_name = model_override or os.getenv("DSPY_TRAIN_MODEL") or original_model or "gpt-4o-mini"
+
+            os.environ["DSPY_PROVIDER"] = provider_key
+            os.environ["DSPY_MODEL"] = model_name
+
+            _, model_id, dspy_instance = _configure_dspy()
+            results[provider_key] = []
+
+            for raw_id in account_ids:
+                account_val = None if raw_id == "global" else int(raw_id)
+                labels = get_triage_labels(account_val)
+                outcome = train_from_overrides(
+                    account_id=account_val,
+                    labels=labels,
+                    dspy_instance=dspy_instance,
+                    model_id=model_id,
+                    limit=limit,
+                    min_samples=min_samples,
+                )
+                outcome["account_id"] = account_val
+                results[provider_key].append(outcome)
+    finally:
+        if original_provider is not None:
+            os.environ["DSPY_PROVIDER"] = original_provider
+        elif "DSPY_PROVIDER" in os.environ:
+            del os.environ["DSPY_PROVIDER"]
+        if original_model is not None:
+            os.environ["DSPY_MODEL"] = original_model
+        elif "DSPY_MODEL" in os.environ:
+            del os.environ["DSPY_MODEL"]
+
+    return {"status": "ok", "providers": results}
