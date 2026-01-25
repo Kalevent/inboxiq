@@ -12,11 +12,15 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 import dspy
+import logging
+from datetime import datetime, timezone
 from dspy.teleprompt import BootstrapFewShot
 
 from src.app import create_app
 from src.models import Ticket
-from src.dspy_triage import build_triage_module, _format_payload, _configure_dspy, _save_compiled_module
+from src.dspy_triage import build_triage_module, _format_payload, _configure_dspy, _save_compiled_module, _load_compiled_meta
+from src.extensions import db
+from src.models import DspyTrainingMetric
 from src.triage_labels import get_triage_labels
 
 
@@ -82,13 +86,54 @@ def train_from_overrides(
         return {"status": "skipped", "reason": "insufficient_samples", "count": len(samples)}
 
     trainset = [_example_from_ticket(t, labels) for t in samples]
+    ticket_ids = [t.id for t in samples]
+    existing_meta = _load_compiled_meta(model_id, account_id)
+    eval_ids = []
+    if existing_meta:
+        eval_ids = [t_id for t_id in existing_meta.get("eval_ids", []) if t_id in ticket_ids]
+    if not eval_ids:
+        # Stable 80/20 split based on ticket id hash for repeatable evals.
+        eval_ids = [t_id for t_id in ticket_ids if hash(str(t_id)) % 5 == 0]
+    eval_set = {t_id for t_id in eval_ids}
+    eval_samples = [ex for ex, t_id in zip(trainset, ticket_ids) if t_id in eval_set]
+    train_samples = [ex for ex, t_id in zip(trainset, ticket_ids) if t_id not in eval_set]
+    if not train_samples:
+        train_samples = trainset[: max(len(trainset) - 1, 1)]
+    if not eval_samples and len(trainset) > 1:
+        eval_samples = trainset[-1:]
     module = build_triage_module(dspy_instance, labels)
 
     optimizer = BootstrapFewShot(metric=_metric)
-    compiled = optimizer.compile(module, trainset=trainset)
+    compiled = optimizer.compile(module, trainset=train_samples)
+    train_predictions = [compiled(content=ex.content) for ex in train_samples]
+    train_accuracy = sum(1 for gold, pred in zip(train_samples, train_predictions) if _metric(gold, pred)) / len(train_samples)
+    eval_accuracy = None
+    if eval_samples:
+        eval_predictions = [compiled(content=ex.content) for ex in eval_samples]
+        eval_accuracy = sum(1 for gold, pred in zip(eval_samples, eval_predictions) if _metric(gold, pred)) / len(eval_samples)
 
-    artifact_path = _save_compiled_module(dspy_instance, compiled, model_id, account_id)
-    return {"status": "compiled", "count": len(samples), "artifact_path": artifact_path}
+    extra_meta = {
+        "eval_ids": eval_ids,
+        "train_accuracy": round(train_accuracy, 4),
+        "eval_accuracy": round(eval_accuracy, 4) if eval_accuracy is not None else None,
+        "sample_count": len(samples),
+        "eval_count": len(eval_samples),
+    }
+    artifact_path = _save_compiled_module(
+        dspy_instance,
+        compiled,
+        model_id,
+        account_id,
+        labels=labels,
+        extra_meta=extra_meta,
+    )
+    return {
+        "status": "compiled",
+        "count": len(samples),
+        "artifact_path": artifact_path,
+        "train_accuracy": round(train_accuracy, 4),
+        "eval_accuracy": round(eval_accuracy, 4) if eval_accuracy is not None else None,
+    }
 
 
 def main() -> None:
@@ -115,6 +160,28 @@ def main() -> None:
 
         print("BootstrapFewShot compile complete.")
         print(f"Saved compiled module: {result['artifact_path']}")
+        logging.getLogger(__name__).info(
+            "DSPy train accuracy: %s eval accuracy: %s compiled_at: %s",
+            result.get("train_accuracy"),
+            result.get("eval_accuracy"),
+            datetime.now(timezone.utc).isoformat(),
+        )
+        try:
+            db.session.add(
+                DspyTrainingMetric(
+                    account_id=account_val,
+                    model_id=model_id,
+                    provider=(os.getenv("DSPY_PROVIDER") or "openai").lower(),
+                    sample_count=result.get("count") or 0,
+                    eval_count=extra_meta.get("eval_count") if "extra_meta" in locals() else None,
+                    train_accuracy=result.get("train_accuracy"),
+                    eval_accuracy=result.get("eval_accuracy"),
+                )
+            )
+            db.session.commit()
+        except Exception as exc:
+            db.session.rollback()
+            logging.getLogger(__name__).warning("Failed to persist DSPy metrics: %s", exc)
 
 
 if __name__ == "__main__":

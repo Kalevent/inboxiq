@@ -385,6 +385,7 @@ def _ticket_view(t: Ticket) -> dict:
         "confidence": decision.get("confidence"),
         "decision_trace": decision.get("decision_trace") or [],
         "risk_flag": risk_flag,
+        "draft_reply": bool(decision.get("reply_text") or decision.get("draft_reply")),
     }
     return view
 
@@ -404,6 +405,7 @@ def dashboard_data():
     priority = (request.args.get("priority") or "").upper()
     q = (request.args.get("q") or "").strip()
     action_only = request.args.get("action_only", "true").lower() != "false"
+    draft_only = request.args.get("draft_only", "false").lower() == "true"
     use_case_filter = (request.args.get("use_case") or "").strip().lower()
     channel_filter = (request.args.get("channel") or "").strip().lower()
 
@@ -449,6 +451,8 @@ def dashboard_data():
         if channel_filter and channel_filter != "all":
             if (view.get("channel") or "").lower() != channel_filter:
                 continue
+        if draft_only and not view.get("draft_reply"):
+            continue
         action_required = view.get("action_required")
         needs_review = bool((t.decision or {}).get("needs_review") or (t.status == "needs_review"))
         risk_flag = bool((t.decision or {}).get("risk_flag"))

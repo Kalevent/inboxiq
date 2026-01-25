@@ -6,6 +6,8 @@ from __future__ import annotations
 import os
 import pickle
 import re
+import json
+from datetime import datetime, timezone
 import logging
 from typing import Any, Dict
 
@@ -27,29 +29,29 @@ def _configure_dspy() -> tuple[str, str, Any]:
 
     model = os.getenv("DSPY_MODEL", "gpt-4o-mini")
     provider = os.getenv("DSPY_PROVIDER")
-    if provider:
-        provider = provider.strip().lower()
-    else:
-        if _env_bool("DSPY_USE_ANTHROPIC", False):
-            provider = "anthropic"
-        elif _env_bool("DSPY_USE_GEMINI", False):
-            provider = "gemini"
-        else:
-            provider = "openai"
+    if not provider:
+        raise RuntimeError("DSPy provider is required. Set DSPY_PROVIDER=openai|anthropic|gemini.")
+    provider = provider.strip().lower()
 
     if provider == "openai":
+        if not os.getenv("OPENAI_API_KEY"):
+            raise RuntimeError("OPENAI_API_KEY is required for DSPy OpenAI provider.")
         try:
             model_id = model if "/" in model else f"openai/{model}"
             lm = dspy.LM(model=model_id, max_tokens=300, temperature=0.2)
         except Exception as exc:
             raise RuntimeError("Failed to configure DSPy OpenAI backend.") from exc
     elif provider == "anthropic":
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            raise RuntimeError("ANTHROPIC_API_KEY is required for DSPy Anthropic provider.")
         try:
             model_id = model if "/" in model else f"anthropic/{model}"
             lm = dspy.LM(model=model_id, max_tokens=300, temperature=0.2)
         except Exception as exc:
             raise RuntimeError("Failed to configure DSPy Anthropic backend.") from exc
     elif provider in {"gemini", "google"}:
+        if not os.getenv("GEMINI_API_KEY"):
+            raise RuntimeError("GEMINI_API_KEY is required for DSPy Gemini provider.")
         try:
             prefix = "google" if provider in {"gemini", "google"} else provider
             model_id = model if "/" in model else f"{prefix}/{model}"
@@ -75,12 +77,57 @@ def _compiled_artifact_path(model_id: str, account_id: int | None = None) -> str
     return os.path.join(_compiled_dir(), f"triage-{safe_key}-acct{account_id}.pkl")
 
 
-def _load_compiled_module(dspy: Any, model_id: str, account_id: int | None = None) -> Any | None:
+def _compiled_meta_path(model_id: str, account_id: int | None = None) -> str:
+    safe_key = re.sub(r"[^a-zA-Z0-9_.-]+", "_", model_id)
+    if account_id is None:
+        return os.path.join(_compiled_dir(), f"triage-{safe_key}.meta.json")
+    return os.path.join(_compiled_dir(), f"triage-{safe_key}-acct{account_id}.meta.json")
+
+
+def _labels_hash(labels: Dict[str, Any] | None) -> str:
+    payload = labels or {}
+    try:
+        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    except Exception:
+        encoded = json.dumps(str(payload), sort_keys=True, separators=(",", ":"))
+    return str(hash(encoded))
+
+
+def _load_compiled_meta(model_id: str, account_id: int | None) -> Dict[str, Any] | None:
+    path = _compiled_meta_path(model_id, account_id)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except Exception as exc:
+        logging.getLogger(__name__).warning("failed to load DSPy compiled metadata: %s", exc)
+        return None
+
+
+def _load_compiled_module(
+    dspy: Any,
+    model_id: str,
+    account_id: int | None = None,
+    labels: Dict[str, Any] | None = None,
+) -> Any | None:
     if not _env_bool("DSPY_COMPILED_ENABLED", True):
         return None
     path = _compiled_artifact_path(model_id, account_id)
     if not os.path.exists(path):
         return None
+    meta = _load_compiled_meta(model_id, account_id)
+    if meta:
+        expected = _labels_hash(labels)
+        if meta.get("labels_hash") and meta.get("labels_hash") != expected:
+            logging.getLogger(__name__).warning(
+                "DSPy compiled module stale: labels hash mismatch (model_id=%s account_id=%s expected=%s actual=%s).",
+                model_id,
+                account_id,
+                expected,
+                meta.get("labels_hash"),
+            )
+            return None
     try:
         if hasattr(dspy, "load"):
             return dspy.load(path)
@@ -91,7 +138,14 @@ def _load_compiled_module(dspy: Any, model_id: str, account_id: int | None = Non
         return None
 
 
-def _save_compiled_module(dspy: Any, module: Any, model_id: str, account_id: int | None = None) -> str:
+def _save_compiled_module(
+    dspy: Any,
+    module: Any,
+    model_id: str,
+    account_id: int | None = None,
+    labels: Dict[str, Any] | None = None,
+    extra_meta: Dict[str, Any] | None = None,
+) -> str:
     path = _compiled_artifact_path(model_id, account_id)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if hasattr(dspy, "save"):
@@ -99,6 +153,21 @@ def _save_compiled_module(dspy: Any, module: Any, model_id: str, account_id: int
     else:
         with open(path, "wb") as handle:
             pickle.dump(module, handle)
+    meta_path = _compiled_meta_path(model_id, account_id)
+    meta = {
+        "model_id": model_id,
+        "account_id": account_id,
+        "labels_hash": _labels_hash(labels),
+        "version": "v1",
+        "compiled_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if extra_meta:
+        meta.update(extra_meta)
+    try:
+        with open(meta_path, "w", encoding="utf-8") as handle:
+            json.dump(meta, handle)
+    except Exception as exc:
+        logging.getLogger(__name__).warning("failed to write DSPy compiled metadata: %s", exc)
     return path
 
 
@@ -170,7 +239,7 @@ def run_dspy_triage(
     label_config = labels or {}
 
     prompt_payload = _format_payload(payload, context)
-    module = _load_compiled_module(dspy, model_id, account_id) or build_triage_module(dspy, label_config)
+    module = _load_compiled_module(dspy, model_id, account_id, labels=label_config) or build_triage_module(dspy, label_config)
     result = module(content=prompt_payload)
 
     content = {

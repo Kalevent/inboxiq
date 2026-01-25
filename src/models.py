@@ -210,6 +210,7 @@ class Ticket(db.Model):
             "decision_outcome": _decision_outcome(),
             "confidence": decision.get("confidence"),
             "decision_trace": decision.get("decision_trace") or [],
+            "draft_reply": bool(decision.get("reply_text") or decision.get("draft_reply")),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "action_required": self.action_required,
@@ -266,6 +267,37 @@ class TriageLabelConfig(db.Model):
             "labels": self.labels or {},
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class DspyTrainingMetric(db.Model):
+    """
+    Track DSPy training metrics for historical monitoring.
+    """
+    __tablename__ = "dspy_training_metrics"
+    __table_args__ = (db.Index("ix_dspy_training_metrics_account", "account_id"),)
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=True)
+    model_id = db.Column(db.String(128), nullable=False)
+    provider = db.Column(db.String(32), nullable=False, default="openai")
+    sample_count = db.Column(db.Integer, nullable=False, default=0)
+    eval_count = db.Column(db.Integer, nullable=True)
+    train_accuracy = db.Column(db.Float, nullable=True)
+    eval_accuracy = db.Column(db.Float, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "model_id": self.model_id,
+            "provider": self.provider,
+            "sample_count": self.sample_count,
+            "eval_count": self.eval_count,
+            "train_accuracy": self.train_accuracy,
+            "eval_accuracy": self.eval_accuracy,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
 

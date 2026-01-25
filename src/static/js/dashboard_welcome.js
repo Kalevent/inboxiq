@@ -295,6 +295,7 @@
   const optionalList = document.getElementById('optionalList');
   const autoHandledEmailList = document.getElementById('autoHandledEmailList');
   const autoHandledFeedbackList = document.getElementById('autoHandledFeedbackList');
+  const showDraftOnly = document.getElementById('showDraftOnly');
   const metricActionRequired = document.getElementById('metricActionRequired');
   const metricOptional = document.getElementById('metricOptional');
   const metricAutoHandledQueue = document.getElementById('metricAutoHandledQueue');
@@ -345,6 +346,9 @@
       updateActionOnlyHint();
       loadDashboardData();
     });
+  }
+  if (showDraftOnly) {
+    showDraftOnly.addEventListener('change', loadDashboardData);
   }
   if (channelFilter) {
     channelFilter.addEventListener('change', loadDashboardData);
@@ -434,6 +438,9 @@
     const openThreadLink = item.provider_url
       ? `<a href="${item.provider_url}" target="_blank" rel="noreferrer" class="text-slate-400 hover:text-slate-300 underline">Open source</a>`
       : '';
+    const draftBadge = item.draft_reply
+      ? '<span class="badge-pill border border-indigo-400/60 text-indigo-200 bg-indigo-500/10">DraftReply</span>'
+      : '';
     const actionBadge =
       kind === 'auto'
         ? `<span class="${badgeClass}">${badge}</span>`
@@ -448,6 +455,7 @@
               <div class="flex items-center gap-2">
                 ${actionBadge}
                 <div class="font-semibold text-slate-200 truncate">${subject}</div>
+                ${draftBadge}
               </div>
               <div class="text-xs text-slate-500 mt-1">
                 Use case: <span class="text-slate-300">${useCase}</span>
@@ -485,6 +493,7 @@
               ${priorityBadge}
               ${actionBadge}
               <div class="font-semibold text-slate-50 truncate">${subject}</div>
+              ${draftBadge}
             </div>
             <div class="text-xs text-slate-400 flex flex-wrap gap-2">
               <span>Use case: <span class="text-slate-200">${useCase}</span></span>
@@ -538,6 +547,7 @@
     if (actionPriorityFilter?.value) params.set('priority', actionPriorityFilter.value);
     if (actionSearchInput?.value) params.set('q', actionSearchInput.value.trim());
     if (showActionOnlyToggle && !showActionOnlyToggle.checked) params.set('action_only', 'false');
+    if (showDraftOnly?.checked) params.set('draft_only', 'true');
     if (activeUseCase && activeUseCase !== 'all') params.set('use_case', activeUseCase);
     if (channelFilter?.value && channelFilter.value !== 'all') params.set('channel', channelFilter.value);
 
@@ -554,6 +564,7 @@
           const itemChannel = normalizeValue(item.channel, 'email');
           if (useCaseFilter !== 'all' && itemUseCase !== useCaseFilter) return false;
           if (channelValue !== 'all' && itemChannel !== channelValue) return false;
+          if (showDraftOnly?.checked && !item.draft_reply) return false;
           return true;
         });
       };

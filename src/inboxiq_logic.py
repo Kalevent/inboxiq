@@ -274,7 +274,7 @@ def triage_email(email: Dict[str, Any], account_id: int | None = None) -> Triage
     except Exception as exc:
         logging.getLogger(__name__).warning("similar feedback lookup failed: %s", exc)
 
-    if not _env_bool("DSPY_ENABLED", False):
+    if not _env_bool("DSPY_ENABLED", True):
         raise RuntimeError("DSPy triage is required. Set DSPY_ENABLED=1 and configure a model.")
 
     try:

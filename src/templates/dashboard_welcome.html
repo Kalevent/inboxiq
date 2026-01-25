@@ -426,6 +426,10 @@
                   <option value="api">API</option>
                   <option value="other">Other</option>
                 </select>
+                <label class="inline-flex items-center gap-2 text-xs text-slate-200 px-3 py-2 rounded-lg border border-slate-800 bg-slate-900/40">
+                  <input id="showDraftOnly" type="checkbox" class="accent-indigo-500" />
+                  DraftReply only
+                </label>
               </div>
             </div>
 
@@ -494,6 +498,9 @@
                             {{ t.priority or 'P2' }}
                           </span>
                           <span class="badge-pill badge-primary">Action Required</span>
+                          {% if t.draft_reply %}
+                          <span class="badge-pill border border-indigo-400/60 text-indigo-200 bg-indigo-500/10">DraftReply</span>
+                          {% endif %}
                           <div class="font-semibold text-slate-50 truncate">{{ t.subject or 'Untitled ticket' }}</div>
                         </div>
 
@@ -564,6 +571,9 @@
                             {{ t.priority or 'P2' }}
                           </span>
                           <span class="badge-pill badge-optional">Optional</span>
+                          {% if t.draft_reply %}
+                          <span class="badge-pill border border-indigo-400/60 text-indigo-200 bg-indigo-500/10">DraftReply</span>
+                          {% endif %}
                           <div class="font-semibold text-slate-50 truncate">{{ t.subject or 'Untitled ticket' }}</div>
                         </div>
 
