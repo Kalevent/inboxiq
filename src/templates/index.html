@@ -36,10 +36,33 @@
               <span class="text-[10px] text-slate-400">▼</span>
             </button>
             <div data-dropdown-menu="solutions-header" class="landing-menu absolute left-0 mt-2 hidden min-w-[200px] rounded-lg border border-slate-800 bg-slate-900 shadow-lg backdrop-blur group-hover:block group-focus-within:block z-50" style="z-index: 9000;">
-              <a href="/ai-email-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">AI Email Triage</a>
-              <a href="/email-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Email Triage Automation</a>
-              <a href="/shared-inbox" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Shared Inbox</a>
-              <a href="/support-automation" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Support Automation</a>
+              <a href="/solutions/unified-intake" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Unified Intake</a>
+              <a href="/solutions/decisions" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Decisions</a>
+              <div class="px-4 pt-2 text-[11px] uppercase tracking-wide text-slate-500">Channels</div>
+              <a href="/solutions/voice" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Voice (IVR)</a>
+              <a href="/solutions/social" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Social</a>
+              <a href="/solutions/forms" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Forms</a>
+              <a href="/solutions/chat" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Chat</a>
+              <a href="/solutions/crm" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">CRM</a>
+              <a href="/solutions/api" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">API / Webhooks</a>
+              <div class="px-4 pt-2 text-[11px] uppercase tracking-wide text-slate-500">Email</div>
+              <a href="/solutions/email/ai-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">AI Email Triage</a>
+              <a href="/solutions/email/triage-automation" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Email Triage Automation</a>
+              <a href="/solutions/email/shared-inbox" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Shared Inbox</a>
+              <a href="/solutions/email/support-automation" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Support Automation</a>
+            </div>
+          </div>
+          <div class="landing-menu-wrap group" style="position: relative; z-index: 8000;">
+            <button data-dropdown="use-cases-header" class="inline-flex items-center gap-1 hover:text-white focus:outline-none">
+              <span>Use cases</span>
+              <span class="text-[10px] text-slate-400">▼</span>
+            </button>
+            <div data-dropdown-menu="use-cases-header" class="landing-menu absolute left-0 mt-2 hidden min-w-[200px] rounded-lg border border-slate-800 bg-slate-900 shadow-lg backdrop-blur group-hover:block group-focus-within:block z-50" style="z-index: 9000;">
+              <a href="/use-cases/support" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Support Triage</a>
+              <a href="/use-cases/healthcare-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Healthcare Triage (Referrals)</a>
+              <a href="/use-cases/claims" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Insurance Claims</a>
+              <a href="/use-cases/hr" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">HR Requests</a>
+              <a href="/use-cases/finance" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Finance Approvals</a>
             </div>
           </div>
           <a href="#feature" class="hover:text-white">Features</a>
@@ -76,6 +99,9 @@
             </h1>
             <p class="text-slate-300 text-sm md:text-base max-w-xl mb-6">
               InboxIQ unifies Voice IVR transcripts, Social, Email, Forms, Chat, and CRM into one decision engine. It decides what matters, prioritises urgency, assigns ownership, and surfaces only actionable work. Draft replies are optional for Business plan teams only.
+            </p>
+            <p class="text-slate-400 text-xs md:text-sm max-w-xl mb-4">
+              Learns from your team’s decisions to tailor routing for your account.
             </p>
 
             <ul class="flex flex-wrap gap-3 text-xs text-slate-300 mb-6">
@@ -278,6 +304,12 @@
                 Decision trails show why something was routed or escalated, so leaders can review outcomes, improve policies, and stay compliant.
               </p>
             </div>
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+              <h3 class="font-semibold mb-2 text-slate-100 text-sm">4. Account-specific learning</h3>
+              <p class="text-xs text-slate-300">
+                Each workspace improves from its own overrides, so decisions reflect your team’s standards.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -389,6 +421,7 @@
               <ul class="space-y-2 text-xs text-slate-300 mb-4">
                 <li>✔ Everything in Pro</li>
                 <li>✔ Draft replies (optional, Business only)</li>
+                <li>✔ Account-scoped tuning + evaluation metrics</li>
                 <li>✔ Up to 15,000 AI actions/month</li>
                 <li>✔ Multi-agent routing</li>
                 <li>✔ Team analytics, SLA alerts & QA</li>

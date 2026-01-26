@@ -201,6 +201,9 @@
     dashboardPanels.forEach((panel) => {
       panel.classList.toggle('hidden', panel.dataset.dashboardSectionPanel !== target);
     });
+    if (target === 'training') {
+      loadTrainingMetrics();
+    }
   }
 
   if (dashboardTabs.length && dashboardPanels.length) {
@@ -311,6 +314,15 @@
   const metricSlaRisk = document.getElementById('metricSlaRisk');
   const useCaseTabs = Array.from(document.querySelectorAll('.use-case-tab'));
   const channelFilter = document.getElementById('channelFilter');
+  const trainingStatus = document.getElementById('trainingStatus');
+  const trainingLastRun = document.getElementById('trainingLastRun');
+  const trainingProvider = document.getElementById('trainingProvider');
+  const trainingModel = document.getElementById('trainingModel');
+  const trainingSamples = document.getElementById('trainingSamples');
+  const trainingTrainAcc = document.getElementById('trainingTrainAcc');
+  const trainingEvalAcc = document.getElementById('trainingEvalAcc');
+  const trainingTable = document.getElementById('trainingTable');
+  let trainingLoaded = false;
   let activeUseCase = 'all';
 
   function setTicketStatus(kind, msg) {
@@ -323,6 +335,64 @@
     ticketStatus.className = `text-xs rounded-xl px-3 py-2 border ${map[kind] || map.info}`;
     ticketStatus.textContent = msg;
     ticketStatus.classList.remove('hidden');
+  }
+
+  function setTrainingStatus(kind, msg) {
+    if (!trainingStatus) return;
+    const map = {
+      success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+      error: 'border-rose-400/40 bg-rose-500/10 text-rose-100',
+      info: 'border-indigo-400/40 bg-indigo-500/10 text-indigo-100',
+    };
+    trainingStatus.className = `text-xs rounded-xl px-3 py-2 border ${map[kind] || map.info}`;
+    trainingStatus.textContent = msg;
+    trainingStatus.classList.remove('hidden');
+  }
+
+  function renderTrainingTable(rows = []) {
+    if (!trainingTable) return;
+    if (!rows.length) {
+      trainingTable.innerHTML = '<div class="px-4 py-3 text-slate-400">No training runs yet.</div>';
+      return;
+    }
+    trainingTable.innerHTML = rows
+      .map((row) => {
+        const created = row.created_at ? new Date(row.created_at).toLocaleString() : '—';
+        const trainAcc = row.train_accuracy != null ? `${Math.round(row.train_accuracy * 100)}%` : '—';
+        const evalAcc = row.eval_accuracy != null ? `${Math.round(row.eval_accuracy * 100)}%` : '—';
+        return `
+          <div class="px-4 py-3 grid grid-cols-1 md:grid-cols-6 gap-2">
+            <div class="text-slate-200">${created}</div>
+            <div>Provider: <span class="text-slate-200">${row.provider || '—'}</span></div>
+            <div>Model: <span class="text-slate-200">${row.model_id || '—'}</span></div>
+            <div>Samples: <span class="text-slate-200">${row.sample_count ?? 0}</span></div>
+            <div>Train: <span class="text-slate-200">${trainAcc}</span></div>
+            <div>Eval: <span class="text-slate-200">${evalAcc}</span></div>
+          </div>
+        `;
+      })
+      .join('');
+  }
+
+  async function loadTrainingMetrics() {
+    if (trainingLoaded) return;
+    if (!trainingTable) return;
+    try {
+      const resp = await fetch('/api/v1/inboxiq/training-metrics', { credentials: 'include' });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Unable to load training metrics');
+      const latest = data.latest || {};
+      if (trainingLastRun) trainingLastRun.textContent = latest.created_at ? new Date(latest.created_at).toLocaleString() : '—';
+      if (trainingProvider) trainingProvider.textContent = latest.provider || '—';
+      if (trainingModel) trainingModel.textContent = latest.model_id || '—';
+      if (trainingSamples) trainingSamples.textContent = latest.sample_count ?? '—';
+      if (trainingTrainAcc) trainingTrainAcc.textContent = latest.train_accuracy != null ? `${Math.round(latest.train_accuracy * 100)}%` : '—';
+      if (trainingEvalAcc) trainingEvalAcc.textContent = latest.eval_accuracy != null ? `${Math.round(latest.eval_accuracy * 100)}%` : '—';
+      renderTrainingTable(data.metrics || []);
+      trainingLoaded = true;
+    } catch (err) {
+      setTrainingStatus('error', err.message || 'Failed to load training metrics.');
+    }
   }
 
   function applyActionFilters() {

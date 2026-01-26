@@ -1,0 +1,41 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Social Intake | InboxIQ{% endblock %}
+{% block meta_description %}
+Route social messages into the same decision queue with InboxIQ.
+{% endblock %}
+{% block canonical %}{{ url_for('solutions_social', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      Solutions • Social
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Social Signals That Become Actionable Decisions
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      InboxIQ brings social messages into your decision stream so urgent issues surface instantly.
+    </p>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Why it matters</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">No missed escalations</h3>
+        <p class="text-slate-200 leading-relaxed">High-risk posts are flagged immediately.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Consistent routing</h3>
+        <p class="text-slate-200 leading-relaxed">Same rules as email, forms, and chat.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit-ready</h3>
+        <p class="text-slate-200 leading-relaxed">See decision context at a glance.</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}HR Request Triage | InboxIQ{% endblock %}
+{% block meta_description %}
+Route HR requests with a unified intake layer that prioritises urgency, assigns owners, and keeps decision trails clear.
+{% endblock %}
+{% block canonical %}{{ url_for('use_case_hr', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      Use case • HR Requests
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      HR Request Triage Without the Inbox Chaos
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      InboxIQ unifies HR requests from email, forms, chat, and HRIS signals, then routes decisions with owners and SLAs.
+    </p>
+    <div class="cta-row mt-2 mb-8">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        See the demo
+      </a>
+      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Start free trial
+      </a>
+    </div>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Where HR intake breaks</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Requests arrive everywhere</h3>
+        <p class="text-slate-200 leading-relaxed">Email, forms, chat, and HRIS tickets fragment visibility and ownership.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Sensitive cases need clear routing</h3>
+        <p class="text-slate-200 leading-relaxed">Escalations can’t be left to chance or manual sorting.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit trails are inconsistent</h3>
+        <p class="text-slate-200 leading-relaxed">Teams lack a record of how decisions were made.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">InboxIQ for HR operations</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Unified HR intake</h3>
+        <p class="text-slate-200 leading-relaxed">Centralise all HR requests into a single decision stream.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Decision routing + SLAs</h3>
+        <p class="text-slate-200 leading-relaxed">Assign owners and deadlines automatically based on request type.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit-friendly decisions</h3>
+        <p class="text-slate-200 leading-relaxed">Track why requests were routed or escalated for compliance.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Outcomes teams care about</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Faster HR response times</h3>
+        <p class="text-slate-200 leading-relaxed">Urgent requests surface immediately with clear ownership.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Lower admin burden</h3>
+        <p class="text-slate-200 leading-relaxed">Reduce manual sorting and duplicate responses.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Consistent handling</h3>
+        <p class="text-slate-200 leading-relaxed">Standardised routing across teams and locations.</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

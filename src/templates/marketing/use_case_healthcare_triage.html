@@ -1,0 +1,85 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Healthcare Referral Triage | InboxIQ{% endblock %}
+{% block meta_description %}
+Triage hospital referrals and clinical requests with a decision-centric intake layer that prioritises urgency and keeps teams compliant.
+{% endblock %}
+{% block canonical %}{{ url_for('use_case_healthcare_triage', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      Use case • Healthcare Triage (Referrals)
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Reduce Referral Admin Load With Decision-Centric Triage
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      Referrals arrive through fax-to-email, portals, calls, and CRMs. InboxIQ unifies those signals, flags urgency, and routes decisions before clinicians touch the queue.
+    </p>
+    <div class="cta-row mt-2 mb-8">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        See the demo
+      </a>
+      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Start free trial
+      </a>
+    </div>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Where referral triage breaks today</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Referrals arrive across systems</h3>
+        <p class="text-slate-200 leading-relaxed">Voice, email, portal uploads, and CRM notes live in separate queues.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Urgency is buried in narrative</h3>
+        <p class="text-slate-200 leading-relaxed">Clinical context and risk indicators are hard to surface quickly.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Admins do manual sorting</h3>
+        <p class="text-slate-200 leading-relaxed">High-value clinician time is spent on intake, not care.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">InboxIQ for healthcare referrals</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Unified intake across channels</h3>
+        <p class="text-slate-200 leading-relaxed">Aggregate Voice transcripts, email attachments, forms, and CRM notes.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Decision routing with SLAs</h3>
+        <p class="text-slate-200 leading-relaxed">Prioritise urgent referrals and assign owners instantly.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit trail ready</h3>
+        <p class="text-slate-200 leading-relaxed">Track why a referral was escalated or routed for compliance.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Operational outcomes</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Faster referral turnaround</h3>
+        <p class="text-slate-200 leading-relaxed">Urgent cases surface immediately, reducing delay to care.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Lower admin workload</h3>
+        <p class="text-slate-200 leading-relaxed">Automated triage reduces manual handoffs and sorting.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Consistent decision quality</h3>
+        <p class="text-slate-200 leading-relaxed">Standardised intake logic across teams and locations.</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

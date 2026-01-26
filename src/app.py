@@ -253,6 +253,76 @@ def create_app() -> Flask:
   @app.get("/support-automation")
   def support_automation():
     return render_template("marketing/support_automation.html")
+
+  # Use case pages
+  @app.get("/use-cases/support")
+  def use_case_support():
+    return render_template("marketing/use_case_support.html")
+
+  @app.get("/use-cases/healthcare-triage")
+  def use_case_healthcare_triage():
+    return render_template("marketing/use_case_healthcare_triage.html")
+
+  @app.get("/use-cases/claims")
+  def use_case_claims():
+    return render_template("marketing/use_case_claims.html")
+
+  @app.get("/use-cases/hr")
+  def use_case_hr():
+    return render_template("marketing/use_case_hr.html")
+
+  @app.get("/use-cases/finance")
+  def use_case_finance():
+    return render_template("marketing/use_case_finance.html")
+
+  # Solutions (decision-centric + unified intake)
+  @app.get("/solutions/unified-intake")
+  def solutions_unified_intake():
+    return render_template("marketing/solutions_unified_intake.html")
+
+  @app.get("/solutions/decisions")
+  def solutions_decisions():
+    return render_template("marketing/solutions_decisions.html")
+
+  @app.get("/solutions/voice")
+  def solutions_voice():
+    return render_template("marketing/solutions_channel_voice.html")
+
+  @app.get("/solutions/social")
+  def solutions_social():
+    return render_template("marketing/solutions_channel_social.html")
+
+  @app.get("/solutions/forms")
+  def solutions_forms():
+    return render_template("marketing/solutions_channel_forms.html")
+
+  @app.get("/solutions/chat")
+  def solutions_chat():
+    return render_template("marketing/solutions_channel_chat.html")
+
+  @app.get("/solutions/crm")
+  def solutions_crm():
+    return render_template("marketing/solutions_channel_crm.html")
+
+  @app.get("/solutions/api")
+  def solutions_api():
+    return render_template("marketing/solutions_channel_api.html")
+
+  @app.get("/solutions/email/ai-triage")
+  def solutions_email_ai_triage():
+    return render_template("marketing/ai_email_triage.html")
+
+  @app.get("/solutions/email/triage-automation")
+  def solutions_email_triage_automation():
+    return render_template("marketing/email_triage.html")
+
+  @app.get("/solutions/email/shared-inbox")
+  def solutions_email_shared_inbox():
+    return render_template("marketing/shared_inbox.html")
+
+  @app.get("/solutions/email/support-automation")
+  def solutions_email_support_automation():
+    return render_template("marketing/support_automation.html")
   
   @app.get("/playbook/unified-support-triage")
   def playbook():

@@ -1,0 +1,85 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Finance Approval Triage | InboxIQ{% endblock %}
+{% block meta_description %}
+Route finance approvals and billing requests with unified intake, clear prioritisation, and audit-ready decision trails.
+{% endblock %}
+{% block canonical %}{{ url_for('use_case_finance', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      Use case • Finance Approvals
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Finance Approvals With Clear Decisions and SLAs
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      InboxIQ unifies finance signals from email, forms, chat, and CRM, then routes approvals with owners, urgency, and audit trails.
+    </p>
+    <div class="cta-row mt-2 mb-8">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        See the demo
+      </a>
+      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Start free trial
+      </a>
+    </div>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Where finance intake slows down</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Approvals arrive via many channels</h3>
+        <p class="text-slate-200 leading-relaxed">Invoices, vendor requests, and approvals are scattered across tools.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Priority is unclear</h3>
+        <p class="text-slate-200 leading-relaxed">Urgent approvals get buried in general inboxes.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit demands are rising</h3>
+        <p class="text-slate-200 leading-relaxed">Teams need consistent decision trails for compliance.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">InboxIQ for finance teams</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Unified intake stream</h3>
+        <p class="text-slate-200 leading-relaxed">Centralise email, forms, chat, and CRM signals.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Decision routing + SLAs</h3>
+        <p class="text-slate-200 leading-relaxed">Auto-assign approvals and escalations to owners.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit-ready outcomes</h3>
+        <p class="text-slate-200 leading-relaxed">Every decision includes why it was routed or escalated.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Operational outcomes</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Faster approvals</h3>
+        <p class="text-slate-200 leading-relaxed">High-urgency decisions surface instantly.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Fewer bottlenecks</h3>
+        <p class="text-slate-200 leading-relaxed">Clear ownership removes the need for follow-up chasing.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Consistent controls</h3>
+        <p class="text-slate-200 leading-relaxed">Standardised decision rules across teams and vendors.</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

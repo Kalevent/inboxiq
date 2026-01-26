@@ -9,19 +9,71 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://kalevent.com/email-triage</loc>
+    <loc>https://kalevent.com/solutions/unified-intake</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://kalevent.com/ai-email-triage</loc>
+    <loc>https://kalevent.com/solutions/decisions</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://kalevent.com/shared-inbox</loc>
+    <loc>https://kalevent.com/solutions/voice</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://kalevent.com/support-automation</loc>
+    <loc>https://kalevent.com/solutions/social</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/forms</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/chat</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/crm</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/api</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/email/ai-triage</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/email/triage-automation</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/email/shared-inbox</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/email/support-automation</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/use-cases/support</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/use-cases/healthcare-triage</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/use-cases/claims</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/use-cases/hr</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/use-cases/finance</loc>
     <priority>0.6</priority>
   </url>
   <url>

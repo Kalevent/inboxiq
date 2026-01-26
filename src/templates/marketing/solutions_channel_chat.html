@@ -1,0 +1,41 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Chat Intake | InboxIQ{% endblock %}
+{% block meta_description %}
+Route chat handoffs into a decision-centric queue with ownership and SLAs.
+{% endblock %}
+{% block canonical %}{{ url_for('solutions_chat', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      Solutions • Chat
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Chat Handoffs With Clear Decisions
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      InboxIQ turns chat handoffs into decision-ready work with owners, SLAs, and audit trails.
+    </p>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Why teams choose InboxIQ</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Unified triage</h3>
+        <p class="text-slate-200 leading-relaxed">Chat sits beside email, forms, and CRM.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Immediate ownership</h3>
+        <p class="text-slate-200 leading-relaxed">InboxIQ assigns a decision owner instantly.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit-ready routing</h3>
+        <p class="text-slate-200 leading-relaxed">See why each chat was escalated.</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

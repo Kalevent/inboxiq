@@ -1,0 +1,41 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}API / Webhooks Intake | InboxIQ{% endblock %}
+{% block meta_description %}
+Send events into InboxIQ via API and webhooks for decision-centric routing.
+{% endblock %}
+{% block canonical %}{{ url_for('solutions_api', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      Solutions • API / Webhooks
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Route Any Signal With the InboxIQ API
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      Push events directly into InboxIQ and get decisions with owners, priority, and audit trails.
+    </p>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Built for custom systems</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Unified intake</h3>
+        <p class="text-slate-200 leading-relaxed">API events join email, chat, and CRM signals.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Decision routing</h3>
+        <p class="text-slate-200 leading-relaxed">Auto-assign owners and SLAs by event type.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit-ready</h3>
+        <p class="text-slate-200 leading-relaxed">Every decision includes a rationale.</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Insurance Claims Triage | InboxIQ{% endblock %}
+{% block meta_description %}
+Automate claims intake decisions with unified signals, clear routing, and audit-friendly escalation paths.
+{% endblock %}
+{% block canonical %}{{ url_for('use_case_claims', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      Use case • Insurance Claims
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Claims Triage With Clear Decisions and Audit Trails
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      InboxIQ consolidates claim signals across channels, detects urgency and risk, and routes each claim to the right owner with traceable rationale.
+    </p>
+    <div class="cta-row mt-2 mb-8">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        See the demo
+      </a>
+      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Start free trial
+      </a>
+    </div>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Common claims bottlenecks</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Fragmented intake channels</h3>
+        <p class="text-slate-200 leading-relaxed">Claims arrive via email, portals, phone notes, and CRM updates.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Slow escalation signals</h3>
+        <p class="text-slate-200 leading-relaxed">High-risk claims are identified too late in the process.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Limited decision traceability</h3>
+        <p class="text-slate-200 leading-relaxed">It is hard to prove why a claim was routed or escalated.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">InboxIQ for claims operations</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Unified claims intake</h3>
+        <p class="text-slate-200 leading-relaxed">Consolidate Voice, Email, Forms, and CRM signals into one stream.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Decision routing + ownership</h3>
+        <p class="text-slate-200 leading-relaxed">Assign owners, set SLAs, and escalate based on risk and severity.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit-ready outcomes</h3>
+        <p class="text-slate-200 leading-relaxed">Every decision includes a rationale for compliance reviews.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Operational outcomes</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Faster claim resolution</h3>
+        <p class="text-slate-200 leading-relaxed">Urgent claims move first without manual sorting delays.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Lower processing cost</h3>
+        <p class="text-slate-200 leading-relaxed">Reduced admin triage means more time for investigations.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Consistent routing quality</h3>
+        <p class="text-slate-200 leading-relaxed">Standardised decisions across teams and regions.</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

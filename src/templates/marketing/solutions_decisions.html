@@ -1,0 +1,67 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Decision Routing | InboxIQ{% endblock %}
+{% block meta_description %}
+Decision-centric triage that routes, escalates, and assigns ownership with auditable outcomes.
+{% endblock %}
+{% block canonical %}{{ url_for('solutions_decisions', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      Solutions • Decisions
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Decision Routing That Teams Can Trust
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      InboxIQ makes the decision before the queue: what needs action, who owns it, and when it’s due—plus the audit trail.
+    </p>
+    <div class="cta-row mt-2 mb-8">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        Watch the demo
+      </a>
+      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Start free trial
+      </a>
+    </div>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">What decisions include</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Action required or auto-handled</h3>
+        <p class="text-slate-200 leading-relaxed">InboxIQ filters noise and routes real work.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Owner + SLA</h3>
+        <p class="text-slate-200 leading-relaxed">Each decision has clear accountability.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit trail</h3>
+        <p class="text-slate-200 leading-relaxed">See why something was routed or escalated.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Why decision-centric beats automation</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">No blind auto-replies</h3>
+        <p class="text-slate-200 leading-relaxed">Draft replies are optional, never forced.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Consistent outcomes</h3>
+        <p class="text-slate-200 leading-relaxed">Decision rules apply across teams and channels.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Operational clarity</h3>
+        <p class="text-slate-200 leading-relaxed">Leadership can measure, review, and improve.</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

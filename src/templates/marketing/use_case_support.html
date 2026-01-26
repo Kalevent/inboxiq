@@ -1,0 +1,85 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Support Triage Decisions | InboxIQ{% endblock %}
+{% block meta_description %}
+Reduce support overload with a decision-centric intake layer that filters, prioritises, and routes requests before humans see the queue.
+{% endblock %}
+{% block canonical %}{{ url_for('use_case_support', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      Use case • Support Triage
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Decision-Centric Support Triage That Reduces Cognitive Load
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      InboxIQ unifies every support signal into one decision stream, then filters, prioritises, and routes work before it hits your team.
+    </p>
+    <div class="cta-row mt-2 mb-8">
+      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+        Watch the demo
+      </a>
+      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+        Start free trial
+      </a>
+    </div>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">What breaks in support triage</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Too many channels, no single queue</h3>
+        <p class="text-slate-200 leading-relaxed">Email, chat, forms, and social arrive with different rules and inconsistent priority.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Urgency gets guessed</h3>
+        <p class="text-slate-200 leading-relaxed">Humans estimate severity after the fact, which creates missed escalations.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Decision fatigue compounds daily</h3>
+        <p class="text-slate-200 leading-relaxed">Teams waste hours sorting noise instead of resolving customer issues.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">How InboxIQ makes the decisions</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Unified intake layer</h3>
+        <p class="text-slate-200 leading-relaxed">Bring Voice, Social, Email, Forms, Chat, and CRM into one stream.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Decision routing with owners + SLAs</h3>
+        <p class="text-slate-200 leading-relaxed">InboxIQ assigns priority, escalation, and ownership before humans see it.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Audit-friendly outcomes</h3>
+        <p class="text-slate-200 leading-relaxed">Each decision comes with context so leaders can review and improve.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">Outcomes teams care about</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Lower cognitive load</h3>
+        <p class="text-slate-200 leading-relaxed">Noise is filtered, and humans start with a decision-ready queue.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Cleaner SLAs</h3>
+        <p class="text-slate-200 leading-relaxed">Urgency is detected at entry, not inferred after delays.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Consistent triage quality</h3>
+        <p class="text-slate-200 leading-relaxed">Routing logic is consistent across every channel and team.</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

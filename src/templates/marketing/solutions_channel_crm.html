@@ -1,0 +1,41 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}CRM Intake | InboxIQ{% endblock %}
+{% block meta_description %}
+Bring CRM signals into your decision stream with InboxIQ.
+{% endblock %}
+{% block canonical %}{{ url_for('solutions_crm', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+  <header class="playbook-hero space-y-6 pb-10">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      Solutions • CRM
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      CRM Signals Routed With Ownership and SLAs
+    </h1>
+    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
+      InboxIQ turns CRM updates into decisions so teams act fast without digging through pipelines.
+    </p>
+  </header>
+
+  <section class="marketing-section space-y-6">
+    <h2 class="text-2xl font-semibold text-white">What you gain</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Unified intake</h3>
+        <p class="text-slate-200 leading-relaxed">CRM becomes part of your decision stream.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Clear escalation rules</h3>
+        <p class="text-slate-200 leading-relaxed">High-risk signals are detected immediately.</p>
+      </div>
+      <div class="marketing-card space-y-2">
+        <h3 class="font-semibold text-white">Decision traceability</h3>
+        <p class="text-slate-200 leading-relaxed">Know why a CRM event was routed.</p>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

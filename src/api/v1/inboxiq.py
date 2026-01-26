@@ -5,10 +5,10 @@ from datetime import datetime, timezone, timedelta
 from flask import Blueprint, jsonify, request, url_for, redirect, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from celery import Celery
-from sqlalchemy import func, or_, case
+from sqlalchemy import func, or_, case, desc
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import Ticket, InboxConnection, Feedback
+from src.models import Ticket, InboxConnection, Feedback, DspyTrainingMetric
 from src.inboxiq_logic import normalize_email_payload, triage_email, sample_messages, compute_due_at
 from src.email_poll import fetch_messages_imap, fetch_messages_gmail, fetch_messages_outlook, apply_label_gmail, apply_label_outlook
 
@@ -560,6 +560,28 @@ def dashboard_data():
             "auto_handled_feedback": auto_feedback_items,
         }
     )
+
+
+@v1.route("/inboxiq/training-metrics", methods=["GET"])
+@jwt_required()
+def training_metrics():
+    """
+    Return recent DSPy training metrics for the current account.
+    """
+    user_id = get_jwt_identity()
+    account_id = _get_account_id(user_id)
+    if not account_id:
+        return jsonify({"error": "missing_account"}), 400
+
+    rows = (
+        DspyTrainingMetric.query.filter(DspyTrainingMetric.account_id == account_id)
+        .order_by(desc(DspyTrainingMetric.created_at))
+        .limit(20)
+        .all()
+    )
+    metrics = [row.to_dict() for row in rows]
+    latest = metrics[0] if metrics else None
+    return jsonify({"latest": latest, "metrics": metrics})
 
 
 @v1.route("/inboxiq/tickets/<ticket_id>/override", methods=["POST"])
