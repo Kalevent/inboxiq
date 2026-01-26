@@ -635,6 +635,20 @@
               </div>
             </div>
             <span class="hidden md:inline text-slate-600">•</span>
+            <div class="landing-menu-wrap group" style="position: relative; z-index: 8000;">
+              <button data-dropdown="use-cases-footer" class="inline-flex items-center gap-1 hover:text-white focus:outline-none">
+                <span>Use cases</span>
+                <span class="text-[10px] text-slate-500">▼</span>
+              </button>
+              <div data-dropdown-menu="use-cases-footer" class="landing-menu absolute left-0 mt-2 hidden min-w-[220px] rounded-lg border border-slate-800 bg-slate-900 shadow-lg backdrop-blur group-hover:block group-focus-within:block z-50">
+                <a href="/use-cases/support" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Support Triage</a>
+                <a href="/use-cases/healthcare-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Healthcare Triage (Referrals)</a>
+                <a href="/use-cases/claims" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Insurance Claims</a>
+                <a href="/use-cases/hr" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">HR Requests</a>
+                <a href="/use-cases/finance" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Finance Approvals</a>
+              </div>
+            </div>
+            <span class="hidden md:inline text-slate-600">•</span>
             <a href="{{ url_for('docs.docs_index') }}" class="hover:text-white">Documentation</a>
             <span class="hidden md:inline text-slate-600">•</span>
             <a href="{{ url_for('blog.blog_index') }}" class="hover:text-white">Blog</a>
