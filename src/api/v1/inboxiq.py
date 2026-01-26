@@ -384,6 +384,10 @@ def _ticket_view(t: Ticket) -> dict:
         "decision_outcome": decision_outcome,
         "confidence": decision.get("confidence"),
         "decision_trace": decision.get("decision_trace") or [],
+        "entities_json": decision.get("entities_json"),
+        "route_json": decision.get("route_json"),
+        "workflow_json": decision.get("workflow_json"),
+        "escalation_json": decision.get("escalation_json"),
         "risk_flag": risk_flag,
         "draft_reply": bool(decision.get("reply_text") or decision.get("draft_reply")),
     }

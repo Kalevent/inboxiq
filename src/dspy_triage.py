@@ -200,6 +200,37 @@ def _label_desc(labels: Dict[str, Any], key: str, fallback: str) -> str:
     return fallback
 
 
+def _draft_reply_enabled(context: Dict[str, Any] | None) -> bool:
+    if not _env_bool("DSPY_DRAFT_REPLY_ENABLED", False):
+        return False
+    if not context:
+        return False
+    features = context.get("features") if isinstance(context, dict) else None
+    if isinstance(features, dict):
+        if features.get("draft_reply") is True:
+            return True
+        if features.get("draft_reply") is False:
+            return False
+    plan = str(context.get("plan") or "").lower() if isinstance(context, dict) else ""
+    return plan in {"business", "enterprise"}
+
+
+def _decision_outcome(action_required: Any) -> str:
+    if isinstance(action_required, str):
+        lowered = action_required.lower()
+        if lowered in {"optional", "needs_review"}:
+            return "needs_review"
+        if lowered in {"false", "no", "none"}:
+            return "auto_handled"
+    if action_required is True:
+        return "action_required"
+    if action_required in ("optional", "needs_review"):
+        return "needs_review"
+    if action_required is False:
+        return "auto_handled"
+    return "action_required"
+
+
 def build_triage_module(dspy: Any, label_config: Dict[str, Any]) -> Any:
     class TriageSignature(dspy.Signature):
         """Classify inbound support content for triage."""
@@ -226,6 +257,76 @@ def build_triage_module(dspy: Any, label_config: Dict[str, Any]) -> Any:
     return TriageModule()
 
 
+def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
+    class ExtractEntitiesSig(dspy.Signature):
+        case_json = dspy.InputField(desc="JSON of normalized case payload.")
+        entities_json = dspy.OutputField(desc="JSON with intent, sentiment, urgency, identifiers, and missing_info.")
+
+    class RouteCaseSig(dspy.Signature):
+        case_json = dspy.InputField()
+        entities_json = dspy.InputField()
+        route_json = dspy.OutputField(desc="JSON with queue, priority, sla_minutes, tags, rationale.")
+
+    class SelectWorkflowSig(dspy.Signature):
+        case_json = dspy.InputField()
+        entities_json = dspy.InputField()
+        route_json = dspy.InputField()
+        workflow_json = dspy.OutputField(desc="JSON with workflow_key, required_tools, next_questions.")
+
+    class EscalationDecisionSig(dspy.Signature):
+        case_json = dspy.InputField()
+        entities_json = dspy.InputField()
+        route_json = dspy.InputField()
+        workflow_json = dspy.InputField()
+        escalation_json = dspy.OutputField(desc="JSON with decision, reason, required_role.")
+
+    class DraftReplySig(dspy.Signature):
+        case_json = dspy.InputField()
+        entities_json = dspy.InputField()
+        workflow_json = dspy.InputField()
+        escalation_json = dspy.InputField()
+        reply_text = dspy.OutputField(desc="Optional draft reply for a human to review. Keep concise.")
+
+    class DecisionProgram(dspy.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.extract = dspy.ChainOfThought(ExtractEntitiesSig)
+            self.route = dspy.Predict(RouteCaseSig)
+            self.select = dspy.Predict(SelectWorkflowSig)
+            self.escalate = dspy.Predict(EscalationDecisionSig)
+            self.draft = dspy.ChainOfThought(DraftReplySig)
+
+        def forward(self, case_json: str, draft_enabled: bool = False) -> Any:
+            entities_json = self.extract(case_json=case_json).entities_json
+            route_json = self.route(case_json=case_json, entities_json=entities_json).route_json
+            workflow_json = self.select(
+                case_json=case_json, entities_json=entities_json, route_json=route_json
+            ).workflow_json
+            escalation_json = self.escalate(
+                case_json=case_json,
+                entities_json=entities_json,
+                route_json=route_json,
+                workflow_json=workflow_json,
+            ).escalation_json
+            reply_text = None
+            if draft_enabled:
+                reply_text = self.draft(
+                    case_json=case_json,
+                    entities_json=entities_json,
+                    workflow_json=workflow_json,
+                    escalation_json=escalation_json,
+                ).reply_text
+            return dspy.Prediction(
+                entities_json=entities_json,
+                route_json=route_json,
+                workflow_json=workflow_json,
+                escalation_json=escalation_json,
+                reply_text=reply_text,
+            )
+
+    return DecisionProgram()
+
+
 def run_dspy_triage(
     payload: Dict[str, Any],
     context: Dict[str, Any] | None = None,
@@ -239,19 +340,73 @@ def run_dspy_triage(
     label_config = labels or {}
 
     prompt_payload = _format_payload(payload, context)
-    module = _load_compiled_module(dspy, model_id, account_id, labels=label_config) or build_triage_module(dspy, label_config)
-    result = module(content=prompt_payload)
+    case = {
+        "channel": payload.get("channel") or payload.get("source") or payload.get("provider") or "email",
+        "text": payload.get("body") or payload.get("text") or prompt_payload,
+        "metadata": {
+            "subject": payload.get("subject"),
+            "from_email": payload.get("from_email") or payload.get("from"),
+            "provider": payload.get("provider"),
+            "source": payload.get("source"),
+            "received_at": payload.get("received_at"),
+        },
+        "crm_snapshot": payload.get("crm_snapshot") or {},
+        "history": payload.get("history") or [],
+    }
+    case_json = json.dumps(case)
+
+    module = _load_compiled_module(dspy, model_id, account_id, labels=label_config) or build_decision_program(dspy, label_config)
+    draft_enabled = _draft_reply_enabled(context)
+    try:
+        result = module(case_json=case_json, draft_enabled=draft_enabled)
+    except Exception as exc:
+        logging.getLogger(__name__).warning("DSPy decision program failed, falling back to simple triage: %s", exc)
+        module = build_triage_module(dspy, label_config)
+        result = module(content=prompt_payload)
+
+    entities_json = getattr(result, "entities_json", None)
+    route_json = getattr(result, "route_json", None)
+    workflow_json = getattr(result, "workflow_json", None)
+    escalation_json = getattr(result, "escalation_json", None)
+    reply_text = getattr(result, "reply_text", None)
+
+    def _safe_parse(val: Any) -> Dict[str, Any]:
+        if not val or not isinstance(val, str):
+            return {}
+        try:
+            return json.loads(val)
+        except Exception:
+            return {}
+
+    entities = _safe_parse(entities_json)
+    route = _safe_parse(route_json)
+    workflow = _safe_parse(workflow_json)
+    escalation = _safe_parse(escalation_json)
+    decision = escalation.get("decision")
+    action_required = True
+    if decision in {"auto_resolve"}:
+        action_required = False
+    elif decision in {"ask_clarifying", "escalate_on_reply"}:
+        action_required = "optional"
 
     content = {
-        "category": getattr(result, "category", None),
-        "priority": getattr(result, "priority", None),
-        "sentiment": getattr(result, "sentiment", None),
-        "intent": getattr(result, "intent", None),
-        "action_required": getattr(result, "action_required", None),
-        "ai_reason": getattr(result, "ai_reason", None),
-        "team": getattr(result, "team", None),
-        "assigned_to": getattr(result, "assigned_to", None),
-        "owner": getattr(result, "owner", None),
+        "category": route.get("queue") or entities.get("intent"),
+        "priority": route.get("priority"),
+        "sentiment": entities.get("sentiment"),
+        "intent": entities.get("intent"),
+        "action_required": action_required,
+        "ai_reason": escalation.get("reason") or route.get("rationale"),
+        "team": route.get("queue"),
+        "assigned_to": escalation.get("required_role"),
+        "owner": escalation.get("required_role"),
+        "decision_type": "triage",
+        "decision_outcome": _decision_outcome(action_required),
+        "decision_trace": ["dspy:extract", "dspy:route", "dspy:workflow", "dspy:escalate"],
+        "reply_text": reply_text,
+        "entities_json": entities_json,
+        "route_json": route_json,
+        "workflow_json": workflow_json,
+        "escalation_json": escalation_json,
     }
     return {
         "provider": "dspy",

@@ -1,4 +1,4 @@
-# DSPy Implementation for Unified Support Agent
+# DSPy Implementation for Unified Intake & Decision Engine
 
 DSPy is a library used to automate and optimize prompts in complex AI systems.
 
@@ -13,7 +13,8 @@ Targets:
 Decision-centric scope:
 - InboxIQ is a decision engine, not an auto-reply system.
 - DSPy is used to standardize and optimize *decisions* (route, priority, escalation, action_required).
-- Email is just one channel; the same decision layer applies to forms, chat, CRM, APIs, and industry-specific intake (claims, HR, finance).
+- Unified intake is the default: Voice, Social, Email, Forms, Chat, CRM, and API events flow into the same decision layer.
+- DraftReply is **optional** and **Business-plan only** (draft assistance, not auto-reply).
 
 ## Table of contents
 1. Canonical case object
@@ -123,9 +124,10 @@ class EscalationDecisionSig(dspy.Signature):
     """)
 ```
 
-### E) DraftReply (optional)
+### E) DraftReply (optional, Business plan only)
 
-InboxIQ is decision‑centric. DraftReply is optional and off by default; include it only if a team explicitly wants draft assistance (not auto‑reply).
+InboxIQ is decision‑centric. DraftReply is optional and off by default; enable it only for Business-plan workspaces that explicitly want draft assistance (not auto‑reply).
+**DraftReply should be wired into the pipeline**, but gated by plan + feature flag so it can be turned on per account without changing the core program.
 
 ```python
 class DraftReplySig(dspy.Signature):
@@ -148,13 +150,14 @@ class DraftReplySig(dspy.Signature):
 ## 3) Program composition
 
 ```python
-class UnifiedSupportProgram(dspy.Module):
+class DecisionProgram(dspy.Module):
     def __init__(self):
         super().__init__()
         self.extract = dspy.ChainOfThought(ExtractEntitiesSig)
         self.route = dspy.Predict(RouteCaseSig)
         self.select = dspy.Predict(SelectWorkflowSig)
         self.escalate = dspy.Predict(EscalationDecisionSig)
+        # DraftReply is optional and Business-plan only.
         self.draft = dspy.ChainOfThought(DraftReplySig)
 
     def forward(self, case_json: str):
@@ -169,6 +172,7 @@ class UnifiedSupportProgram(dspy.Module):
             route_json=route_json,
             workflow_json=workflow_json,
         ).escalation_json
+        # Decision-first output; reply is gated by plan/feature flag.
         reply_text = self.draft(
             case_json=case_json,
             entities_json=entities_json,
@@ -184,6 +188,35 @@ class UnifiedSupportProgram(dspy.Module):
             reply_text=reply_text,
         )
 ```
+
+---
+
+## 3a) Wiring plan (future‑proof + expandable)
+
+**Goal:** Wire all components (extract → route → workflow → escalation → optional draft) now, so future workflows can be added without refactoring the pipeline.
+
+### Required wiring (now)
+1. **Canonical case normalization** for every channel (email/voice/social/forms/chat/crm/api/webhook).
+2. **DSPy program execution** with decision outputs always produced.
+3. **DraftReply call wired but gated** by:
+   - plan check (Business only)
+   - feature flag (per account)
+4. **Structured decision payload** stored on the ticket (decision_type, outcome, rationale, confidence, trace).
+
+### Extensibility hooks (later)
+- Add optional tool modules (CRM lookup, policy checks, SLA rules).
+- Add custom workflow selectors per industry (claims, HR, finance).
+- Add multi‑step decision graphs (triage → verify → compliance → finalize).
+
+### Suggested gating contract
+- `features.draft_reply = true|false`
+- `plan in {business, enterprise}` required for DraftReply
+- If gated off, return `reply_text=None` but keep decision outputs.
+
+### Why this approach scales
+- The **decision pipeline stays stable**.
+- New workflows plug into `SelectWorkflow` or a tool‑augmented step.
+- DraftReply stays optional without blocking core decisions.
 
 ---
 

@@ -493,6 +493,12 @@
     const trace = Array.isArray(item.decision_trace) && item.decision_trace.length
       ? item.decision_trace.join(', ')
       : '';
+    const decisionDetails = [
+      item.entities_json ? `Entities: ${item.entities_json}` : '',
+      item.route_json ? `Route: ${item.route_json}` : '',
+      item.workflow_json ? `Workflow: ${item.workflow_json}` : '',
+      item.escalation_json ? `Escalation: ${item.escalation_json}` : '',
+    ].filter(Boolean).join(' • ');
 
     const badge = kind === 'action' ? 'Action Required' : kind === 'optional' ? 'Optional' : 'INFO';
     const badgeClass =
@@ -586,6 +592,7 @@
               ${aiReason}
             </div>
             ${trace ? `<div class="text-xs text-slate-400"><span class="font-semibold text-slate-300">Audit trail:</span> ${trace}</div>` : ''}
+            ${decisionDetails ? `<div class="text-[11px] text-slate-400 mt-1"><span class="text-slate-500">Decision details:</span> ${decisionDetails}</div>` : ''}
           </div>
             <div class="shrink-0 text-xs text-slate-300 flex flex-col gap-1 items-end text-right">
               <div>Assigned: <span class="text-slate-50 font-semibold">${owner}</span></div>
