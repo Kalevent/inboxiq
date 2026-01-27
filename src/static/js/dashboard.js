@@ -18,6 +18,9 @@
   const cancelCategories = document.getElementById('cancelCategories');
   const categoriesForm = document.getElementById('categoriesForm');
   const categoriesStatus = document.getElementById('categoriesStatus');
+  const customCategoryInput = document.getElementById('customCategoryInput');
+  const customCategoryAdd = document.getElementById('customCategoryAdd');
+  const customCategoriesContainer = document.getElementById('customCategoriesContainer');
   const step2Status = document.getElementById('step2Status');
   const step2Badge = document.getElementById('step2Badge');
   const triageModal = document.getElementById('triageModal');
@@ -111,6 +114,39 @@
     }
   }
 
+  function normalizeCategoryLabel(label) {
+    return (label || '').trim().replace(/\s+/g, ' ');
+  }
+
+  function hasCategory(label) {
+    const normalized = normalizeCategoryLabel(label).toLowerCase();
+    if (!normalized) return true;
+    const existing = categoriesForm?.querySelectorAll('input[name="categories"]') || [];
+    for (const input of existing) {
+      if ((input.value || '').trim().toLowerCase() === normalized) return true;
+    }
+    return false;
+  }
+
+  function addCustomCategory(label, checked = true) {
+    const normalized = normalizeCategoryLabel(label);
+    if (!normalized) return false;
+    if (hasCategory(normalized)) {
+      const existing = categoriesForm?.querySelector(`input[name="categories"][value="${normalized}"]`);
+      if (existing) existing.checked = true;
+      return false;
+    }
+    if (!customCategoriesContainer) return false;
+    const wrap = document.createElement('label');
+    wrap.className = 'flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 cursor-pointer hover:border-indigo-400/60';
+    wrap.innerHTML = `
+      <input type="checkbox" name="categories" value="${normalized}" class="h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-500" ${checked ? 'checked' : ''}/>
+      <span class="text-sm text-slate-100">${normalized}</span>
+    `;
+    customCategoriesContainer.appendChild(wrap);
+    return true;
+  }
+
   function maybeRestoreCategories() {
     try {
       const raw = localStorage.getItem(STORAGE_CATEGORIES);
@@ -118,7 +154,11 @@
         const selected = JSON.parse(raw);
         selected.forEach((cat) => {
           const input = categoriesForm?.querySelector(`input[name="categories"][value="${cat}"]`);
-          if (input) input.checked = true;
+          if (input) {
+            input.checked = true;
+          } else {
+            addCustomCategory(cat, true);
+          }
         });
         updateCategoriesSaved(selected);
       }
@@ -260,6 +300,25 @@
       }
       updateCategoriesSaved(selected);
       setTimeout(() => hideLayer(categoriesModal), 400);
+    });
+  }
+
+  function handleAddCustomCategory() {
+    const label = normalizeCategoryLabel(customCategoryInput?.value || '');
+    if (!label) return;
+    const added = addCustomCategory(label, true);
+    if (added && customCategoryInput) customCategoryInput.value = '';
+  }
+
+  if (customCategoryAdd) {
+    customCategoryAdd.addEventListener('click', handleAddCustomCategory);
+  }
+  if (customCategoryInput) {
+    customCategoryInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddCustomCategory();
+      }
     });
   }
 

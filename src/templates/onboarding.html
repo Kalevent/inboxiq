@@ -49,8 +49,8 @@
             <div class="flex items-center justify-between gap-3">
               <div>
                 <p class="text-xs text-indigo-200 font-semibold mb-1">Step 1</p>
-                <h2 class="text-lg font-semibold text-slate-50">Connect your support inbox</h2>
-                <p class="text-sm text-slate-300 mt-1">Gmail · Outlook · Custom IMAP. This unlocks routing and triage.</p>
+                <h2 class="text-lg font-semibold text-slate-50">Connect your sources</h2>
+                <p class="text-sm text-slate-300 mt-1">Email is first. Voice, social, forms, chat, CRM, and API connect next.</p>
                 <p id="step1Status" class="text-xs text-emerald-300 mt-2 hidden">Inbox connected. You can move on to categories.</p>
               </div>
               <div class="flex items-center gap-2">
@@ -58,6 +58,38 @@
                 <button id="connectInboxBtn" type="button" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">
                   Connect Inbox
                 </button>
+              </div>
+            </div>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                <p class="text-sm font-semibold text-slate-100">Voice / IVR</p>
+                <p class="text-xs text-slate-400 mt-1">Send transcripts via webhook or upload CSVs.</p>
+                <a href="/integrations/webhooks" class="text-xs text-indigo-200 hover:text-white">Use webhook →</a>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                <p class="text-sm font-semibold text-slate-100">Social</p>
+                <p class="text-xs text-slate-400 mt-1">Connect via social inbox tools or APIs.</p>
+                <a href="/integrations/webhooks" class="text-xs text-indigo-200 hover:text-white">Use webhook →</a>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                <p class="text-sm font-semibold text-slate-100">Forms</p>
+                <p class="text-xs text-slate-400 mt-1">Typeform, Webflow, HubSpot forms.</p>
+                <a href="/integrations/webhooks" class="text-xs text-indigo-200 hover:text-white">Use webhook →</a>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                <p class="text-sm font-semibold text-slate-100">Chat</p>
+                <p class="text-xs text-slate-400 mt-1">Intercom, Zendesk, Drift, Freshchat.</p>
+                <a href="/integrations/webhooks" class="text-xs text-indigo-200 hover:text-white">Use webhook →</a>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                <p class="text-sm font-semibold text-slate-100">CRM</p>
+                <p class="text-xs text-slate-400 mt-1">Salesforce, HubSpot, Pipedrive.</p>
+                <a href="/integrations/webhooks" class="text-xs text-indigo-200 hover:text-white">Use webhook →</a>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
+                <p class="text-sm font-semibold text-slate-100">API / Webhooks</p>
+                <p class="text-xs text-slate-400 mt-1">Unified intake endpoint + token.</p>
+                <a href="/settings/integrations" class="text-xs text-indigo-200 hover:text-white">Open integrations →</a>
               </div>
             </div>
           </div>
@@ -195,7 +227,7 @@
         <button id="closeCategories" class="text-slate-400 hover:text-white text-lg">✕</button>
       </div>
       <form id="categoriesForm" class="p-5 space-y-4">
-        <div class="grid sm:grid-cols-2 gap-3">
+        <div class="grid sm:grid-cols-2 gap-3" id="defaultCategories">
           {% set default_cats = ['Billing','Bugs','Refunds','Feature Requests','Sales Leads','Customer Complaints'] %}
           {% for cat in default_cats %}
           <label class="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 cursor-pointer hover:border-indigo-400/60">
@@ -203,6 +235,26 @@
             <span class="text-sm text-slate-100">{{ cat }}</span>
           </label>
           {% endfor %}
+        </div>
+        <div id="customCategoriesContainer" class="grid sm:grid-cols-2 gap-3"></div>
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex-1 min-w-[220px]">
+            <label class="text-xs text-slate-400">Add custom category</label>
+            <input
+              id="customCategoryInput"
+              type="text"
+              maxlength="40"
+              class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
+              placeholder="e.g. Vendor Requests"
+            />
+          </div>
+          <button
+            id="customCategoryAdd"
+            type="button"
+            class="mt-5 px-4 py-2 rounded-xl border border-slate-700 text-sm font-semibold text-slate-200 hover:bg-slate-800"
+          >
+            Add category
+          </button>
         </div>
         <div id="categoriesStatus" class="text-sm text-slate-300 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 hidden"></div>
         <div class="flex items-center justify-end gap-3 pt-2">

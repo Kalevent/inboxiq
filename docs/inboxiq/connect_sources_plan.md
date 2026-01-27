@@ -70,6 +70,11 @@ Replace **Step 1: Connect your support inbox** with **Step 1: Connect Sources**.
 - Keep it simple: 1–2 primary CTAs per card.
 - Provide “Skip for now” and “Advanced” links to Settings → Webhooks.
 
+### Categories (Step 2)
+- Allow users to add **custom categories** in addition to the defaults.
+- **Added:** “Add custom category” input + button in the Step 2 modal.
+- Store custom labels alongside the predefined set for account‑specific triage.
+
 ## Settings Integration (Existing)
 We already have **Settings → Integrations → Webhooks**. Keep it as the advanced configuration page and link to it from:
 - Onboarding Step 1 (Connect Sources)
