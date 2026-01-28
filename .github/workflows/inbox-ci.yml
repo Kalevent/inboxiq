@@ -167,27 +167,15 @@ jobs:
           kubectl set image deploy/inboxiq inboxiq="${IMAGE}" -n "${KUBE_NAMESPACE}"
           kubectl set image deploy/inboxiq-celery-inbox-worker inbox-worker="${IMAGE}" -n "${KUBE_NAMESPACE}"
           kubectl set image deploy/inboxiq-celery-inbox-beat inbox-beat="${IMAGE}" -n "${KUBE_NAMESPACE}"
-          for i in {1..3}; do
-            if kubectl rollout status deploy/inboxiq -n "${KUBE_NAMESPACE}"; then
-              break
-            fi
-            echo "inboxiq rollout failed (attempt ${i}/3); retrying in 20s..."
-            sleep 20
-          done
-          for i in {1..3}; do
-            if kubectl rollout status deploy/inboxiq-celery-inbox-worker -n "${KUBE_NAMESPACE}"; then
-              break
-            fi
-            echo "inbox-worker rollout failed (attempt ${i}/3); retrying in 20s..."
-            sleep 20
-          done
           kubectl scale deploy/inboxiq-celery-inbox-beat -n "${KUBE_NAMESPACE}" --replicas=1
-          for i in {1..3}; do
-            if kubectl rollout status deploy/inboxiq-celery-inbox-beat -n "${KUBE_NAMESPACE}"; then
-              break
+          for deploy in inboxiq inboxiq-celery-inbox-worker inboxiq-celery-inbox-beat; do
+            echo "Waiting for rollout: ${deploy}"
+            if ! kubectl rollout status "deploy/${deploy}" -n "${KUBE_NAMESPACE}" --timeout=180s; then
+              echo "${deploy} rollout failed; rolling back..."
+              kubectl rollout undo "deploy/${deploy}" -n "${KUBE_NAMESPACE}" || true
+              kubectl rollout status "deploy/${deploy}" -n "${KUBE_NAMESPACE}" --timeout=180s || true
+              exit 1
             fi
-            echo "inbox-beat rollout failed (attempt ${i}/3); retrying in 20s..."
-            sleep 20
           done
 
       - name: Post-deploy health check
