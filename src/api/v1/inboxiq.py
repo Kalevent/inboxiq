@@ -923,7 +923,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
     )
 
 
-@v1.route("/inboxiq/poll/<connection_id>", methods=["POST"])
+@v1.route("/inboxiq/poll/<connection_id>", methods=["GET", "POST"])
 @jwt_required(optional=True)
 def poll_inbox(connection_id: str):
     """
@@ -933,7 +933,7 @@ def poll_inbox(connection_id: str):
     return _poll_inbox_internal(connection_id, get_jwt_identity())
 
 
-@v1.route("/inboxiq/poll/mine", methods=["POST"])
+@v1.route("/inboxiq/poll/mine", methods=["GET", "POST"])
 @jwt_required()
 def poll_my_inbox():
     """

@@ -66,6 +66,13 @@
     });
   }
 
+  async function getJSON(url) {
+    return fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+    });
+  }
+
   async function handleSourceConnect(channel, btn) {
     if (!channel) return;
     if (btn) {
@@ -239,7 +246,7 @@
     const connectionId = getConnectionId();
     if (!connectionId) return;
     try {
-      const resp = await postJSON(`/api/v1/inboxiq/poll/${connectionId}`);
+      const resp = await getJSON(`/api/v1/inboxiq/poll/${connectionId}`);
       const data = await resp.json();
       if (resp.ok) {
         connectStatus.textContent = `Polled inbox: ${data.summary.created} new, ${data.summary.duplicates} duplicates, ${data.summary.errors} errors.`;
@@ -266,7 +273,7 @@
       if (!autoPollAttempted && (lp.last_poll_status === 'never' || !lp.last_poll_status) && apiConnectionId) {
         autoPollAttempted = true;
         try {
-          await postJSON(`/api/v1/inboxiq/poll/${apiConnectionId}`);
+          await getJSON(`/api/v1/inboxiq/poll/${apiConnectionId}`);
           await refreshLastPoll();
         } catch (_) {
           // ignore auto-poll failures
@@ -364,7 +371,7 @@
           if (pollStatus) pollStatus.textContent = 'No connected inbox id found.';
           return;
         }
-        const resp = await postJSON(`/api/v1/inboxiq/poll/${connectionId}`);
+        const resp = await getJSON(`/api/v1/inboxiq/poll/${connectionId}`);
         const contentType = resp.headers.get('content-type') || '';
         const data = contentType.includes('application/json') ? await resp.json() : {};
         if (!resp.ok) {
@@ -979,7 +986,7 @@
         pollStatus.textContent = 'Polling inbox...';
       }
       try {
-        const resp = await postJSON('/api/v1/inboxiq/poll/mine');
+        const resp = await getJSON('/api/v1/inboxiq/poll/mine');
         const contentType = resp.headers.get('content-type') || '';
         const data = contentType.includes('application/json') ? await resp.json() : {};
         if (!resp.ok) throw new Error(data.error || data.message || `HTTP ${resp.status}`);
