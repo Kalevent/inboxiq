@@ -22,7 +22,7 @@
           </div>
           <div>
             <div class="font-semibold text-lg tracking-tight">Kalevent</div>
-            <div class="text-xs text-slate-400">InboxIQ – AI Support Agent</div>
+            <div class="text-xs text-slate-400">InboxIQ – AI Decision Engine</div>
           </div>
         </a>
         <div class="flex items-center gap-4 text-sm text-slate-300">
@@ -38,7 +38,7 @@
           <p class="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full border border-indigo-400/40 bg-indigo-500/10 text-indigo-200">
             Step 1 of onboarding
           </p>
-          <h1 class="text-3xl font-semibold mt-3">Let’s set up your AI Support Agent</h1>
+          <h1 class="text-3xl font-semibold mt-3">Let’s set up your AI Decision Engine</h1>
           <p class="text-sm text-slate-300 mt-2 max-w-2xl">
             Complete these steps to finish onboarding. We’ll unlock the next step after you finish the previous one.
           </p>
@@ -51,6 +51,17 @@
                 <p class="text-xs text-indigo-200 font-semibold mb-1">Step 1</p>
                 <h2 class="text-lg font-semibold text-slate-50">Connect your sources</h2>
                 <p class="text-sm text-slate-300 mt-1">Email is first. Voice, social, forms, chat, CRM, and API connect next.</p>
+                <div class="mt-3 max-w-xs">
+                  <label class="text-xs text-slate-400">Default use case</label>
+                  <select id="defaultUseCase" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100">
+                    <option value="support">Support triage</option>
+                    <option value="claims">Insurance claims</option>
+                    <option value="healthcare_referrals">Healthcare (Referrals)</option>
+                    <option value="hr">HR requests</option>
+                    <option value="finance">Finance approvals</option>
+                  </select>
+                  <p class="text-[11px] text-slate-500 mt-1">Used to tailor routing and dashboard filters.</p>
+                </div>
                 <p id="step1Status" class="text-xs text-emerald-300 mt-2 hidden">Inbox connected. You can move on to categories.</p>
               </div>
               <div class="flex items-center gap-2">
