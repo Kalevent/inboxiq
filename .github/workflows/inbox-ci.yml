@@ -170,10 +170,10 @@ jobs:
           kubectl scale deploy/inboxiq-celery-inbox-beat -n "${KUBE_NAMESPACE}" --replicas=1
           for deploy in inboxiq inboxiq-celery-inbox-worker inboxiq-celery-inbox-beat; do
             echo "Waiting for rollout: ${deploy}"
-            if ! kubectl rollout status "deploy/${deploy}" -n "${KUBE_NAMESPACE}" --timeout=180s; then
+            if ! kubectl rollout status "deploy/${deploy}" -n "${KUBE_NAMESPACE}" --timeout=600s; then
               echo "${deploy} rollout failed; rolling back..."
               kubectl rollout undo "deploy/${deploy}" -n "${KUBE_NAMESPACE}" || true
-              kubectl rollout status "deploy/${deploy}" -n "${KUBE_NAMESPACE}" --timeout=180s || true
+              kubectl rollout status "deploy/${deploy}" -n "${KUBE_NAMESPACE}" --timeout=600s || true
               exit 1
             fi
           done

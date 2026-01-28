@@ -52,7 +52,6 @@ CMD [ "gunicorn", "-b", "0.0.0.0:8000", "src.app:create_app()" ]
 #  aws eks update-kubeconfig --name inboxiq-eks --region us-west-2
 
 # kubectl delete secret inboxiq-env -n kaley || true
-# kubectl create secret generic inboxiq-env --from-env-file=src/.env -n kaley
 # kubectl create secret generic inboxiq-env --from-env-file=src/prod.env -n kaley
 
 
