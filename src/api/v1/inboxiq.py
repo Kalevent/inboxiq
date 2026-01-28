@@ -1017,7 +1017,10 @@ def get_my_connection():
     except Exception:
         stale_minutes = 30
     if not last_poll_at:
-        poll_health = {"status": "never", "stale_minutes": stale_minutes}
+        if last_poll_status and last_poll_status != "never":
+            poll_health = {"status": "ok", "stale_minutes": stale_minutes}
+        else:
+            poll_health = {"status": "never", "stale_minutes": stale_minutes}
     else:
         ts = None
         try:
