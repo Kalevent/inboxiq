@@ -255,7 +255,15 @@
     }
     const badge = document.getElementById('pollHealthBadge');
     if (badge) {
-      const status = health?.status || 'unknown';
+      let status = health?.status || 'unknown';
+      if (lp?.last_poll_at && (status === 'never' || status === 'unknown')) {
+        const ts = Date.parse(lp.last_poll_at);
+        if (!Number.isNaN(ts)) {
+          const ageMin = (Date.now() - ts) / 60000;
+          const staleMinutes = Number(health?.stale_minutes ?? 30);
+          status = ageMin > staleMinutes ? 'stale' : 'ok';
+        }
+      }
       badge.textContent = status === 'ok' ? 'healthy' : status;
       badge.className = 'text-slate-400';
       if (status === 'ok') badge.className = 'text-emerald-300';
