@@ -241,21 +241,48 @@
     window.location = url;
   }
 
+  function applyPollMeta(lp, health) {
+    if (!lastPollLine) return;
+    if (lp?.last_poll_at) {
+      let text = `Last poll: ${lp.last_poll_at}`;
+      if (lp.last_poll_status) text += ` (${lp.last_poll_status})`;
+      if (lp.last_poll_error) text += ` • Error: ${lp.last_poll_error}`;
+      lastPollLine.textContent = text;
+    } else if (lp?.last_poll_status && lp.last_poll_status !== 'never') {
+      let text = `Last poll: ${lp.last_poll_status}`;
+      if (lp.last_poll_error) text += ` • Error: ${lp.last_poll_error}`;
+      lastPollLine.textContent = text;
+    }
+    const badge = document.getElementById('pollHealthBadge');
+    if (badge) {
+      const status = health?.status || 'unknown';
+      badge.textContent = status === 'ok' ? 'healthy' : status;
+      badge.className = 'text-slate-400';
+      if (status === 'ok') badge.className = 'text-emerald-300';
+      else if (status === 'stale') badge.className = 'text-amber-300';
+      else if (status === 'error') badge.className = 'text-rose-300';
+    }
+  }
+
   // One-time poll trigger when a connection exists
   async function pollInboxOnce() {
     const connectionId = getConnectionId();
     if (!connectionId) return;
     try {
       const resp = await getJSON(`/api/v1/inboxiq/poll/${connectionId}`);
-      const data = await resp.json();
+      const contentType = resp.headers.get('content-type') || '';
+      const data = contentType.includes('application/json') ? await resp.json() : {};
       if (resp.ok) {
-        connectStatus.textContent = `Polled inbox: ${data.summary.created} new, ${data.summary.duplicates} duplicates, ${data.summary.errors} errors.`;
+        if (connectStatus) {
+          connectStatus.textContent = `Polled inbox: ${data.summary?.created ?? 0} new, ${data.summary?.duplicates ?? 0} duplicates, ${data.summary?.errors ?? 0} errors.`;
+        }
+        applyPollMeta(data.last_poll, data.poll_health);
         await refreshLastPoll();
-      } else {
+      } else if (connectStatus) {
         connectStatus.textContent = data.error || `Polling failed (HTTP ${resp.status})`;
       }
     } catch (err) {
-      connectStatus.textContent = 'Connected — polling in the background.';
+      if (connectStatus) connectStatus.textContent = 'Connected — polling in the background.';
     }
   }
   pollInboxOnce();
@@ -265,7 +292,8 @@
     if (!lastPollLine) return;
     try {
       const resp = await fetch('/api/v1/inboxiq/connections/mine', { credentials: 'include' });
-      const data = await resp.json();
+      const contentType = resp.headers.get('content-type') || '';
+      const data = contentType.includes('application/json') ? await resp.json() : {};
       if (!resp.ok) return;
       const lp = data.last_poll || {};
       const health = data.poll_health || {};
@@ -279,25 +307,7 @@
           // ignore auto-poll failures
         }
       }
-      if (lp.last_poll_at) {
-        let text = `Last poll: ${lp.last_poll_at}`;
-        if (lp.last_poll_status) text += ` (${lp.last_poll_status})`;
-        if (lp.last_poll_error) text += ` • Error: ${lp.last_poll_error}`;
-        lastPollLine.textContent = text;
-      } else if (lp.last_poll_status && lp.last_poll_status !== 'never') {
-        let text = `Last poll: ${lp.last_poll_status}`;
-        if (lp.last_poll_error) text += ` • Error: ${lp.last_poll_error}`;
-        lastPollLine.textContent = text;
-      }
-      const badge = document.getElementById('pollHealthBadge');
-      if (badge) {
-        const status = health.status || 'unknown';
-        badge.textContent = status === 'ok' ? 'healthy' : status;
-        badge.className = 'text-slate-400';
-        if (status === 'ok') badge.className = 'text-emerald-300';
-        else if (status === 'stale') badge.className = 'text-amber-300';
-        else if (status === 'error') badge.className = 'text-rose-300';
-      }
+      applyPollMeta(lp, health);
     } catch (err) {
       // silent
     }
@@ -356,34 +366,6 @@
       btn.addEventListener('click', () => {
         setActiveFeedbackTab(btn.dataset.feedbackSection);
       });
-    });
-  }
-
-  if (pollNowBtn) {
-    pollNowBtn.addEventListener('click', async () => {
-      if (pollStatus) {
-        pollStatus.classList.remove('hidden');
-        pollStatus.textContent = 'Polling inbox...';
-      }
-      const connectionId = getConnectionId();
-      try {
-        if (!connectionId || !connectionId.trim()) {
-          if (pollStatus) pollStatus.textContent = 'No connected inbox id found.';
-          return;
-        }
-        const resp = await getJSON(`/api/v1/inboxiq/poll/${connectionId}`);
-        const contentType = resp.headers.get('content-type') || '';
-        const data = contentType.includes('application/json') ? await resp.json() : {};
-        if (!resp.ok) {
-          const msg = data.error || data.message || `HTTP ${resp.status}`;
-          if (pollStatus) pollStatus.textContent = `Error: ${msg}${resp.status === 401 ? ' (please log in again)' : ''}`;
-        } else {
-          if (pollStatus) pollStatus.textContent = 'Poll triggered. Refreshing...';
-          await refreshLastPoll();
-        }
-      } catch (err) {
-        if (pollStatus) pollStatus.textContent = `Error: ${err.message}`;
-      }
     });
   }
 
@@ -985,13 +967,20 @@
         pollStatus.classList.remove('hidden');
         pollStatus.textContent = 'Polling inbox...';
       }
+      const connectionId = getConnectionId();
+      const pollUrl = connectionId ? `/api/v1/inboxiq/poll/${connectionId}` : '/api/v1/inboxiq/poll/mine';
       try {
-        const resp = await getJSON('/api/v1/inboxiq/poll/mine');
+        const resp = await getJSON(pollUrl);
         const contentType = resp.headers.get('content-type') || '';
         const data = contentType.includes('application/json') ? await resp.json() : {};
-        if (!resp.ok) throw new Error(data.error || data.message || `HTTP ${resp.status}`);
+        if (!resp.ok) {
+          const msg = data.error || data.message || `HTTP ${resp.status}`;
+          if (pollStatus) pollStatus.textContent = `Error: ${msg}${resp.status === 401 ? ' (please log in again)' : ''}`;
+          return;
+        }
         if (pollStatus) pollStatus.textContent = 'Poll triggered. Refreshing...';
-        window.location.reload();
+        if (data.last_poll) applyPollMeta(data.last_poll, data.poll_health);
+        await refreshLastPoll();
       } catch (err) {
         if (pollStatus) pollStatus.textContent = `Error: ${err.message}`;
       }
