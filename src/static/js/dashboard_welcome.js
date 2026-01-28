@@ -304,7 +304,7 @@
   }
 
   if (dashboardTabs.length && dashboardPanels.length) {
-    const defaultTab = 'connections';
+    const defaultTab = 'impact';
     const initial = dashboardTabs.find((btn) => btn.dataset.dashboardSection === defaultTab);
     if (initial) setActiveDashboardTab(defaultTab);
     dashboardTabs.forEach((btn) => {
