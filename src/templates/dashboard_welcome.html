@@ -131,6 +131,7 @@
               <div>
                 <p class="text-sm font-semibold text-slate-100">Connect sources</p>
                 <p class="text-xs text-slate-400">Add voice, social, forms, chat, CRM, and API feeds alongside email.</p>
+                <p id="connectSourcesStatus" class="mt-2 text-xs text-slate-400 hidden"></p>
               </div>
               <div class="flex items-center gap-2">
                 <a href="/settings/integrations" class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/40 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-900">
@@ -145,26 +146,50 @@
               <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
                 <p class="text-sm font-semibold text-slate-100">Voice / IVR</p>
                 <p class="text-xs text-slate-400 mt-1">Webhook transcripts or CSV upload.</p>
+                <div class="mt-2 flex items-center gap-2 text-[11px]">
+                  <button class="source-connect-btn rounded-full border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800" data-channel="voice">Connect</button>
+                  <button class="source-test-btn rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-indigo-200 hover:text-white" data-channel="voice">Test</button>
+                </div>
               </div>
               <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
                 <p class="text-sm font-semibold text-slate-100">Social</p>
                 <p class="text-xs text-slate-400 mt-1">Connect via social inbox tools or APIs.</p>
+                <div class="mt-2 flex items-center gap-2 text-[11px]">
+                  <button class="source-connect-btn rounded-full border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800" data-channel="social">Connect</button>
+                  <button class="source-test-btn rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-indigo-200 hover:text-white" data-channel="social">Test</button>
+                </div>
               </div>
               <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
                 <p class="text-sm font-semibold text-slate-100">Forms</p>
                 <p class="text-xs text-slate-400 mt-1">Typeform, Webflow, HubSpot forms.</p>
+                <div class="mt-2 flex items-center gap-2 text-[11px]">
+                  <button class="source-connect-btn rounded-full border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800" data-channel="forms">Connect</button>
+                  <button class="source-test-btn rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-indigo-200 hover:text-white" data-channel="forms">Test</button>
+                </div>
               </div>
               <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
                 <p class="text-sm font-semibold text-slate-100">Chat</p>
                 <p class="text-xs text-slate-400 mt-1">Intercom, Zendesk, Drift, Freshchat.</p>
+                <div class="mt-2 flex items-center gap-2 text-[11px]">
+                  <button class="source-connect-btn rounded-full border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800" data-channel="chat">Connect</button>
+                  <button class="source-test-btn rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-indigo-200 hover:text-white" data-channel="chat">Test</button>
+                </div>
               </div>
               <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
                 <p class="text-sm font-semibold text-slate-100">CRM</p>
                 <p class="text-xs text-slate-400 mt-1">Salesforce, HubSpot, Pipedrive.</p>
+                <div class="mt-2 flex items-center gap-2 text-[11px]">
+                  <button class="source-connect-btn rounded-full border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800" data-channel="crm">Connect</button>
+                  <button class="source-test-btn rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-indigo-200 hover:text-white" data-channel="crm">Test</button>
+                </div>
               </div>
               <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-3">
                 <p class="text-sm font-semibold text-slate-100">API / Webhooks</p>
                 <p class="text-xs text-slate-400 mt-1">Unified intake endpoint + token.</p>
+                <div class="mt-2 flex items-center gap-2 text-[11px]">
+                  <button class="source-connect-btn rounded-full border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800" data-channel="api">Connect</button>
+                  <button class="source-test-btn rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-indigo-200 hover:text-white" data-channel="api">Test</button>
+                </div>
               </div>
             </div>
           </div>

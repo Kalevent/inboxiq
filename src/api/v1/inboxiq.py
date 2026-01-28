@@ -9,8 +9,8 @@ from sqlalchemy import func, or_, case, desc
 from src.api.v1 import v1
 from src.extensions import db
 from src.models import Ticket, InboxConnection, Feedback, DspyTrainingMetric
-from src.inboxiq_logic import normalize_email_payload, triage_email, sample_messages, compute_due_at
-from src.email_poll import fetch_messages_imap, fetch_messages_gmail, fetch_messages_outlook, apply_label_gmail, apply_label_outlook
+from src.inboxiq_logic import normalize_email_payload, run_dspy_decision, sample_messages, compute_due_at
+from src.email_poll import fetch_messages_gmail, fetch_messages_outlook
 
 BODY_PREVIEW_LIMIT = 240
 
@@ -127,7 +127,7 @@ def triage():
             continue
 
         try:
-            decision = triage_email(normalized)
+            decision = run_dspy_decision(normalized, account_id=account_id)
         except Exception as exc:
             summary["errors"] += 1
             results.append({"error": "triage_failed", "message": str(exc), "payload": raw_email})
@@ -801,6 +801,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
     created = 0
     duplicates = 0
     errors = 0
+    queued = 0
 
     # Auth errors: stop and surface to caller so they can reconnect.
     if fetch_status == "auth_error":
@@ -810,7 +811,13 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                 "last_poll_status": fetch_status,
                 "last_poll_error": fetch_error,
                 "last_poll_at": datetime.now(timezone.utc).isoformat(),
-                "last_poll_counts": {"created": created, "duplicates": duplicates, "errors": errors, "fetched": 0},
+                "last_poll_counts": {
+                    "created": created,
+                    "queued": queued,
+                    "duplicates": duplicates,
+                    "errors": errors,
+                    "fetched": 0,
+                },
             }
         )
         try:
@@ -836,69 +843,17 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             duplicates += 1
             continue
         try:
-            decision = triage_email(normalized)
+            task = _celery_client().send_task(
+                "inboxiq.process_incoming_email",
+                args=[{"email": normalized, "user_id": conn.user_id, "account_id": conn.account_id}],
+                queue="inbox",
+            )
+            queued += 1
+            created += 1
         except Exception as exc:
             errors += 1
-            current_app.logger.warning("triage failed during poll: %s", exc)
+            current_app.logger.warning("enqueue failed during poll: %s", exc)
             continue
-        redacted_body = _build_body_preview(normalized.get("body") or "")
-        due_at = compute_due_at(decision.priority)
-        ticket_record = Ticket(
-            account_id=conn.account_id,
-            user_id=conn.user_id,
-            subject=normalized["subject"],
-            from_email=normalized["from_email"],
-            body_preview=redacted_body,
-            category=decision.category,
-            priority=decision.priority,
-            sentiment=decision.sentiment,
-            entities=decision.entities,
-            status="needs_review" if decision.needs_review else "new",
-            message_id=normalized["message_id"],
-            provider=normalized.get("provider"),
-            provider_thread_url=normalized.get("provider_thread_url"),
-            decision=decision.to_dict(),
-            due_at=due_at,
-            last_question=decision.last_question,
-            summary=decision.summary,
-            owner=decision.owner,
-            team=decision.team,
-            assigned_to=decision.assigned_to,
-        )
-        db.session.add(ticket_record)
-        created += 1
-
-        # Optional provider post-processing: label/mark-read
-        try:
-            auto_label_processed = current_app.config.get("INBOXIQ_AUTO_LABEL_PROCESSED", False)
-            auto_label_review = current_app.config.get("INBOXIQ_AUTO_LABEL_NEEDS_REVIEW", True)
-            auto_mark_read = current_app.config.get("INBOXIQ_AUTO_MARK_READ", False)
-            label_to_apply = None
-            if decision.needs_review and auto_label_review:
-                label_to_apply = "Needs Review"
-            elif auto_label_processed:
-                label_to_apply = "Processed by InboxIQ"
-            if label_to_apply and conn.access_token and normalized.get("message_id"):
-                if conn.provider == "gmail":
-                    apply_label_gmail(
-                        access_token=conn.access_token,
-                        message_id=normalized["message_id"],
-                        label=label_to_apply,
-                        mark_read=auto_mark_read,
-                    )
-                elif conn.provider == "outlook":
-                    apply_label_outlook(
-                        access_token=conn.access_token,
-                        message_id=normalized["message_id"],
-                        category=label_to_apply,
-                        mark_read=auto_mark_read,
-                    )
-        except Exception:
-            current_app.logger.warning(
-                {"event": "inbox.poll.label_failed", "connection_id": conn.id, "provider": conn.provider},
-                exc_info=True,
-            )
-    db.session.commit()
 
     # Normalize status based on outcome so the dashboard doesn't show stale failures
     # when we successfully processed messages (even from the stub).
@@ -918,7 +873,13 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             "last_poll_status": fetch_status,
             "last_poll_error": fetch_error,
             "last_poll_at": datetime.now(timezone.utc).isoformat(),
-            "last_poll_counts": {"created": created, "duplicates": duplicates, "errors": errors, "fetched": len(messages)},
+            "last_poll_counts": {
+                "created": created,
+                "queued": queued,
+                "duplicates": duplicates,
+                "errors": errors,
+                "fetched": len(messages),
+            },
         }
     )
     current_app.logger.info(
@@ -956,7 +917,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
     return jsonify(
         {
             "connection": conn.to_dict(),
-            "summary": {"created": created, "duplicates": duplicates, "errors": errors},
+            "summary": {"created": created, "queued": queued, "duplicates": duplicates, "errors": errors},
             "last_poll": meta,
         }
     )

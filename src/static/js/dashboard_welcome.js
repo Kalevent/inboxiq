@@ -7,6 +7,9 @@
   const connectGmailBtn = document.getElementById('connectGmailBtn');
   const connectOutlookBtn = document.getElementById('connectOutlookBtn');
   const connectStatus = document.getElementById('connectStatus');
+  const connectSourcesStatus = document.getElementById('connectSourcesStatus');
+  const sourceConnectBtns = Array.from(document.querySelectorAll('.source-connect-btn'));
+  const sourceTestBtns = Array.from(document.querySelectorAll('.source-test-btn'));
   const rawConnectionId = connectStatus?.dataset?.connectionId;
   const normalizedConnectionId = (rawConnectionId || '').trim();
   const hasConnectionId = normalizedConnectionId && !['none', 'null', 'undefined'].includes(normalizedConnectionId.toLowerCase());
@@ -36,6 +39,91 @@
     statusEl.className = `mt-3 text-xs rounded-xl border px-3 py-2 ${map[type] || map.info}`;
     statusEl.textContent = message;
     statusEl.classList.remove('hidden');
+  }
+
+  function setConnectSourcesStatus(type, message) {
+    if (!connectSourcesStatus) return;
+    const map = {
+      success: 'text-emerald-300',
+      error: 'text-rose-300',
+      info: 'text-indigo-300',
+    };
+    connectSourcesStatus.className = `mt-2 text-xs ${map[type] || map.info}`;
+    connectSourcesStatus.textContent = message;
+    connectSourcesStatus.classList.remove('hidden');
+  }
+
+  async function postJSON(url, body) {
+    const csrf = getCookie('csrf_access_token') || getCookie('csrf_refresh_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (csrf) headers['X-CSRF-TOKEN'] = csrf;
+    return fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers,
+      body: JSON.stringify(body || {}),
+    });
+  }
+
+  async function handleSourceConnect(channel, btn) {
+    if (!channel) return;
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Connecting...';
+    }
+    setConnectSourcesStatus('info', `Connecting ${channel}...`);
+    try {
+      const resp = await postJSON('/api/v1/inboxiq/source-connections', {
+        channel,
+        provider: channel,
+        status: 'connected',
+        metadata: { channel },
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.message || data.error || 'Unable to connect source.');
+      }
+      setConnectSourcesStatus('success', `${channel} marked as connected.`);
+    } catch (err) {
+      setConnectSourcesStatus('error', err.message || 'Failed to connect source.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Connect';
+      }
+    }
+  }
+
+  async function handleSourceTest(channel, btn) {
+    if (!channel) return;
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Testing...';
+    }
+    setConnectSourcesStatus('info', `Sending test event for ${channel}...`);
+    try {
+      const resp = await postJSON('/api/v1/inboxiq/connection-test', {
+        channel,
+        payload: {
+          subject: `Connection test (${channel})`,
+          body: `Test event from dashboard for ${channel}.`,
+          from_email: 'dashboard@inboxiq.local',
+          provider: channel,
+        },
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.message || data.error || 'Unable to run test.');
+      }
+      setConnectSourcesStatus('success', `${channel} test queued (task ${data.task_id || 'queued'}).`);
+    } catch (err) {
+      setConnectSourcesStatus('error', err.message || 'Failed to send test event.');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Test';
+      }
+    }
   }
 
   async function handleSend() {
@@ -96,6 +184,20 @@
   if (sendBtn) {
     sendBtn.addEventListener('click', handleSend);
   }
+  if (sourceConnectBtns.length) {
+    sourceConnectBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        handleSourceConnect(btn.dataset.channel, btn);
+      });
+    });
+  }
+  if (sourceTestBtns.length) {
+    sourceTestBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        handleSourceTest(btn.dataset.channel, btn);
+      });
+    });
+  }
 
   // Auto-refresh recent triage every 10 seconds
   let refreshInterval = null;
@@ -136,12 +238,7 @@
     const connectionId = getConnectionId();
     if (!connectionId) return;
     try {
-      const csrf = getCookie('csrf_access_token') || getCookie('csrf_refresh_token');
-      const resp = await fetch(`/api/v1/inboxiq/poll/${connectionId}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: csrf ? { 'X-CSRF-TOKEN': csrf } : {},
-      });
+      const resp = await postJSON(`/api/v1/inboxiq/poll/${connectionId}`);
       const data = await resp.json();
       if (resp.ok) {
         connectStatus.textContent = `Polled inbox: ${data.summary.created} new, ${data.summary.duplicates} duplicates, ${data.summary.errors} errors.`;
@@ -251,16 +348,11 @@
       }
       const connectionId = getConnectionId();
       try {
-        const csrf = getCookie('csrf_access_token') || getCookie('csrf_refresh_token');
         if (!connectionId || !connectionId.trim()) {
           if (pollStatus) pollStatus.textContent = 'No connected inbox id found.';
           return;
         }
-        const resp = await fetch(`/api/v1/inboxiq/poll/${connectionId}`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: csrf ? { 'X-CSRF-TOKEN': csrf } : {},
-        });
+        const resp = await postJSON(`/api/v1/inboxiq/poll/${connectionId}`);
         const contentType = resp.headers.get('content-type') || '';
         const data = contentType.includes('application/json') ? await resp.json() : {};
         if (!resp.ok) {
@@ -875,12 +967,7 @@
         pollStatus.textContent = 'Polling inbox...';
       }
       try {
-        const csrf = getCookie('csrf_access_token') || getCookie('csrf_refresh_token');
-        const resp = await fetch('/api/v1/inboxiq/poll/mine', {
-          method: 'POST',
-          credentials: 'include',
-          headers: csrf ? { 'X-CSRF-TOKEN': csrf } : {},
-        });
+        const resp = await postJSON('/api/v1/inboxiq/poll/mine');
         const contentType = resp.headers.get('content-type') || '';
         const data = contentType.includes('application/json') ? await resp.json() : {};
         if (!resp.ok) throw new Error(data.error || data.message || `HTTP ${resp.status}`);

@@ -4,6 +4,7 @@ InboxIQ triage utilities (copied from legacy app, kept self-contained).
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import os
 from datetime import datetime, timedelta, timezone
@@ -251,28 +252,33 @@ def normalize_email_payload(data: Dict[str, Any]) -> Dict[str, Any]:
         "message_id": message_id,
         "provider": provider,
         "source": source,
+        "channel": data.get("channel") or source,
+        "use_case": data.get("use_case"),
+        "context": data.get("context"),
         "provider_thread_url": provider_thread_url,
         "received_at": data.get("received_at"),
     }
 
 
 def triage_email(email: Dict[str, Any], account_id: int | None = None) -> TriageDecision:
+    """
+    Deprecated: use run_dspy_decision instead.
+    """
+    return run_dspy_decision(email, account_id=account_id)
+
+
+def _safe_json(val: Any) -> Dict[str, Any]:
+    if not val or not isinstance(val, str):
+        return {}
+    try:
+        return json.loads(val)
+    except Exception:
+        return {}
+
+
+def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> TriageDecision:
     normalized = normalize_email_payload(email)
     account_id = account_id or email.get("account_id")
-    from_email = normalized.get("from_email", "").lower()
-
-    override_hint = _manual_override_hint(from_email, account_id)
-
-    decision_trace: List[str] = []
-    similar_feedback = []
-    try:
-        from src.retrieval.feedback_rag import get_similar_overrides
-
-        similar_feedback = get_similar_overrides(normalized["subject"], normalized["body"])
-        if similar_feedback:
-            decision_trace.append(f"similar_feedback:{similar_feedback[0]['score']}")
-    except Exception as exc:
-        logging.getLogger(__name__).warning("similar feedback lookup failed: %s", exc)
 
     if not _env_bool("DSPY_ENABLED", True):
         raise RuntimeError("DSPy triage is required. Set DSPY_ENABLED=1 and configure a model.")
@@ -288,14 +294,11 @@ def triage_email(email: Dict[str, Any], account_id: int | None = None) -> Triage
         intents = label_config.get("intents", [])
 
         dspy_context = {"labels": label_config}
-        if similar_feedback:
-            dspy_context["similar_feedback"] = similar_feedback[:1]
         extra_context = email.get("context") or email.get("metadata") or email.get("payload_context")
         if extra_context:
             dspy_context["payload_context"] = extra_context
 
         dspy_result = run_dspy_triage(normalized, context=dspy_context or None, labels=label_config, account_id=account_id)
-        decision_trace.append("dspy")
 
         category = _normalize_choice(dspy_result.get("category"), categories, (categories[0] if categories else "general"))
         priority = _normalize_priority(dspy_result.get("priority"), priorities)
@@ -308,40 +311,17 @@ def triage_email(email: Dict[str, Any], account_id: int | None = None) -> Triage
         owner = (dspy_result.get("owner") or "").strip() or None
         assigned_to = (dspy_result.get("assigned_to") or "").strip() or None
 
-        if override_hint:
-            category = override_hint.get("category") or category
-            intent = override_hint.get("intent") or intent
-            priority = override_hint.get("priority") or priority
-            sentiment = override_hint.get("sentiment") or sentiment
-            decision_trace.append(f"manual_override_hint:{override_hint.get('source')}")
-
-        is_vip = any(v in from_email for v in VIP_EMAILS) if VIP_EMAILS else False
-        if is_vip:
-            decision_trace.append("vip_sender")
-            priority = "P0"
-
-        if not team:
-            team = _assign_team(intent or category)
-        if not owner:
-            owner = _assign_owner(category)
-        if not assigned_to:
-            assigned_to = _assign_owner_name(team)
-
-        action_required_override = override_hint.get("action_required") if override_hint else None
-        if action_required_override is not None:
-            action_required = action_required_override
-            decision_trace.append("manual_override_action_required")
-
         if action_required is None:
             action_required = "optional"
+            decision_trace = list(dspy_result.get("decision_trace") or [])
             decision_trace.append("dspy_action_required_missing")
+        else:
+            decision_trace = list(dspy_result.get("decision_trace") or [])
+            if not decision_trace:
+                decision_trace = ["dspy"]
 
-        risk_flag = priority == "P0" or sentiment == "negative" or is_vip
-        entities = _extract_entities(normalized["body"])
-        if entities.get("order_ids"):
-            decision_trace.append(f"order_ids:{','.join(entities['order_ids'])}")
-        if entities.get("customer_ids"):
-            decision_trace.append(f"customer_ids:{','.join(entities['customer_ids'])}")
+        risk_flag = priority == "P0" or sentiment == "negative"
+        entities = _safe_json(dspy_result.get("entities_json")) or {}
 
         confidence = {"category": 0.55, "priority": 0.55, "sentiment": 0.55}
         needs_review = False if action_required is not None else True
@@ -361,7 +341,7 @@ def triage_email(email: Dict[str, Any], account_id: int | None = None) -> Triage
             owner=owner,
             team=team,
             assigned_to=assigned_to,
-            similar_feedback=similar_feedback,
+            similar_feedback=[],
             action_required=action_required,
             ai_reason=ai_reason or _reason_text(action_required, "dspy"),
         )

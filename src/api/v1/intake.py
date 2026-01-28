@@ -4,14 +4,15 @@ import hmac
 import time
 import json
 from collections import defaultdict
+from functools import lru_cache
 from flask import jsonify, request, g, current_app
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from celery import Celery
 import requests
 
 from src.api.v1 import v1
-from src.extensions import db
-from src.inboxiq_logic import triage_email, compute_due_at
-from src.models import Feedback, Ticket, IntakeToken
+from src.inboxiq_logic import normalize_email_payload
+from src.models import IntakeToken
 from datetime import datetime, timezone
 from src.api.v1.inboxiq import _get_account_id
 from src.api.v1.access_control import account_allows_api
@@ -20,6 +21,12 @@ from src.api.v1.access_control import account_allows_api
 _RATE_LIMIT_WINDOW = 60  # seconds
 _RATE_LIMIT_MAX = 120  # requests per token per window
 _RATE_LIMITS = defaultdict(list)
+
+@lru_cache(maxsize=1)
+def _celery_client() -> Celery:
+    broker_url = current_app.config.get("CELERY_BROKER_URL")
+    backend_url = current_app.config.get("CELERY_RESULT_BACKEND")
+    return Celery("inboxiq", broker=broker_url, backend=backend_url)
 
 
 def _require_intake_token():
@@ -110,6 +117,8 @@ def intake():
         "body": body or payload.get("summary", ""),
         "provider": provider,
         "source": payload.get("source") or provider,
+        "channel": payload.get("channel") or payload.get("source") or provider,
+        "use_case": payload.get("use_case"),
         "provider_thread_url": thread_url,
         "message_id": payload.get("message_id"),
         "received_at": payload.get("received_at"),
@@ -117,67 +126,22 @@ def intake():
     }
 
     try:
-        decision = triage_email(triage_input, account_id=account_id)
+        normalized = normalize_email_payload(triage_input)
     except Exception as exc:
-        current_app.logger.warning("triage failed in intake: %s", exc)
-        return jsonify({"error": "triage_failed", "message": str(exc)}), 503
-    action_required = decision.action_required
-    action_required_str = "true" if action_required is True else ("false" if action_required is False else "optional")
+        current_app.logger.warning("intake validation failed: %s", exc)
+        return jsonify({"error": "validation_error", "message": str(exc)}), 400
 
-    ticket_record = None
-    feedback_record = None
-
-    if action_required is True:
-        ticket_record = Ticket(
-            account_id=account_id,
-            user_id=user_id,
-            subject=subject,
-            from_email=from_email,
-            body_preview=body[:500],
-            category=decision.category,
-            priority=decision.priority,
-            sentiment=decision.sentiment,
-            entities=decision.entities,
-            status="new",
-            message_id=triage_input.get("message_id") or None,
-            provider=provider,
-            provider_thread_url=thread_url,
-            decision=decision.to_dict(),
-            team=decision.team,
-            assigned_to=decision.assigned_to,
-            owner=decision.owner,
-            due_at=compute_due_at(decision.priority),
+    try:
+        task = _celery_client().send_task(
+            "inboxiq.process_incoming_email",
+            args=[{"email": normalized, "user_id": user_id, "account_id": account_id}],
+            queue="inbox",
         )
-        db.session.add(ticket_record)
-    else:
-        feedback_record = Feedback(
-            account_id=account_id,
-            user_id=user_id,
-            message=body or subject,
-            context=payload.get("context"),
-            urgency=3,
-            source=provider or "intake",
-            status="auto_handled" if action_required is False else "optional",
-            action_required=action_required_str,
-            metadata_json=decision.entities or {},
-            ai_decision_json=decision.to_dict(),
-        )
-        db.session.add(feedback_record)
+    except Exception as exc:
+        current_app.logger.exception("failed to enqueue intake payload", exc_info=exc)
+        return jsonify({"error": "enqueue_failed", "message": str(exc)}), 502
 
-    db.session.commit()
-
-    if feedback_record and ticket_record:
-        feedback_record.ticket_id = ticket_record.id
-        db.session.commit()
-
-    return jsonify(
-        {
-            "success": True,
-            "decision": decision.to_dict(),
-            "ticket": ticket_record.to_dict() if ticket_record else None,
-            "feedback": feedback_record.to_dict() if feedback_record else None,
-        }
-    )
+    return jsonify({"success": True, "status": "queued", "task_id": task.id}), 202
 
 
 # Shim for sources that cannot set JSON + HMAC headers directly.

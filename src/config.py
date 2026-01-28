@@ -19,6 +19,9 @@ def _env_bool(name: str, default: bool) -> bool:
         return default
     return val.lower() in ("1", "true", "yes", "on")
 
+def _redis_dev_url() -> str | None:
+    return os.getenv("REDIS_DEV_URL") or os.getenv("REDIS__DEV_URL") or os.getenv("REDIS_URL")
+
 
 class Config:
     """Minimal config; extend as features land."""
@@ -51,13 +54,11 @@ class Config:
     # Caching (Redis)
     # Caching (default to SimpleCache to avoid redis dependency in dev)
     CACHE_TYPE = os.getenv("CACHE_TYPE", "SimpleCache")
-    CACHE_REDIS_URL = (
-        os.getenv("REDIS_DEV_URL") or os.getenv("REDIS__DEV_URL") or os.getenv("REDIS_URL")
-    )
+    CACHE_REDIS_URL = _redis_dev_url()
     # Rate limiting (Flask-Limiter)
     RATELIMIT_STORAGE_URI = os.getenv(
         "RATELIMIT_STORAGE_URI",
-        os.getenv("REDIS_DEV_URL") or os.getenv("REDIS__DEV_URL") or os.getenv("REDIS_URL", "memory://"),
+        _redis_dev_url() or "memory://",
     )
     RATELIMIT_DEFAULTS = os.getenv("RATELIMIT_DEFAULTS")
     RATELIMIT_HEADERS_ENABLED = True
@@ -72,8 +73,8 @@ class Config:
     SMTP_USE_SSL = _env_bool("SMTP_USE_SSL", False)
     MAIL_FROM = os.getenv("MAIL_FROM", "noreply@kalevent.com")
     # Celery
-    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_DEV_URL") or os.getenv("CELERY_BROKER_URL")
-    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_DEV_BACKEND") or os.getenv("CELERY_RESULT_BACKEND")
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_DEV_URL") or os.getenv("CELERY_BROKER_URL") or _redis_dev_url()
+    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_DEV_BACKEND") or os.getenv("CELERY_RESULT_BACKEND") or _redis_dev_url()
     # Payments
     STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
     STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
@@ -96,8 +97,8 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
     GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
     # Celery
-    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_DEV_URL") or os.getenv("CELERY_BROKER_URL")
-    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_DEV_BACKEND") or os.getenv("CELERY_RESULT_BACKEND")
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_DEV_URL") or os.getenv("CELERY_BROKER_URL") or _redis_dev_url()
+    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_DEV_BACKEND") or os.getenv("CELERY_RESULT_BACKEND") or _redis_dev_url()
     # Testimonials gating
     TESTIMONIAL_MIN_TICKETS = int(os.getenv("TESTIMONIAL_MIN_TICKETS", "3"))
     TESTIMONIAL_MIN_ACCOUNT_AGE_DAYS = int(os.getenv("TESTIMONIAL_MIN_ACCOUNT_AGE_DAYS", "7"))
@@ -127,11 +128,9 @@ class DevelopmentConfig(Config):
         or os.getenv("DATABASE_URL")
         or "postgresql://postgres:postgres@localhost:5432/inboxiq"
     )
-    CACHE_REDIS_URL = (
-        os.getenv("REDIS_DEV_URL") or os.getenv("REDIS__DEV_URL") or os.getenv("REDIS_URL")
-    )
-    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_DEV_URL") or os.getenv("CELERY_BROKER_URL")
-    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_DEV_BACKEND") or os.getenv("CELERY_RESULT_BACKEND")
+    CACHE_REDIS_URL = _redis_dev_url()
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_DEV_URL") or os.getenv("CELERY_BROKER_URL") or _redis_dev_url()
+    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_DEV_BACKEND") or os.getenv("CELERY_RESULT_BACKEND") or _redis_dev_url()
     # Prefer dev overrides for publishing
     PUBLISHING_API_BASE = (
         os.getenv("PUBLISHING_API_BASE_DEV")

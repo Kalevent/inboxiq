@@ -12,4 +12,5 @@ instance/
 flask_session/
 src/.env
 src/.env.*
+src/prod.env
 certs/

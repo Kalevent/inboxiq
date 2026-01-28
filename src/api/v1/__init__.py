@@ -19,4 +19,5 @@ from src.api.v1 import (  # noqa: F401
     publishing,
     leads,
     twilio,
+    source_connections,
 )

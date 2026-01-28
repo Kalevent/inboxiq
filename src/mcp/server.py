@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from src.inboxiq_logic import normalize_email_payload, triage_email
+from src.inboxiq_logic import normalize_email_payload, run_dspy_decision
 
 mcp = FastMCP("inboxiq")
 
@@ -36,7 +36,7 @@ def triage_email_ticket(subject: str, body: str, from_email: str = "", message_i
         "provider": provider,
     }
     normalized = normalize_email_payload(payload)
-    decision = triage_email(normalized)
+    decision = run_dspy_decision(normalized)
     return decision.to_dict()
 
 

@@ -3,7 +3,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from src.api.v1 import v1
 from src.extensions import db
-from src.inboxiq_logic import triage_email, compute_due_at
+from src.inboxiq_logic import run_dspy_decision, compute_due_at
 from src.models import Feedback, Ticket, User
 
 
@@ -41,7 +41,7 @@ def submit_feedback():
         "source": "feedback",
     }
     try:
-        decision = triage_email(triage_input)
+        decision = run_dspy_decision(triage_input, account_id=user.account_id)
     except Exception as exc:
         current_app.logger.warning("triage failed in feedback: %s", exc)
         return jsonify({"error": "triage_failed", "message": str(exc)}), 503

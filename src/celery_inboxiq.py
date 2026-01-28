@@ -9,7 +9,7 @@ from celery import Celery
 from celery.schedules import crontab
 from src.app import create_app
 from src.agent_worker import process_email_with_agents
-from src.inboxiq_logic import normalize_email_payload, triage_email
+from src.inboxiq_logic import normalize_email_payload, run_dspy_decision
 from src.extensions import db
 from src.models import Ticket, InboxConnection, Account
 from src.triage_labels import get_triage_labels
@@ -171,7 +171,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         except self.MaxRetriesExceededError:
             logging.getLogger(__name__).exception("agent pipeline failed after retries")
 
-    decision = triage_email(normalized, account_id=account_id)
+    decision = run_dspy_decision(normalized, account_id=account_id)
     agent_decision = None
     if agent_result:
         agent_decision = agent_result.get("decision") or agent_result.get("triage") or {}

@@ -17,3 +17,5 @@ __pycache__/
 instance
 k8s/inboxiq-config.yaml
 README.md
+src/prod.env
+prod.env

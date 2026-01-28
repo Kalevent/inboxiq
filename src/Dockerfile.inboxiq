@@ -53,6 +53,8 @@ CMD [ "gunicorn", "-b", "0.0.0.0:8000", "src.app:create_app()" ]
 
 # kubectl delete secret inboxiq-env -n kaley || true
 # kubectl create secret generic inboxiq-env --from-env-file=src/.env -n kaley
+# kubectl create secret generic inboxiq-env --from-env-file=src/prod.env -n kaley
+
 
 # docker build -f src/Dockerfile.inboxiq -t inboxiq:latest .
 # Or 
