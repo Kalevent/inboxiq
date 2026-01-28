@@ -17,6 +17,7 @@
   const pollNowBtn = document.getElementById('pollNowBtn');
   const pollStatus = document.getElementById('pollStatus');
   const lastPollLine = document.getElementById('lastPollLine');
+  let lastKnownPollAt = null;
   let autoPollAttempted = false;
   const dashboardTabs = Array.from(document.querySelectorAll('[data-dashboard-section]'));
   const dashboardPanels = Array.from(document.querySelectorAll('[data-dashboard-section-panel]'));
@@ -244,6 +245,7 @@
   function applyPollMeta(lp, health) {
     if (!lastPollLine) return;
     if (lp?.last_poll_at) {
+      lastKnownPollAt = lp.last_poll_at;
       let text = `Last poll: ${lp.last_poll_at}`;
       if (lp.last_poll_status) text += ` (${lp.last_poll_status})`;
       if (lp.last_poll_error) text += ` • Error: ${lp.last_poll_error}`;
@@ -252,12 +254,15 @@
       let text = `Last poll: ${lp.last_poll_status}`;
       if (lp.last_poll_error) text += ` • Error: ${lp.last_poll_error}`;
       lastPollLine.textContent = text;
+    } else if (lastKnownPollAt && lastPollLine.textContent.includes('not yet polled')) {
+      lastPollLine.textContent = `Last poll: ${lastKnownPollAt}`;
     }
     const badge = document.getElementById('pollHealthBadge');
     if (badge) {
       let status = health?.status || 'unknown';
-      if (lp?.last_poll_at && (status === 'never' || status === 'unknown')) {
-        const ts = Date.parse(lp.last_poll_at);
+      const effectivePollAt = lp?.last_poll_at || lastKnownPollAt;
+      if (effectivePollAt && (status === 'never' || status === 'unknown')) {
+        const ts = Date.parse(effectivePollAt);
         if (!Number.isNaN(ts)) {
           const ageMin = (Date.now() - ts) / 60000;
           const staleMinutes = Number(health?.stale_minutes ?? 30);
