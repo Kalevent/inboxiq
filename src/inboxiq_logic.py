@@ -12,7 +12,6 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List
 import logging
 
-VIP_EMAILS = [e.strip().lower() for e in os.getenv("INBOXIQ_VIP_EMAILS", "").split(",") if e.strip()]
 def _env_bool(name: str, default: bool = False) -> bool:
     val = os.getenv(name)
     if val is None:
@@ -60,21 +59,6 @@ class TriageDecision:
             "action_required": self.action_required,
             "ai_reason": self.ai_reason,
         }
-
-
-def _extract_entities(text: str) -> Dict[str, Any]:
-    entities: Dict[str, Any] = {"order_ids": [], "customer_ids": []}
-    order_matches = re.findall(r"(order|invoice|ticket)[\s#:]*([\w-]{3,})", text, flags=re.IGNORECASE)
-    customer_matches = re.findall(r"(customer|account)[\s#:]*([A-Z0-9-]{3,})", text, flags=re.IGNORECASE)
-
-    for _, match in order_matches:
-        entities["order_ids"].append(match)
-    for _, match in customer_matches:
-        entities["customer_ids"].append(match)
-
-    entities["order_ids"] = list(dict.fromkeys(entities["order_ids"]))
-    entities["customer_ids"] = list(dict.fromkeys(entities["customer_ids"]))
-    return entities
 
 
 def _extract_last_question(text: str) -> str | None:
@@ -131,42 +115,6 @@ def _normalize_action_required(value: object | None) -> bool | str | None:
     return None
 
 
-def _assign_owner(category: str) -> str:
-    mapping = {
-        "billing": "Billing Team",
-        "refund": "Billing Team",
-        "bug": "Engineering Triage",
-        "incident": "Incident Response",
-        "general": "Support",
-    }
-    return mapping.get(category, "Support")
-
-
-def _assign_team(category: str) -> str:
-    mapping = {
-        "billing": "Billing",
-        "refund": "Billing",
-        "bug": "Engineering",
-        "incident": "Incident Response",
-        "feature": "Product",
-        "how_to": "Support",
-        "general": "Support",
-    }
-    return mapping.get(category, "Support")
-
-
-def _assign_owner_name(team: str) -> str:
-    # Placeholder owner per team; replace with real user/team mapping if available.
-    mapping = {
-        "Billing": "billing-queue",
-        "Engineering": "eng-triage",
-        "Incident Response": "incident-queue",
-        "Product": "product-queue",
-        "Support": "support-queue",
-    }
-    return mapping.get(team, "support-queue")
-
-
 def compute_due_at(priority: str) -> datetime | None:
     """
     Simple SLA mapping to a due_at timestamp.
@@ -178,50 +126,6 @@ def compute_due_at(priority: str) -> datetime | None:
     if priority == "P1":
         return now + timedelta(hours=4)
     return now + timedelta(hours=24)
-
-
-def _manual_override_hint(from_email: str, account_id: int | None = None) -> Dict[str, Any] | None:
-    """Return the latest manual override for an email or its domain."""
-    try:
-        from src.models import Ticket
-    except Exception:
-        return None
-
-    if not from_email:
-        return None
-
-    def _query():
-        q = Ticket.query.filter(Ticket.manual_override.is_(True))
-        if account_id:
-            q = q.filter(Ticket.account_id == account_id)
-        return q
-
-    hint_source = None
-    ticket = _query().filter(Ticket.from_email.ilike(from_email)).order_by(Ticket.updated_at.desc()).first()
-    if not ticket and "@" in from_email:
-        domain = from_email.split("@", 1)[1].lower()
-        ticket = (
-            _query()
-            .filter(Ticket.from_email.ilike(f"%@{domain}"))
-            .order_by(Ticket.updated_at.desc())
-            .first()
-        )
-        hint_source = f"domain:{domain}" if ticket else None
-    if not ticket:
-        return None
-
-    decision = ticket.decision or {}
-    return {
-        "category": ticket.category,
-        "priority": ticket.priority,
-        "sentiment": ticket.sentiment or "neutral",
-        "intent": decision.get("intent"),
-        "action_required": decision.get("action_required"),
-        "team": ticket.team or decision.get("team"),
-        "assigned_to": ticket.assigned_to or decision.get("assigned_to"),
-        "owner": ticket.owner or decision.get("owner"),
-        "source": hint_source or "sender",
-    }
 
 
 def _reason_text(action_required: bool | str, reason: str) -> str:
@@ -258,13 +162,6 @@ def normalize_email_payload(data: Dict[str, Any]) -> Dict[str, Any]:
         "provider_thread_url": provider_thread_url,
         "received_at": data.get("received_at"),
     }
-
-
-def triage_email(email: Dict[str, Any], account_id: int | None = None) -> TriageDecision:
-    """
-    Deprecated: use run_dspy_decision instead.
-    """
-    return run_dspy_decision(email, account_id=account_id)
 
 
 def _safe_json(val: Any) -> Dict[str, Any]:

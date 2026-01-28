@@ -242,6 +242,7 @@
       const data = await resp.json();
       if (resp.ok) {
         connectStatus.textContent = `Polled inbox: ${data.summary.created} new, ${data.summary.duplicates} duplicates, ${data.summary.errors} errors.`;
+        await refreshLastPoll();
       } else {
         connectStatus.textContent = data.error || `Polling failed (HTTP ${resp.status})`;
       }
@@ -260,6 +261,9 @@
       if (!resp.ok) return;
       const lp = data.last_poll || {};
       const health = data.poll_health || {};
+      if (lp.last_poll_status === 'never' && getConnectionId()) {
+        pollInboxOnce();
+      }
       if (lp.last_poll_at) {
         let text = `Last poll: ${lp.last_poll_at}`;
         if (lp.last_poll_status) text += ` (${lp.last_poll_status})`;
@@ -360,7 +364,7 @@
           if (pollStatus) pollStatus.textContent = `Error: ${msg}${resp.status === 401 ? ' (please log in again)' : ''}`;
         } else {
           if (pollStatus) pollStatus.textContent = 'Poll triggered. Refreshing...';
-          window.location.reload();
+          await refreshLastPoll();
         }
       } catch (err) {
         if (pollStatus) pollStatus.textContent = `Error: ${err.message}`;
