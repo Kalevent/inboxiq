@@ -387,6 +387,8 @@ def create_app() -> Flask:
     def _pick_connection(connections):
       if not connections:
         return None
+      def _is_email(conn):
+        return (conn.provider or "").lower() in {"gmail", "outlook", "imap"}
       def _poll_ts(conn):
         meta = conn.metadata_json or {}
         ts = meta.get("last_poll_at")
@@ -403,8 +405,10 @@ def create_app() -> Flask:
         except Exception:
           return None
       # Prefer latest poll timestamp; fall back to updated_at.
+      email_connections = [c for c in connections if _is_email(c)]
+      candidate_pool = email_connections or connections
       return max(
-        connections,
+        candidate_pool,
         key=lambda c: (_poll_ts(c) or datetime.min.replace(tzinfo=timezone.utc), c.updated_at or datetime.min.replace(tzinfo=timezone.utc)),
       )
 

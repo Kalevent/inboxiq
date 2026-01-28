@@ -17,6 +17,7 @@
   const pollNowBtn = document.getElementById('pollNowBtn');
   const pollStatus = document.getElementById('pollStatus');
   const lastPollLine = document.getElementById('lastPollLine');
+  let autoPollAttempted = false;
   const dashboardTabs = Array.from(document.querySelectorAll('[data-dashboard-section]'));
   const dashboardPanels = Array.from(document.querySelectorAll('[data-dashboard-section-panel]'));
   const feedbackTabs = Array.from(document.querySelectorAll('[data-feedback-section]'));
@@ -261,8 +262,15 @@
       if (!resp.ok) return;
       const lp = data.last_poll || {};
       const health = data.poll_health || {};
-      if (lp.last_poll_status === 'never' && getConnectionId()) {
-        pollInboxOnce();
+      const apiConnectionId = data.connection?.id;
+      if (!autoPollAttempted && (lp.last_poll_status === 'never' || !lp.last_poll_status) && apiConnectionId) {
+        autoPollAttempted = true;
+        try {
+          await postJSON(`/api/v1/inboxiq/poll/${apiConnectionId}`);
+          await refreshLastPoll();
+        } catch (_) {
+          // ignore auto-poll failures
+        }
       }
       if (lp.last_poll_at) {
         let text = `Last poll: ${lp.last_poll_at}`;
