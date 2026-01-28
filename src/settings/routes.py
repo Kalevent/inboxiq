@@ -4,7 +4,8 @@ from uuid import uuid4
 from flask import current_app, g, jsonify, redirect, render_template, request, url_for
 
 from src.extensions import db
-from src.models import IntakeToken, User, Passkey, TOTPDevice, Account
+from src.models import IntakeToken, User, Passkey, TOTPDevice, Account, InboxConnection
+from src.crypto import encrypt_value, decrypt_value
 from src.api.v1.access_control import account_allows_api
 from src.settings import bp, login_required_settings
 
@@ -391,10 +392,26 @@ def _legacy_settings_redirect(tab="team"):
 @login_required_settings
 def integrations_webhooks():
   import hashlib
+  from werkzeug.utils import secure_filename
+  from src.uploads import upload_bytes
 
   user = getattr(g, "current_user", None)
   account_id = getattr(g, "current_account_id", None)
   api_allowed = account_allows_api(account_id) if account_id else False
+  voice_connection = None
+  voice_prefill = {"account_sid": "", "webhook_url": ""}
+  if account_id:
+    voice_connection = InboxConnection.query.filter_by(account_id=account_id, provider="voice").first()
+    if voice_connection and voice_connection.metadata_json:
+      meta = voice_connection.metadata_json
+      if meta.get("account_sid_enc"):
+        voice_prefill["account_sid"] = decrypt_value(meta.get("account_sid_enc")) or ""
+      elif meta.get("account_sid"):
+        voice_prefill["account_sid"] = meta.get("account_sid") or ""
+      if meta.get("webhook_url_enc"):
+        voice_prefill["webhook_url"] = decrypt_value(meta.get("webhook_url_enc")) or ""
+      elif meta.get("webhook_url"):
+        voice_prefill["webhook_url"] = meta.get("webhook_url") or ""
   if request.method == "POST":
     action = (request.form.get("action") or "").strip()
     label = (request.form.get("label") or "").strip() or None
@@ -408,6 +425,78 @@ def integrations_webhooks():
       except Exception:
         expires_at = None
 
+    if action == "save_voice" and account_id:
+      provider = (request.form.get("voice_provider") or "twilio").strip().lower()
+      account_sid = (request.form.get("twilio_account_sid") or "").strip()
+      auth_token = (request.form.get("twilio_auth_token") or "").strip()
+      webhook_url = (request.form.get("voice_webhook_url") or "").strip()
+      status = "connected" if (account_sid or webhook_url or auth_token) else "pending"
+
+      metadata = (voice_connection.metadata_json or {}) if voice_connection else {}
+      metadata.update(
+        {
+          "channel": "voice",
+          "provider": provider or "twilio",
+        }
+      )
+      if account_sid:
+        metadata["account_sid_enc"] = encrypt_value(account_sid)
+        metadata.pop("account_sid", None)
+      if webhook_url:
+        metadata["webhook_url_enc"] = encrypt_value(webhook_url)
+        metadata.pop("webhook_url", None)
+      if auth_token:
+        metadata["auth_token_enc"] = encrypt_value(auth_token)
+
+      file = request.files.get("voice_csv")
+      if file and file.filename:
+        filename = secure_filename(file.filename or "")
+        data = file.read()
+        if data:
+          uploads_bucket = current_app.config.get("UPLOADS_BUCKET")
+          uploads_host = current_app.config.get("UPLOADS_HOST")
+          if not uploads_bucket or not uploads_host:
+            return jsonify({"error": "uploads_not_configured"}), 503
+          if len(data) > 10 * 1024 * 1024:
+            return jsonify({"error": "file_too_large", "max_bytes": 10 * 1024 * 1024}), 413
+          key = f"public/{uuid4().hex}_{filename}"
+          url = upload_bytes(
+            key=key,
+            data=data,
+            content_type=file.mimetype or "text/csv",
+            content_disposition=f'attachment; filename="{filename}"',
+          )
+          metadata["csv_upload"] = {"key": key, "url": url, "filename": filename}
+
+      if voice_connection:
+        voice_connection.metadata_json = metadata
+        voice_connection.status = status
+      else:
+        voice_connection = InboxConnection(
+          user_id=user.id if user else None,
+          account_id=account_id,
+          provider="voice",
+          status=status,
+          metadata_json=metadata,
+        )
+        db.session.add(voice_connection)
+      db.session.commit()
+      return render_template(
+        "settings/index.html",
+        active_tab="integrations",
+        integrations_view="webhooks",
+        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
+        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
+        new_token=None,
+        team_view=None,
+        billing_view=None,
+        security_view=None,
+        api_allowed=api_allowed,
+        account_id=account_id,
+        voice_connection=voice_connection,
+        voice_prefill=voice_prefill,
+        voice_saved=True,
+      )
     if action == "generate" and account_id and api_allowed:
       token_value = str(uuid4())
       token_hash = hashlib.sha256(token_value.encode("utf-8")).hexdigest()
@@ -430,6 +519,10 @@ def integrations_webhooks():
         team_view=None,
         billing_view=None,
         security_view=None,
+        api_allowed=api_allowed,
+        account_id=account_id,
+        voice_connection=voice_connection,
+        voice_prefill=voice_prefill,
       )
   active_tokens = IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all() if account_id else []
   intake_token_set = bool(active_tokens)
@@ -445,4 +538,6 @@ def integrations_webhooks():
     security_view=None,
     api_allowed=api_allowed,
     account_id=account_id,
+    voice_connection=voice_connection,
+    voice_prefill=voice_prefill,
   )
