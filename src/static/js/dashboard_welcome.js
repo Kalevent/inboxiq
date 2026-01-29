@@ -10,6 +10,16 @@
   const connectSourcesStatus = document.getElementById('connectSourcesStatus');
   const sourceConnectBtns = Array.from(document.querySelectorAll('.source-connect-btn'));
   const sourceTestBtns = Array.from(document.querySelectorAll('.source-test-btn'));
+  const formsConnectBtn = document.getElementById('formsConnectBtn');
+  const formsCopyBtns = Array.from(document.querySelectorAll('.copy-forms-url'));
+  const formsConnectInline = document.getElementById('formsConnectInline');
+  const closeFormsConnectInline = document.getElementById('closeFormsConnectInline');
+  const formsIntakeUrlInline = document.getElementById('formsIntakeUrlInline');
+  const formsShimUrlInline = document.getElementById('formsShimUrlInline');
+  const formsPayloadSampleInline = document.getElementById('formsPayloadSampleInline');
+  const markFormsConnectedInline = document.getElementById('markFormsConnectedInline');
+  const formsConnectStatusInline = document.getElementById('formsConnectStatusInline');
+  let formsConnectTriggerBtn = null;
   const rawConnectionId = connectStatus?.dataset?.connectionId;
   const normalizedConnectionId = (rawConnectionId || '').trim();
   const hasConnectionId = normalizedConnectionId && !['none', 'null', 'undefined'].includes(normalizedConnectionId.toLowerCase());
@@ -53,6 +63,19 @@
     connectSourcesStatus.className = `mt-2 text-xs ${map[type] || map.info}`;
     connectSourcesStatus.textContent = message;
     connectSourcesStatus.classList.remove('hidden');
+  }
+
+  function openFormsModal(triggerBtn) {
+    if (!formsConnectInline) return;
+    formsConnectTriggerBtn = triggerBtn || null;
+    formsConnectStatusInline && (formsConnectStatusInline.textContent = '');
+    formsConnectInline.classList.remove('hidden');
+    formsConnectInline.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function closeFormsModal() {
+    if (!formsConnectInline) return;
+    formsConnectInline.classList.add('hidden');
   }
 
   async function postJSON(url, body) {
@@ -196,8 +219,19 @@
   if (sourceConnectBtns.length) {
     sourceConnectBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
+        if (btn.dataset.channel === 'forms') {
+          setConnectSourcesStatus('info', 'Opening forms connect…');
+          openFormsModal(btn);
+          return;
+        }
         handleSourceConnect(btn.dataset.channel, btn);
       });
+    });
+  }
+  if (formsConnectBtn) {
+    formsConnectBtn.addEventListener('click', () => {
+      setConnectSourcesStatus('info', 'Opening forms connect…');
+      openFormsModal(formsConnectBtn);
     });
   }
   if (sourceTestBtns.length) {
@@ -210,6 +244,46 @@
 
   // Auto-refresh recent triage every 10 seconds
   let refreshInterval = null;
+
+  function bindFormsModalHandlers() {
+    if (formsConnectInline && closeFormsConnectInline) {
+      closeFormsConnectInline.addEventListener('click', () => {
+        formsConnectInline.classList.add('hidden');
+      });
+    }
+    if (formsIntakeUrlInline) {
+      const origin = window.location.origin;
+      formsIntakeUrlInline.value = `${origin}/api/v1/intake`;
+    }
+    if (formsShimUrlInline) {
+      const origin = window.location.origin;
+      formsShimUrlInline.value = `${origin}/api/v1/intake/shim`;
+    }
+    if (formsCopyBtns.length) {
+      formsCopyBtns.forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const targetId = btn.dataset.copyTarget;
+          const target = targetId ? document.getElementById(targetId) : null;
+          const value = target?.value || target?.textContent || '';
+          if (!value) return;
+          try {
+            await navigator.clipboard.writeText(value);
+            if (formsConnectStatusInline) formsConnectStatusInline.textContent = 'Copied.';
+          } catch (err) {
+            if (formsConnectStatusInline) formsConnectStatusInline.textContent = 'Copy failed.';
+          }
+        });
+      });
+    }
+    if (markFormsConnectedInline) {
+      markFormsConnectedInline.addEventListener('click', async () => {
+        if (formsConnectStatusInline) formsConnectStatusInline.textContent = 'Marking connected...';
+        await handleSourceConnect('forms', formsConnectTriggerBtn);
+        if (formsConnectStatusInline) formsConnectStatusInline.textContent = 'Forms marked as connected.';
+      });
+    }
+  }
+  bindFormsModalHandlers();
 
   async function refreshTickets() {
     try {
@@ -954,6 +1028,21 @@
         testimonialStatus.className = 'text-xs rounded-xl border border-emerald-400/40 bg-emerald-500/10 text-emerald-100 px-3 py-2';
         testimonialStatus.textContent = 'Thank you! Submitted.';
         testimonialStatus.classList.remove('hidden');
+      }
+      try {
+        await fetch('/api/v1/inboxiq/forms/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            message,
+            context: `Rating: ${rating}${consent_public ? ' • Consent to publish' : ''}`,
+            form_name: 'testimonial',
+            use_case: 'feedback',
+          }),
+        });
+      } catch (err) {
+        console.warn('testimonial intake enqueue failed', err);
       }
       if (testimonialMsg) testimonialMsg.value = '';
     } catch (err) {

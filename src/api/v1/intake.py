@@ -12,7 +12,9 @@ import requests
 
 from src.api.v1 import v1
 from src.inboxiq_logic import normalize_email_payload
-from src.models import IntakeToken
+from src.models import IntakeToken, InboxConnection, User
+from src.extensions import db
+from src.sanitize import sanitize_html
 from datetime import datetime, timezone
 from src.api.v1.inboxiq import _get_account_id
 from src.api.v1.access_control import account_allows_api
@@ -141,6 +143,102 @@ def intake():
         current_app.logger.exception("failed to enqueue intake payload", exc_info=exc)
         return jsonify({"error": "enqueue_failed", "message": str(exc)}), 502
 
+    return jsonify({"success": True, "status": "queued", "task_id": task.id}), 202
+
+
+def _ensure_forms_connection(account_id: int | None, user_id: int | None, form_name: str | None = None) -> None:
+    if not account_id and not user_id:
+        return
+    query = InboxConnection.query
+    if account_id:
+        query = query.filter_by(account_id=account_id)
+    else:
+        query = query.filter_by(user_id=user_id)
+    conn = query.filter_by(provider="forms").order_by(InboxConnection.updated_at.desc()).first()
+    meta = {}
+    if conn:
+        meta = conn.metadata_json or {}
+        meta.setdefault("channel", "forms")
+        if form_name:
+            forms = meta.get("forms") or []
+            if form_name not in forms:
+                forms.append(form_name)
+            meta["forms"] = forms
+        conn.metadata_json = meta
+        conn.status = "connected"
+        db.session.commit()
+        return
+    meta = {"channel": "forms"}
+    if form_name:
+        meta["forms"] = [form_name]
+    conn = InboxConnection(
+        user_id=user_id,
+        account_id=account_id,
+        provider="forms",
+        status="connected",
+        metadata_json=meta,
+    )
+    db.session.add(conn)
+    db.session.commit()
+
+
+@v1.route("/inboxiq/forms/submit", methods=["POST"])
+@jwt_required()
+def submit_form():
+    """
+    In-app form intake: accepts JSON from authenticated users and routes
+    through the same intake/triage pipeline as external forms.
+    """
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id) if user_id else None
+    if not user:
+        return jsonify({"error": "not_authenticated"}), 401
+
+    payload = request.get_json(silent=True) or {}
+    form_name = (payload.get("form_name") or payload.get("form") or payload.get("source") or "form").strip()
+    raw_message = payload.get("message") or payload.get("body") or payload.get("summary") or ""
+    raw_context = payload.get("context") or ""
+    message = sanitize_html(str(raw_message)).strip()
+    context = sanitize_html(str(raw_context)).strip()
+    if not message:
+        return jsonify({"error": "validation_error", "message": "message/body required"}), 400
+
+    raw_subject = payload.get("subject") or f"Form: {form_name}"
+    subject = sanitize_html(str(raw_subject)).strip()[:500]
+    body = message if not context else f"{message}\n\nContext: {context}"
+    account_id = _get_account_id(user_id)
+
+    triage_input = {
+        "subject": subject,
+        "from_email": user.email or "forms@inboxiq.local",
+        "body": body,
+        "provider": "forms",
+        "source": "forms",
+        "channel": "forms",
+        "use_case": payload.get("use_case") or form_name,
+        "context": context or payload.get("context"),
+        "provider_thread_url": payload.get("provider_thread_url"),
+        "message_id": payload.get("message_id"),
+        "received_at": payload.get("received_at"),
+    }
+
+    try:
+        normalized = normalize_email_payload(triage_input)
+    except Exception as exc:
+        current_app.logger.warning("forms intake validation failed: %s", exc)
+        return jsonify({"error": "validation_error", "message": str(exc)}), 400
+
+    try:
+        task = _celery_client().send_task(
+            "inboxiq.process_incoming_email",
+            args=[{"email": normalized, "user_id": user_id, "account_id": account_id}],
+            queue="inbox",
+        )
+    except Exception as exc:
+        current_app.logger.exception("failed to enqueue form payload", exc_info=exc)
+        return jsonify({"error": "enqueue_failed", "message": str(exc)}), 502
+
+    _ensure_forms_connection(account_id, user_id, form_name=form_name)
     return jsonify({"success": True, "status": "queued", "task_id": task.id}), 202
 
 

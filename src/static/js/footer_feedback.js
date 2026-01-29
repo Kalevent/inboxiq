@@ -76,14 +76,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const payload = {
       message,
       context: context || null,
-      urgency,
+      form_name: "feedback",
+      use_case: "feedback",
+      metadata: {
+        urgency,
+      },
     };
 
     try {
       submitBtn && (submitBtn.disabled = true);
       showStatus("Sending…");
 
-      const res = await fetch("/api/v1/feedback", {
+      const res = await fetch("/api/v1/inboxiq/forms/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

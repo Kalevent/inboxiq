@@ -163,7 +163,7 @@
                 <p class="text-sm font-semibold text-slate-100">Forms</p>
                 <p class="text-xs text-slate-400 mt-1">Typeform, Webflow, HubSpot forms.</p>
                 <div class="mt-2 flex items-center gap-2 text-[11px]">
-                  <button class="source-connect-btn rounded-full border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800" data-channel="forms">Connect</button>
+                  <button id="formsConnectBtn" class="source-connect-btn rounded-full border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800" data-channel="forms">Connect</button>
                   <button class="source-test-btn rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-indigo-200 hover:text-white" data-channel="forms">Test</button>
                 </div>
               </div>
@@ -190,6 +190,56 @@
                   <button class="source-connect-btn rounded-full border border-slate-700 px-3 py-1 text-slate-200 hover:bg-slate-800" data-channel="api">Connect</button>
                   <button class="source-test-btn rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-indigo-200 hover:text-white" data-channel="api">Test</button>
                 </div>
+              </div>
+            </div>
+
+            <div id="formsConnectInline" class="hidden mt-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-semibold text-slate-100">Connect Forms Intake</p>
+                  <p class="text-xs text-slate-400">Use the unified intake endpoint or shim for external form providers.</p>
+                </div>
+                <button id="closeFormsConnectInline" class="text-slate-400 hover:text-slate-200 text-sm">Close</button>
+              </div>
+
+              <div class="mt-4 space-y-3">
+                <div>
+                  <label class="text-[11px] uppercase tracking-wide text-slate-500">Intake endpoint (signed)</label>
+                  <div class="mt-1 flex items-center gap-2">
+                    <input id="formsIntakeUrlInline" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs text-slate-200" readonly />
+                    <button type="button" class="copy-forms-url rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200" data-copy-target="formsIntakeUrlInline">Copy</button>
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-1">Requires X-Intake-Token + signature. Generate token in Webhook setup.</p>
+                </div>
+
+                <div>
+                  <label class="text-[11px] uppercase tracking-wide text-slate-500">Shim endpoint (no-signature)</label>
+                  <div class="mt-1 flex items-center gap-2">
+                    <input id="formsShimUrlInline" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs text-slate-200" readonly />
+                    <button type="button" class="copy-forms-url rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200" data-copy-target="formsShimUrlInline">Copy</button>
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-1">Use when a provider cannot send custom headers.</p>
+                </div>
+
+                <div>
+                  <div class="flex items-center justify-between">
+                    <label class="text-[11px] uppercase tracking-wide text-slate-500">Sample payload (JSON)</label>
+                    <button type="button" class="copy-forms-url rounded-lg border border-slate-700 px-3 py-1 text-[11px] text-slate-200" data-copy-target="formsPayloadSampleInline">Copy payload</button>
+                  </div>
+                  <pre id="formsPayloadSampleInline" class="mt-2 rounded-lg border border-slate-800 bg-slate-900/70 p-3 text-[11px] text-slate-300 whitespace-pre-wrap">{
+  "form_name": "website_feedback",
+  "message": "Customer reported a billing issue on checkout.",
+  "context": "Order #4821 · Needs response within 24h.",
+  "use_case": "support",
+  "provider_thread_url": "https://your-form-provider.com/submissions/123"
+}</pre>
+                </div>
+              </div>
+
+              <div class="mt-4 flex flex-wrap items-center gap-3">
+                <a href="/settings/integrations/webhooks" class="text-xs text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Open webhook setup</a>
+                <button id="markFormsConnectedInline" class="rounded-full btn-primary text-white text-xs font-semibold px-4 py-2">Mark connected</button>
+                <span id="formsConnectStatusInline" class="text-[11px] text-slate-400"></span>
               </div>
             </div>
           </div>
