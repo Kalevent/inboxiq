@@ -14,3 +14,7 @@ src/.env
 src/.env.*
 src/prod.env
 certs/
+
+# Local planning/implementation docs
+IMPLEMENTATION_PLAN.md
+.dockerignore

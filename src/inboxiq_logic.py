@@ -38,6 +38,8 @@ class TriageDecision:
     similar_feedback: List[Dict[str, Any]] = field(default_factory=list)
     action_required: bool | str | None = None  # true | false | "optional"
     ai_reason: str | None = None
+    email_type: str | None = None  # spam | marketing | newsletter | support_request | etc.
+    is_automated: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -58,6 +60,8 @@ class TriageDecision:
             "similar_feedback": self.similar_feedback,
             "action_required": self.action_required,
             "ai_reason": self.ai_reason,
+            "email_type": self.email_type,
+            "is_automated": self.is_automated,
         }
 
 
@@ -208,20 +212,49 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
         owner = (dspy_result.get("owner") or "").strip() or None
         assigned_to = (dspy_result.get("assigned_to") or "").strip() or None
 
+        # Extract email_type and is_automated from DSPy result
+        email_type = (dspy_result.get("email_type") or "").strip().lower() or None
+        is_automated_val = dspy_result.get("is_automated")
+        is_automated = str(is_automated_val).lower() in ("true", "yes", "1") if is_automated_val else False
+
+        # Email types that should be auto-handled
+        NON_ACTIONABLE_TYPES = {
+            "spam", "marketing", "newsletter", "transactional",
+            "auto_reply", "out_of_office", "promotional", "notification"
+        }
+
+        decision_trace = list(dspy_result.get("decision_trace") or [])
+        if not decision_trace:
+            decision_trace = ["dspy"]
+
+        # FIXED: Smart fallback based on email_type instead of defaulting to "optional"
         if action_required is None:
-            action_required = "optional"
-            decision_trace = list(dspy_result.get("decision_trace") or [])
-            decision_trace.append("dspy_action_required_missing")
-        else:
-            decision_trace = list(dspy_result.get("decision_trace") or [])
-            if not decision_trace:
-                decision_trace = ["dspy"]
+            # Check if email_type indicates non-actionable
+            if email_type in NON_ACTIONABLE_TYPES:
+                action_required = False
+                decision_trace.append(f"fallback:email_type={email_type}")
+            elif is_automated:
+                action_required = False
+                decision_trace.append("fallback:is_automated")
+            elif priority in {"P3", "P4"}:
+                # Low priority without explicit action -> auto-handle
+                action_required = False
+                decision_trace.append("fallback:low_priority")
+            elif priority in {"P0", "P1"}:
+                # High priority without explicit action -> requires action
+                action_required = True
+                decision_trace.append("fallback:high_priority")
+            else:
+                # P2 or unknown -> optional (cautious approach)
+                action_required = "optional"
+                decision_trace.append("fallback:p2_optional")
 
         risk_flag = priority == "P0" or sentiment == "negative"
         entities = _safe_json(dspy_result.get("entities_json")) or {}
 
         confidence = {"category": 0.55, "priority": 0.55, "sentiment": 0.55}
-        needs_review = False if action_required is not None else True
+        # Only needs review if action_required is True or "optional"
+        needs_review = action_required is True or action_required == "optional"
 
         return TriageDecision(
             category=category,
@@ -241,6 +274,8 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
             similar_feedback=[],
             action_required=action_required,
             ai_reason=ai_reason or _reason_text(action_required, "dspy"),
+            email_type=email_type,
+            is_automated=is_automated,
         )
     except Exception as exc:
         logging.getLogger(__name__).warning("dspy triage failed: %s", exc)

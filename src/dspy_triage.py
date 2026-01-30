@@ -207,6 +207,73 @@ def _label_desc(labels: Dict[str, Any], key: str, fallback: str) -> str:
     return fallback
 
 
+# Email types that should be auto-handled without human review
+NON_ACTIONABLE_EMAIL_TYPES = {
+    "spam", "marketing", "newsletter", "transactional",
+    "auto_reply", "out_of_office", "promotional", "notification"
+}
+
+# Sender patterns that indicate automated emails
+AUTOMATED_SENDER_PATTERNS = [
+    "noreply@", "no-reply@", "donotreply@", "do-not-reply@",
+    "mailer-daemon", "postmaster@", "notifications@", "alerts@",
+    "newsletter@", "marketing@", "promo@", "bounce@", "auto@"
+]
+
+# Subject patterns indicating non-actionable emails
+SPAM_SUBJECT_PATTERNS = [
+    "you've won", "congratulations", "act now", "limited time",
+    "click here", "free gift", "winner", "claim your"
+]
+
+MARKETING_SUBJECT_PATTERNS = [
+    "newsletter", "unsubscribe", "weekly digest", "monthly update",
+    "special offer", "% off", "sale ends", "don't miss"
+]
+
+AUTO_REPLY_SUBJECT_PATTERNS = [
+    "out of office", "automatic reply", "auto:", "re: automatic",
+    "away from", "on vacation", "currently unavailable"
+]
+
+
+def _detect_email_type(payload: Dict[str, Any]) -> tuple[str, bool, str | None]:
+    """
+    Detect email type using heuristics before LLM classification.
+    Returns: (email_type, is_automated, skip_reason)
+    """
+    subject = (payload.get("subject") or "").lower()
+    from_email = (payload.get("from_email") or payload.get("from") or "").lower()
+    body = (payload.get("body") or "").lower()
+
+    # Check for automated sender patterns
+    is_automated = any(pattern in from_email for pattern in AUTOMATED_SENDER_PATTERNS)
+
+    # Check for spam patterns
+    if any(pattern in subject for pattern in SPAM_SUBJECT_PATTERNS):
+        return "spam", True, "Spam subject pattern detected"
+
+    # Check for marketing patterns
+    if any(pattern in subject for pattern in MARKETING_SUBJECT_PATTERNS):
+        return "marketing", True, "Marketing email pattern detected"
+    if "unsubscribe" in body and ("view in browser" in body or "email preferences" in body):
+        return "newsletter", True, "Newsletter pattern detected"
+
+    # Check for auto-reply patterns
+    if any(pattern in subject for pattern in AUTO_REPLY_SUBJECT_PATTERNS):
+        return "auto_reply", True, "Auto-reply detected"
+    if "i am currently out" in body or "automatic response" in body:
+        return "auto_reply", True, "Auto-reply body pattern detected"
+
+    # Check for transactional/notification emails
+    if is_automated:
+        if any(word in subject for word in ["shipped", "delivered", "confirmation", "receipt", "invoice"]):
+            return "transactional", True, "Transactional email from no-reply sender"
+        return "notification", True, "Automated notification from no-reply sender"
+
+    return "unknown", False, None
+
+
 def _draft_reply_enabled(context: Dict[str, Any] | None) -> bool:
     if not _env_bool("DSPY_DRAFT_REPLY_ENABLED", False):
         return False
@@ -240,14 +307,25 @@ def _decision_outcome(action_required: Any) -> str:
 
 def build_triage_module(dspy: Any, label_config: Dict[str, Any]) -> Any:
     class TriageSignature(dspy.Signature):
-        """Classify inbound support content for triage."""
+        """Classify inbound support content for triage. Identify spam, marketing, and auto-replies for auto-handling."""
 
         content = dspy.InputField(desc="Inbound payload with subject, body, sender, source, and context.")
         category = dspy.OutputField(desc=_label_desc(label_config, "categories", "Provide a concise category label."))
         priority = dspy.OutputField(desc=_label_desc(label_config, "priorities", "Provide a priority label."))
         sentiment = dspy.OutputField(desc=_label_desc(label_config, "sentiments", "Provide a sentiment label."))
         intent = dspy.OutputField(desc=_label_desc(label_config, "intents", "Provide an intent label."))
-        action_required = dspy.OutputField(desc=_label_desc(label_config, "action_required", "true|false|optional"))
+        # NEW: Email type classification for auto-handling
+        email_type = dspy.OutputField(
+            desc="One of: support_request | sales_inquiry | billing | bug_report | feature_request | "
+                 "marketing | newsletter | spam | transactional | auto_reply | notification | internal | other. "
+                 "Use marketing/newsletter/spam/auto_reply/transactional for non-actionable emails."
+        )
+        is_automated = dspy.OutputField(
+            desc="true if this is an automated email (auto-reply, system notification, no-reply sender, newsletter), false if from a human requiring response"
+        )
+        action_required = dspy.OutputField(
+            desc="false for spam/marketing/newsletter/auto_reply/transactional emails. true for support requests needing human response. optional for low-priority items."
+        )
         ai_reason = dspy.OutputField(desc="Short reason for the decision.")
         team = dspy.OutputField(desc=_label_desc(label_config, "teams", "Suggested team name for assignment."))
         assigned_to = dspy.OutputField(desc="Suggested queue or owner identifier.")
@@ -266,8 +344,14 @@ def build_triage_module(dspy: Any, label_config: Dict[str, Any]) -> Any:
 
 def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
     class ExtractEntitiesSig(dspy.Signature):
+        """Extract entities and classify email type. Identify spam, marketing, newsletters, and auto-replies for auto-handling."""
         case_json = dspy.InputField(desc="JSON of normalized case payload.")
-        entities_json = dspy.OutputField(desc="JSON with intent, sentiment, urgency, identifiers, and missing_info.")
+        entities_json = dspy.OutputField(
+            desc="JSON with: intent, sentiment, urgency, identifiers, missing_info, "
+                 "email_type (support_request|sales_inquiry|billing|bug_report|feature_request|marketing|newsletter|spam|transactional|auto_reply|notification|other), "
+                 "is_automated (true/false), requires_human_response (true/false). "
+                 "Set email_type to spam/marketing/newsletter/auto_reply/transactional and is_automated=true for non-actionable emails."
+        )
 
     class RouteCaseSig(dspy.Signature):
         case_json = dspy.InputField()
@@ -281,11 +365,15 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
         workflow_json = dspy.OutputField(desc="JSON with workflow_key, required_tools, next_questions.")
 
     class EscalationDecisionSig(dspy.Signature):
+        """Decide whether to escalate, auto-resolve, or request clarification. Auto-resolve spam, marketing, newsletters, and auto-replies."""
         case_json = dspy.InputField()
         entities_json = dspy.InputField()
         route_json = dspy.InputField()
         workflow_json = dspy.InputField()
-        escalation_json = dspy.OutputField(desc="JSON with decision, reason, required_role.")
+        escalation_json = dspy.OutputField(
+            desc="JSON with decision (auto_resolve|escalate|ask_clarifying|escalate_on_reply), reason, required_role. "
+                 "Use auto_resolve for spam, marketing, newsletters, auto-replies, transactional emails, and low-priority informational content."
+        )
 
     class DraftReplySig(dspy.Signature):
         case_json = dspy.InputField()
@@ -389,37 +477,105 @@ def run_dspy_triage(
     route = _safe_parse(route_json)
     workflow = _safe_parse(workflow_json)
     escalation = _safe_parse(escalation_json)
+
+    # Extract email type classification from entities
+    email_type = str(entities.get("email_type", "")).lower().strip()
+    is_automated_str = str(entities.get("is_automated", "")).lower().strip()
+    is_automated = is_automated_str in ("true", "yes", "1")
+    requires_human = str(entities.get("requires_human_response", "")).lower().strip()
+    requires_human_response = requires_human in ("true", "yes", "1")
+
+    # Pre-filter using heuristics (before LLM decision)
+    heuristic_type, heuristic_automated, heuristic_reason = _detect_email_type(payload)
+    decision_trace = ["dspy:extract", "dspy:route", "dspy:workflow", "dspy:escalate"]
+
+    # Determine action_required based on multiple signals
     decision = escalation.get("decision")
-    action_required: bool | str = True
-    if decision in {"auto_resolve"}:
+    action_required: bool | str = True  # Default, will be overridden
+
+    # PRIORITY 1: Heuristic detection of spam/marketing/auto-replies (highest confidence)
+    if heuristic_type in NON_ACTIONABLE_EMAIL_TYPES:
         action_required = False
-    elif decision in {"ask_clarifying", "escalate_on_reply"}:
+        decision_trace.append(f"heuristic:{heuristic_type}")
+        if not email_type or email_type == "unknown":
+            email_type = heuristic_type
+        is_automated = True
+
+    # PRIORITY 2: LLM classified as non-actionable email type
+    elif email_type in NON_ACTIONABLE_EMAIL_TYPES:
+        action_required = False
+        decision_trace.append(f"llm_email_type:{email_type}")
+
+    # PRIORITY 3: LLM says it's automated and doesn't require human response
+    elif is_automated and not requires_human_response:
+        action_required = False
+        decision_trace.append("llm:automated_no_human_needed")
+
+    # PRIORITY 4: Explicit escalation decision from LLM
+    elif decision in {"auto_resolve", "auto-resolve", "resolved", "ignore"}:
+        action_required = False
+        decision_trace.append("llm:auto_resolve")
+    elif decision in {"ask_clarifying", "escalate_on_reply", "optional"}:
         action_required = "optional"
+        decision_trace.append("llm:optional")
+    elif decision in {"escalate", "human_required", "urgent"}:
+        action_required = True
+        decision_trace.append("llm:escalate")
+
+    # PRIORITY 5: Fallback based on priority level
     else:
-        # Fallback when escalation decision is missing: infer from route/priority.
         priority = (route.get("priority") or "").strip().upper()
         if priority in {"P0", "P1"}:
             action_required = True
+            decision_trace.append("fallback:high_priority")
         elif priority in {"P2"}:
-            action_required = "optional"
-        elif priority in {"P3", "P4"}:
+            # P2 with neutral sentiment and no urgency markers -> optional
+            sentiment = str(entities.get("sentiment", "")).lower()
+            if sentiment in {"neutral", "positive"}:
+                action_required = "optional"
+                decision_trace.append("fallback:p2_neutral")
+            else:
+                action_required = True
+                decision_trace.append("fallback:p2_negative")
+        elif priority in {"P3", "P4", ""}:
+            # Low priority -> auto-handle by default
             action_required = False
+            decision_trace.append("fallback:low_priority")
         else:
+            # Unknown priority -> be cautious, mark as optional
             action_required = "optional"
+            decision_trace.append("fallback:unknown_priority")
+
+    # Build AI reason
+    ai_reason = escalation.get("reason") or route.get("rationale")
+    if not ai_reason:
+        if action_required is False:
+            if email_type in NON_ACTIONABLE_EMAIL_TYPES:
+                ai_reason = f"Auto-handled: {email_type.replace('_', ' ')} email"
+            elif heuristic_reason:
+                ai_reason = f"Auto-handled: {heuristic_reason}"
+            else:
+                ai_reason = "Auto-handled: low priority or informational"
+        elif action_required == "optional":
+            ai_reason = "Optional follow-up when capacity allows"
+        else:
+            ai_reason = "Action required: customer needs response"
 
     content = {
-        "category": route.get("queue") or entities.get("intent"),
-        "priority": route.get("priority"),
-        "sentiment": entities.get("sentiment"),
+        "category": route.get("queue") or entities.get("intent") or email_type or "general",
+        "priority": route.get("priority") or ("P4" if action_required is False else "P2"),
+        "sentiment": entities.get("sentiment") or "neutral",
         "intent": entities.get("intent"),
+        "email_type": email_type or heuristic_type or "unknown",
+        "is_automated": is_automated or heuristic_automated,
         "action_required": action_required,
-        "ai_reason": escalation.get("reason") or route.get("rationale"),
+        "ai_reason": ai_reason,
         "team": route.get("queue"),
         "assigned_to": escalation.get("required_role"),
         "owner": escalation.get("required_role"),
         "decision_type": "triage",
         "decision_outcome": _decision_outcome(action_required),
-        "decision_trace": ["dspy:extract", "dspy:route", "dspy:workflow", "dspy:escalate"],
+        "decision_trace": decision_trace,
         "reply_text": reply_text,
         "entities_json": entities_json,
         "route_json": route_json,

@@ -9,7 +9,8 @@ from celery import Celery
 from celery.schedules import crontab
 from src.app import create_app
 from src.agent_worker import process_email_with_agents
-from src.inboxiq_logic import normalize_email_payload, run_dspy_decision
+from src.inboxiq_logic import normalize_email_payload, run_dspy_decision, compute_due_at
+from src.decision_merger import merge_decisions, should_skip_triage
 from src.extensions import db
 from src.models import Ticket, InboxConnection, Account
 from src.triage_labels import get_triage_labels
@@ -140,8 +141,11 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     Process a single inbound email:
       1) normalize payload
       2) dedupe on message_id+provider
-      3) invoke agents (intake/enrich/triage)
-      4) persist ticket with agent + LLM triage decision
+      3) pre-filter check for obvious spam/marketing/auto-replies
+      4) invoke agents (intake/enrich/triage) if not skipped
+      5) run DSPy triage
+      6) merge agent + DSPy decisions
+      7) persist ticket with merged decision
     """
     email_payload = (payload or {}).get("email") or (payload or {})
     account_id = (payload or {}).get("account_id")
@@ -161,41 +165,76 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     if existing:
         return {"status": "duplicate", "ticket_id": existing.id}
 
+    # Pre-filter check: skip full triage for obvious spam/marketing/auto-replies
+    skip_triage, pre_filter_type, pre_filter_reason = should_skip_triage(normalized)
+
     agent_result = None
-    try:
-        agent_result = process_email_with_agents(normalized)
-    except Exception as exc:
-        require_agents = os.getenv("AGENT_PIPELINE_REQUIRED", "1").lower() in ("1", "true", "yes", "on")
-        if require_agents:
-            logging.getLogger(__name__).error("agent pipeline failed; aborting intake: %s", exc)
-            raise
-        # If agents are optional, continue with DSPy triage so intake isn't blocked.
-        logging.getLogger(__name__).warning("agent pipeline failed; continuing without agents: %s", exc)
-        agent_result = None
-
-    decision = run_dspy_decision(normalized, account_id=account_id)
     agent_decision = None
-    if agent_result:
-        agent_decision = agent_result.get("decision") or agent_result.get("triage") or {}
 
-    category = decision.category
-    priority = decision.priority
-    sentiment = decision.sentiment
-    needs_review = decision.needs_review or False
-    action_required = decision.action_required
+    # Only run agent pipeline if not skipping triage
+    if not skip_triage:
+        try:
+            agent_result = process_email_with_agents(normalized)
+            if agent_result:
+                agent_decision = agent_result.get("decision") or agent_result.get("triage") or {}
+        except Exception as exc:
+            # Default to optional agents - don't fail intake if agents fail
+            require_agents = os.getenv("AGENT_PIPELINE_REQUIRED", "0").lower() in ("1", "true", "yes", "on")
+            if require_agents:
+                logging.getLogger(__name__).error("agent pipeline failed; aborting intake: %s", exc)
+                raise
+            logging.getLogger(__name__).warning("agent pipeline failed; continuing without agents: %s", exc)
+            agent_result = None
 
+    # Run DSPy triage (will also apply heuristics internally)
+    decision = run_dspy_decision(normalized, account_id=account_id)
+
+    # Merge agent decision with DSPy decision
+    dspy_dict = decision.to_dict()
+    merged = merge_decisions(dspy_dict, agent_decision)
+
+    # Apply pre-filter override if it detected non-actionable email
+    if skip_triage and pre_filter_type:
+        merged["action_required"] = False
+        merged["email_type"] = pre_filter_type
+        merged["is_automated"] = True
+        merged["ai_reason"] = f"Auto-handled: {pre_filter_reason}"
+        merged["decision_trace"] = merged.get("decision_trace", []) + [f"pre_filter:{pre_filter_type}"]
+        merged["decision_outcome"] = "auto_handled"
+
+    # Extract final values from merged decision
+    category = merged.get("category") or decision.category
+    priority = merged.get("priority") or decision.priority
+    sentiment = merged.get("sentiment") or decision.sentiment
+    action_required = merged.get("action_required")
+    email_type = merged.get("email_type")
+    is_automated = merged.get("is_automated", False)
+
+    # Build comprehensive decision record
     decision_record = {
         "agent": agent_decision,
-        "llm": decision.to_dict(),
+        "llm": dspy_dict,
+        "merged": merged,
         "agent_pipeline": agent_result,
         "action_required": action_required,
+        "email_type": email_type,
+        "is_automated": is_automated,
+        "pre_filter": {
+            "skipped": skip_triage,
+            "type": pre_filter_type,
+            "reason": pre_filter_reason,
+        } if skip_triage else None,
     }
 
-    status = "needs_review" if needs_review else "new"
+    # Determine ticket status based on action_required
     if action_required is False:
         status = "auto_handled"
-    elif action_required == "optional" and status != "needs_review":
+    elif action_required == "optional":
         status = "optional"
+    elif decision.needs_review:
+        status = "needs_review"
+    else:
+        status = "new"
 
     ticket = Ticket(
         account_id=account_id,
@@ -212,6 +251,10 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         provider=normalized.get("provider"),
         provider_thread_url=normalized.get("provider_thread_url"),
         decision=decision_record,
+        team=merged.get("team") or decision.team,
+        assigned_to=merged.get("assigned_to") or decision.assigned_to,
+        owner=merged.get("owner") or decision.owner,
+        due_at=compute_due_at(priority),
     )
     db.session.add(ticket)
     try:
@@ -221,7 +264,19 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         logging.getLogger(__name__).exception("failed to persist inbound email ticket: %s", exc)
         raise self.retry(exc=exc)
 
-    return {"status": "created", "ticket_id": ticket.id, "category": category, "priority": priority}
+    logging.getLogger(__name__).info(
+        "ticket created: id=%s status=%s action_required=%s email_type=%s",
+        ticket.id, status, action_required, email_type
+    )
+
+    return {
+        "status": "created" if status != "auto_handled" else "auto_handled",
+        "ticket_id": ticket.id,
+        "category": category,
+        "priority": priority,
+        "action_required": action_required,
+        "email_type": email_type,
+    }
 
 
 @celery.task(

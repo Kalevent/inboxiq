@@ -1,14 +1,25 @@
 """
 Utility worker to orchestrate intake -> (enrich) -> triage agents for InboxIQ.
 
-This is a minimal helper and does not auto-run; call process_email_with_agents
-from your worker/cron after wiring agent IDs and BASE_URL env vars.
+DEPRECATION NOTICE:
+-------------------
+This module is being superseded by the integrated DSPy triage in celery_inboxiq.py
+with decision_merger.py. The agent pipeline is now OPTIONAL and will gracefully
+skip if INTAKE_AGENT_ID/TRIAGE_AGENT_ID are not configured.
+
+The new flow uses:
+- src/dspy_triage.py for LLM-based classification with email_type detection
+- src/decision_merger.py for merging agent + DSPy decisions
+- src/mcp/server.py for MCP-based classification tools
+
+TODO: Remove this file after confirming the new triage flow works in production.
 """
 from __future__ import annotations
 
 import os
 import json
-from typing import Any, Dict, Optional
+import logging
+from typing import Any, Dict
 
 import requests
 
@@ -33,43 +44,86 @@ def _invoke_agent(agent_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
 def process_email_with_agents(raw_email: Dict[str, Any]) -> Dict[str, Any]:
     """
     Orchestrate intake -> optional enrichment -> triage. Returns a dict with details.
-    Expects agent IDs in env:
-      INTAKE_AGENT_ID, TRIAGE_AGENT_ID (required)
-      ENRICH_AGENT_ID (optional)
+
+    UPDATED: Agent IDs are now OPTIONAL. If not configured, returns empty result
+    and lets the DSPy triage handle classification directly.
+
+    Expects agent IDs in env (all optional now):
+      INTAKE_AGENT_ID - Intake agent for normalization
+      TRIAGE_AGENT_ID - Triage agent for classification
+      ENRICH_AGENT_ID - Enrichment agent (optional)
     """
     intake_id = os.getenv("INTAKE_AGENT_ID")
     triage_id = os.getenv("TRIAGE_AGENT_ID")
     enrich_id = os.getenv("ENRICH_AGENT_ID")  # optional
+
+    # CHANGED: Agent pipeline is now optional - skip gracefully if not configured
     if not intake_id or not triage_id:
-        raise RuntimeError("INTAKE_AGENT_ID and TRIAGE_AGENT_ID env vars must be set")
+        logging.getLogger(__name__).debug(
+            "Agent pipeline skipped: INTAKE_AGENT_ID=%s TRIAGE_AGENT_ID=%s not fully configured",
+            "set" if intake_id else "unset",
+            "set" if triage_id else "unset"
+        )
+        # Return empty result - DSPy triage will handle classification
+        return {
+            "raw": raw_email,
+            "skipped": True,
+            "reason": "agent_ids_not_configured",
+            "decision": {},
+        }
 
-    result: Dict[str, Any] = {"raw": raw_email}
+    result: Dict[str, Any] = {"raw": raw_email, "skipped": False}
 
-    # Intake (LLM)
-    intake_payload = {"input": json.dumps(raw_email), "use_llm": True}
-    intake_resp = _invoke_agent(intake_id, intake_payload)
-    normalized = intake_resp.get("result") or intake_resp.get("llm_result") or {}
-    result["intake"] = intake_resp
-    result["normalized"] = normalized
+    try:
+        # Intake (LLM)
+        intake_payload = {"input": json.dumps(raw_email), "use_llm": True}
+        intake_resp = _invoke_agent(intake_id, intake_payload)
+        normalized = intake_resp.get("result") or intake_resp.get("llm_result") or {}
+        result["intake"] = intake_resp
+        result["normalized"] = normalized
 
-    # Enrichment (optional)
-    enriched: Dict[str, Any] = normalized
-    if enrich_id:
-        try:
-            enrich_payload = {"input": json.dumps(normalized), "use_llm": True}
-            enrich_resp = _invoke_agent(enrich_id, enrich_payload)
-            enriched = {**normalized, "context": enrich_resp.get("result") or enrich_resp.get("llm_result")}
-            result["enrich"] = enrich_resp
-            result["enriched"] = enriched
-        except Exception as exc:
-            result["enrich_error"] = str(exc)
-            enriched = normalized
+        # Enrichment (optional)
+        enriched: Dict[str, Any] = normalized
+        if enrich_id:
+            try:
+                enrich_payload = {"input": json.dumps(normalized), "use_llm": True}
+                enrich_resp = _invoke_agent(enrich_id, enrich_payload)
+                enriched = {**normalized, "context": enrich_resp.get("result") or enrich_resp.get("llm_result")}
+                result["enrich"] = enrich_resp
+                result["enriched"] = enriched
+            except Exception as exc:
+                result["enrich_error"] = str(exc)
+                enriched = normalized
 
-    # Triage (LLM)
-    triage_payload = {"input": json.dumps(enriched), "use_llm": True}
-    triage_resp = _invoke_agent(triage_id, triage_payload)
-    decision = triage_resp.get("result") or triage_resp.get("llm_result") or {}
-    result["triage"] = triage_resp
-    result["decision"] = decision
+        # Triage (LLM)
+        triage_payload = {"input": json.dumps(enriched), "use_llm": True}
+        triage_resp = _invoke_agent(triage_id, triage_payload)
+        decision = triage_resp.get("result") or triage_resp.get("llm_result") or {}
+        result["triage"] = triage_resp
+        result["decision"] = decision
+
+    except Exception as exc:
+        logging.getLogger(__name__).warning("Agent pipeline failed: %s", exc)
+        result["error"] = str(exc)
+        result["decision"] = {}
 
     return result
+
+
+# -----------------------------------------------------------------------------
+# DEPRECATED CODE BELOW - Kept for reference, will be removed in future version
+# -----------------------------------------------------------------------------
+#
+# The original implementation required INTAKE_AGENT_ID and TRIAGE_AGENT_ID to be
+# set, which caused failures when agents weren't configured. The new implementation
+# above makes agents optional and falls back to DSPy triage.
+#
+# Old behavior (commented out):
+# if not intake_id or not triage_id:
+#     raise RuntimeError("INTAKE_AGENT_ID and TRIAGE_AGENT_ID env vars must be set")
+#
+# This was problematic because:
+# 1. It blocked email intake if agents weren't configured
+# 2. DSPy triage is now the primary classification method
+# 3. Agents are supplementary and should enhance, not block, triage
+# -----------------------------------------------------------------------------
