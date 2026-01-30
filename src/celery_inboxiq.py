@@ -165,11 +165,13 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     try:
         agent_result = process_email_with_agents(normalized)
     except Exception as exc:
-        logging.getLogger(__name__).warning("agent pipeline failed, will retry once: %s", exc)
-        try:
-            return self.retry(exc=exc)
-        except self.MaxRetriesExceededError:
-            logging.getLogger(__name__).exception("agent pipeline failed after retries")
+        require_agents = os.getenv("AGENT_PIPELINE_REQUIRED", "1").lower() in ("1", "true", "yes", "on")
+        if require_agents:
+            logging.getLogger(__name__).error("agent pipeline failed; aborting intake: %s", exc)
+            raise
+        # If agents are optional, continue with DSPy triage so intake isn't blocked.
+        logging.getLogger(__name__).warning("agent pipeline failed; continuing without agents: %s", exc)
+        agent_result = None
 
     decision = run_dspy_decision(normalized, account_id=account_id)
     agent_decision = None

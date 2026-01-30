@@ -35,6 +35,41 @@ def create_app() -> Flask:
   else:
     app.config.from_object(DevelopmentConfig)
 
+  def _env_bool(name: str, default: bool = False) -> bool:
+    val = os.getenv(name)
+    if val is None:
+      return default
+    return val.lower() in ("1", "true", "yes", "on")
+
+  def _validate_required_env() -> None:
+    """Fail fast on missing required env in production to avoid silent breakage."""
+    if env not in ("prod", "production"):
+      return
+
+    if not _env_bool("DSPY_ENABLED", False):
+      return
+
+    provider = (os.getenv("DSPY_PROVIDER") or "").strip().lower()
+    if not provider:
+      if _env_bool("DSPY_USE_OPENAI", False):
+        provider = "openai"
+      elif _env_bool("DSPY_USE_ANTHROPIC", False):
+        provider = "anthropic"
+      elif _env_bool("DSPY_USE_GEMINI", False):
+        provider = "gemini"
+
+    if not provider:
+      raise RuntimeError("DSPy provider missing. Set DSPY_PROVIDER or DSPY_USE_OPENAI/ANTHROPIC/GEMINI.")
+
+    if provider == "openai" and not os.getenv("OPENAI_API_KEY"):
+      raise RuntimeError("OPENAI_API_KEY missing for DSPy OpenAI provider.")
+    if provider == "anthropic" and not os.getenv("ANTHROPIC_API_KEY"):
+      raise RuntimeError("ANTHROPIC_API_KEY missing for DSPy Anthropic provider.")
+    if provider in {"gemini", "google"} and not os.getenv("GEMINI_API_KEY"):
+      raise RuntimeError("GEMINI_API_KEY missing for DSPy Gemini provider.")
+
+  _validate_required_env()
+
   db.init_app(app)
   migrate.init_app(app, db, directory=app.config.get("MIGRATION_DIR"))
   jwt.init_app(app)

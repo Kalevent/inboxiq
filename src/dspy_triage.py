@@ -30,7 +30,14 @@ def _configure_dspy() -> tuple[str, str, Any]:
     model = os.getenv("DSPY_MODEL", "gpt-4o-mini")
     provider = os.getenv("DSPY_PROVIDER")
     if not provider:
-        raise RuntimeError("DSPy provider is required. Set DSPY_PROVIDER=openai|anthropic|gemini.")
+        if _env_bool("DSPY_USE_OPENAI", False) and os.getenv("OPENAI_API_KEY"):
+            provider = "openai"
+        elif _env_bool("DSPY_USE_ANTHROPIC", False) and os.getenv("ANTHROPIC_API_KEY"):
+            provider = "anthropic"
+        elif _env_bool("DSPY_USE_GEMINI", False) and os.getenv("GEMINI_API_KEY"):
+            provider = "gemini"
+        else:
+            raise RuntimeError("DSPy provider is required. Set DSPY_PROVIDER=openai|anthropic|gemini.")
     provider = provider.strip().lower()
 
     if provider == "openai":
