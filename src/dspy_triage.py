@@ -390,11 +390,22 @@ def run_dspy_triage(
     workflow = _safe_parse(workflow_json)
     escalation = _safe_parse(escalation_json)
     decision = escalation.get("decision")
-    action_required = True
+    action_required: bool | str = True
     if decision in {"auto_resolve"}:
         action_required = False
     elif decision in {"ask_clarifying", "escalate_on_reply"}:
         action_required = "optional"
+    else:
+        # Fallback when escalation decision is missing: infer from route/priority.
+        priority = (route.get("priority") or "").strip().upper()
+        if priority in {"P0", "P1"}:
+            action_required = True
+        elif priority in {"P2"}:
+            action_required = "optional"
+        elif priority in {"P3", "P4"}:
+            action_required = False
+        else:
+            action_required = "optional"
 
     content = {
         "category": route.get("queue") or entities.get("intent"),
