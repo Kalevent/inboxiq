@@ -323,8 +323,6 @@ def billing_plan():
           plan_change_status = "success"
         current_plan = new_plan
 
-  csrf_token_value = request.cookies.get("csrf_access_token") or request.cookies.get("csrf_refresh_token") or ""
-
   return render_template(
     "settings/index.html",
     active_tab="billing",
@@ -338,7 +336,6 @@ def billing_plan():
     current_plan=current_plan,
     plan_change_message=plan_change_message,
     plan_change_status=plan_change_status,
-    csrf_token=csrf_token_value,
   )
 
 
