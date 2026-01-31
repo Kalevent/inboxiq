@@ -93,6 +93,13 @@
                 <span class="text-xs text-slate-400">{% if active_tab == 'integrations' %}Active{% endif %}</span>
               </a>
 
+              <a href="{{ url_for('settings.settings_page', tab='features') }}"
+                 class="flex items-center justify-between px-3 py-2 rounded-xl border
+                 {% if active_tab == 'features' %}border-indigo-400/40 bg-indigo-500/10 text-indigo-100{% else %}border-transparent hover:border-slate-700 hover:bg-slate-900/60 text-slate-200{% endif %}">
+                <span>AI Features</span>
+                <span class="text-xs text-slate-400">{% if active_tab == 'features' %}Active{% endif %}</span>
+              </a>
+
           </nav>
 
           <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-400">
@@ -836,6 +843,73 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                 </div>
               {% endif %}
 
+            {% elif active_tab == 'features' %}
+              <div class="space-y-3">
+                <h2 class="text-xl font-semibold">AI Features</h2>
+                <p class="text-sm text-slate-300">
+                  Configure AI-powered features for your InboxIQ workspace.
+                </p>
+              </div>
+
+              <div class="mt-6 space-y-4">
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30">
+                  <div class="flex items-start justify-between gap-4">
+                    <div class="flex-1">
+                      <div class="text-sm font-semibold text-slate-100">Draft Reply Generation</div>
+                      <p class="text-sm text-slate-300 mt-2">
+                        Automatically generate AI-powered draft replies using your knowledge base and conversation history.
+                        Drafts appear on eligible tickets and require human review before sending.
+                      </p>
+                      {% if not draft_reply_has_access %}
+                        <div class="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+                          Draft reply feature requires Business plan or active trial. Contact sales to upgrade.
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="flex-shrink-0">
+                      <label class="relative inline-flex items-center cursor-pointer" id="draftReplyToggleWrapper">
+                        <input
+                          type="checkbox"
+                          id="draftReplyToggle"
+                          class="sr-only peer"
+                          {% if draft_reply_enabled %}checked{% endif %}
+                          {% if not draft_reply_has_access %}disabled{% endif %}
+                        />
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 {% if not draft_reply_has_access %}opacity-50 cursor-not-allowed{% endif %}"></div>
+                      </label>
+                    </div>
+                  </div>
+                  <div id="draftReplyStatus" class="hidden mt-3 text-xs px-3 py-2 rounded-xl border"></div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30">
+                  <div class="text-sm font-semibold text-slate-100">How Draft Replies Work</div>
+                  <ul class="mt-3 space-y-2 text-sm text-slate-300">
+                    <li class="flex gap-2">
+                      <span class="text-indigo-300">1.</span>
+                      <span>When a ticket is triaged, the AI analyzes the customer's message and relevant context.</span>
+                    </li>
+                    <li class="flex gap-2">
+                      <span class="text-indigo-300">2.</span>
+                      <span>If enabled, it searches your knowledge base for relevant documentation and past interactions.</span>
+                    </li>
+                    <li class="flex gap-2">
+                      <span class="text-indigo-300">3.</span>
+                      <span>A draft reply is generated and attached to the ticket for your review.</span>
+                    </li>
+                    <li class="flex gap-2">
+                      <span class="text-indigo-300">4.</span>
+                      <span>You can edit, approve, or discard the draft before sending to the customer.</span>
+                    </li>
+                  </ul>
+                  <div class="mt-4 pt-4 border-t border-slate-800">
+                    <p class="text-xs text-slate-400">
+                      Tip: Upload knowledge base articles in Settings → Integrations → Knowledge Base to improve draft quality.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
             {% else %}
               <div class="space-y-2">
                 <h2 class="text-xl font-semibold">Settings</h2>
@@ -854,6 +928,76 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
     {% endif %}
     {% if active_tab == 'security' %}
       <script src="{{ url_for('static', filename='settings/js/security.js') }}"></script>
+    {% endif %}
+    {% if active_tab == 'features' %}
+      <script>
+        (() => {
+          const toggle = document.getElementById('draftReplyToggle');
+          const statusEl = document.getElementById('draftReplyStatus');
+
+          if (!toggle) return;
+
+          function setStatus(type, message) {
+            if (!statusEl) return;
+            const map = {
+              success: 'border border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+              error: 'border border-rose-400/40 bg-rose-500/10 text-rose-100',
+              info: 'border border-indigo-400/40 bg-indigo-500/10 text-indigo-100',
+            };
+            statusEl.className = `mt-3 text-xs px-3 py-2 rounded-xl ${map[type] || map.info}`;
+            statusEl.textContent = message;
+            statusEl.classList.remove('hidden');
+          }
+
+          function getAccessToken() {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+              const [name, value] = cookie.trim().split('=');
+              if (name === 'access_token_cookie') {
+                return value;
+              }
+            }
+            return localStorage.getItem('access_token') || '';
+          }
+
+          async function handleToggle(event) {
+            const enabled = event.target.checked;
+
+            try {
+              const response = await fetch('/api/v1/features/draft-reply', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${getAccessToken()}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ enabled }),
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                console.debug('[settings] draft reply updated', data);
+                setStatus('success', data.message || `Draft reply ${enabled ? 'enabled' : 'disabled'}`);
+                setTimeout(() => {
+                  statusEl.classList.add('hidden');
+                }, 3000);
+              } else if (response.status === 403) {
+                event.target.checked = !enabled;
+                const errorData = await response.json();
+                setStatus('error', errorData.message || 'Draft reply requires Business plan or trial');
+              } else {
+                event.target.checked = !enabled;
+                setStatus('error', 'Failed to update draft reply setting');
+              }
+            } catch (err) {
+              event.target.checked = !enabled;
+              setStatus('error', 'Network error. Please try again.');
+              console.error('[settings] error updating draft reply', err);
+            }
+          }
+
+          toggle.addEventListener('change', handleToggle);
+        })();
+      </script>
     {% endif %}
 
     <!-- Footer -->

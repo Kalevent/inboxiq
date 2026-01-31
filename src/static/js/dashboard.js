@@ -30,10 +30,14 @@
   const step3Status = document.getElementById('step3Status');
   const step3Badge = document.getElementById('step3Badge');
   const goDashboardBtn = document.getElementById('goDashboardBtn');
+  const draftReplySection = document.getElementById('draftReplySection');
+  const enableDraftReplyCheckbox = document.getElementById('enableDraftReply');
+  const draftReplyPlanNote = document.getElementById('draftReplyPlanNote');
 
   const STORAGE_KEY = 'inboxiqInboxConnected';
   const STORAGE_CATEGORIES = 'inboxiqCategoriesSaved';
   const STORAGE_TRIAGE = 'inboxiqTriageDone';
+  const STORAGE_DRAFT_REPLY = 'inboxiqDraftReplyEnabled';
 
   function showLayer(el) {
     if (!el) return;
@@ -85,6 +89,11 @@
     if (runTriageBtn) {
       runTriageBtn.classList.remove('cursor-not-allowed', 'opacity-60');
       runTriageBtn.disabled = false;
+    }
+    // Show draft reply section after inbox connection
+    if (draftReplySection) {
+      draftReplySection.classList.remove('hidden');
+      fetchDraftReplyStatus();
     }
   }
 
@@ -189,6 +198,133 @@
     }
   }
 
+  async function fetchDraftReplyStatus() {
+    if (!enableDraftReplyCheckbox) return;
+
+    try {
+      const response = await fetch('/api/v1/features/draft-reply', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${getAccessToken()}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Set checkbox state
+        enableDraftReplyCheckbox.checked = data.draft_reply_enabled || false;
+
+        // Store in localStorage
+        try {
+          localStorage.setItem(STORAGE_DRAFT_REPLY, data.draft_reply_enabled ? 'true' : 'false');
+        } catch (e) {
+          // ignore
+        }
+
+        // Show plan note if user doesn't have access
+        if (draftReplyPlanNote && !data.has_access) {
+          draftReplyPlanNote.classList.remove('hidden');
+        }
+
+        // Disable checkbox if user doesn't have access
+        if (!data.can_enable) {
+          enableDraftReplyCheckbox.disabled = true;
+          enableDraftReplyCheckbox.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        console.debug('[dashboard] draft reply status loaded', data);
+      } else {
+        console.error('[dashboard] failed to fetch draft reply status', response.status);
+      }
+    } catch (err) {
+      console.error('[dashboard] error fetching draft reply status', err);
+    }
+  }
+
+  async function handleDraftReplyToggle(event) {
+    const enabled = event.target.checked;
+
+    try {
+      const response = await fetch('/api/v1/features/draft-reply', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getAccessToken()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ enabled }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.debug('[dashboard] draft reply updated', data);
+
+        // Store in localStorage
+        try {
+          localStorage.setItem(STORAGE_DRAFT_REPLY, enabled ? 'true' : 'false');
+        } catch (e) {
+          // ignore
+        }
+
+        // Show brief success message (optional)
+        if (statusEl) {
+          const msg = enabled ? 'Draft reply feature enabled' : 'Draft reply feature disabled';
+          setStatus('success', msg);
+          setTimeout(() => {
+            statusEl.classList.add('hidden');
+          }, 2000);
+        }
+      } else if (response.status === 403) {
+        // Not eligible - revert checkbox
+        event.target.checked = !enabled;
+        const errorData = await response.json();
+        if (statusEl) {
+          setStatus('error', errorData.message || 'Draft reply requires Business plan or trial');
+          setTimeout(() => {
+            statusEl.classList.add('hidden');
+          }, 3000);
+        }
+      } else {
+        // Other error - revert checkbox
+        event.target.checked = !enabled;
+        console.error('[dashboard] failed to update draft reply', response.status);
+      }
+    } catch (err) {
+      // Network error - revert checkbox
+      event.target.checked = !enabled;
+      console.error('[dashboard] error updating draft reply', err);
+    }
+  }
+
+  function getAccessToken() {
+    // Get JWT token from cookie or localStorage
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'access_token_cookie') {
+        return value;
+      }
+    }
+    // Fallback to localStorage if used
+    return localStorage.getItem('access_token') || '';
+  }
+
+  function maybeRestoreDraftReply() {
+    try {
+      const flag = localStorage.getItem(STORAGE_DRAFT_REPLY);
+      const inboxConnected = localStorage.getItem(STORAGE_KEY);
+
+      // Only show draft reply section if inbox is connected
+      if (inboxConnected === 'true' && draftReplySection) {
+        draftReplySection.classList.remove('hidden');
+        fetchDraftReplyStatus();
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
   // Fallback: if the DOM already shows completed badges (e.g., after refresh without localStorage),
   // infer completion so CTA buttons are usable.
   function reconcileFromDom() {
@@ -270,7 +406,13 @@
   maybeRestoreConnected();
   maybeRestoreCategories();
   maybeRestoreTriage();
+  maybeRestoreDraftReply();
   reconcileFromDom();
+
+  // Draft reply checkbox handler
+  if (enableDraftReplyCheckbox) {
+    enableDraftReplyCheckbox.addEventListener('change', handleDraftReplyToggle);
+  }
 
   if (saveCategoriesBtn) {
     saveCategoriesBtn.addEventListener('click', () => {

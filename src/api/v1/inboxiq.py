@@ -1212,3 +1212,86 @@ def finish_connect():
         current_app.logger.warning("Auto-poll after connect failed", exc_info=True)
 
     return redirect(url_for("dashboard_home"))
+
+
+@v1.route("/features/draft-reply", methods=["POST"])
+@jwt_required()
+def update_draft_reply_feature():
+    """
+    Enable or disable draft reply feature for an account.
+
+    Request JSON:
+        {
+            "enabled": true/false
+        }
+
+    Returns:
+        200: Feature updated successfully
+        400: Invalid request
+        403: Account not eligible for draft reply feature
+    """
+    user_id = get_jwt_identity()
+    account_id = _get_account_id(user_id)
+
+    if not account_id:
+        return jsonify({"error": "account_not_found"}), 404
+
+    data = request.get_json() or {}
+    enabled = data.get("enabled", False)
+
+    if not isinstance(enabled, bool):
+        return jsonify({"error": "invalid_enabled_value"}), 400
+
+    # Check if account is eligible for draft reply feature
+    from src.features import check_draft_reply_access
+    has_access = check_draft_reply_access(account_id)
+
+    if enabled and not has_access:
+        return jsonify({
+            "error": "not_eligible",
+            "message": "Draft reply feature requires Business plan or active trial"
+        }), 403
+
+    # Get or create feature flags
+    from src.models import AccountFeatureFlags
+    feature_flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
+
+    if not feature_flags:
+        feature_flags = AccountFeatureFlags(
+            account_id=account_id,
+            draft_reply_enabled=enabled
+        )
+        db.session.add(feature_flags)
+    else:
+        feature_flags.draft_reply_enabled = enabled
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "draft_reply_enabled": enabled,
+        "message": f"Draft reply feature {'enabled' if enabled else 'disabled'}"
+    }), 200
+
+
+@v1.route("/features/draft-reply", methods=["GET"])
+@jwt_required()
+def get_draft_reply_feature():
+    """Get current draft reply feature status for account."""
+    user_id = get_jwt_identity()
+    account_id = _get_account_id(user_id)
+
+    if not account_id:
+        return jsonify({"error": "account_not_found"}), 404
+
+    from src.models import AccountFeatureFlags
+    from src.features import check_draft_reply_access
+
+    feature_flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
+    has_access = check_draft_reply_access(account_id)
+
+    return jsonify({
+        "draft_reply_enabled": feature_flags.draft_reply_enabled if feature_flags else False,
+        "has_access": has_access,
+        "can_enable": has_access
+    }), 200

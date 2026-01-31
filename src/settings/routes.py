@@ -75,7 +75,7 @@ def settings_root():
 @bp.get("/settings/<tab>")
 @login_required_settings
 def settings_page(tab):
-  allowed = {"team", "profile", "billing", "security", "integrations"}
+  allowed = {"team", "profile", "billing", "security", "integrations", "features"}
   if tab not in allowed:
     tab = "team"
   passkeys = []
@@ -84,6 +84,18 @@ def settings_page(tab):
   account = Account.query.get(account_id) if account_id else None
   seats_used = User.query.filter_by(account_id=account_id).count() if account_id else 0
   seats_limit = account.seats_limit if account else None
+
+  # Get draft reply feature status for features tab
+  draft_reply_enabled = False
+  draft_reply_has_access = False
+  if tab == "features" and account_id:
+    from src.models import AccountFeatureFlags
+    from src.features import check_draft_reply_access
+
+    feature_flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
+    draft_reply_enabled = feature_flags.draft_reply_enabled if feature_flags else False
+    draft_reply_has_access = check_draft_reply_access(account_id)
+
   if tab == "security":
     user = getattr(g, "current_user", None)
     if user:
@@ -101,6 +113,8 @@ def settings_page(tab):
     seats_used=seats_used,
     seats_limit=seats_limit,
     account_id=account_id,
+    draft_reply_enabled=draft_reply_enabled,
+    draft_reply_has_access=draft_reply_has_access,
   )
 
 
