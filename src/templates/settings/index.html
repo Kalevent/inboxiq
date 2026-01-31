@@ -347,7 +347,7 @@
                   <!-- Plan Options -->
                   <form method="POST" class="space-y-4">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}" />
-                    <div class="grid sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-4">
                       <!-- Pro Plan Card -->
                       <div class="rounded-2xl border p-5 transition {% if current_plan == 'pro' %}border-indigo-400/40 bg-indigo-500/5{% else %}border-slate-800 bg-slate-900/70 hover:border-indigo-400/20{% endif %}">
                         <div class="flex items-start justify-between">
