@@ -282,32 +282,46 @@ def billing_plan():
     if new_plan not in ["pro", "business"]:
       plan_change_message = "Invalid plan selected"
       plan_change_status = "error"
-    elif not profile:
-      # Create billing profile if it doesn't exist
-      profile = CustomerBillingProfile(
-        account_id=account_id,
-        email=getattr(g, "current_user", None).email if hasattr(g, "current_user") else "",
-        plan_choice=new_plan,
-        trial_status="ended",
-      )
-      db.session.add(profile)
-      db.session.commit()
-      plan_change_message = f"Plan updated to {new_plan.capitalize()}. Changes take effect immediately."
-      plan_change_status = "success"
-      current_plan = new_plan
     else:
-      # Update existing profile
-      old_plan = profile.plan_choice
-      profile.plan_choice = new_plan
-      db.session.commit()
+      # Check if account is allowed to change plans without payment
+      from src.api.v1.access_control import _parse_id_set
+      import os
+      exempt_ids = _parse_id_set(os.getenv("API_EXEMPT_ACCOUNT_IDS", ""))
+      has_stripe_subscription = profile and profile.subscription_status in ("active", "trialing") if profile else False
+      is_exempt = account_id in exempt_ids
 
-      if old_plan == new_plan:
-        plan_change_message = f"You're already on the {new_plan.capitalize()} plan."
-        plan_change_status = "info"
-      else:
-        plan_change_message = f"Plan changed from {old_plan.capitalize()} to {new_plan.capitalize()}. Changes take effect immediately."
+      # Only allow plan changes for:
+      # 1. Exempt/internal accounts (no payment required)
+      # 2. Accounts with active Stripe subscriptions
+      if not (is_exempt or has_stripe_subscription):
+        plan_change_message = "Plan changes require an active subscription. Please contact sales or set up billing."
+        plan_change_status = "error"
+      elif not profile:
+        # Create billing profile if it doesn't exist
+        profile = CustomerBillingProfile(
+          account_id=account_id,
+          email=getattr(g, "current_user", None).email if hasattr(g, "current_user") else "",
+          plan_choice=new_plan,
+          trial_status="ended",
+        )
+        db.session.add(profile)
+        db.session.commit()
+        plan_change_message = f"Plan updated to {new_plan.capitalize()}. Changes take effect immediately."
         plan_change_status = "success"
-      current_plan = new_plan
+        current_plan = new_plan
+      else:
+        # Update existing profile
+        old_plan = profile.plan_choice
+        profile.plan_choice = new_plan
+        db.session.commit()
+
+        if old_plan == new_plan:
+          plan_change_message = f"You're already on the {new_plan.capitalize()} plan."
+          plan_change_status = "info"
+        else:
+          plan_change_message = f"Plan changed from {old_plan.capitalize()} to {new_plan.capitalize()}. Changes take effect immediately."
+          plan_change_status = "success"
+        current_plan = new_plan
 
   return render_template(
     "settings/index.html",
