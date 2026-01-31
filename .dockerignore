@@ -23,3 +23,5 @@ tmp/
 certs/
 secrets/
 archive/
+IMPLEMENTATION_PLAN.md
+CLAUDE.md

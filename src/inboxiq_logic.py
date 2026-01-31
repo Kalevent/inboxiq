@@ -185,7 +185,7 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
         raise RuntimeError("DSPy triage is required. Set DSPY_ENABLED=1 and configure a model.")
 
     try:
-        from src.dspy_triage import run_dspy_triage
+        from src.dspy import run_dspy_triage
         from src.triage_labels import get_triage_labels
 
         label_config = get_triage_labels(account_id)

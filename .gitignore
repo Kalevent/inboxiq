@@ -17,4 +17,5 @@ certs/
 
 # Local planning/implementation docs
 IMPLEMENTATION_PLAN.md
+CLAUDE.md
 .dockerignore

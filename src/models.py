@@ -725,3 +725,129 @@ class AccountFeatureFlags(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+class KBIntegration(db.Model):
+    """Knowledge base integration configuration (per account)."""
+    __tablename__ = "kb_integrations"
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False, index=True)
+    integration_type = db.Column(db.String(50), nullable=False)  # "file_upload", "zendesk", "notion", etc.
+    status = db.Column(db.String(20), default="active")  # "active", "paused", "error"
+
+    # Configuration (JSON)
+    config_json = db.Column("config", db.JSON, nullable=False, default=dict)
+
+    # Sync metadata
+    last_sync_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    last_sync_status = db.Column(db.String(20), nullable=True)  # "success", "failed"
+    last_sync_error = db.Column(db.Text, nullable=True)
+    article_count = db.Column(db.Integer, default=0)
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relationships
+    account = db.relationship("Account", backref="kb_integrations")
+    articles = db.relationship("KBArticle", backref="integration", cascade="all, delete-orphan")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "integration_type": self.integration_type,
+            "status": self.status,
+            "config": self.config_json or {},
+            "last_sync_at": self.last_sync_at.isoformat() if self.last_sync_at else None,
+            "last_sync_status": self.last_sync_status,
+            "last_sync_error": self.last_sync_error,
+            "article_count": self.article_count,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class KBArticle(db.Model):
+    """Knowledge base article content."""
+    __tablename__ = "kb_articles"
+    __table_args__ = (
+        db.Index("ix_kb_articles_integration_title", "integration_id", "title"),
+        db.Index("ix_kb_articles_external_id", "external_id"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    integration_id = db.Column(db.String(64), db.ForeignKey("kb_integrations.id"), nullable=False, index=True)
+
+    # Article metadata
+    external_id = db.Column(db.String(255), nullable=True)  # ID from external system (Zendesk, etc.)
+    title = db.Column(db.String(500), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    url = db.Column(db.String(1000), nullable=True)
+
+    # Categorization
+    category = db.Column(db.String(255), nullable=True)
+    tags_json = db.Column("tags", db.JSON, nullable=True)  # ["billing", "refunds"]
+    language = db.Column(db.String(10), default="en")
+
+    # Sync tracking
+    external_updated_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    synced_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relationships
+    embeddings = db.relationship("KBArticleEmbedding", backref="article", cascade="all, delete-orphan")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "integration_id": self.integration_id,
+            "external_id": self.external_id,
+            "title": self.title,
+            "content": self.content,
+            "url": self.url,
+            "category": self.category,
+            "tags": self.tags_json or [],
+            "language": self.language,
+            "external_updated_at": self.external_updated_at.isoformat() if self.external_updated_at else None,
+            "synced_at": self.synced_at.isoformat() if self.synced_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class KBArticleEmbedding(db.Model):
+    """Vector embeddings for KB articles (semantic search)."""
+    __tablename__ = "kb_article_embeddings"
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    article_id = db.Column(db.String(64), db.ForeignKey("kb_articles.id"), nullable=False, index=True)
+
+    # Embedding data (same pattern as TicketEmbedding)
+    embedding_model = db.Column(db.String(100), default="text-embedding-3-small")
+    embedding_vector = db.Column(Vector(1536)) if Vector else db.Column(db.JSON, nullable=True)
+    embedding_json = db.Column(db.JSON, nullable=True)  # JSON fallback if pgvector unavailable
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    # Vector index for cosine similarity search
+    if Vector:
+        __table_args__ = (
+            db.Index(
+                "ix_kb_article_embeddings_vector",
+                "embedding_vector",
+                postgresql_using="ivfflat",
+                postgresql_with={"lists": 100},
+                postgresql_ops={"embedding_vector": "vector_cosine_ops"},
+            ),
+        )
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "article_id": self.article_id,
+            "embedding_model": self.embedding_model,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }

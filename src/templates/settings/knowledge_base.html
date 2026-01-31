@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Knowledge Base</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Knowledge Base</div>
+          </div>
+        </div>
+        <nav class="flex items-center gap-3 text-sm text-slate-300">
+          <a href="{{ url_for('dashboard_home') }}" class="px-3 py-1.5 rounded-full border border-slate-700 bg-slate-900/60 hover:bg-slate-800">
+            ← Dashboard
+          </a>
+          <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="px-3 py-1.5 rounded-full border border-slate-700 bg-slate-900/60 hover:bg-slate-800">
+            Settings
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-10 lg:py-14">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-6 space-y-2">
+              {% for category, message in messages %}
+                <div class="rounded-xl border {% if category == 'error' %}border-red-500/30 bg-red-500/10 text-red-200{% else %}border-green-500/30 bg-green-500/10 text-green-200{% endif %} px-4 py-3 text-sm">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Breadcrumb Navigation -->
+        <nav class="mb-4 flex items-center gap-1.5 text-xs">
+          <a href="{{ url_for('dashboard_home') }}" class="text-slate-500 hover:text-slate-300 transition">
+            Dashboard
+          </a>
+          <span class="text-slate-700">/</span>
+          <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="text-slate-500 hover:text-slate-300 transition">
+            Settings
+          </a>
+          <span class="text-slate-700">/</span>
+          <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="text-slate-500 hover:text-slate-300 transition">
+            Integrations
+          </a>
+          <span class="text-slate-700">/</span>
+          <span class="text-slate-300">Knowledge Base</span>
+        </nav>
+
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-8 shadow-2xl shadow-indigo-500/15 relative overflow-hidden">
+          <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-20 bottom-0 h-48 w-48 rounded-full bg-fuchsia-500/5 blur-3xl pointer-events-none"></div>
+
+          <div class="space-y-3 mb-8">
+            <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+              Integrations • Knowledge Base
+            </p>
+            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Knowledge Base Integration</h1>
+            <p class="text-sm text-slate-300 max-w-2xl">
+              Upload documentation to help AI generate better draft replies. Supports Markdown, TXT, HTML, and PDF files.
+            </p>
+          </div>
+
+          <!-- Upload Form -->
+          <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4">Upload Articles</h2>
+            <form method="POST" enctype="multipart/form-data" id="kb-upload-form">
+              <input type="hidden" name="action" value="upload_files">
+
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-300 mb-2">Select Files (.md, .txt, .html, .pdf)</label>
+                  <input
+                    type="file"
+                    name="kb_files"
+                    class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-500 file:text-white hover:file:bg-indigo-400 cursor-pointer"
+                    multiple
+                    accept=".md,.txt,.html,.pdf"
+                    required
+                  >
+                  <p class="mt-2 text-xs text-slate-400">
+                    Max 100 files, 10 MB per file
+                  </p>
+                </div>
+
+                <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  Upload Articles
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- KB Status -->
+          {% if integration %}
+          <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4">KB Status</h2>
+            <dl class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <dt class="text-slate-400 mb-1">Status:</dt>
+                <dd>
+                  <span class="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 text-green-200 px-2 py-0.5 text-xs font-medium">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 8 8">
+                      <circle cx="4" cy="4" r="3" />
+                    </svg>
+                    Active
+                  </span>
+                </dd>
+              </div>
+
+              <div>
+                <dt class="text-slate-400 mb-1">Total Articles:</dt>
+                <dd class="text-slate-100 font-semibold">{{ integration.article_count }}</dd>
+              </div>
+
+              <div>
+                <dt class="text-slate-400 mb-1">Last Sync:</dt>
+                <dd class="text-slate-100">
+                  {% if integration.last_sync_at %}
+                    {{ integration.last_sync_at.strftime('%Y-%m-%d %H:%M UTC') }}
+                  {% else %}
+                    Never
+                  {% endif %}
+                </dd>
+              </div>
+            </dl>
+          </div>
+          {% endif %}
+
+          <!-- Articles List -->
+          {% if articles %}
+          <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-6">
+            <h2 class="text-lg font-semibold mb-4">Uploaded Articles ({{ articles|length }})</h2>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-800 text-left">
+                    <th class="pb-3 pr-4 font-medium text-slate-300">Title</th>
+                    <th class="pb-3 pr-4 font-medium text-slate-300 hidden md:table-cell">Content Preview</th>
+                    <th class="pb-3 pr-4 font-medium text-slate-300">Uploaded</th>
+                    <th class="pb-3 font-medium text-slate-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                  {% for article in articles %}
+                  <tr>
+                    <td class="py-3 pr-4 text-slate-100">{{ article.title }}</td>
+                    <td class="py-3 pr-4 text-slate-400 text-xs hidden md:table-cell">
+                      {{ article.content[:100] }}...
+                    </td>
+                    <td class="py-3 pr-4 text-slate-400">{{ article.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td class="py-3">
+                      <div class="flex items-center gap-2">
+                        {% if article.url %}
+                        <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 px-2 py-1 text-xs font-medium transition">
+                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          Download
+                        </a>
+                        {% endif %}
+                        <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this article?');">
+                          <input type="hidden" name="action" value="delete_article">
+                          <input type="hidden" name="article_id" value="{{ article.id }}">
+                          <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-200 px-2 py-1 text-xs font-medium transition">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% elif integration %}
+          <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-6">
+            <p class="text-sm text-slate-400">No articles uploaded yet. Upload your first article above.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

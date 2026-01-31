@@ -70,7 +70,7 @@ def invoke_llm(user_input: str, context: Dict[str, Any] | None = None) -> Dict[s
     Try OpenAI first; fall back to Ollama local model on failure.
     """
     if DSPY_ENABLED:
-        from src.dspy_triage import run_dspy_llm
+        from src.dspy import run_dspy_llm
 
         return run_dspy_llm(user_input, context)
 

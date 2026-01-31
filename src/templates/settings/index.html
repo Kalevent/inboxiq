@@ -821,6 +821,18 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                       </a>
                     </div>
                   </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2 settings-span-2">
+                    <div class="text-sm font-semibold text-slate-100">Knowledge Base</div>
+                    <p class="text-sm text-slate-300 mt-2">
+                      Upload documentation to help AI generate better draft replies. Supports Markdown, TXT, HTML, and PDF files.
+                    </p>
+                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                      <a href="{{ url_for('settings.knowledge_base_integration') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                        Manage Knowledge Base →
+                      </a>
+                    </div>
+                  </div>
                 </div>
               {% endif %}
 

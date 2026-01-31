@@ -15,7 +15,7 @@ from src.extensions import db
 from src.models import Ticket, InboxConnection, Account
 from src.triage_labels import get_triage_labels
 from src.dspy_train import train_from_overrides
-from src.dspy_triage import _configure_dspy
+from src.dspy import _configure_dspy
 import logging
 
 BODY_PREVIEW_LIMIT = 240

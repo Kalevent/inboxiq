@@ -174,7 +174,7 @@ def draft_customer_reply(
         - decision: Full triage decision including category, priority, sentiment
         - access_granted: Whether draft reply feature was enabled
     """
-    from src.dspy_triage import run_dspy_triage
+    from src.dspy import run_dspy_triage
     from src.features import check_draft_reply_access
 
     # Check if account has access to draft reply feature

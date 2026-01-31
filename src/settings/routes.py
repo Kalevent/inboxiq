@@ -541,3 +541,64 @@ def integrations_webhooks():
     voice_connection=voice_connection,
     voice_prefill=voice_prefill,
   )
+
+
+@bp.route("/integrations/knowledge-base", methods=["GET", "POST"])
+@login_required_settings
+def knowledge_base_integration():
+    """Knowledge base integration settings."""
+    from flask import flash
+    from src.models import KBIntegration, KBArticle
+
+    account_id = getattr(g, "current_account_id", None)
+    if not account_id:
+        return redirect(url_for("settings.index"))
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "upload_files":
+            # Handle file upload
+            files = request.files.getlist("kb_files")
+            if not files or not any(f.filename for f in files):
+                flash("No files selected", "error")
+                return redirect(url_for("settings.knowledge_base_integration"))
+
+            from src.kb_integrations import process_uploaded_files
+            result = process_uploaded_files(files, account_id)
+
+            if result["success"] > 0:
+                flash(f"Successfully uploaded {result['success']} articles", "success")
+            if result["failed"] > 0:
+                for error in result["errors"][:5]:  # Show first 5 errors
+                    flash(error, "error")
+
+            return redirect(url_for("settings.knowledge_base_integration"))
+
+        elif action == "delete_article":
+            article_id = request.form.get("article_id")
+            from src.kb_integrations import delete_kb_article
+            if delete_kb_article(article_id, account_id):
+                flash("Article deleted", "success")
+            else:
+                flash("Article not found", "error")
+            return redirect(url_for("settings.knowledge_base_integration"))
+
+    # GET: Display current KB status
+    integration = KBIntegration.query.filter_by(
+        account_id=account_id,
+        integration_type="file_upload"
+    ).first()
+
+    articles = []
+    if integration:
+        articles = KBArticle.query.filter_by(
+            integration_id=integration.id
+        ).order_by(KBArticle.created_at.desc()).limit(50).all()
+
+    return render_template(
+        "settings/knowledge_base.html",
+        integration=integration,
+        articles=articles,
+        account_id=account_id,
+    )
