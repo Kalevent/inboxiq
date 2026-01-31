@@ -666,3 +666,62 @@ class BlogPost(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+class DraftReplyFeedback(db.Model):
+    """
+    Track human feedback on AI-generated draft replies for continuous improvement.
+    Used for training DSPy reply optimization and measuring reply quality metrics.
+    """
+    __tablename__ = "draft_reply_feedback"
+    __table_args__ = (db.Index("ix_draft_reply_feedback_ticket", "ticket_id"),)
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    ticket_id = db.Column(db.String(64), db.ForeignKey("inboxiq_tickets.id"), nullable=False)
+    draft_text = db.Column(db.Text, nullable=False)
+    final_text = db.Column(db.Text, nullable=True)
+    feedback_type = db.Column(db.String(32), nullable=False)  # accepted|edited|rejected
+    edit_distance = db.Column(db.Integer, nullable=True)
+    helpfulness_score = db.Column(db.SmallInteger, nullable=True)  # 1-5 rating
+    time_saved_seconds = db.Column(db.Integer, nullable=True)
+    metadata_json = db.Column("metadata", db.JSON, nullable=False, default=dict)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "ticket_id": self.ticket_id,
+            "draft_text": self.draft_text,
+            "final_text": self.final_text,
+            "feedback_type": self.feedback_type,
+            "edit_distance": self.edit_distance,
+            "helpfulness_score": self.helpfulness_score,
+            "time_saved_seconds": self.time_saved_seconds,
+            "metadata": self.metadata_json or {},
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class AccountFeatureFlags(db.Model):
+    """
+    Account-level feature flag overrides for gating features beyond plan limits.
+    Enables A/B testing and gradual rollout of features like draft_reply.
+    """
+    __tablename__ = "account_feature_flags"
+
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), primary_key=True)
+    draft_reply_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    draft_reply_auto_approve = db.Column(db.Boolean, nullable=False, default=False)  # Future: auto-send low-risk replies
+    draft_reply_min_confidence = db.Column(db.Float, nullable=False, default=0.7)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "account_id": self.account_id,
+            "draft_reply_enabled": self.draft_reply_enabled,
+            "draft_reply_auto_approve": self.draft_reply_auto_approve,
+            "draft_reply_min_confidence": self.draft_reply_min_confidence,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }

@@ -274,19 +274,118 @@ def _detect_email_type(payload: Dict[str, Any]) -> tuple[str, bool, str | None]:
     return "unknown", False, None
 
 
-def _draft_reply_enabled(context: Dict[str, Any] | None) -> bool:
+def _draft_reply_enabled(context: Dict[str, Any] | None, account_id: int | None = None) -> bool:
+    """
+    Check if draft reply generation is enabled for this request.
+    Uses the centralized features.check_draft_reply_access for consistency.
+    """
     if not _env_bool("DSPY_DRAFT_REPLY_ENABLED", False):
         return False
-    if not context:
-        return False
-    features = context.get("features") if isinstance(context, dict) else None
-    if isinstance(features, dict):
-        if features.get("draft_reply") is True:
-            return True
-        if features.get("draft_reply") is False:
+    if not account_id:
+        # Fallback to legacy context-based check if no account_id
+        if not context:
             return False
-    plan = str(context.get("plan") or "").lower() if isinstance(context, dict) else ""
-    return plan in {"business", "enterprise"}
+        features = context.get("features") if isinstance(context, dict) else None
+        if isinstance(features, dict):
+            if features.get("draft_reply") is True:
+                return True
+            if features.get("draft_reply") is False:
+                return False
+        plan = str(context.get("plan") or "").lower() if isinstance(context, dict) else ""
+        return plan in {"business", "enterprise"}
+
+    # Use centralized feature access control
+    try:
+        from src.features import check_draft_reply_access
+        return check_draft_reply_access(account_id, context)
+    except Exception as exc:
+        logging.warning(f"Failed to check draft_reply access: {exc}")
+        return False
+
+
+def _fetch_kb_context(
+    subject: str,
+    body: str,
+    account_id: int | None = None,
+    limit: int = 3
+) -> list[dict]:
+    """
+    Retrieve relevant knowledge base articles using semantic search.
+
+    Returns a list of dicts with: {"id": str, "title": str, "snippet": str}
+
+    Note: This is a placeholder implementation. When a proper KB system exists,
+    this should query the KB using vector similarity search with embeddings.
+    """
+    # TODO: Implement actual KB retrieval when KB system is available
+    # For now, return empty list - draft replies will work without KB context
+
+    # Future implementation should:
+    # 1. Combine subject + body into query text
+    # 2. Generate embedding using src.embeddings.embed_text
+    # 3. Query KB articles table with pgvector similarity search
+    # 4. Return top N relevant articles with title and content snippet
+
+    return []
+
+
+def _sanitize_reply(reply_text: str, account_id: int | None = None) -> str:
+    """
+    Sanitize and improve draft reply text.
+
+    - Removes internal markers like [INTERNAL: ...]
+    - Ensures professional tone
+    - Adds signature placeholder if missing
+    - Applies account-specific tone preferences (future enhancement)
+
+    Args:
+        reply_text: The raw reply text from DSPy
+        account_id: Optional account ID for account-specific preferences
+
+    Returns:
+        Sanitized reply text ready for human review
+    """
+    if not reply_text:
+        return ""
+
+    # Remove internal markers and notes
+    reply_text = re.sub(r'\[INTERNAL:.*?\]', '', reply_text, flags=re.IGNORECASE | re.DOTALL)
+    reply_text = re.sub(r'\[NOTE:.*?\]', '', reply_text, flags=re.IGNORECASE | re.DOTALL)
+
+    # Clean up excessive whitespace
+    reply_text = re.sub(r'\n{3,}', '\n\n', reply_text)
+    reply_text = reply_text.strip()
+
+    # Ensure signature placeholder if not present
+    signature_markers = ["best regards", "sincerely", "thanks", "thank you", "regards"]
+    has_signature = any(marker in reply_text.lower() for marker in signature_markers)
+
+    if not has_signature and len(reply_text) > 20:
+        reply_text += "\n\nBest regards"
+
+    return reply_text
+
+
+def _compute_reply_confidence(result: Any) -> float:
+    """
+    Compute confidence score for generated draft reply.
+
+    Currently returns a default confidence of 0.8.
+    Future enhancement: analyze reply quality, length, specificity, etc.
+
+    Args:
+        result: The DSPy prediction result
+
+    Returns:
+        Confidence score between 0.0 and 1.0
+    """
+    # TODO: Implement actual confidence calculation based on:
+    # - Reply length (too short or too long = lower confidence)
+    # - Presence of specific answers vs vague responses
+    # - KB article relevance scores
+    # - Entity extraction confidence
+
+    return 0.8
 
 
 def _decision_outcome(action_required: Any) -> str:
@@ -376,11 +475,13 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
         )
 
     class DraftReplySig(dspy.Signature):
-        case_json = dspy.InputField()
-        entities_json = dspy.InputField()
-        workflow_json = dspy.InputField()
-        escalation_json = dspy.InputField()
-        reply_text = dspy.OutputField(desc="Optional draft reply for a human to review. Keep concise.")
+        """Generate customer-ready draft reply based on triage context and knowledge base."""
+        case_json = dspy.InputField(desc="Customer case details including email content and metadata")
+        entities_json = dspy.InputField(desc="Extracted entities: intent, sentiment, urgency")
+        workflow_json = dspy.InputField(desc="Selected workflow and required tools")
+        escalation_json = dspy.InputField(desc="Escalation decision and reasoning")
+        kb_context = dspy.InputField(desc="Relevant knowledge base articles for context (JSON array)")
+        reply_text = dspy.OutputField(desc="Draft reply for human review. Be helpful, concise, and professional. Reference KB articles when applicable.")
 
     class DecisionProgram(dspy.Module):
         def __init__(self) -> None:
@@ -391,7 +492,7 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
             self.escalate = dspy.Predict(EscalationDecisionSig)
             self.draft = dspy.ChainOfThought(DraftReplySig)
 
-        def forward(self, case_json: str, draft_enabled: bool = False) -> Any:
+        def forward(self, case_json: str, draft_enabled: bool = False, kb_context: str = "[]") -> Any:
             entities_json = self.extract(case_json=case_json).entities_json
             route_json = self.route(case_json=case_json, entities_json=entities_json).route_json
             workflow_json = self.select(
@@ -410,6 +511,7 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
                     entities_json=entities_json,
                     workflow_json=workflow_json,
                     escalation_json=escalation_json,
+                    kb_context=kb_context,
                 ).reply_text
             return dspy.Prediction(
                 entities_json=entities_json,
@@ -451,9 +553,19 @@ def run_dspy_triage(
     case_json = json.dumps(case)
 
     module = _load_compiled_module(dspy, model_id, account_id, labels=label_config) or build_decision_program(dspy, label_config)
-    draft_enabled = _draft_reply_enabled(context)
+    draft_enabled = _draft_reply_enabled(context, account_id)
+
+    # Fetch KB context if draft reply is enabled
+    kb_context_list = []
+    kb_context_json = "[]"
+    if draft_enabled:
+        subject = payload.get("subject", "")
+        body = payload.get("body") or payload.get("text") or ""
+        kb_context_list = _fetch_kb_context(subject, body, account_id, limit=3)
+        kb_context_json = json.dumps(kb_context_list)
+
     try:
-        result = module(case_json=case_json, draft_enabled=draft_enabled)
+        result = module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json)
     except Exception as exc:
         logging.getLogger(__name__).warning("DSPy decision program failed, falling back to simple triage: %s", exc)
         module = build_triage_module(dspy, label_config)
@@ -477,6 +589,19 @@ def run_dspy_triage(
     route = _safe_parse(route_json)
     workflow = _safe_parse(workflow_json)
     escalation = _safe_parse(escalation_json)
+
+    # Sanitize and enrich reply if present
+    reply_confidence = None
+    reply_metadata = {}
+    if reply_text and draft_enabled:
+        reply_text = _sanitize_reply(reply_text, account_id)
+        reply_confidence = _compute_reply_confidence(result)
+        reply_metadata = {
+            "kb_articles_used": [article.get("id") for article in kb_context_list if article.get("id")],
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "requires_review": reply_confidence < 0.7,
+            "confidence": reply_confidence,
+        }
 
     # Extract email type classification from entities
     email_type = str(entities.get("email_type", "")).lower().strip()
@@ -577,6 +702,8 @@ def run_dspy_triage(
         "decision_outcome": _decision_outcome(action_required),
         "decision_trace": decision_trace,
         "reply_text": reply_text,
+        "reply_confidence": reply_confidence,
+        "reply_metadata": reply_metadata if reply_metadata else None,
         "entities_json": entities_json,
         "route_json": route_json,
         "workflow_json": workflow_json,

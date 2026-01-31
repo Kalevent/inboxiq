@@ -8,7 +8,7 @@ from celery import Celery
 from sqlalchemy import func, or_, case, desc
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import Ticket, InboxConnection, Feedback, DspyTrainingMetric
+from src.models import Ticket, InboxConnection, Feedback, DspyTrainingMetric, DraftReplyFeedback
 from src.inboxiq_logic import normalize_email_payload, run_dspy_decision, sample_messages, compute_due_at
 from src.email_poll import fetch_messages_gmail, fetch_messages_outlook
 
@@ -687,6 +687,110 @@ def ticket_feedback(ticket_id: str):
         db.session.rollback()
         return jsonify({"error": "Could not save feedback"}), 500
     return jsonify({"ticket": ticket.to_dict()})
+
+
+@v1.route("/inboxiq/tickets/<ticket_id>/reply-feedback", methods=["POST"])
+@jwt_required(optional=True)
+def reply_feedback(ticket_id: str):
+    """
+    Collect feedback on AI-generated draft reply quality.
+    Tracks acceptance, edits, helpfulness scores, and time saved.
+
+    Expected payload:
+    {
+        "feedback_type": "accepted"|"edited"|"rejected",
+        "final_text": "...",  # Required if feedback_type is "edited"
+        "helpfulness_score": 1-5,  # Optional rating
+        "time_saved_seconds": 120,  # Optional time tracking
+        "metadata": {}  # Optional additional metadata
+    }
+    """
+    ticket = Ticket.query.get(ticket_id)
+    if not ticket:
+        return jsonify({"error": "Ticket not found"}), 404
+
+    # Check if ticket has a draft reply
+    decision = ticket.decision or {}
+    draft_text = decision.get("reply_text")
+    if not draft_text:
+        return jsonify({"error": "No draft reply found for this ticket"}), 400
+
+    data = request.get_json() or {}
+    feedback_type = (data.get("feedback_type") or "").strip().lower()
+    if feedback_type not in ("accepted", "edited", "rejected"):
+        return jsonify({"error": "feedback_type must be 'accepted', 'edited', or 'rejected'"}), 400
+
+    final_text = (data.get("final_text") or "").strip() or None
+    if feedback_type == "edited" and not final_text:
+        return jsonify({"error": "final_text is required when feedback_type is 'edited'"}), 400
+
+    helpfulness_score = data.get("helpfulness_score")
+    if helpfulness_score is not None:
+        try:
+            helpfulness_score = int(helpfulness_score)
+            if not (1 <= helpfulness_score <= 5):
+                return jsonify({"error": "helpfulness_score must be between 1 and 5"}), 400
+        except (ValueError, TypeError):
+            return jsonify({"error": "helpfulness_score must be an integer"}), 400
+
+    time_saved_seconds = data.get("time_saved_seconds")
+    if time_saved_seconds is not None:
+        try:
+            time_saved_seconds = int(time_saved_seconds)
+        except (ValueError, TypeError):
+            time_saved_seconds = None
+
+    # Calculate edit distance if final_text provided
+    edit_distance = None
+    if final_text and draft_text:
+        # Simple Levenshtein distance calculation
+        def levenshtein(s1: str, s2: str) -> int:
+            if len(s1) < len(s2):
+                return levenshtein(s2, s1)
+            if len(s2) == 0:
+                return len(s1)
+            previous_row = range(len(s2) + 1)
+            for i, c1 in enumerate(s1):
+                current_row = [i + 1]
+                for j, c2 in enumerate(s2):
+                    insertions = previous_row[j + 1] + 1
+                    deletions = current_row[j] + 1
+                    substitutions = previous_row[j] + (c1 != c2)
+                    current_row.append(min(insertions, deletions, substitutions))
+                previous_row = current_row
+            return previous_row[-1]
+
+        edit_distance = levenshtein(draft_text, final_text)
+
+    # Create feedback record
+    feedback = DraftReplyFeedback(
+        ticket_id=ticket_id,
+        draft_text=draft_text,
+        final_text=final_text,
+        feedback_type=feedback_type,
+        edit_distance=edit_distance,
+        helpfulness_score=helpfulness_score,
+        time_saved_seconds=time_saved_seconds,
+        metadata_json=data.get("metadata") or {},
+    )
+
+    try:
+        db.session.add(feedback)
+        db.session.commit()
+        current_app.logger.info(
+            {"event": "reply_feedback.created", "ticket_id": ticket_id, "feedback_type": feedback_type}
+        )
+    except Exception as exc:
+        current_app.logger.error(
+            {"event": "reply_feedback.error", "ticket_id": ticket_id, "error": str(exc)}, exc_info=True
+        )
+        db.session.rollback()
+        return jsonify({"error": "Could not save reply feedback"}), 500
+
+    return jsonify({
+        "feedback": feedback.to_dict(),
+        "message": "Reply feedback saved successfully"
+    })
 
 
 @v1.route("/inboxiq/connect", methods=["POST"])

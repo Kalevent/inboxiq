@@ -145,5 +145,82 @@ def batch_classify_emails(emails: list) -> dict:
     }
 
 
+@mcp.tool()
+def draft_customer_reply(
+    subject: str,
+    body: str,
+    from_email: str = "",
+    account_id: int | None = None,
+    context: dict | None = None
+) -> dict:
+    """
+    Generate a draft reply for a customer email using AI.
+
+    This tool runs the full triage workflow with draft reply enabled,
+    returning an AI-generated response that a human can review and send.
+
+    Args:
+        subject: Email subject line
+        body: Email body content
+        from_email: Sender email address
+        account_id: Optional account ID for access control and customization
+        context: Optional context dict with features, plan, etc.
+
+    Returns:
+        Dict with:
+        - reply_text: The generated draft reply (if access granted)
+        - reply_confidence: Confidence score (0.0-1.0)
+        - reply_metadata: Additional metadata about the generation
+        - decision: Full triage decision including category, priority, sentiment
+        - access_granted: Whether draft reply feature was enabled
+    """
+    from src.dspy_triage import run_dspy_triage
+    from src.features import check_draft_reply_access
+
+    # Check if account has access to draft reply feature
+    access_granted = False
+    if account_id:
+        access_granted = check_draft_reply_access(account_id, context)
+
+    # Build context with draft_reply feature flag
+    request_context = context or {}
+    if access_granted:
+        features = request_context.get("features", {})
+        features["draft_reply"] = True
+        request_context["features"] = features
+
+    # Prepare payload
+    payload = {
+        "subject": subject,
+        "body": body,
+        "from_email": from_email or "customer@example.com",
+        "provider": "mcp",
+    }
+
+    # Run triage with draft reply enabled
+    result = run_dspy_triage(payload, context=request_context, account_id=account_id)
+
+    # Extract reply information
+    content = result.get("content", {})
+    reply_text = content.get("reply_text")
+    reply_confidence = content.get("reply_confidence")
+    reply_metadata = content.get("reply_metadata")
+
+    return {
+        "reply_text": reply_text,
+        "reply_confidence": reply_confidence,
+        "reply_metadata": reply_metadata,
+        "decision": {
+            "category": content.get("category"),
+            "priority": content.get("priority"),
+            "sentiment": content.get("sentiment"),
+            "action_required": content.get("action_required"),
+            "ai_reason": content.get("ai_reason"),
+        },
+        "access_granted": access_granted,
+        "message": "Draft reply generated successfully" if reply_text else "No draft reply generated (access denied or auto-handled)",
+    }
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")
