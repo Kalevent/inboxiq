@@ -47,7 +47,9 @@ def login_required_settings(view_func):
     g.current_account_id = account_id
 
     # Enforce upgrade redirect when trial expired and not allowed for API/Business.
-    if account_id and request.path != url_for("upgrade"):
+    # Exclude billing/plan page since that's where users go to upgrade.
+    billing_plan_path = url_for("settings.billing_plan")
+    if account_id and request.path not in [url_for("upgrade"), billing_plan_path]:
       if not account_allows_api(account_id):
         return redirect(url_for("upgrade", trial="ended"))
 
