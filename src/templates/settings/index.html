@@ -1060,6 +1060,17 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
             return localStorage.getItem('access_token') || '';
           }
 
+          function getCsrfToken() {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+              const [name, value] = cookie.trim().split('=');
+              if (name === 'csrf_access_token') {
+                return value;
+              }
+            }
+            return '';
+          }
+
           async function handleToggle(event) {
             const enabled = event.target.checked;
 
@@ -1069,6 +1080,7 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                 headers: {
                   'Authorization': `Bearer ${getAccessToken()}`,
                   'Content-Type': 'application/json',
+                  'X-CSRF-TOKEN': getCsrfToken(),
                 },
                 body: JSON.stringify({ enabled }),
               });
