@@ -46,6 +46,9 @@ def account_allows_api(account_id: int) -> bool:
         profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
         if profile and profile.subscription_status in ("active", "trialing"):
             return True
+        # For internal accounts without Stripe, check plan_choice field
+        if profile and profile.plan_choice in ("business", "enterprise"):
+            return True
     except Exception:
         # If billing tables are unavailable (e.g., during migrations), fall through to the older rules.
         pass
