@@ -277,7 +277,6 @@ def billing_plan():
   plan_change_status = None
 
   if request.method == "POST":
-    current_app.logger.info(f"[billing_plan] POST request from account {account_id}, form data: {dict(request.form)}, cookies: {list(request.cookies.keys())}")
     new_plan = request.form.get("plan_choice")
 
     if new_plan not in ["pro", "business"]:
