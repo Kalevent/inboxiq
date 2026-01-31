@@ -43,7 +43,9 @@ def check_draft_reply_access(account_id: int, context: Optional[dict] = None) ->
     2. One of the following:
        - Account has Business or Enterprise plan
        - Account has active trial
-       - Account has explicit feature flag override
+
+    Note: This checks ELIGIBILITY only, not whether the feature is currently enabled.
+    The AccountFeatureFlags.draft_reply_enabled field stores the user's preference.
 
     Args:
         account_id: The account ID to check
@@ -61,19 +63,8 @@ def check_draft_reply_access(account_id: int, context: Optional[dict] = None) ->
         features = context.get("features")
         if isinstance(features, dict):
             draft_reply_setting = features.get("draft_reply")
-            if draft_reply_setting is True:
-                return True
-            if draft_reply_setting is False:
-                return False
-
-    # Check account-level feature flag override
-    feature_flags = (
-        AccountFeatureFlags.query
-        .filter_by(account_id=account_id)
-        .first()
-    )
-    if feature_flags:
-        return feature_flags.draft_reply_enabled
+            if draft_reply_setting is not None:
+                return bool(draft_reply_setting)
 
     # Check billing plan
     plan = get_account_plan(account_id)
