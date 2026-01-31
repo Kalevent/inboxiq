@@ -317,17 +317,117 @@
                     Review and change your subscription. Hook this panel to your billing provider.
                   </p>
                 </div>
-                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
-                  <p class="text-sm text-slate-300">Plan details will appear here.</p>
-                  <p class="text-xs text-slate-400">Wire to your billing API to show plan, seats, and update controls.</p>
-                  <div class="flex items-center gap-3">
-                    <button class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white" disabled>
-                      Coming soon
-                    </button>
-                    <a href="{{ url_for('settings.settings_page', tab='billing') }}" class="text-sm text-indigo-200 hover:text-white">
-                      ← Back to billing
-                    </a>
+
+                {% if plan_change_message %}
+                  <div class="mt-6 rounded-xl border px-4 py-3 text-sm {% if plan_change_status == 'success' %}border-emerald-400/40 bg-emerald-500/10 text-emerald-100{% elif plan_change_status == 'error' %}border-rose-400/40 bg-rose-500/10 text-rose-100{% else %}border-indigo-400/40 bg-indigo-500/10 text-indigo-100{% endif %}">
+                    {{ plan_change_message }}
                   </div>
+                {% endif %}
+
+                <div class="mt-6 space-y-4">
+                  <!-- Current Plan Display -->
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30">
+                    <div class="text-sm font-semibold text-slate-100">Current Plan</div>
+                    <div class="mt-3 flex items-center gap-3">
+                      <span class="text-2xl font-bold text-indigo-100">
+                        {% if current_plan %}
+                          {{ current_plan|capitalize }}
+                        {% else %}
+                          No plan selected
+                        {% endif %}
+                      </span>
+                      {% if current_plan == 'business' %}
+                        <span class="text-xs px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30">
+                          Includes AI Draft Replies
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- Plan Options -->
+                  <form method="POST" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}" />
+                    <div class="grid md:grid-cols-2 gap-4">
+                      <!-- Pro Plan Card -->
+                      <div class="rounded-2xl border p-5 transition {% if current_plan == 'pro' %}border-indigo-400/40 bg-indigo-500/5{% else %}border-slate-800 bg-slate-900/70 hover:border-indigo-400/20{% endif %}">
+                        <div class="flex items-start justify-between">
+                          <div>
+                            <div class="text-lg font-semibold text-slate-100">Pro</div>
+                            <p class="text-sm text-slate-300 mt-2">Essential inbox management and triage</p>
+                          </div>
+                          {% if current_plan == 'pro' %}
+                            <span class="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
+                              Current
+                            </span>
+                          {% endif %}
+                        </div>
+                        <ul class="mt-4 space-y-2 text-sm text-slate-300">
+                          <li class="flex gap-2">
+                            <span class="text-indigo-300">✓</span>
+                            <span>Automated email triage</span>
+                          </li>
+                          <li class="flex gap-2">
+                            <span class="text-indigo-300">✓</span>
+                            <span>Priority categorization</span>
+                          </li>
+                          <li class="flex gap-2">
+                            <span class="text-indigo-300">✓</span>
+                            <span>Basic analytics</span>
+                          </li>
+                        </ul>
+                        {% if current_plan != 'pro' %}
+                          <button type="submit" name="plan_choice" value="pro" class="mt-4 w-full rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm font-semibold text-white transition">
+                            Switch to Pro
+                          </button>
+                        {% endif %}
+                      </div>
+
+                      <!-- Business Plan Card -->
+                      <div class="rounded-2xl border p-5 transition {% if current_plan == 'business' %}border-indigo-400/40 bg-indigo-500/5{% else %}border-slate-800 bg-slate-900/70 hover:border-indigo-400/20{% endif %}">
+                        <div class="flex items-start justify-between">
+                          <div>
+                            <div class="text-lg font-semibold text-slate-100">Business</div>
+                            <p class="text-sm text-slate-300 mt-2">Advanced features with AI-powered replies</p>
+                          </div>
+                          {% if current_plan == 'business' %}
+                            <span class="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
+                              Current
+                            </span>
+                          {% endif %}
+                        </div>
+                        <ul class="mt-4 space-y-2 text-sm text-slate-300">
+                          <li class="flex gap-2">
+                            <span class="text-indigo-300">✓</span>
+                            <span>Everything in Pro</span>
+                          </li>
+                          <li class="flex gap-2">
+                            <span class="text-indigo-300">✓</span>
+                            <span><strong>AI Draft Replies</strong></span>
+                          </li>
+                          <li class="flex gap-2">
+                            <span class="text-indigo-300">✓</span>
+                            <span>Knowledge Base integration</span>
+                          </li>
+                          <li class="flex gap-2">
+                            <span class="text-indigo-300">✓</span>
+                            <span>Advanced analytics</span>
+                          </li>
+                        </ul>
+                        {% if current_plan != 'business' %}
+                          <button type="submit" name="plan_choice" value="business" class="mt-4 w-full rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition">
+                            Upgrade to Business
+                          </button>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 text-xs text-slate-400">
+                      <p>Plan changes take effect immediately. No payment required for internal accounts.</p>
+                      <a href="{{ url_for('settings.settings_page', tab='billing') }}" class="text-sm text-indigo-200 hover:text-white ml-auto">
+                        ← Back to billing
+                      </a>
+                    </div>
+                  </form>
                 </div>
               {% elif billing_view == 'invoices' %}
                 <div class="space-y-3">

@@ -259,14 +259,56 @@ def _serialize_members(members, assignments):
   return payload
 
 
-@bp.get("/settings/billing/plan")
+@bp.route("/settings/billing/plan", methods=["GET", "POST"])
 @login_required_settings
 def billing_plan():
-  """Billing plan placeholder view."""
+  """Billing plan view and update."""
   account_id = getattr(g, "current_account_id", None)
   account = Account.query.get(account_id) if account_id else None
   seats_used = User.query.filter_by(account_id=account_id).count() if account_id else 0
   seats_limit = account.seats_limit if account else None
+
+  # Get current plan from billing profile
+  from src.billing.models import CustomerBillingProfile
+  profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first() if account_id else None
+  current_plan = profile.plan_choice if profile else None
+
+  plan_change_message = None
+  plan_change_status = None
+
+  if request.method == "POST":
+    new_plan = request.form.get("plan_choice")
+
+    if new_plan not in ["pro", "business"]:
+      plan_change_message = "Invalid plan selected"
+      plan_change_status = "error"
+    elif not profile:
+      # Create billing profile if it doesn't exist
+      profile = CustomerBillingProfile(
+        account_id=account_id,
+        email=getattr(g, "current_user", None).email if hasattr(g, "current_user") else "",
+        plan_choice=new_plan,
+        trial_status="ended",
+      )
+      db.session.add(profile)
+      db.session.commit()
+      plan_change_message = f"Plan updated to {new_plan.capitalize()}. Changes take effect immediately."
+      plan_change_status = "success"
+      current_plan = new_plan
+    else:
+      # Update existing profile
+      old_plan = profile.plan_choice
+      profile.plan_choice = new_plan
+      db.session.commit()
+
+      if old_plan == new_plan:
+        plan_change_message = f"You're already on the {new_plan.capitalize()} plan."
+        plan_change_status = "info"
+      else:
+        plan_change_message = f"Plan changed from {old_plan.capitalize()} to {new_plan.capitalize()}. Changes take effect immediately."
+        plan_change_status = "success"
+      current_plan = new_plan
+
   return render_template(
     "settings/index.html",
     active_tab="billing",
@@ -277,6 +319,9 @@ def billing_plan():
     seats_used=seats_used,
     seats_limit=seats_limit,
     account_id=account_id,
+    current_plan=current_plan,
+    plan_change_message=plan_change_message,
+    plan_change_status=plan_change_status,
   )
 
 
