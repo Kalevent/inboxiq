@@ -12,14 +12,50 @@ from src.extensions import db
 from src.models import TriageLabelConfig
 
 
+# Default labels when no configuration exists
+DEFAULT_TRIAGE_LABELS: Dict[str, Any] = {
+    "priorities": ["P1", "P2", "P3", "P4"],
+    "categories": [
+        "support",
+        "billing",
+        "sales",
+        "technical",
+        "feedback",
+        "spam",
+        "marketing",
+        "auto_reply",
+        "other",
+    ],
+    "sentiments": ["positive", "neutral", "negative", "urgent"],
+    "intents": [
+        "question",
+        "complaint",
+        "request",
+        "feedback",
+        "bug_report",
+        "feature_request",
+        "general",
+        "spam",
+        "informational",
+    ],
+    "teams": ["support", "engineering", "sales", "billing", "management"],
+    "action_required_options": ["true", "false", "optional"],
+}
+
+
 def _load_env_labels() -> Dict[str, Any]:
     raw = os.getenv("TRIAGE_LABELS_JSON")
     if not raw:
-        return {}
+        return DEFAULT_TRIAGE_LABELS
     try:
-        return json.loads(raw)
+        labels = json.loads(raw)
+        # Merge with defaults for any missing keys
+        for key, value in DEFAULT_TRIAGE_LABELS.items():
+            if key not in labels:
+                labels[key] = value
+        return labels
     except json.JSONDecodeError:
-        return {}
+        return DEFAULT_TRIAGE_LABELS
 
 
 def get_triage_labels(account_id: int | None) -> Dict[str, Any]:

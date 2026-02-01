@@ -235,6 +235,59 @@ def _example_from_ticket(ticket: Ticket, labels: Dict[str, Any]) -> dspy.Example
     ).with_inputs("content")
 
 
+def _normalize_priority(value: Any) -> str:
+    """
+    Normalize priority value to comparable format.
+
+    Handles multiple formats:
+    - P0, P1, P2, P3, P4 -> p0, p1, p2, p3, p4
+    - Low, Medium, High, Urgent, Critical -> mapped to p-levels
+    - 1, 2, 3, 4 -> p1, p2, p3, p4
+    """
+    if value is None:
+        return "p3"  # Default to medium
+
+    val = str(value).strip().lower()
+
+    # Direct P-level format
+    if val in ("p1", "p0", "urgent", "critical", "1"):
+        return "p1"
+    if val in ("p2", "high", "2"):
+        return "p2"
+    if val in ("p3", "medium", "normal", "3"):
+        return "p3"
+    if val in ("p4", "low", "4"):
+        return "p4"
+
+    # Fallback: try to extract number
+    for c in val:
+        if c.isdigit():
+            digit = int(c)
+            if 1 <= digit <= 4:
+                return f"p{digit}"
+            if digit == 0:
+                return "p1"  # P0 = urgent
+
+    return "p3"  # Default
+
+
+def _normalize_action(value: Any) -> str:
+    """Normalize action_required to true/false/optional."""
+    if value is None:
+        return "optional"
+
+    val = str(value).strip().lower()
+
+    if val in ("true", "yes", "1", "required"):
+        return "true"
+    if val in ("false", "no", "0", "none"):
+        return "false"
+    if val in ("optional", "maybe", "needs_review"):
+        return "optional"
+
+    return "optional"
+
+
 def _metric(gold: dspy.Example, pred: dspy.Example, trace=None) -> bool:
     """
     Metric function for DSPy BootstrapFewShot.
@@ -243,13 +296,18 @@ def _metric(gold: dspy.Example, pred: dspy.Example, trace=None) -> bool:
     - action_required (critical: determines if human needs to act)
     - priority (important: determines urgency)
 
-    Category, sentiment, and intent are nice-to-have but less critical.
+    Normalizes values to handle format mismatches (P1 vs High, etc).
 
     Third arg (trace) is required by DSPy API.
     """
-    # Core fields that MUST match (critical for triage)
-    action_match = str(gold.action_required).lower() == str(pred.action_required).lower()
-    priority_match = str(gold.priority).upper() == str(pred.priority).upper()
+    # Normalize before comparing
+    gold_action = _normalize_action(gold.action_required)
+    pred_action = _normalize_action(pred.action_required)
+    action_match = gold_action == pred_action
+
+    gold_priority = _normalize_priority(gold.priority)
+    pred_priority = _normalize_priority(pred.priority)
+    priority_match = gold_priority == pred_priority
 
     # For BootstrapFewShot, we use a focused metric on the most important fields
     # This gives the optimizer more signal to learn from
@@ -263,8 +321,8 @@ def _detailed_metric(gold: dspy.Example, pred: dspy.Example) -> dict:
     Returns dict with per-field match status and overall scores.
     """
     fields = {
-        "action_required": str(gold.action_required).lower() == str(pred.action_required).lower(),
-        "priority": str(gold.priority).upper() == str(pred.priority).upper(),
+        "action_required": _normalize_action(gold.action_required) == _normalize_action(pred.action_required),
+        "priority": _normalize_priority(gold.priority) == _normalize_priority(pred.priority),
         "category": str(gold.category).lower() == str(pred.category).lower(),
         "sentiment": str(gold.sentiment).lower() == str(pred.sentiment).lower(),
         "intent": str(gold.intent).lower() == str(pred.intent).lower(),
