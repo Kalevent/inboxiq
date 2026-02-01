@@ -18,7 +18,8 @@ from src.dspy_train import train_from_overrides
 from src.dspy import _configure_dspy
 import logging
 
-BODY_PREVIEW_LIMIT = 240
+# Default body preview limit (can be overridden per-account via TriageConfig)
+DEFAULT_BODY_PREVIEW_LIMIT = 240
 
 
 def make_celery(app) -> Celery:
@@ -125,8 +126,10 @@ def _redact_body_preview(text: str) -> str:
     return redacted
 
 
-def _build_body_preview(text: str) -> str:
-    return _redact_body_preview(text or "")[:BODY_PREVIEW_LIMIT]
+def _build_body_preview(text: str, account_id: int | None = None) -> str:
+    from src.triage_config import get_triage_config
+    limit = get_triage_config(account_id).body_preview_limit
+    return _redact_body_preview(text or "")[:limit]
 
 
 @celery.task(
@@ -241,7 +244,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         user_id=user_id,
         subject=normalized.get("subject"),
         from_email=normalized.get("from_email"),
-        body_preview=_build_body_preview(normalized.get("body")),
+        body_preview=_build_body_preview(normalized.get("body"), account_id),
         category=category,
         priority=priority,
         sentiment=sentiment,
@@ -254,7 +257,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         team=merged.get("team") or decision.team,
         assigned_to=merged.get("assigned_to") or decision.assigned_to,
         owner=merged.get("owner") or decision.owner,
-        due_at=compute_due_at(priority),
+        due_at=compute_due_at(priority, account_id),
     )
     db.session.add(ticket)
     try:

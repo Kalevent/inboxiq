@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Triage Configuration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Triage Configuration</div>
+          </div>
+        </div>
+        <nav class="flex items-center gap-3 text-sm text-slate-300">
+          <a href="{{ url_for('dashboard_home') }}" class="px-3 py-1.5 rounded-full border border-slate-700 bg-slate-900/60 hover:bg-slate-800">
+            ← Dashboard
+          </a>
+          <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="px-3 py-1.5 rounded-full border border-slate-700 bg-slate-900/60 hover:bg-slate-800">
+            Settings
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-10 lg:py-14">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-6 space-y-2">
+              {% for category, message in messages %}
+                <div class="rounded-xl border {% if category == 'error' %}border-red-500/30 bg-red-500/10 text-red-200{% else %}border-green-500/30 bg-green-500/10 text-green-200{% endif %} px-4 py-3 text-sm">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Breadcrumb Navigation -->
+        <nav class="mb-4 flex items-center gap-1.5 text-xs">
+          <a href="{{ url_for('dashboard_home') }}" class="text-slate-500 hover:text-slate-300 transition">
+            Dashboard
+          </a>
+          <span class="text-slate-700">/</span>
+          <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="text-slate-500 hover:text-slate-300 transition">
+            Settings
+          </a>
+          <span class="text-slate-700">/</span>
+          <span class="text-slate-300">Triage Configuration</span>
+        </nav>
+
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 lg:p-8 shadow-2xl shadow-indigo-500/15 relative overflow-hidden">
+          <div class="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+          <div class="absolute -left-20 bottom-0 h-48 w-48 rounded-full bg-fuchsia-500/5 blur-3xl pointer-events-none"></div>
+
+          <div class="space-y-3 mb-8">
+            <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+              Settings • Triage Configuration
+            </p>
+            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Triage Configuration</h1>
+            <p class="text-sm text-slate-300 max-w-2xl">
+              Customize SLA mappings, fallback messages, default values, and decision thresholds for your account.
+              Changes are cached for performance and applied to all new tickets.
+            </p>
+          </div>
+
+          <form method="POST" class="space-y-8 relative z-10">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="action" value="save_config" />
+
+            <!-- SLA Mappings Section -->
+            <section class="space-y-4">
+              <h2 class="text-lg font-semibold text-slate-100 border-b border-slate-700 pb-2">SLA Display Labels</h2>
+              <p class="text-xs text-slate-400">Human-readable SLA labels shown in the dashboard (e.g., "2h", "24h", "1w").</p>
+              <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {% for p in ["P0", "P1", "P2", "P3", "P4"] %}
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1">{{ p }}</label>
+                  <input
+                    type="text"
+                    name="sla_display_{{ p }}"
+                    value="{{ config.sla_mappings.get(p, defaults.sla_mappings.get(p, '')) }}"
+                    placeholder="{{ defaults.sla_mappings.get(p, '') }}"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                {% endfor %}
+              </div>
+            </section>
+
+            <!-- SLA Hours Section -->
+            <section class="space-y-4">
+              <h2 class="text-lg font-semibold text-slate-100 border-b border-slate-700 pb-2">SLA Hours (for due_at calculation)</h2>
+              <p class="text-xs text-slate-400">Number of hours to add to ticket creation time to compute due_at.</p>
+              <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {% for p in ["P0", "P1", "P2", "P3", "P4"] %}
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1">{{ p }} (hours)</label>
+                  <input
+                    type="number"
+                    name="sla_hours_{{ p }}"
+                    value="{{ config.sla_hours.get(p, defaults.sla_hours.get(p, '')) }}"
+                    placeholder="{{ defaults.sla_hours.get(p, '') }}"
+                    min="1"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                {% endfor %}
+              </div>
+            </section>
+
+            <!-- Fallback Messages Section -->
+            <section class="space-y-4">
+              <h2 class="text-lg font-semibold text-slate-100 border-b border-slate-700 pb-2">Fallback Messages ("Why this decision")</h2>
+              <p class="text-xs text-slate-400">Default text shown when AI doesn't provide a specific reason.</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for key, label in [("action_required", "Action Required"), ("optional", "Optional Follow-up"), ("auto_handled", "Auto-handled"), ("needs_review", "Needs Review")] %}
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1">{{ label }}</label>
+                  <input
+                    type="text"
+                    name="fallback_{{ key }}"
+                    value="{{ config.fallback_messages.get(key, defaults.fallback_messages.get(key, '')) }}"
+                    placeholder="{{ defaults.fallback_messages.get(key, '') }}"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                {% endfor %}
+              </div>
+            </section>
+
+            <!-- Default Values Section -->
+            <section class="space-y-4">
+              <h2 class="text-lg font-semibold text-slate-100 border-b border-slate-700 pb-2">Default Values</h2>
+              <p class="text-xs text-slate-400">Fallback values when AI doesn't specify owner, team, category, or priority.</p>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1">Default Owner</label>
+                  <input
+                    type="text"
+                    name="default_owner"
+                    value="{{ config.default_owner or '' }}"
+                    placeholder="{{ defaults.default_owner }}"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1">Default Team</label>
+                  <input
+                    type="text"
+                    name="default_team"
+                    value="{{ config.default_team or '' }}"
+                    placeholder="{{ defaults.get('default_team') or 'None' }}"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1">Default Category</label>
+                  <input
+                    type="text"
+                    name="default_category"
+                    value="{{ config.default_category or '' }}"
+                    placeholder="{{ defaults.default_category }}"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1">Default Priority</label>
+                  <select
+                    name="default_priority"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="">System default ({{ defaults.default_priority }})</option>
+                    {% for p in ["P0", "P1", "P2", "P3", "P4"] %}
+                    <option value="{{ p }}" {% if config.default_priority == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <!-- Decision Thresholds Section -->
+            <section class="space-y-4">
+              <h2 class="text-lg font-semibold text-slate-100 border-b border-slate-700 pb-2">Decision Settings</h2>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1">Confidence Threshold (0.0 - 1.0)</label>
+                  <input
+                    type="number"
+                    name="confidence_threshold"
+                    value="{{ config.confidence_threshold if config.confidence_threshold is not none else '' }}"
+                    placeholder="{{ defaults.confidence_threshold }}"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                  <p class="text-xs text-slate-500 mt-1">Min confidence for draft reply auto-approval</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1">Body Preview Limit (chars)</label>
+                  <input
+                    type="number"
+                    name="body_preview_limit"
+                    value="{{ config.body_preview_limit if config.body_preview_limit else '' }}"
+                    placeholder="{{ defaults.body_preview_limit }}"
+                    min="50"
+                    max="1000"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-300 mb-1">Min Training Samples</label>
+                  <input
+                    type="number"
+                    name="train_min_samples"
+                    value="{{ config.train_min_samples if config.train_min_samples else '' }}"
+                    placeholder="{{ defaults.train_min_samples }}"
+                    min="5"
+                    max="500"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 pt-2">
+                <input
+                  type="checkbox"
+                  name="p2_neutral_auto_handle"
+                  id="p2_neutral_auto_handle"
+                  {% if config.p2_neutral_auto_handle %}checked{% endif %}
+                  class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
+                />
+                <label for="p2_neutral_auto_handle" class="text-sm text-slate-300">
+                  Auto-handle P2 + neutral sentiment emails (no action required)
+                </label>
+              </div>
+            </section>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-4 pt-6 border-t border-slate-700">
+              <button
+                type="submit"
+                class="px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-semibold text-sm transition"
+              >
+                Save Configuration
+              </button>
+              <button
+                type="submit"
+                name="action"
+                value="reset_defaults"
+                class="px-5 py-2.5 rounded-xl border border-slate-600 hover:border-slate-500 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 font-medium text-sm transition"
+                onclick="return confirm('Reset all triage settings to system defaults?')"
+              >
+                Reset to Defaults
+              </button>
+            </div>
+          </form>
+
+          <!-- Current Config Summary -->
+          <div class="mt-8 pt-6 border-t border-slate-700">
+            <h3 class="text-sm font-semibold text-slate-300 mb-3">Current Configuration (cached for 5 minutes)</h3>
+            <div class="bg-slate-800/30 rounded-xl p-4 text-xs font-mono text-slate-400 overflow-x-auto">
+              <pre>{{ config.to_dict()|tojson(indent=2) }}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+      <p>&copy; 2025 Kalevent - InboxIQ</p>
+    </footer>
+  </div>
+</body>
+</html>

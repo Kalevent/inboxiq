@@ -477,9 +477,11 @@ def create_app() -> Flask:
     has_admin_access = bool(user and user.email and ((not allowed) or (user.email.lower() in allowed)))
 
     # Build work queue groupings to match the UI sections (action required, optional, auto-handled).
+    from src.triage_config import get_triage_config
+    triage_cfg = get_triage_config(account_id)
+
     def _sla_display(priority: str | None) -> str:
-      mapping = {"P0": "2h", "P1": "4h", "P2": "24h"}
-      return mapping.get((priority or "").upper(), "24h")
+      return triage_cfg.get_sla_display(priority)
 
     def _ai_reason(decision: dict, fallback: str) -> str:
       # Check top-level first, then merged dict (where auto-handled reasons are stored)
@@ -491,13 +493,7 @@ def create_app() -> Flask:
       )
 
     def _action_reason_text(flag) -> str:
-      if flag is True:
-        return "Action required — customer needs help."
-      if flag == "optional":
-        return "Optional follow-up when capacity allows."
-      if flag is False:
-        return "Informational / auto-handled."
-      return "Queued for review."
+      return triage_cfg.get_action_reason_text(flag)
 
     def _parse_scope(scope: str | None):
       scope = (scope or "today").lower()
@@ -540,12 +536,12 @@ def create_app() -> Flask:
         "id": t.id,
         "priority": priority,
         "subject": t.subject,
-        "category": t.category or decision.get("category") or "general",
-        "intent": decision.get("intent") or "general",
+        "category": t.category or decision.get("category") or triage_cfg.default_category,
+        "intent": decision.get("intent") or triage_cfg.default_category,
         "sentiment": sentiment or "neutral",
         "provider": t.provider or decision.get("provider"),
         "ai_reason": _ai_reason(decision, _action_reason_text(action_required)),
-        "owner": t.owner or decision.get("owner") or "Support",
+        "owner": t.owner or decision.get("owner") or triage_cfg.default_owner,
         "due_at": t.due_at,
         "sla": _sla_display(priority),
         "url": url_for("ticket_detail", ticket_id=t.id),
@@ -557,7 +553,7 @@ def create_app() -> Flask:
       elif action_required == "optional" or needs_review:
         ticket_view["ai_reason"] = _ai_reason(decision, _action_reason_text("optional"))
         optional_tickets.append(ticket_view)
-      elif action_required is False or auto_handled_flag or (priority == "P2" and sentiment == "neutral" and not risk_flag):
+      elif action_required is False or auto_handled_flag or triage_cfg.should_auto_handle_p2_neutral(priority, sentiment, risk_flag):
         ticket_view["ai_reason"] = _ai_reason(decision, _action_reason_text(False))
         auto_handled_items.append(ticket_view)
       else:

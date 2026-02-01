@@ -204,7 +204,10 @@ def run_dspy_triage(
             action_required = "optional"
             decision_trace.append("fallback:unknown_priority")
 
-    # Build AI reason
+    # Build AI reason using configurable fallbacks
+    from src.triage_config import get_triage_config
+    triage_cfg = get_triage_config(account_id)
+
     ai_reason = escalation.get("reason") or route.get("rationale")
     if not ai_reason:
         if action_required is False:
@@ -213,15 +216,15 @@ def run_dspy_triage(
             elif heuristic_reason:
                 ai_reason = f"Auto-handled: {heuristic_reason}"
             else:
-                ai_reason = "Auto-handled: low priority or informational"
+                ai_reason = triage_cfg.get_fallback_message("auto_handled")
         elif action_required == "optional":
-            ai_reason = "Optional follow-up when capacity allows"
+            ai_reason = triage_cfg.get_fallback_message("optional")
         else:
-            ai_reason = "Action required: customer needs response"
+            ai_reason = triage_cfg.get_fallback_message("action_required")
 
     content = {
-        "category": route.get("queue") or entities.get("intent") or email_type or "general",
-        "priority": route.get("priority") or ("P4" if action_required is False else "P2"),
+        "category": route.get("queue") or entities.get("intent") or email_type or triage_cfg.default_category,
+        "priority": route.get("priority") or ("P4" if action_required is False else triage_cfg.default_priority),
         "sentiment": entities.get("sentiment") or "neutral",
         "intent": entities.get("intent"),
         "email_type": email_type or heuristic_type or "unknown",

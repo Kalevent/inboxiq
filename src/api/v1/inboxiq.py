@@ -183,7 +183,7 @@ def triage():
                 team=decision.team,
                 assigned_to=decision.assigned_to,
                 owner=decision.owner,
-                due_at=compute_due_at(decision.priority),
+                due_at=compute_due_at(decision.priority, account_id),
             )
             db.session.add(ticket_record)
             try:
@@ -277,8 +277,11 @@ def _parse_scope(scope: str | None):
 
 
 def _ticket_view(t: Ticket) -> dict:
+    from src.triage_config import get_triage_config
+    triage_cfg = get_triage_config(t.account_id)
+
     decision = t.decision or {}
-    priority = (t.priority or decision.get("priority") or "P2").upper()
+    priority = (t.priority or decision.get("priority") or triage_cfg.default_priority).upper()
     sentiment = (t.sentiment or decision.get("sentiment") or "neutral").lower()
     action_required = t.action_required
     needs_review = bool(decision.get("needs_review") or (t.status == "needs_review"))
@@ -296,8 +299,7 @@ def _ticket_view(t: Ticket) -> dict:
         )
 
     def _sla_display(priority_val: str | None) -> str:
-        mapping = {"P0": "2h", "P1": "4h", "P2": "24h"}
-        return mapping.get((priority_val or "").upper(), "24h")
+        return triage_cfg.get_sla_display(priority_val)
 
     def _infer_use_case() -> str:
         hint = (decision.get("use_case") or "").lower()
@@ -317,7 +319,7 @@ def _ticket_view(t: Ticket) -> dict:
 
     if action_required is None and auto_flag:
         action_required = False
-    if action_required is None and priority == "P2" and sentiment == "neutral" and not risk_flag:
+    if action_required is None and triage_cfg.should_auto_handle_p2_neutral(priority, sentiment, risk_flag):
         action_required = False
     if action_required is None and needs_review:
         action_required = "optional"
@@ -370,13 +372,13 @@ def _ticket_view(t: Ticket) -> dict:
         "id": t.id,
         "priority": priority,
         "subject": t.subject,
-        "category": t.category or decision.get("category") or "general",
-        "intent": decision.get("intent") or "general",
+        "category": t.category or decision.get("category") or triage_cfg.default_category,
+        "intent": decision.get("intent") or triage_cfg.default_category,
         "sentiment": sentiment or "neutral",
         "provider": provider,
         "channel": _channel_from_provider(provider),
-        "ai_reason": _ai_reason(decision, "Action required — customer needs help."),
-        "owner": t.owner or decision.get("owner") or "Support",
+        "ai_reason": _ai_reason(decision, triage_cfg.get_action_reason_text(action_required)),
+        "owner": t.owner or decision.get("owner") or triage_cfg.default_owner,
         "team": t.team or decision.get("team"),
         "assigned_to": t.assigned_to or decision.get("assigned_to"),
         "due_at": t.due_at.isoformat() if t.due_at else None,
@@ -450,6 +452,9 @@ def dashboard_data():
         if t.due_at and t.due_at <= now + timedelta(hours=1) and t.status not in ("auto_handled",):
             sla_risk_count += 1
 
+    from src.triage_config import get_triage_config
+    triage_cfg = get_triage_config(account_id)
+
     action_required_items = []
     optional_items = []
     auto_items = []
@@ -469,10 +474,10 @@ def dashboard_data():
         if action_required is True:
             action_required_items.append(view)
         elif action_required == "optional" or needs_review:
-            view["ai_reason"] = view.get("ai_reason") or "Optional — not blocking, follow up if capacity."
+            view["ai_reason"] = view.get("ai_reason") or triage_cfg.get_fallback_message("optional")
             optional_items.append(view)
-        elif action_required is False or t.status == "auto_handled" or (view["priority"] == "P2" and view["sentiment"] == "neutral" and not risk_flag):
-            view["ai_reason"] = view.get("ai_reason") or "Informational / auto-handled."
+        elif action_required is False or t.status == "auto_handled" or triage_cfg.should_auto_handle_p2_neutral(view["priority"], view["sentiment"], risk_flag):
+            view["ai_reason"] = view.get("ai_reason") or triage_cfg.get_fallback_message("auto_handled")
             auto_items.append(view)
         else:
             action_required_items.append(view)
@@ -496,10 +501,10 @@ def dashboard_data():
                 "category": decision.get("category") or "feedback",
                 "intent": decision.get("intent") or "feedback",
                 "sentiment": decision.get("sentiment") or "neutral",
-                "priority": decision.get("priority") or "P2",
-                "ai_reason": decision.get("ai_reason") or "Feedback auto-handled.",
-                "owner": decision.get("owner") or "Product",
-                "team": decision.get("team") or "Product",
+                "priority": decision.get("priority") or triage_cfg.default_priority,
+                "ai_reason": decision.get("ai_reason") or triage_cfg.get_fallback_message("auto_handled"),
+                "owner": decision.get("owner") or triage_cfg.default_owner,
+                "team": decision.get("team") or triage_cfg.default_team or "Product",
                 "assigned_to": decision.get("assigned_to"),
                 "provider": "feedback",
                 "channel": "feedback",
@@ -677,7 +682,7 @@ def ticket_feedback(ticket_id: str):
             ticket.category = category
         if priority:
             ticket.priority = priority
-            ticket.due_at = compute_due_at(ticket.priority)
+            ticket.due_at = compute_due_at(ticket.priority, ticket.account_id)
         if team:
             ticket.team = team
         if assigned_to:

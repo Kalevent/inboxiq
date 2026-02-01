@@ -851,3 +851,72 @@ class KBArticleEmbedding(db.Model):
             "embedding_model": self.embedding_model,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class TriageConfig(db.Model):
+    """
+    Per-account triage configuration for customizable SLA mappings, fallback messages,
+    decision thresholds, and other triage-related settings.
+
+    If no config exists for an account, system-wide defaults are used.
+    """
+    __tablename__ = "triage_configs"
+    __table_args__ = (
+        db.UniqueConstraint("account_id", name="uq_triage_config_account"),
+        db.Index("ix_triage_configs_account", "account_id"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+
+    # SLA mappings: {"P0": "2h", "P1": "4h", "P2": "24h", "P3": "48h", "P4": "1w"}
+    sla_mappings = db.Column(db.JSON, nullable=False, default=dict)
+
+    # SLA durations in hours for compute_due_at: {"P0": 1, "P1": 4, "P2": 24, "P3": 48, "P4": 168}
+    sla_hours = db.Column(db.JSON, nullable=False, default=dict)
+
+    # Fallback messages for "Why this decision" text
+    # {"action_required": "...", "optional": "...", "auto_handled": "...", "needs_review": "..."}
+    fallback_messages = db.Column(db.JSON, nullable=False, default=dict)
+
+    # Default owner/team/category when not specified
+    default_owner = db.Column(db.String(128), nullable=True)
+    default_team = db.Column(db.String(128), nullable=True)
+    default_category = db.Column(db.String(64), nullable=True)
+    default_priority = db.Column(db.String(8), nullable=True)
+
+    # Decision thresholds
+    confidence_threshold = db.Column(db.Float, nullable=True)  # Default 0.7 for draft reply
+    p2_neutral_auto_handle = db.Column(db.Boolean, nullable=False, default=True)  # Auto-handle P2 neutral emails
+
+    # Body preview and summary limits
+    body_preview_limit = db.Column(db.Integer, nullable=True)  # Default 240
+    summary_limit = db.Column(db.Integer, nullable=True)  # Default 280
+
+    # Training settings
+    train_min_samples = db.Column(db.Integer, nullable=True)  # Default 20
+    poll_stale_minutes = db.Column(db.Integer, nullable=True)  # Default 30
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "sla_mappings": self.sla_mappings or {},
+            "sla_hours": self.sla_hours or {},
+            "fallback_messages": self.fallback_messages or {},
+            "default_owner": self.default_owner,
+            "default_team": self.default_team,
+            "default_category": self.default_category,
+            "default_priority": self.default_priority,
+            "confidence_threshold": self.confidence_threshold,
+            "p2_neutral_auto_handle": self.p2_neutral_auto_handle,
+            "body_preview_limit": self.body_preview_limit,
+            "summary_limit": self.summary_limit,
+            "train_min_samples": self.train_min_samples,
+            "poll_stale_minutes": self.poll_stale_minutes,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }

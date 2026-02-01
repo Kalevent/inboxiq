@@ -687,3 +687,131 @@ def knowledge_base_integration():
         articles=articles,
         account_id=account_id,
     )
+
+
+@bp.route("/settings/integrations/triage-config", methods=["GET", "POST"])
+@login_required_settings
+def triage_config_settings():
+    """Triage configuration settings (SLA mappings, fallback messages, defaults)."""
+    account_id = getattr(g, "current_account_id", None)
+    if not account_id:
+        flash("Account not found", "error")
+        return redirect(url_for("settings.settings_page"))
+
+    from src.triage_config import get_triage_config, save_triage_config, invalidate_triage_config
+    from src.triage_config import (
+        DEFAULT_SLA_MAPPINGS, DEFAULT_SLA_HOURS, DEFAULT_FALLBACK_MESSAGES,
+        DEFAULT_OWNER, DEFAULT_CATEGORY, DEFAULT_PRIORITY,
+        DEFAULT_CONFIDENCE_THRESHOLD, DEFAULT_P2_NEUTRAL_AUTO_HANDLE,
+        DEFAULT_BODY_PREVIEW_LIMIT, DEFAULT_TRAIN_MIN_SAMPLES,
+    )
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "save_config":
+            try:
+                # Parse SLA mappings
+                sla_mappings = {}
+                for p in ["P0", "P1", "P2", "P3", "P4"]:
+                    val = request.form.get(f"sla_display_{p}", "").strip()
+                    if val:
+                        sla_mappings[p] = val
+
+                sla_hours = {}
+                for p in ["P0", "P1", "P2", "P3", "P4"]:
+                    val = request.form.get(f"sla_hours_{p}", "").strip()
+                    if val:
+                        try:
+                            sla_hours[p] = int(val)
+                        except ValueError:
+                            pass
+
+                # Parse fallback messages
+                fallback_messages = {}
+                for key in ["action_required", "optional", "auto_handled", "needs_review"]:
+                    val = request.form.get(f"fallback_{key}", "").strip()
+                    if val:
+                        fallback_messages[key] = val
+
+                # Parse other settings
+                default_owner = request.form.get("default_owner", "").strip() or None
+                default_team = request.form.get("default_team", "").strip() or None
+                default_category = request.form.get("default_category", "").strip() or None
+                default_priority = request.form.get("default_priority", "").strip() or None
+                p2_neutral_auto_handle = request.form.get("p2_neutral_auto_handle") == "on"
+
+                confidence_threshold = None
+                val = request.form.get("confidence_threshold", "").strip()
+                if val:
+                    try:
+                        confidence_threshold = float(val)
+                    except ValueError:
+                        pass
+
+                body_preview_limit = None
+                val = request.form.get("body_preview_limit", "").strip()
+                if val:
+                    try:
+                        body_preview_limit = int(val)
+                    except ValueError:
+                        pass
+
+                train_min_samples = None
+                val = request.form.get("train_min_samples", "").strip()
+                if val:
+                    try:
+                        train_min_samples = int(val)
+                    except ValueError:
+                        pass
+
+                save_triage_config(
+                    account_id=account_id,
+                    sla_mappings=sla_mappings if sla_mappings else None,
+                    sla_hours=sla_hours if sla_hours else None,
+                    fallback_messages=fallback_messages if fallback_messages else None,
+                    default_owner=default_owner,
+                    default_team=default_team,
+                    default_category=default_category,
+                    default_priority=default_priority,
+                    p2_neutral_auto_handle=p2_neutral_auto_handle,
+                    confidence_threshold=confidence_threshold,
+                    body_preview_limit=body_preview_limit,
+                    train_min_samples=train_min_samples,
+                )
+                flash("Triage configuration saved", "success")
+            except Exception as exc:
+                flash(f"Failed to save configuration: {exc}", "error")
+
+            return redirect(url_for("settings.triage_config_settings"))
+
+        elif action == "reset_defaults":
+            from src.models import TriageConfig
+            config = TriageConfig.query.filter_by(account_id=account_id).first()
+            if config:
+                db.session.delete(config)
+                db.session.commit()
+                invalidate_triage_config(account_id)
+                flash("Configuration reset to system defaults", "success")
+            return redirect(url_for("settings.triage_config_settings"))
+
+    # GET: Load current config
+    current_config = get_triage_config(account_id)
+
+    return render_template(
+        "settings/triage_config.html",
+        config=current_config,
+        defaults={
+            "sla_mappings": DEFAULT_SLA_MAPPINGS,
+            "sla_hours": DEFAULT_SLA_HOURS,
+            "fallback_messages": DEFAULT_FALLBACK_MESSAGES,
+            "default_owner": DEFAULT_OWNER,
+            "default_category": DEFAULT_CATEGORY,
+            "default_priority": DEFAULT_PRIORITY,
+            "confidence_threshold": DEFAULT_CONFIDENCE_THRESHOLD,
+            "p2_neutral_auto_handle": DEFAULT_P2_NEUTRAL_AUTO_HANDLE,
+            "body_preview_limit": DEFAULT_BODY_PREVIEW_LIMIT,
+            "train_min_samples": DEFAULT_TRAIN_MIN_SAMPLES,
+        },
+        account_id=account_id,
+    )

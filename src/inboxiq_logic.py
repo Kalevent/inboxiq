@@ -119,25 +119,26 @@ def _normalize_action_required(value: object | None) -> bool | str | None:
     return None
 
 
-def compute_due_at(priority: str) -> datetime | None:
+def compute_due_at(priority: str, account_id: int | None = None) -> datetime | None:
     """
-    Simple SLA mapping to a due_at timestamp.
-    P0: +1h, P1: +4h, P2+: +24h.
+    SLA mapping to a due_at timestamp using account-specific or system defaults.
     """
+    from src.triage_config import get_triage_config
+    triage_cfg = get_triage_config(account_id)
     now = datetime.now(timezone.utc)
-    if priority == "P0":
-        return now + timedelta(hours=1)
-    if priority == "P1":
-        return now + timedelta(hours=4)
-    return now + timedelta(hours=24)
+    return now + triage_cfg.get_sla_timedelta(priority)
 
 
-def _reason_text(action_required: bool | str, reason: str) -> str:
+def _reason_text(action_required: bool | str, reason: str, account_id: int | None = None) -> str:
+    from src.triage_config import get_triage_config
+    triage_cfg = get_triage_config(account_id)
+
     if action_required is True:
-        return "Action required — customer needs help." if reason == "default_actionable" else f"Action required ({reason.replace('_', ' ')})."
+        fallback = triage_cfg.get_fallback_message("action_required")
+        return fallback if reason == "default_actionable" else f"Action required ({reason.replace('_', ' ')})."
     if action_required == "optional":
-        return "Optional follow-up when capacity allows."
-    return "Informational / auto-handled."
+        return triage_cfg.get_fallback_message("optional")
+    return triage_cfg.get_fallback_message("auto_handled")
 
 
 def normalize_email_payload(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -273,7 +274,7 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
             assigned_to=assigned_to,
             similar_feedback=[],
             action_required=action_required,
-            ai_reason=ai_reason or _reason_text(action_required, "dspy"),
+            ai_reason=ai_reason or _reason_text(action_required, "dspy", account_id),
             email_type=email_type,
             is_automated=is_automated,
         )

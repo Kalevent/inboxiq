@@ -81,7 +81,7 @@ def submit_feedback():
             team=decision.team,
             assigned_to=decision.assigned_to,
             owner=decision.owner,
-            due_at=compute_due_at(decision.priority),
+            due_at=compute_due_at(decision.priority, user.account_id),
         )
         db.session.add(ticket_record)
 
