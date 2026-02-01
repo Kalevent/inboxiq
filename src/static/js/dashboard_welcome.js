@@ -416,6 +416,7 @@
     });
     if (target === 'training') {
       loadTrainingMetrics();
+      loadTrainingStatus();
     }
   }
 
@@ -502,6 +503,10 @@
   const trainingTrainAcc = document.getElementById('trainingTrainAcc');
   const trainingEvalAcc = document.getElementById('trainingEvalAcc');
   const trainingTable = document.getElementById('trainingTable');
+  const runTrainingBtn = document.getElementById('runTrainingBtn');
+  const runTrainingBtnText = document.getElementById('runTrainingBtnText');
+  const runTrainingSpinner = document.getElementById('runTrainingSpinner');
+  const trainingReadiness = document.getElementById('trainingReadiness');
   let trainingLoaded = false;
   let activeUseCase = 'all';
 
@@ -573,6 +578,80 @@
     } catch (err) {
       setTrainingStatus('error', err.message || 'Failed to load training metrics.');
     }
+  }
+
+  async function loadTrainingStatus() {
+    if (!runTrainingBtn) return;
+    try {
+      const resp = await fetch('/api/v1/inboxiq/training/status', { credentials: 'include' });
+      const data = await resp.json();
+      if (!resp.ok) {
+        runTrainingBtn.disabled = true;
+        if (trainingReadiness) trainingReadiness.textContent = 'Unable to check status';
+        return;
+      }
+
+      if (data.can_train) {
+        runTrainingBtn.disabled = false;
+        if (trainingReadiness) {
+          trainingReadiness.textContent = `${data.override_count} overrides + ${data.seed_count} seeds ready`;
+          trainingReadiness.className = 'text-xs text-emerald-400';
+        }
+      } else {
+        runTrainingBtn.disabled = true;
+        if (trainingReadiness) {
+          trainingReadiness.textContent = `Need ${data.samples_needed} more samples (${data.override_count}/${data.min_samples})`;
+          trainingReadiness.className = 'text-xs text-amber-400';
+        }
+      }
+    } catch (err) {
+      runTrainingBtn.disabled = true;
+      if (trainingReadiness) trainingReadiness.textContent = 'Status unavailable';
+    }
+  }
+
+  async function triggerTraining() {
+    if (!runTrainingBtn) return;
+
+    runTrainingBtn.disabled = true;
+    if (runTrainingBtnText) runTrainingBtnText.textContent = 'Queuing...';
+    if (runTrainingSpinner) runTrainingSpinner.classList.remove('hidden');
+
+    try {
+      const csrfToken = getCookie('csrf_access_token');
+      const resp = await fetch('/api/v1/inboxiq/training/trigger', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken ? decodeURIComponent(csrfToken) : '',
+        },
+      });
+      const data = await resp.json();
+
+      if (resp.ok) {
+        setTrainingStatus('success', data.message || 'Training queued successfully');
+        if (runTrainingBtnText) runTrainingBtnText.textContent = 'Queued!';
+        setTimeout(() => {
+          if (runTrainingBtnText) runTrainingBtnText.textContent = 'Run Training';
+          loadTrainingStatus();
+        }, 3000);
+      } else {
+        setTrainingStatus('error', data.message || 'Failed to queue training');
+        if (runTrainingBtnText) runTrainingBtnText.textContent = 'Run Training';
+        runTrainingBtn.disabled = false;
+      }
+    } catch (err) {
+      setTrainingStatus('error', 'Network error. Please try again.');
+      if (runTrainingBtnText) runTrainingBtnText.textContent = 'Run Training';
+      runTrainingBtn.disabled = false;
+    } finally {
+      if (runTrainingSpinner) runTrainingSpinner.classList.add('hidden');
+    }
+  }
+
+  if (runTrainingBtn) {
+    runTrainingBtn.addEventListener('click', triggerTraining);
   }
 
   function applyActionFilters() {

@@ -1295,3 +1295,123 @@ def get_draft_reply_feature():
         "has_access": has_access,
         "can_enable": has_access
     }), 200
+
+
+@v1.route("/inboxiq/training/trigger", methods=["POST"])
+@jwt_required()
+def trigger_training():
+    """
+    Manually trigger DSPy training for the current account.
+
+    Returns:
+        200: Training queued or result returned
+        400: Not enough samples for training
+        403: Training not enabled for account
+    """
+    user_id = get_jwt_identity()
+    account_id = _get_account_id(user_id)
+
+    if not account_id:
+        return jsonify({"error": "account_not_found"}), 404
+
+    # Check if account has enough manual overrides
+    override_count = Ticket.query.filter(
+        Ticket.account_id == account_id,
+        Ticket.manual_override.is_(True)
+    ).count()
+
+    min_samples = int(os.getenv("DSPY_TRAIN_MIN_SAMPLES", "20"))
+
+    # Seed examples can supplement when override count is low
+    include_seeds = os.getenv("DSPY_TRAIN_INCLUDE_SEEDS", "1").lower() in ("1", "true", "yes", "on")
+    seed_count = 12 if include_seeds else 0  # Number of seed examples in dspy_train.py
+
+    total_samples = override_count + seed_count
+    can_train = total_samples >= min_samples
+
+    if not can_train:
+        return jsonify({
+            "error": "insufficient_samples",
+            "message": f"Need at least {min_samples} samples for training. You have {override_count} manual overrides + {seed_count} seed examples = {total_samples} total.",
+            "override_count": override_count,
+            "seed_count": seed_count,
+            "total_samples": total_samples,
+            "min_samples": min_samples,
+        }), 400
+
+    # Queue the training task via Celery
+    try:
+        task = _celery_client().send_task(
+            "inboxiq.train_dspy_overrides",
+            queue="inbox",
+        )
+        current_app.logger.info({
+            "event": "training.triggered",
+            "account_id": account_id,
+            "task_id": task.id,
+            "override_count": override_count,
+        })
+        return jsonify({
+            "status": "queued",
+            "task_id": task.id,
+            "message": f"Training queued with {override_count} overrides + {seed_count} seeds",
+            "override_count": override_count,
+            "seed_count": seed_count,
+        }), 200
+    except Exception as exc:
+        current_app.logger.error({
+            "event": "training.trigger_failed",
+            "account_id": account_id,
+            "error": str(exc),
+        })
+        return jsonify({
+            "error": "queue_failed",
+            "message": "Failed to queue training task. Check Celery worker status.",
+        }), 503
+
+
+@v1.route("/inboxiq/training/status", methods=["GET"])
+@jwt_required()
+def training_status():
+    """
+    Get training readiness status for the current account.
+    """
+    user_id = get_jwt_identity()
+    account_id = _get_account_id(user_id)
+
+    if not account_id:
+        return jsonify({"error": "account_not_found"}), 404
+
+    # Check manual override count
+    override_count = Ticket.query.filter(
+        Ticket.account_id == account_id,
+        Ticket.manual_override.is_(True)
+    ).count()
+
+    total_tickets = Ticket.query.filter(Ticket.account_id == account_id).count()
+    min_samples = int(os.getenv("DSPY_TRAIN_MIN_SAMPLES", "20"))
+
+    include_seeds = os.getenv("DSPY_TRAIN_INCLUDE_SEEDS", "1").lower() in ("1", "true", "yes", "on")
+    seed_count = 12 if include_seeds else 0
+
+    total_samples = override_count + seed_count
+    can_train = total_samples >= min_samples
+
+    # Get latest training run
+    latest_metric = (
+        DspyTrainingMetric.query
+        .filter(DspyTrainingMetric.account_id == account_id)
+        .order_by(desc(DspyTrainingMetric.created_at))
+        .first()
+    )
+
+    return jsonify({
+        "can_train": can_train,
+        "override_count": override_count,
+        "total_tickets": total_tickets,
+        "seed_count": seed_count,
+        "total_samples": total_samples,
+        "min_samples": min_samples,
+        "samples_needed": max(0, min_samples - total_samples),
+        "latest_training": latest_metric.to_dict() if latest_metric else None,
+    }), 200

@@ -119,7 +119,105 @@ cat src/prod.env | grep -E "JWT_COOKIE"
 
 **Permanent Fix**: Keep `JWT_COOKIE_SAMESITE=Lax` and properly implement CSRF token passing in all forms.
 
-### Prevention
+## Issue: JavaScript Fetch Requests Fail with JWT Cookies
+
+### AJAX Symptoms
+
+- Toggle switches or AJAX buttons show "Failed to update" errors
+- API returns 401 Unauthorized or 422 Unprocessable Entity
+- Browser console shows empty or missing Authorization header
+- Form submissions work but JavaScript fetch requests fail
+
+### AJAX Root Cause
+
+#### Problem: Trying to Read HttpOnly Cookies in JavaScript
+
+When JWT is stored in cookies with `HttpOnly=True` (the secure default):
+- JavaScript **cannot** read the `access_token_cookie`
+- Code like `document.cookie.split(';')` won't find it
+- Sending `Authorization: Bearer ${token}` results in an empty token
+
+**Incorrect Pattern**:
+```javascript
+// This will NOT work - access_token_cookie is HttpOnly
+function getAccessToken() {
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'access_token_cookie') {
+      return value;  // Always empty!
+    }
+  }
+  return '';
+}
+
+fetch('/api/endpoint', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${getAccessToken()}`,  // Empty!
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify(data),
+});
+```
+
+**Correct Pattern**:
+```javascript
+// CSRF token is NOT HttpOnly, so JavaScript can read it
+function getCsrfToken() {
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name.trim() === 'csrf_access_token') {
+      return decodeURIComponent(value);
+    }
+  }
+  return '';
+}
+
+// Let browser send JWT cookie automatically
+fetch('/api/endpoint', {
+  method: 'POST',
+  credentials: 'same-origin',  // Required to send cookies!
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-TOKEN': getCsrfToken(),  // CSRF token in header
+  },
+  body: JSON.stringify(data),
+});
+```
+
+### Key Points for AJAX Requests
+
+1. **Don't read JWT from cookies** - It's HttpOnly for security
+2. **Don't send Authorization header** - Browser sends cookie automatically
+3. **Add `credentials: 'same-origin'`** - Required for cookies to be sent
+4. **Send CSRF token in header** - Read from `csrf_access_token` cookie (not HttpOnly)
+
+### AJAX Resolution Timeline
+
+**Date**: 2026-02-01
+
+**Issue**: AI Features toggle failing with "Failed to update draft reply setting"
+
+**Steps Taken**:
+
+1. Identified JavaScript was trying to read HttpOnly `access_token_cookie`
+2. Removed `Authorization: Bearer` header (was sending empty token)
+3. Added `credentials: 'same-origin'` to fetch request
+4. Kept CSRF token header (read from non-HttpOnly `csrf_access_token`)
+5. Toggle now works correctly
+
+**Commit**: Fixed in `src/templates/settings/index.html`
+
+### AJAX Related Files
+
+- `src/templates/settings/index.html` - Draft reply toggle JavaScript
+- `src/api/v1/inboxiq.py` - API endpoint with `@jwt_required()`
+
+---
+
+## Prevention
 
 1. **Always use `SameSite=Lax`** for same-site applications
 2. **Test form submissions** after JWT configuration changes
