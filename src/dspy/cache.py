@@ -11,7 +11,6 @@ This module handles loading and saving compiled DSPy modules with:
 from __future__ import annotations
 
 import os
-import pickle
 import re
 import json
 import hmac
@@ -19,6 +18,18 @@ import hashlib
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict
+
+# Use cloudpickle for serializing dynamically-created DSPy classes
+# (standard pickle can't serialize classes defined inside functions)
+try:
+    import cloudpickle as pickle
+except ImportError:
+    import pickle
+    logger = logging.getLogger(__name__)
+    logger.warning(
+        "cloudpickle not installed - DSPy module serialization may fail for "
+        "dynamically created classes. Install with: pip install cloudpickle"
+    )
 
 logger = logging.getLogger(__name__)
 
