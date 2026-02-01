@@ -273,6 +273,10 @@ class TriageLabelConfig(db.Model):
 class DspyTrainingMetric(db.Model):
     """
     Track DSPy training metrics for historical monitoring.
+
+    Core accuracy focuses on action_required + priority (most important fields).
+    Weighted accuracy gives partial credit for other fields.
+    Per-field accuracy is stored in metadata_json.
     """
     __tablename__ = "dspy_training_metrics"
     __table_args__ = (db.Index("ix_dspy_training_metrics_account", "account_id"),)
@@ -282,21 +286,36 @@ class DspyTrainingMetric(db.Model):
     model_id = db.Column(db.String(128), nullable=False)
     provider = db.Column(db.String(32), nullable=False, default="openai")
     sample_count = db.Column(db.Integer, nullable=False, default=0)
+    seed_count = db.Column(db.Integer, nullable=True, default=0)
     eval_count = db.Column(db.Integer, nullable=True)
-    train_accuracy = db.Column(db.Float, nullable=True)
-    eval_accuracy = db.Column(db.Float, nullable=True)
+    train_accuracy = db.Column(db.Float, nullable=True)  # Core accuracy (action_required + priority)
+    eval_accuracy = db.Column(db.Float, nullable=True)  # Core accuracy on eval set
+    train_weighted = db.Column(db.Float, nullable=True)  # Weighted accuracy across all fields
+    eval_weighted = db.Column(db.Float, nullable=True)  # Weighted accuracy on eval set
+    metadata_json = db.Column(db.Text, nullable=True)  # Per-field accuracy and other details
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def to_dict(self) -> dict:
+        import json
+        metadata = {}
+        if self.metadata_json:
+            try:
+                metadata = json.loads(self.metadata_json)
+            except (json.JSONDecodeError, TypeError):
+                pass
         return {
             "id": self.id,
             "account_id": self.account_id,
             "model_id": self.model_id,
             "provider": self.provider,
             "sample_count": self.sample_count,
+            "seed_count": self.seed_count,
             "eval_count": self.eval_count,
             "train_accuracy": self.train_accuracy,
             "eval_accuracy": self.eval_accuracy,
+            "train_weighted": self.train_weighted,
+            "eval_weighted": self.eval_weighted,
+            "metadata": metadata,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

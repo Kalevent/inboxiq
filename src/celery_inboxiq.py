@@ -390,20 +390,35 @@ def train_dspy_overrides_task(self) -> dict:
                 # Save training metrics to database
                 if outcome.get("status") == "compiled":
                     try:
+                        import json
                         from src.models import DspyTrainingMetric
+
+                        # Build metadata with per-field accuracy
+                        metadata = {
+                            "train_field_accuracy": outcome.get("train_field_accuracy", {}),
+                            "eval_field_accuracy": outcome.get("eval_field_accuracy", {}),
+                        }
+
                         metric = DspyTrainingMetric(
                             account_id=account_val,
                             model_id=model_id,
                             provider=provider_key,
                             sample_count=outcome.get("count") or 0,
+                            seed_count=outcome.get("seed_count") or 0,
                             train_accuracy=outcome.get("train_accuracy"),
                             eval_accuracy=outcome.get("eval_accuracy"),
+                            train_weighted=outcome.get("train_weighted"),
+                            eval_weighted=outcome.get("eval_weighted"),
+                            metadata_json=json.dumps(metadata),
                         )
                         db.session.add(metric)
                         db.session.commit()
                         logging.getLogger(__name__).info(
-                            "Saved DSPy training metric: account=%s provider=%s train_acc=%s eval_acc=%s",
-                            account_val, provider_key, outcome.get("train_accuracy"), outcome.get("eval_accuracy")
+                            "Saved DSPy training metric: account=%s provider=%s "
+                            "train_acc=%s eval_acc=%s train_weighted=%s eval_weighted=%s",
+                            account_val, provider_key,
+                            outcome.get("train_accuracy"), outcome.get("eval_accuracy"),
+                            outcome.get("train_weighted"), outcome.get("eval_weighted"),
                         )
                     except Exception as exc:
                         db.session.rollback()

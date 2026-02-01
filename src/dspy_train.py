@@ -236,14 +236,57 @@ def _example_from_ticket(ticket: Ticket, labels: Dict[str, Any]) -> dspy.Example
 
 
 def _metric(gold: dspy.Example, pred: dspy.Example, trace=None) -> bool:
-    """Metric function for DSPy BootstrapFewShot. Third arg (trace) is required by DSPy API."""
-    return (
-        gold.category == pred.category
-        and gold.priority == pred.priority
-        and gold.sentiment == pred.sentiment
-        and gold.intent == pred.intent
-        and gold.action_required == pred.action_required
-    )
+    """
+    Metric function for DSPy BootstrapFewShot.
+
+    Focuses on the MOST IMPORTANT fields for triage:
+    - action_required (critical: determines if human needs to act)
+    - priority (important: determines urgency)
+
+    Category, sentiment, and intent are nice-to-have but less critical.
+
+    Third arg (trace) is required by DSPy API.
+    """
+    # Core fields that MUST match (critical for triage)
+    action_match = str(gold.action_required).lower() == str(pred.action_required).lower()
+    priority_match = str(gold.priority).upper() == str(pred.priority).upper()
+
+    # For BootstrapFewShot, we use a focused metric on the most important fields
+    # This gives the optimizer more signal to learn from
+    return action_match and priority_match
+
+
+def _detailed_metric(gold: dspy.Example, pred: dspy.Example) -> dict:
+    """
+    Compute detailed per-field accuracy for reporting.
+
+    Returns dict with per-field match status and overall scores.
+    """
+    fields = {
+        "action_required": str(gold.action_required).lower() == str(pred.action_required).lower(),
+        "priority": str(gold.priority).upper() == str(pred.priority).upper(),
+        "category": str(gold.category).lower() == str(pred.category).lower(),
+        "sentiment": str(gold.sentiment).lower() == str(pred.sentiment).lower(),
+        "intent": str(gold.intent).lower() == str(pred.intent).lower(),
+    }
+
+    # Core accuracy: action_required + priority (weighted more heavily)
+    core_correct = fields["action_required"] and fields["priority"]
+
+    # Full accuracy: all fields
+    full_correct = all(fields.values())
+
+    # Weighted score: core fields worth more
+    weights = {"action_required": 3, "priority": 2, "category": 1, "sentiment": 1, "intent": 1}
+    weighted_score = sum(weights[f] * (1 if fields[f] else 0) for f in fields)
+    max_score = sum(weights.values())
+
+    return {
+        "fields": fields,
+        "core_correct": core_correct,
+        "full_correct": full_correct,
+        "weighted_score": weighted_score / max_score,
+    }
 
 
 def train_from_overrides(
@@ -268,42 +311,83 @@ def train_from_overrides(
     if total_samples < min_samples:
         return {"status": "skipped", "reason": "insufficient_samples", "count": len(samples), "seed_count": len(seed_examples)}
 
-    trainset = [_example_from_ticket(t, labels) for t in samples]
-
-    # Prepend seed examples to ensure model sees non-actionable patterns
-    if seed_examples:
-        trainset = seed_examples + trainset
+    # Convert tickets to examples (these are the "real" examples from manual overrides)
+    ticket_examples = [_example_from_ticket(t, labels) for t in samples]
     ticket_ids = [t.id for t in samples]
+
+    # Determine eval set from tickets only (not seeds)
     existing_meta = _load_compiled_meta(model_id, account_id)
     eval_ids = []
     if existing_meta:
         eval_ids = [t_id for t_id in existing_meta.get("eval_ids", []) if t_id in ticket_ids]
     if not eval_ids:
-        # Stable 80/20 split based on ticket id hash for repeatable evals.
+        # Stable 80/20 split based on ticket id hash for repeatable evals
         eval_ids = [t_id for t_id in ticket_ids if hash(str(t_id)) % 5 == 0]
-    eval_set = {t_id for t_id in eval_ids}
-    eval_samples = [ex for ex, t_id in zip(trainset, ticket_ids) if t_id in eval_set]
-    train_samples = [ex for ex, t_id in zip(trainset, ticket_ids) if t_id not in eval_set]
+
+    eval_set = set(eval_ids)
+
+    # Split ticket examples into train/eval
+    train_ticket_examples = []
+    eval_ticket_examples = []
+    for ex, t_id in zip(ticket_examples, ticket_ids):
+        if t_id in eval_set:
+            eval_ticket_examples.append(ex)
+        else:
+            train_ticket_examples.append(ex)
+
+    # Training set = seed examples + train ticket examples
+    # (Seeds always go to training, never eval)
+    train_samples = seed_examples + train_ticket_examples
+    eval_samples = eval_ticket_examples
+
+    # Ensure we have at least some training samples
     if not train_samples:
-        train_samples = trainset[: max(len(trainset) - 1, 1)]
-    if not eval_samples and len(trainset) > 1:
-        eval_samples = trainset[-1:]
+        train_samples = ticket_examples[: max(len(ticket_examples) - 1, 1)]
+    if not eval_samples and len(ticket_examples) > 1:
+        eval_samples = ticket_examples[-1:]
+
     module = build_triage_module(dspy_instance, labels)
 
     optimizer = BootstrapFewShot(metric=_metric)
     compiled = optimizer.compile(module, trainset=train_samples)
+
+    # Compute training accuracy with detailed metrics
     train_predictions = [compiled(content=ex.content) for ex in train_samples]
-    train_accuracy = sum(1 for gold, pred in zip(train_samples, train_predictions) if _metric(gold, pred)) / len(train_samples)
+    train_core_correct = sum(1 for gold, pred in zip(train_samples, train_predictions) if _metric(gold, pred))
+    train_accuracy = train_core_correct / len(train_samples)
+
+    # Compute detailed per-field accuracy
+    train_detailed = [_detailed_metric(gold, pred) for gold, pred in zip(train_samples, train_predictions)]
+    train_field_accuracy = {}
+    for field in ["action_required", "priority", "category", "sentiment", "intent"]:
+        correct = sum(1 for d in train_detailed if d["fields"][field])
+        train_field_accuracy[field] = round(correct / len(train_detailed), 4)
+    train_weighted_avg = sum(d["weighted_score"] for d in train_detailed) / len(train_detailed)
+
     eval_accuracy = None
+    eval_field_accuracy = {}
+    eval_weighted_avg = None
     if eval_samples:
         eval_predictions = [compiled(content=ex.content) for ex in eval_samples]
-        eval_accuracy = sum(1 for gold, pred in zip(eval_samples, eval_predictions) if _metric(gold, pred)) / len(eval_samples)
+        eval_core_correct = sum(1 for gold, pred in zip(eval_samples, eval_predictions) if _metric(gold, pred))
+        eval_accuracy = eval_core_correct / len(eval_samples)
+
+        eval_detailed = [_detailed_metric(gold, pred) for gold, pred in zip(eval_samples, eval_predictions)]
+        for field in ["action_required", "priority", "category", "sentiment", "intent"]:
+            correct = sum(1 for d in eval_detailed if d["fields"][field])
+            eval_field_accuracy[field] = round(correct / len(eval_detailed), 4)
+        eval_weighted_avg = sum(d["weighted_score"] for d in eval_detailed) / len(eval_detailed)
 
     extra_meta = {
         "eval_ids": eval_ids,
         "train_accuracy": round(train_accuracy, 4),
         "eval_accuracy": round(eval_accuracy, 4) if eval_accuracy is not None else None,
+        "train_weighted": round(train_weighted_avg, 4),
+        "eval_weighted": round(eval_weighted_avg, 4) if eval_weighted_avg is not None else None,
+        "train_field_accuracy": train_field_accuracy,
+        "eval_field_accuracy": eval_field_accuracy,
         "sample_count": len(samples),
+        "seed_count": len(seed_examples),
         "eval_count": len(eval_samples),
     }
     artifact_path = _save_compiled_module(
@@ -317,9 +401,14 @@ def train_from_overrides(
     return {
         "status": "compiled",
         "count": len(samples),
+        "seed_count": len(seed_examples),
         "artifact_path": artifact_path,
         "train_accuracy": round(train_accuracy, 4),
         "eval_accuracy": round(eval_accuracy, 4) if eval_accuracy is not None else None,
+        "train_weighted": round(train_weighted_avg, 4),
+        "eval_weighted": round(eval_weighted_avg, 4) if eval_weighted_avg is not None else None,
+        "train_field_accuracy": train_field_accuracy,
+        "eval_field_accuracy": eval_field_accuracy,
     }
 
 
