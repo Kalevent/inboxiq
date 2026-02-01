@@ -232,10 +232,11 @@ def _example_from_ticket(ticket: Ticket, labels: Dict[str, Any]) -> dspy.Example
         team=decision.get("team") or "",
         assigned_to=decision.get("assigned_to") or "",
         owner=decision.get("owner") or "",
-    )
+    ).with_inputs("content")
 
 
-def _metric(gold: dspy.Example, pred: dspy.Example) -> bool:
+def _metric(gold: dspy.Example, pred: dspy.Example, trace=None) -> bool:
+    """Metric function for DSPy BootstrapFewShot. Third arg (trace) is required by DSPy API."""
     return (
         gold.category == pred.category
         and gold.priority == pred.priority
