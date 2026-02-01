@@ -287,7 +287,13 @@ def _ticket_view(t: Ticket) -> dict:
     provider = (t.provider or decision.get("provider") or "email").lower()
 
     def _ai_reason(decision: dict, fallback: str) -> str:
-        return decision.get("ai_reason") or decision.get("reason") or fallback
+        # Check top-level first, then merged dict (where auto-handled reasons are stored)
+        return (
+            decision.get("ai_reason")
+            or decision.get("reason")
+            or decision.get("merged", {}).get("ai_reason")
+            or fallback
+        )
 
     def _sla_display(priority_val: str | None) -> str:
         mapping = {"P0": "2h", "P1": "4h", "P2": "24h"}

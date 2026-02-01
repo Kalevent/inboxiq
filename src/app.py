@@ -482,7 +482,13 @@ def create_app() -> Flask:
       return mapping.get((priority or "").upper(), "24h")
 
     def _ai_reason(decision: dict, fallback: str) -> str:
-      return decision.get("ai_reason") or decision.get("reason") or fallback
+      # Check top-level first, then merged dict (where auto-handled reasons are stored)
+      return (
+          decision.get("ai_reason")
+          or decision.get("reason")
+          or decision.get("merged", {}).get("ai_reason")
+          or fallback
+      )
 
     def _action_reason_text(flag) -> str:
       if flag is True:
