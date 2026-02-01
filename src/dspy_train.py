@@ -361,7 +361,8 @@ def train_from_overrides(
     samples = query.order_by(Ticket.updated_at.desc()).limit(limit).all()
 
     # Include seed examples for non-actionable emails to ensure model learns patterns
-    include_seeds = _env_bool("DSPY_TRAIN_INCLUDE_SEEDS", True)
+    # Default to False - seeds can conflict with user's labeling convention
+    include_seeds = _env_bool("DSPY_TRAIN_INCLUDE_SEEDS", False)
     seed_examples = _seed_examples_to_dspy(labels) if include_seeds else []
 
     # Allow training with seeds even if not enough manual overrides
