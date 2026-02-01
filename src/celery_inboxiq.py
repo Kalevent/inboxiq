@@ -386,6 +386,28 @@ def train_dspy_overrides_task(self) -> dict:
                 )
                 outcome["account_id"] = account_val
                 results[provider_key].append(outcome)
+
+                # Save training metrics to database
+                if outcome.get("status") == "compiled":
+                    try:
+                        from src.models import DspyTrainingMetric
+                        metric = DspyTrainingMetric(
+                            account_id=account_val,
+                            model_id=model_id,
+                            provider=provider_key,
+                            sample_count=outcome.get("count") or 0,
+                            train_accuracy=outcome.get("train_accuracy"),
+                            eval_accuracy=outcome.get("eval_accuracy"),
+                        )
+                        db.session.add(metric)
+                        db.session.commit()
+                        logging.getLogger(__name__).info(
+                            "Saved DSPy training metric: account=%s provider=%s train_acc=%s eval_acc=%s",
+                            account_val, provider_key, outcome.get("train_accuracy"), outcome.get("eval_accuracy")
+                        )
+                    except Exception as exc:
+                        db.session.rollback()
+                        logging.getLogger(__name__).warning("Failed to persist DSPy metrics: %s", exc)
     finally:
         if original_provider is not None:
             os.environ["DSPY_PROVIDER"] = original_provider
