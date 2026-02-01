@@ -54,8 +54,8 @@ def check_draft_reply_access(account_id: int, context: Optional[dict] = None) ->
     Returns:
         True if account has access, False otherwise
     """
-    # Check global kill switch
-    if not _env_bool("DSPY_DRAFT_REPLY_ENABLED", False):
+    # Check global kill switch (defaults to enabled; set DSPY_DRAFT_REPLY_ENABLED=false to disable)
+    if not _env_bool("DSPY_DRAFT_REPLY_ENABLED", True):
         return False
 
     # Check explicit context override (useful for testing)
