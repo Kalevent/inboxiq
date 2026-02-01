@@ -85,6 +85,13 @@ def settings_page(tab):
   seats_used = User.query.filter_by(account_id=account_id).count() if account_id else 0
   seats_limit = account.seats_limit if account else None
 
+  # Get current plan for billing tab
+  plan_name = None
+  if tab == "billing" and account_id:
+    from src.billing.models import CustomerBillingProfile
+    profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
+    plan_name = profile.plan_choice.capitalize() if profile and profile.plan_choice else None
+
   # Get draft reply feature status for features tab
   draft_reply_enabled = False
   draft_reply_has_access = False
@@ -113,6 +120,7 @@ def settings_page(tab):
     seats_used=seats_used,
     seats_limit=seats_limit,
     account_id=account_id,
+    plan_name=plan_name,
     draft_reply_enabled=draft_reply_enabled,
     draft_reply_has_access=draft_reply_has_access,
   )
