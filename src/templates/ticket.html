@@ -189,20 +189,64 @@
               <form method="post" class="mt-4 space-y-4 ticket-form" data-form-type="feedback">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
 
+                <!-- Priority & Action Required (most important for training) -->
+                <div class="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-3">
+                  <div class="text-[11px] text-amber-200 font-semibold">Critical for training accuracy</div>
+
+                  <div class="grid md:grid-cols-2 gap-3">
+                    <label class="text-xs text-slate-300 space-y-1 block">
+                      <span>Priority</span>
+                      <select name="priority" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                        <option value="P1" {% if (ticket.priority or '').upper() == 'P1' or (ticket.priority or '').upper() == 'P0' %}selected{% endif %}>P1 - Urgent (needs immediate action)</option>
+                        <option value="P2" {% if (ticket.priority or '').upper() == 'P2' %}selected{% endif %}>P2 - High (important, act soon)</option>
+                        <option value="P3" {% if (ticket.priority or '').upper() == 'P3' or not ticket.priority %}selected{% endif %}>P3 - Normal (standard response time)</option>
+                        <option value="P4" {% if (ticket.priority or '').upper() == 'P4' %}selected{% endif %}>P4 - Low (no rush, informational)</option>
+                      </select>
+                    </label>
+
+                    <label class="text-xs text-slate-300 space-y-1 block">
+                      <span>Action required?</span>
+                      <select name="action_required" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                        <option value="true" {% if ticket.action_required is sameas true %}selected{% endif %}>Yes - Human must respond</option>
+                        <option value="false" {% if ticket.action_required is sameas false %}selected{% endif %}>No - Auto-handle (spam, marketing, auto-reply)</option>
+                        <option value="optional" {% if ticket.action_required == 'optional' or ticket.action_required is none %}selected{% endif %}>Optional - Low priority follow-up</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
                 <div class="grid md:grid-cols-2 gap-3">
                   <label class="text-xs text-slate-300 space-y-1 block">
-                    <span>Priority</span>
-                    <select name="priority" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
-                      {% for opt in ['P0','P1','P2'] %}
-                        <option value="{{ opt }}" {% if (ticket.priority or '').upper() == opt %}selected{% endif %}>{{ opt }}</option>
-                      {% endfor %}
+                    <span>Category</span>
+                    <select name="category" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                      {% set current_cat = (ticket.category or 'general').lower() %}
+                      <option value="support" {% if current_cat == 'support' %}selected{% endif %}>Support - Help request</option>
+                      <option value="billing" {% if current_cat == 'billing' %}selected{% endif %}>Billing - Payment/invoice</option>
+                      <option value="sales" {% if current_cat == 'sales' %}selected{% endif %}>Sales - Purchase inquiry</option>
+                      <option value="technical" {% if current_cat == 'technical' %}selected{% endif %}>Technical - Bug/issue</option>
+                      <option value="feedback" {% if current_cat == 'feedback' %}selected{% endif %}>Feedback - Suggestion</option>
+                      <option value="spam" {% if current_cat == 'spam' %}selected{% endif %}>Spam - Junk/phishing</option>
+                      <option value="marketing" {% if current_cat == 'marketing' %}selected{% endif %}>Marketing - Newsletter/promo</option>
+                      <option value="auto_reply" {% if current_cat == 'auto_reply' %}selected{% endif %}>Auto-reply - OOO/bounce</option>
+                      <option value="transactional" {% if current_cat == 'transactional' %}selected{% endif %}>Transactional - Receipt/notification</option>
+                      <option value="general" {% if current_cat == 'general' or current_cat not in ['support','billing','sales','technical','feedback','spam','marketing','auto_reply','transactional'] %}selected{% endif %}>General - Other</option>
                     </select>
                   </label>
 
                   <label class="text-xs text-slate-300 space-y-1 block">
-                    <span>Category</span>
-                    <input name="category" value="{{ ticket.category or '' }}"
-                           class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                    <span>Intent</span>
+                    <select name="intent" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                      {% set current_intent = ((ticket.decision or {}).get('intent','') or 'general').lower() %}
+                      <option value="question" {% if current_intent == 'question' %}selected{% endif %}>Question - Asking for info</option>
+                      <option value="complaint" {% if current_intent == 'complaint' %}selected{% endif %}>Complaint - Unhappy customer</option>
+                      <option value="request" {% if current_intent == 'request' %}selected{% endif %}>Request - Action needed</option>
+                      <option value="feedback" {% if current_intent == 'feedback' %}selected{% endif %}>Feedback - Suggestion/review</option>
+                      <option value="bug_report" {% if current_intent == 'bug_report' %}selected{% endif %}>Bug report - Technical issue</option>
+                      <option value="feature_request" {% if current_intent == 'feature_request' %}selected{% endif %}>Feature request - New functionality</option>
+                      <option value="spam" {% if current_intent == 'spam' %}selected{% endif %}>Spam - Junk content</option>
+                      <option value="informational" {% if current_intent == 'informational' %}selected{% endif %}>Informational - FYI only</option>
+                      <option value="general" {% if current_intent == 'general' or current_intent not in ['question','complaint','request','feedback','bug_report','feature_request','spam','informational'] %}selected{% endif %}>General - Other</option>
+                    </select>
                   </label>
                 </div>
 
@@ -210,34 +254,18 @@
                   <label class="text-xs text-slate-300 space-y-1 block">
                     <span>Sentiment</span>
                     <select name="sentiment" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
-                      {% for opt in ['positive','neutral','negative','frustrated'] %}
-                        <option value="{{ opt }}" {% if (ticket.sentiment or '').lower() == opt %}selected{% endif %}>{{ opt.title() }}</option>
-                      {% endfor %}
+                      {% set current_sent = (ticket.sentiment or 'neutral').lower() %}
+                      <option value="positive" {% if current_sent == 'positive' %}selected{% endif %}>Positive - Happy/grateful</option>
+                      <option value="neutral" {% if current_sent == 'neutral' %}selected{% endif %}>Neutral - No strong emotion</option>
+                      <option value="negative" {% if current_sent == 'negative' %}selected{% endif %}>Negative - Unhappy/frustrated</option>
+                      <option value="urgent" {% if current_sent == 'urgent' or current_sent == 'frustrated' %}selected{% endif %}>Urgent - Time-sensitive</option>
                     </select>
                   </label>
 
-                  <label class="text-xs text-slate-300 space-y-1 block">
-                    <span>Intent</span>
-                    <input name="intent" value="{{ (ticket.decision or {}).get('intent','') }}"
-                           class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
-                  </label>
-                </div>
-
-                <div class="grid md:grid-cols-2 gap-3">
                   <label class="text-xs text-slate-300 space-y-1 block">
                     <span>Assigned to</span>
                     <input name="assigned_to" value="{{ ticket.assigned_to or '' }}"
                            class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
-                  </label>
-
-                  <label class="text-xs text-slate-300 space-y-1 block">
-                    <span>Action required?</span>
-                    <select name="action_required" class="w-full rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
-                      <option value="" {% if ticket.action_required is none %}selected{% endif %}>— (no change)</option>
-                      <option value="true" {% if ticket.action_required is sameas true %}selected{% endif %}>Yes</option>
-                      <option value="false" {% if ticket.action_required is sameas false %}selected{% endif %}>No (auto-handle)</option>
-                      <option value="optional" {% if ticket.action_required == 'optional' %}selected{% endif %}>Optional follow-up</option>
-                    </select>
                   </label>
                 </div>
 

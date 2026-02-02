@@ -183,7 +183,7 @@ def run_dspy_triage(
     # PRIORITY 5: Fallback based on priority level
     else:
         priority = (route.get("priority") or "").strip().upper()
-        if priority in {"P0", "P1"}:
+        if priority == "P1":  # Urgent
             action_required = True
             decision_trace.append("fallback:high_priority")
         elif priority in {"P2"}:

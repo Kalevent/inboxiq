@@ -257,10 +257,12 @@ def tickets():
 
 def _priority_order():
     return case(
-        (Ticket.priority == "P0", 0),
-        (Ticket.priority == "P1", 1),
-        (Ticket.priority == "P2", 2),
-        else_=3,
+        (Ticket.priority == "P0", 0),  # Legacy P0 sorts as highest
+        (Ticket.priority == "P1", 0),  # P1 = Urgent
+        (Ticket.priority == "P2", 1),  # P2 = High
+        (Ticket.priority == "P3", 2),  # P3 = Normal
+        (Ticket.priority == "P4", 3),  # P4 = Low
+        else_=2,  # Unknown defaults to normal
     )
 
 
@@ -424,7 +426,7 @@ def dashboard_data():
     query = Ticket.query.filter(Ticket.account_id == account_id)
     if created_after:
         query = query.filter(Ticket.created_at >= created_after)
-    if priority in ("P0", "P1", "P2"):
+    if priority in ("P0", "P1", "P2", "P3", "P4"):  # P0 kept for legacy
         query = query.filter(Ticket.priority == priority)
     if q:
         search_filter = Ticket.subject.ilike(f"%{q}%") | Ticket.body_preview.ilike(f"%{q}%")

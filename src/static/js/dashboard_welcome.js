@@ -1014,7 +1014,7 @@
           let assignedTo = null;
           if (!correct) {
             const catInput = prompt('Override category? (leave blank to keep current)');
-            const priInput = prompt('Override priority? (P0/P1/P2; leave blank to keep current)');
+            const priInput = prompt('Override priority? (P1=Urgent, P2=High, P3=Normal, P4=Low; leave blank to keep current)');
             const teamInput = prompt('Assign to team? (e.g., Billing, Engineering, Support)');
             const ownerInput = prompt('Assign to owner/queue?');
             category = catInput && catInput.trim() ? catInput.trim() : null;

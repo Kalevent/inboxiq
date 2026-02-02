@@ -98,5 +98,63 @@ def cli_billing_backfill_trial(email: str, days: int):
     db.session.commit()
 
 
+@app.cli.command("dspy-reset-training")
+@click.option("--account-id", default=None, help="Account ID to reset (leave empty for all).")
+@click.option("--confirm", is_flag=True, help="Confirm the reset (required).")
+def cli_dspy_reset_training(account_id: str | None, confirm: bool):
+    """
+    Reset DSPy training data by clearing manual_override flags.
+    This allows starting fresh with clean training data.
+    """
+    from src.models import Ticket, DspyTrainingMetric
+
+    if not confirm:
+        click.echo("This will reset all manual override training data.")
+        click.echo("Run with --confirm to proceed.")
+        return
+
+    query = Ticket.query.filter(Ticket.manual_override.is_(True))
+    if account_id:
+        query = query.filter(Ticket.account_id == account_id)
+
+    count = query.count()
+    if count == 0:
+        click.echo("No manual overrides found to reset.")
+        return
+
+    # Reset manual_override flag
+    query.update({Ticket.manual_override: False}, synchronize_session=False)
+
+    # Optionally delete training metrics
+    metrics_query = DspyTrainingMetric.query
+    if account_id:
+        metrics_query = metrics_query.filter(DspyTrainingMetric.account_id == account_id)
+    metrics_count = metrics_query.delete(synchronize_session=False)
+
+    db.session.commit()
+    click.echo(f"Reset {count} manual overrides and deleted {metrics_count} training metrics.")
+    click.echo("New training data will be collected from future manual overrides.")
+
+
+@app.cli.command("dspy-fix-priorities")
+@click.option("--confirm", is_flag=True, help="Confirm the fix (required).")
+def cli_dspy_fix_priorities(confirm: bool):
+    """
+    Fix invalid P0 priorities by converting them to P1.
+    """
+    from src.models import Ticket
+
+    if not confirm:
+        click.echo("This will convert all P0 priorities to P1.")
+        click.echo("Run with --confirm to proceed.")
+        return
+
+    count = Ticket.query.filter(Ticket.priority == "P0").update(
+        {Ticket.priority: "P1"}, synchronize_session=False
+    )
+    db.session.commit()
+    click.echo(f"Fixed {count} tickets with P0 priority (now P1).")
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)

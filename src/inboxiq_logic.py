@@ -94,7 +94,7 @@ def _normalize_priority(value: str | None, allowed: list[str]) -> str:
     if cleaned in [str(a).upper() for a in allowed]:
         return cleaned
     if cleaned in {"0", "P0", "CRITICAL", "URGENT", "HIGH"}:
-        return "P0"
+        return "P1"  # Map P0 and urgent to P1
     if cleaned in {"1", "P1"}:
         return "P1"
     if cleaned in {"2", "P2", "MEDIUM"}:
@@ -241,8 +241,8 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
                 # Low priority without explicit action -> auto-handle
                 action_required = False
                 decision_trace.append("fallback:low_priority")
-            elif priority in {"P0", "P1"}:
-                # High priority without explicit action -> requires action
+            elif priority == "P1":
+                # Urgent priority without explicit action -> requires action
                 action_required = True
                 decision_trace.append("fallback:high_priority")
             else:
@@ -250,7 +250,7 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
                 action_required = "optional"
                 decision_trace.append("fallback:p2_optional")
 
-        risk_flag = priority == "P0" or sentiment == "negative"
+        risk_flag = priority == "P1" or sentiment == "negative"
         entities = _safe_json(dspy_result.get("entities_json")) or {}
 
         confidence = {"category": 0.55, "priority": 0.55, "sentiment": 0.55}

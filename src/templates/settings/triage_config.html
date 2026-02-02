@@ -185,9 +185,10 @@
                     class="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   >
                     <option value="">System default ({{ defaults.default_priority }})</option>
-                    {% for p in ["P0", "P1", "P2", "P3", "P4"] %}
-                    <option value="{{ p }}" {% if config.default_priority == p %}selected{% endif %}>{{ p }}</option>
-                    {% endfor %}
+                    <option value="P1" {% if config.default_priority == 'P1' %}selected{% endif %}>P1 - Urgent</option>
+                    <option value="P2" {% if config.default_priority == 'P2' %}selected{% endif %}>P2 - High</option>
+                    <option value="P3" {% if config.default_priority == 'P3' %}selected{% endif %}>P3 - Normal</option>
+                    <option value="P4" {% if config.default_priority == 'P4' %}selected{% endif %}>P4 - Low</option>
                   </select>
                 </div>
               </div>

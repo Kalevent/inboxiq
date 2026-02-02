@@ -64,7 +64,7 @@ def merge_decisions(
     elif agent_is_automated in (True, "true", "True", "yes", "1"):
         # Automated emails typically don't need action unless high priority
         dspy_priority = str(merged.get("priority") or "").upper()
-        if dspy_priority not in {"P0", "P1"}:
+        if dspy_priority != "P1":  # Only P1 is urgent enough to override auto-handling
             merged["action_required"] = False
             merged["is_automated"] = True
             decision_trace.append("agent_override:is_automated")
