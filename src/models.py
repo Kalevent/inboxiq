@@ -571,9 +571,11 @@ class Lead(db.Model):
         db.Index("idx_leads_funnel_stage", "current_funnel_stage", "stage_entered_at"),
         db.Index("idx_leads_last_engagement", "last_engagement_at"),
         db.Index("idx_leads_fit_intent", "fit_score", "intent_score"),
+        db.Index("idx_leads_account_id", "account_id"),
     )
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, nullable=True, default=2, comment="Multi-tenancy support - default account 2")
     name = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(50), nullable=True)
@@ -626,6 +628,7 @@ class Lead(db.Model):
     def to_dict(self) -> dict:
         return {
             "id": self.id,
+            "account_id": self.account_id,
             "name": self.name,
             "email": self.email,
             "phone": self.phone,
