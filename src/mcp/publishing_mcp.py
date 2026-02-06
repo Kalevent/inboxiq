@@ -2,6 +2,17 @@
 Publishing MCP server that wraps the publishing HTTP endpoints so agents can invoke
 blog/newsletter/whitepaper tools over MCP.
 
+PARTIAL DEPRECATION: Manual blog draft creation (create_blog_draft with user-provided briefs)
+is deprecated. Use Content Generation Agent for autonomous content creation instead.
+
+The publish_blog/publish_newsletter/publish_whitepaper tools are still active and used by the
+Content Generation Agent after DSPy-generated content is ready for publication.
+
+Deprecation date: 2026-02-03
+Full migration to Content Agent: 2026-04-01
+
+Migration: See docs/inboxiq/leads_funnel_v2_plan.md#content-generation-agent-architecture
+
 Env:
 - PUBLISHING_API_BASE: base URL including /api/v1 (default: http://localhost:8000/api/v1)
 - PUBLISHING_API_TOKEN: Bearer token for auth
@@ -54,6 +65,16 @@ def _post(path: str, json_body: Dict[str, Any]) -> Dict[str, Any]:
 def create_blog_draft(title: str, audience: str, brief: str, sync: bool = True) -> Dict[str, Any]:
     """
     Create a blog draft via publishing API.
+
+    DEPRECATED for manual use: This tool requires human-written briefs.
+    Use Content Generation Agent's generate_full_blog_post() instead for autonomous content creation.
+
+    Still used internally by Content Agent after DSPy generation is complete.
+
+    Deprecation date: 2026-02-03
+    Removal date: 2026-06-01 (after Content Agent fully tested)
+
+    Migration: Use content-generation-mcp tools for autonomous blog generation
     """
     payload = {"title": title, "audience": audience, "brief": brief, "sync": sync}
     return _post("/publishing/blog/draft", payload)

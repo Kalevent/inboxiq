@@ -1,0 +1,186 @@
+{
+  "id": "funnel-orchestration-agent",
+  "name": "Funnel Orchestration Agent",
+  "description": "Manages lead progression through 5-stage funnel with automated qualification, scoring, and stage transitions",
+  "version": "2.0.0",
+  "status": "active",
+  "mcp_servers": [
+    "funnel-analytics-mcp",
+    "engagement-tracking-mcp",
+    "stage-orchestration-mcp",
+    "enrichment-v2-mcp",
+    "attribution-mcp",
+    "gcal-mcp",
+    "search-mcp",
+    "http-mcp",
+    "sql-mcp"
+  ],
+  "capabilities": [
+    "lead_qualification",
+    "interest_scoring",
+    "buying_intent_detection",
+    "deal_prediction",
+    "churn_prediction",
+    "stage_orchestration",
+    "engagement_tracking",
+    "attribution_analysis",
+    "demo_scheduling"
+  ],
+  "triggers": [
+    {
+      "type": "webhook",
+      "event": "lead.created",
+      "action": "qualify_visitor"
+    },
+    {
+      "type": "webhook",
+      "event": "engagement.recorded",
+      "action": "update_interest_score"
+    },
+    {
+      "type": "schedule",
+      "cron": "0 */6 * * *",
+      "action": "check_stage_progression"
+    },
+    {
+      "type": "schedule",
+      "cron": "0 9 * * 1",
+      "action": "churn_risk_analysis"
+    }
+  ],
+  "human_review": {
+    "stage_regression_required": true,
+    "high_value_deals_required": true,
+    "threshold": {
+      "deal_value": 50000,
+      "stage": "conversion"
+    }
+  },
+  "workflow": {
+    "stage_visits": {
+      "dspy_module": "VisitorQualificationModule",
+      "actions": [
+        "enrich_company",
+        "calculate_fit_score",
+        "record_attribution"
+      ],
+      "success_criteria": {
+        "fit_score_min": 5,
+        "email_verified": true
+      },
+      "next_stage": "discovery",
+      "automation_level": "full"
+    },
+    "stage_discovery": {
+      "dspy_module": "InterestScoringModule",
+      "actions": [
+        "track_engagement",
+        "calculate_intent_score",
+        "send_nurture_sequence"
+      ],
+      "success_criteria": {
+        "intent_score_min": 5,
+        "engagement_count_min": 3
+      },
+      "next_stage": "consideration",
+      "automation_level": "full"
+    },
+    "stage_consideration": {
+      "dspy_module": "BuyingIntentModule",
+      "actions": [
+        "detect_buying_signals",
+        "find_buying_committee",
+        "offer_demo"
+      ],
+      "success_criteria": {
+        "buying_intent": "high",
+        "demo_requested": true
+      },
+      "next_stage": "conversion",
+      "automation_level": "semi"
+    },
+    "stage_conversion": {
+      "dspy_module": "DealPredictorModule",
+      "actions": [
+        "predict_conversion_probability",
+        "send_proposal",
+        "schedule_pricing_discussion"
+      ],
+      "success_criteria": {
+        "conversion_probability_min": 0.6,
+        "proposal_sent": true
+      },
+      "next_stage": "retention",
+      "automation_level": "manual"
+    },
+    "stage_retention": {
+      "dspy_module": "ChurnPredictorModule",
+      "actions": [
+        "monitor_product_usage",
+        "detect_churn_risk",
+        "trigger_retention_campaign"
+      ],
+      "success_criteria": {
+        "churn_probability_max": 0.3,
+        "nps_score_min": 7
+      },
+      "next_stage": null,
+      "automation_level": "semi"
+    }
+  },
+  "configuration": {
+    "icp_criteria": {
+      "target_industries": ["SaaS", "Technology", "Financial Services", "Healthcare"],
+      "min_employees": 50,
+      "max_employees": 5000,
+      "target_locations": ["US", "CA", "UK", "EU"],
+      "target_titles": ["VP", "Director", "Head", "C-level", "Manager"],
+      "disqualifiers": ["agency", "consultancy", "freelancer"]
+    },
+    "scoring_thresholds": {
+      "fit_score_qualified": 6,
+      "intent_score_warm": 5,
+      "intent_score_hot": 8,
+      "conversion_probability_high": 0.7,
+      "churn_probability_critical": 0.6
+    },
+    "stage_velocity_targets": {
+      "visits_to_discovery": 7,
+      "discovery_to_consideration": 14,
+      "consideration_to_conversion": 30,
+      "conversion_to_retention": 90
+    },
+    "engagement_scoring": {
+      "email_open": 1,
+      "email_click": 3,
+      "page_visit": 2,
+      "pricing_page_view": 4,
+      "demo_page_view": 5,
+      "content_download": 5,
+      "demo_requested": 10,
+      "trial_started": 15
+    }
+  },
+  "integrations": {
+    "google_calendar": {
+      "enabled": true,
+      "calendar_id": "primary",
+      "demo_duration_minutes": 30
+    },
+    "email_provider": {
+      "enabled": true,
+      "provider": "sendgrid"
+    }
+  },
+  "metrics": {
+    "track": [
+      "stage_conversion_rates",
+      "average_stage_velocity",
+      "attribution_breakdown",
+      "engagement_score_distribution",
+      "deal_win_rate",
+      "churn_rate"
+    ],
+    "dashboard_refresh_minutes": 60
+  }
+}

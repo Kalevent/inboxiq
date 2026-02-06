@@ -25,3 +25,11 @@ secrets/
 archive/
 IMPLEMENTATION_PLAN.md
 CLAUDE.md
+
+# VSCode settings
+.vscode/
+
+# Development/planning docs
+docs/inboxiq/DEPRECATION_LIST.md
+docs/inboxiq/PHASE_3_INTEGRATION_GUIDE.md
+docs/inboxiq/leads_funnel_v2_plan.md

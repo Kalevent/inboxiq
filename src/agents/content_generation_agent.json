@@ -1,0 +1,218 @@
+{
+  "id": "content-generation-agent",
+  "name": "Content Generation Agent",
+  "description": "Autonomous content creation for funnel stages using DSPy-powered pipeline",
+  "version": "1.0.0",
+  "status": "active",
+  "mcp_servers": [
+    "content-generation-mcp",
+    "search-mcp",
+    "publishing-mcp",
+    "sql-mcp",
+    "http-mcp"
+  ],
+  "capabilities": [
+    "topic_generation",
+    "outline_creation",
+    "content_writing",
+    "editing",
+    "seo_optimization",
+    "blog_publishing",
+    "content_performance_tracking"
+  ],
+  "triggers": [
+    {
+      "type": "schedule",
+      "cron": "0 6 * * 1",
+      "action": "generate_weekly_blog_posts",
+      "config": {
+        "num_posts": 3,
+        "auto_publish": false
+      }
+    },
+    {
+      "type": "funnel_event",
+      "event": "lead.entered_consideration",
+      "action": "generate_personalized_case_study",
+      "config": {
+        "auto_publish": false,
+        "notify_sales": true
+      }
+    },
+    {
+      "type": "api",
+      "endpoint": "/api/v1/admin/content/generate",
+      "action": "on_demand_generation"
+    }
+  ],
+  "human_review": {
+    "auto_publish_enabled": true,
+    "notification_on_complete": true,
+    "notification_channels": ["email"],
+    "notification_email": "support@kalevent.com",
+    "notification_includes": ["content_preview", "seo_metrics", "feedback_link"],
+    "approval_required_for": []
+  },
+  "workflow": {
+    "blog_post_generation": {
+      "steps": [
+        {
+          "name": "topic_generation",
+          "dspy_module": "TopicGeneratorModule",
+          "tool": "generate_topics",
+          "config": {
+            "num_topics": 10,
+            "filter_existing": true
+          }
+        },
+        {
+          "name": "outline_creation",
+          "dspy_module": "OutlineCreatorModule",
+          "tool": "create_outline",
+          "config": {
+            "target_word_count": 1500,
+            "content_depth": "intermediate"
+          }
+        },
+        {
+          "name": "content_writing",
+          "dspy_module": "ContentWriterModule",
+          "tool": "write_content",
+          "config": {
+            "tone": "professional",
+            "include_examples": true,
+            "include_stats": true
+          }
+        },
+        {
+          "name": "editing",
+          "dspy_module": "EditorModule",
+          "tool": "edit_content",
+          "config": {
+            "editing_focus": "all"
+          }
+        },
+        {
+          "name": "seo_optimization",
+          "dspy_module": "SEOOptimizerModule",
+          "tool": "optimize_seo",
+          "config": {
+            "target_seo_score": 70
+          }
+        },
+        {
+          "name": "save_to_database",
+          "action": "store_generated_content",
+          "table": "generated_content"
+        },
+        {
+          "name": "notify_human",
+          "action": "send_notification",
+          "channels": ["slack", "email"]
+        }
+      ],
+      "quality_gates": {
+        "min_word_count": 1000,
+        "min_readability_score": 60,
+        "min_seo_score": 50
+      }
+    },
+    "email_sequence_generation": {
+      "steps": [
+        "identify_stage_and_persona",
+        "generate_email_content",
+        "personalize_for_lead",
+        "schedule_or_queue"
+      ],
+      "config": {
+        "max_emails_per_sequence": 5,
+        "day_spacing": 3
+      }
+    }
+  },
+  "configuration": {
+    "content_calendar": {
+      "posts_per_week": 3,
+      "preferred_publish_days": ["Tuesday", "Wednesday", "Thursday"],
+      "preferred_publish_time": "09:00"
+    },
+    "target_audience": {
+      "primary": "VP Revenue Operations, B2B SaaS, 100-500 employees",
+      "secondary": "Director of Sales Operations, Enterprise SaaS",
+      "tertiary": "Marketing Operations Manager, Mid-market"
+    },
+    "content_niches": [
+      "Revenue Operations",
+      "Lead Routing Automation",
+      "Sales Automation",
+      "RevOps Metrics",
+      "B2B Lead Generation"
+    ],
+    "brand_voice": {
+      "tone": "professional",
+      "style": "data-driven, helpful but not salesy",
+      "avoid": ["jargon overload", "clickbait", "aggressive sales language"]
+    },
+    "seo_targets": {
+      "domain_authority_goal": 50,
+      "keyword_ranking_goal_position": 10,
+      "monthly_organic_traffic_goal": 10000
+    }
+  },
+  "content_types": {
+    "blog_post": {
+      "enabled": true,
+      "priority": 1,
+      "target_word_count": 1500,
+      "target_per_month": 12,
+      "funnel_stages": ["discovery", "consideration"]
+    },
+    "case_study": {
+      "enabled": true,
+      "priority": 2,
+      "target_word_count": 1000,
+      "target_per_month": 4,
+      "funnel_stages": ["consideration", "conversion"]
+    },
+    "landing_page": {
+      "enabled": false,
+      "priority": 3,
+      "target_word_count": 800,
+      "target_per_month": 2,
+      "funnel_stages": ["discovery", "consideration", "conversion"]
+    },
+    "email_sequence": {
+      "enabled": true,
+      "priority": 1,
+      "target_word_count": 300,
+      "target_per_month": 20,
+      "funnel_stages": ["discovery", "consideration", "retention"]
+    }
+  },
+  "performance_tracking": {
+    "metrics": [
+      "pageviews",
+      "time_on_page",
+      "bounce_rate",
+      "conversions",
+      "keyword_rankings",
+      "backlinks"
+    ],
+    "review_frequency_days": 30,
+    "auto_optimize": false
+  },
+  "integrations": {
+    "cms": {
+      "type": "internal",
+      "auto_publish": false
+    },
+    "seo_tools": {
+      "enabled": false,
+      "providers": []
+    },
+    "analytics": {
+      "enabled": true,
+      "provider": "google_analytics"
+    }
+  }
+}

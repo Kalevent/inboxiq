@@ -13,6 +13,8 @@ from src.api.v1 import (  # noqa: F401
     feedback,
     intake,
     admin,
+    admin_funnel,
+    admin_content,
     blog,
     feedback_export,
     uploads,

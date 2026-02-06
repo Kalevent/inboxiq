@@ -92,6 +92,8 @@ class Config:
     GA_MARKETING_PROPERTY_ID = os.getenv("GA_MARKETING_PROPERTY_ID")
     # Crash reporting email target (used by crash_report)
     CRASH_EMAIL_TO = os.getenv("CRASH_EMAIL_TO")
+    # Admin access control (comma-separated emails)
+    ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "support@kalevent.com")
     # OAuth
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")

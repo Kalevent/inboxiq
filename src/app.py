@@ -9,6 +9,7 @@ from src.extensions import db, migrate, jwt, cache, limiter
 from src.crash_report import configure_crash_email
 from flask_cors import CORS
 from src.models import Account, User, Ticket, InboxConnection, BlogPost, Feedback, IntakeToken  # noqa: F401  # ensure models are registered
+from src.admin import bp as admin_bp
 from src.auth import bp as auth_bp
 from src.users import bp as users_bp
 from src.accounts import bp as accounts_bp
@@ -237,6 +238,7 @@ def create_app() -> Flask:
     except Exception:
       return None
 
+  app.register_blueprint(admin_bp)
   app.register_blueprint(auth_bp)
   app.register_blueprint(users_bp)
   app.register_blueprint(accounts_bp)
@@ -827,5 +829,12 @@ def create_app() -> Flask:
   @app.errorhandler(429)
   def ratelimit_handler(e):
     return jsonify({"error": "too many requests", "details": str(e.description)}), 429
+
+  # Initialize Celery instance for background tasks
+  # This ensures shared_task decorators use the correct broker (Redis)
+  try:
+    from src.celery_inboxiq import celery  # noqa: F401
+  except ImportError:
+    pass  # Celery optional for basic Flask operations
 
   return app

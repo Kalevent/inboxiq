@@ -64,7 +64,7 @@ def evaluate(limit: int = 200, account_id: int | None = None) -> Dict[str, float
 
     expected = []
     predicted = []
-    labels = get_triage_labels(account_val)
+    labels = get_triage_labels(account_id)
     for ticket in samples:
         expected.append(_label_from_ticket(ticket))
         predicted.append(run_dspy_triage(_payload_from_ticket(ticket), labels=labels))

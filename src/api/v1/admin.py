@@ -428,54 +428,6 @@ def admin_blog_metrics():
     except Exception as exc:
         current_app.logger.exception("admin_blog_metrics_failed", exc_info=exc)
         return jsonify({"error": "admin_blog_metrics_failed"}), 200
-
-
-@v1.route("/admin/lead-sourcing", methods=["GET"])
-@jwt_required()
-def admin_lead_sourcing():
-    """
-    Lead sourcing snapshot for admin dashboard.
-    """
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
-
-    total_leads = db.session.query(func.count(Lead.id)).scalar() or 0
-    leads_24h = (
-        db.session.query(func.count(Lead.id))
-        .filter(Lead.created_at >= datetime.utcnow() - timedelta(hours=24))
-        .scalar()
-        or 0
-    )
-    leads_week = (
-        db.session.query(func.count(Lead.id))
-        .filter(Lead.created_at >= datetime.utcnow() - timedelta(days=7))
-        .scalar()
-        or 0
-    )
-
-    # Recipients may not have an ORM model; use raw counts if table exists.
-    recipients_total = None
-    recipients_24h = None
-    try:
-        recipients_total = db.session.execute(text("select count(*) from recipients")).scalar() or 0
-        recipients_24h = (
-            db.session.execute(
-                text("select count(*) from recipients where created_at >= now() - interval '24 hours'")
-            ).scalar()
-            or 0
-        )
-    except Exception:
-        pass
-
-    return jsonify(
-        {
-            "leads_total": int(total_leads),
-            "leads_last_24h": int(leads_24h),
-            "leads_last_7d": int(leads_week),
-            "recipients_total": int(recipients_total) if recipients_total is not None else None,
-            "recipients_last_24h": int(recipients_24h) if recipients_24h is not None else None,
-        }
-    )
     avg_word_count = (
         db.session.query(func.avg(BlogPost.word_count))
         .filter(BlogPost.word_count.isnot(None))
@@ -617,3 +569,78 @@ def admin_refresh_embeddings():
     except Exception as exc:
         current_app.logger.exception("refresh embeddings failed", exc_info=exc)
         return jsonify({"error": "refresh_failed", "message": str(exc)}), 500
+
+
+@v1.route("/admin/content/published-posts", methods=["GET"])
+@jwt_required()
+def admin_published_posts():
+    """List recently published blog posts (auto-published by Content Generation Agent)."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+    try:
+        from src.models import BlogPost
+        limit = min(max(int(request.args.get("limit", 20)), 1), 100)
+
+        posts = (
+            BlogPost.query
+            .filter(BlogPost.status == "published")
+            .order_by(BlogPost.published_at.desc())
+            .limit(limit)
+            .all()
+        )
+
+        return jsonify({
+            "posts": [
+                {
+                    "id": str(post.id),
+                    "title": post.title,
+                    "slug": post.slug,
+                    "published_at": post.published_at.isoformat() if post.published_at else None,
+                    "word_count": post.word_count,
+                    "funnel_stage": post.funnel_stage,
+                    "primary_keyword": post.primary_keyword,
+                    "auto_generated": post.auto_generated,
+                    "dspy_quality_score": float(post.dspy_quality_score) if post.dspy_quality_score else None,
+                }
+                for post in posts
+            ],
+            "total": len(posts),
+        })
+    except Exception as exc:
+        current_app.logger.exception("admin_published_posts_failed", exc_info=exc)
+        return jsonify({"error": "admin_published_posts_failed"}), 500
+
+
+@v1.route("/admin/content/generate-blog", methods=["POST"])
+@jwt_required()
+def admin_generate_blog():
+    """Manually trigger content generation (on-demand)."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+    try:
+        from src.content.tasks import generate_blog_post
+
+        payload = request.get_json(silent=True) or {}
+        niche = payload.get("niche", "Revenue Operations")
+        audience = payload.get("audience", "VP Revenue Operations, B2B SaaS, 100-500 employees")
+        topic_index = int(payload.get("topic_index", 0))
+        auto_publish = payload.get("auto_publish", True)
+
+        # Queue the task
+        task = generate_blog_post.delay(
+            niche=niche,
+            audience=audience,
+            topic_index=topic_index,
+            auto_publish=auto_publish
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "Blog generation queued",
+            "task_id": task.id,
+            "niche": niche,
+            "audience": audience,
+        })
+    except Exception as exc:
+        current_app.logger.exception("admin_generate_blog_failed", exc_info=exc)
+        return jsonify({"error": "admin_generate_blog_failed", "message": str(exc)}), 500

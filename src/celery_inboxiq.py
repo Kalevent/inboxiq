@@ -32,14 +32,14 @@ def make_celery(app) -> Celery:
             return default
         return val.lower() in ("1", "true", "yes", "on")
 
-    # Optional daily lead sourcing schedule (runs only if env/config is present)
-    sourcing_agent = os.getenv("LEAD_SOURCING_AGENT_ID")
-    sourcing_queries = [q.strip() for q in (os.getenv("LEAD_SOURCING_QUERIES") or "").split("|") if q.strip()]
-    sourcing_max_results = int(os.getenv("LEAD_SOURCING_MAX_RESULTS", "5") or "5")
-    sourcing_send_probe = _parse_bool(os.getenv("LEAD_SOURCING_SEND_PROBE"), False)
     dspy_train_enabled = _parse_bool(os.getenv("DSPY_TRAIN_AUTOMATION"), False)
     dspy_train_hour = int(os.getenv("DSPY_TRAIN_SCHEDULE_HOUR", "3"))
     dspy_train_minute = int(os.getenv("DSPY_TRAIN_SCHEDULE_MINUTE", "0"))
+
+    content_gen_enabled = _parse_bool(os.getenv("CONTENT_GENERATION_ENABLED"), True)
+    content_gen_day = int(os.getenv("CONTENT_GENERATION_DAY", "1"))  # Monday
+    content_gen_hour = int(os.getenv("CONTENT_GENERATION_HOUR", "6"))
+    content_gen_minute = int(os.getenv("CONTENT_GENERATION_MINUTE", "0"))
 
     celery_app.conf.update(
         task_serializer="json",
@@ -71,18 +71,6 @@ def make_celery(app) -> Celery:
             },
             **(
                 {
-                    "lead_sourcing_daily": {
-                        "task": "leads.sourcing_job",
-                        "schedule": crontab(hour=2, minute=0),
-                        "args": [sourcing_agent, sourcing_queries, sourcing_max_results, sourcing_send_probe],
-                        "options": {"queue": "leads"},
-                    }
-                }
-                if sourcing_agent and sourcing_queries
-                else {}
-            ),
-            **(
-                {
                     "dspy_train_overrides_daily": {
                         "task": "inboxiq.train_dspy_overrides",
                         "schedule": crontab(hour=dspy_train_hour, minute=dspy_train_minute),
@@ -90,6 +78,23 @@ def make_celery(app) -> Celery:
                     }
                 }
                 if dspy_train_enabled
+                else {}
+            ),
+            **(
+                {
+                    "content_weekly_blog_generation": {
+                        "task": "content.generate_blog_post",
+                        "schedule": crontab(day_of_week=content_gen_day, hour=content_gen_hour, minute=content_gen_minute),
+                        "args": [
+                            "Revenue Operations",  # niche
+                            "VP Revenue Operations, B2B SaaS, 100-500 employees",  # audience
+                            0,  # topic_index
+                            True,  # auto_publish - ENABLE AUTO-PUBLISH
+                        ],
+                        "options": {"queue": "inbox"},
+                    }
+                }
+                if content_gen_enabled
                 else {}
             ),
         },
@@ -109,7 +114,7 @@ def make_celery(app) -> Celery:
 
 app = create_app()
 celery = make_celery(app)
-celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads"])
+celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content"])
 
 
 def _redact_body_preview(text: str) -> str:

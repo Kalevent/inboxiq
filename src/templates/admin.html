@@ -11,11 +11,62 @@
     crossorigin="anonymous"
   />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+  <style>
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      color: rgb(203 213 225);
+      border-radius: 0.5rem;
+      transition: all 0.15s ease-in-out;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+    }
+    .sidebar-nav-item:hover {
+      background-color: rgba(30, 41, 59, 0.5);
+      color: rgb(241 245 249);
+    }
+    .sidebar-nav-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .sidebar-nav-item.active {
+      background-color: rgba(99, 102, 241, 0.1);
+      color: rgb(129 140 248);
+      font-weight: 500;
+    }
+    .admin-section {
+      display: none;
+    }
+    .admin-section.active {
+      display: block;
+    }
+    .content-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+    main > div.flex-1 {
+      padding: 0;
+    }
+    .admin-section > div {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  </style>
 </head>
 <body class="bg-slate-950 text-slate-50 antialiased">
   <div class="min-h-screen flex flex-col">
+    <!-- Header (unchanged) -->
     <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
-      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="mx-auto px-6 py-4 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
           <div>
@@ -60,151 +111,302 @@
       </div>
     </header>
 
-    <main class="flex-1">
-      <section class="relative overflow-hidden border-b border-slate-800">
-        <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/15 via-fuchsia-500/5 to-slate-900/60 pointer-events-none"></div>
-        <div class="absolute -left-20 top-10 h-64 w-64 bg-indigo-500/20 rounded-full blur-3xl"></div>
-        <div class="absolute -right-10 bottom-10 h-64 w-64 bg-fuchsia-500/10 rounded-full blur-3xl"></div>
+    <main class="flex-1 flex">
+      <!-- Left Sidebar Navigation -->
+      <aside class="w-52 border-r border-slate-800 bg-slate-950/50 overflow-y-auto flex-shrink-0">
+        <div class="p-3 space-y-0.5">
+          <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-3 px-3">Navigation</div>
 
-        <div class="max-w-6xl mx-auto px-4 py-10 relative z-10 space-y-6 overflow-visible">
-          <div>
-            <h1 class="text-2xl font-semibold tracking-tight">Admin overview</h1>
-            <p class="text-sm text-slate-300 mt-1">At-a-glance adoption, tickets, integrations, billing, and security.</p>
-          </div>
+          <button class="sidebar-nav-item active w-full text-left" data-section="overview">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span>Overview</span>
+          </button>
 
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-            <div class="flex items-center justify-between mb-2">
-              <h2 class="text-lg font-semibold text-slate-100">Invite to testimonial</h2>
+          <button class="sidebar-nav-item w-full text-left" data-section="funnel">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <span>Funnel v2.0</span>
+            <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded font-medium">NEW</span>
+          </button>
+
+          <button class="sidebar-nav-item w-full text-left" data-section="content">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            <span>Content</span>
+          </button>
+
+          <button class="sidebar-nav-item w-full text-left" data-section="ai">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+            <span>AI & Training</span>
+          </button>
+
+          <button class="sidebar-nav-item w-full text-left" data-section="system">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <span>System</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="flex-1 overflow-y-auto">
+        <!-- Overview Section -->
+        <section id="section-overview" class="admin-section active">
+          <div class="relative overflow-hidden border-b border-slate-800">
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/15 via-fuchsia-500/5 to-slate-900/60 pointer-events-none"></div>
+            <div class="absolute -left-20 top-10 h-64 w-64 bg-indigo-500/20 rounded-full blur-3xl"></div>
+            <div class="absolute -right-10 bottom-10 h-64 w-64 bg-fuchsia-500/10 rounded-full blur-3xl"></div>
+
+            <div class="content-container relative z-10 space-y-6">
+              <div>
+                <h1 class="text-2xl font-semibold tracking-tight">System Overview</h1>
+                <p class="text-sm text-slate-300 mt-1">At-a-glance adoption, tickets, integrations, and user testimonials.</p>
+              </div>
+
+              <!-- Testimonial Invite -->
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <h2 class="text-lg font-semibold text-slate-100 mb-3">Invite to testimonial</h2>
+                <form id="testimonialForm" class="grid gap-3 md:grid-cols-3 items-end">
+                  <div>
+                    <label class="text-xs text-slate-400">Account ID</label>
+                    <input id="testimonialAccount" type="number" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="e.g. 18" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">User ID (optional)</label>
+                    <input id="testimonialUser" type="number" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="e.g. 42" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Send to email (optional)</label>
+                    <input id="testimonialEmail" type="email" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="you@company.com" />
+                  </div>
+                  <button id="testimonialButton" type="submit" class="inline-flex justify-center items-center rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60">
+                    Generate invite link
+                  </button>
+                </form>
+                <div id="testimonialResult" class="mt-3 text-xs text-slate-300 break-all"></div>
+              </div>
+
+              <!-- Stats Grid -->
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-2">Adoption</h2>
+                  <ul id="adoption" class="text-sm text-slate-200 space-y-1"></ul>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-2">Tickets</h2>
+                  <ul id="tickets" class="text-sm text-slate-200 space-y-1"></ul>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-2">Integrations</h2>
+                  <ul id="integrations" class="text-sm text-slate-200 space-y-1"></ul>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-2">AI Agent Health</h2>
+                  <ul id="agentHealth" class="text-sm text-slate-200 space-y-1"></ul>
+                </div>
+              </div>
             </div>
-            <form id="testimonialForm" class="grid gap-3 md:grid-cols-3 items-end">
+          </div>
+        </section>
+
+        <!-- Funnel v2.0 Section (NEW) -->
+        <section id="section-funnel" class="admin-section">
+          <div class="relative overflow-hidden border-b border-slate-800">
+            <div class="absolute inset-0 bg-gradient-to-br from-green-500/15 via-emerald-500/5 to-slate-900/60 pointer-events-none"></div>
+            <div class="content-container relative z-10 space-y-6">
               <div>
-                <label class="text-xs text-slate-400">Account ID</label>
-                <input id="testimonialAccount" type="number" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="e.g. 18" />
+                <h1 class="text-2xl font-semibold tracking-tight">Funnel v2.0 Management</h1>
+                <p class="text-sm text-slate-300 mt-1">5-stage funnel system (Visits → Discovery → Consideration → Conversion → Retention)</p>
               </div>
+
+              <!-- Funnel Metrics -->
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="text-lg font-semibold text-slate-100">Funnel Metrics</h2>
+                  <button id="refreshFunnelMetrics" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-sm font-semibold text-white">
+                    Refresh
+                  </button>
+                </div>
+                <div id="funnelMetrics" class="grid md:grid-cols-5 gap-4"></div>
+                <div id="funnelConversionRates" class="mt-4 grid md:grid-cols-4 gap-4"></div>
+              </div>
+
+              <!-- Manual Controls -->
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-3">Qualify Lead</h2>
+                  <p class="text-xs text-slate-400 mb-3">Test DSPy visitor qualification module</p>
+                  <div class="flex gap-2">
+                    <input id="qualifyLeadId" type="text" placeholder="Lead UUID" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                    <button id="qualifyLeadBtn" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">
+                      Qualify
+                    </button>
+                  </div>
+                  <div id="qualifyLeadResult" class="mt-3 text-xs text-slate-300"></div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-3">Update Interest Score</h2>
+                  <p class="text-xs text-slate-400 mb-3">Test DSPy interest scoring module</p>
+                  <div class="flex gap-2">
+                    <input id="interestLeadId" type="text" placeholder="Lead UUID" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                    <button id="interestLeadBtn" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">
+                      Update
+                    </button>
+                  </div>
+                  <div id="interestLeadResult" class="mt-3 text-xs text-slate-300"></div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 md:col-span-2">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-3">Move Lead to Stage</h2>
+                  <p class="text-xs text-slate-400 mb-3">Manually move lead to different stage (testing only)</p>
+                  <div class="grid md:grid-cols-3 gap-2">
+                    <input id="moveStageLeadId" type="text" placeholder="Lead UUID" class="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                    <select id="moveStageTarget" class="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100">
+                      <option value="">Select stage...</option>
+                      <option value="visits">Visits</option>
+                      <option value="discovery">Discovery</option>
+                      <option value="consideration">Consideration</option>
+                      <option value="conversion">Conversion</option>
+                      <option value="retention">Retention</option>
+                    </select>
+                    <button id="moveStageBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+                      Move Stage
+                    </button>
+                  </div>
+                  <div id="moveStageResult" class="mt-3 text-xs text-slate-300"></div>
+                </div>
+              </div>
+
+              <!-- Orchestration -->
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <h2 class="text-lg font-semibold text-slate-100 mb-3">Automation Jobs</h2>
+                <p class="text-xs text-slate-400 mb-4">Manually trigger automated funnel orchestration tasks</p>
+                <div class="flex gap-3">
+                  <button id="runOrchestrationBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+                    Run Full Orchestration
+                  </button>
+                  <button id="checkProgressionBtn" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">
+                    Check Stage Progression
+                  </button>
+                </div>
+                <div id="orchestrationResult" class="mt-3 text-xs text-slate-300"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Content & Publishing Section -->
+        <section id="section-content" class="admin-section">
+          <div class="content-container space-y-6">
+            <div class="flex items-center justify-between">
               <div>
-                <label class="text-xs text-slate-400">User ID (optional)</label>
-                <input id="testimonialUser" type="number" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="e.g. 42" />
+                <h1 class="text-2xl font-semibold tracking-tight">Content & Publishing</h1>
+                <p class="text-sm text-slate-300 mt-1">Blog posts, SEO, and publishing workflow management.</p>
               </div>
-              <div>
-                <label class="text-xs text-slate-400">Send to email (optional)</label>
-                <input id="testimonialEmail" type="email" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="you@company.com" />
-              </div>
-              <button
-                id="testimonialButton"
-                type="submit"
-                class="inline-flex justify-center items-center rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60"
-              >
-                Generate invite link
+              <button id="generateBlogBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+                Generate Blog Post Now
               </button>
-            </form>
-            <div id="testimonialResult" class="mt-3 text-xs text-slate-300 break-all"></div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <h2 class="text-lg font-semibold text-slate-100 mb-2">Blog / SEO</h2>
+              <ul id="blogMetrics" class="text-sm text-slate-200 space-y-1"></ul>
+            </div>
+
+            <!-- Recently Published Posts -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Recently Published Posts</h2>
+                  <p class="text-xs text-slate-400 mt-1">Auto-published blog posts from Content Generation Agent</p>
+                </div>
+                <button id="refreshPublishedBtn" class="rounded-lg bg-slate-700 hover:bg-slate-600 px-3 py-2 text-xs font-semibold text-white">
+                  Refresh
+                </button>
+              </div>
+              <div id="publishedPosts" class="space-y-2"></div>
+            </div>
+
+            <!-- Publishing Draft Review -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div>
+                <h2 class="text-lg font-semibold text-slate-100">Publishing (draft review)</h2>
+                <p class="text-xs text-slate-400 mt-1">Drafts require login; only approved items should be published.</p>
+              </div>
+              <div class="grid md:grid-cols-2 gap-4 mt-4">
+                <div class="space-y-2">
+                  <div class="text-xs text-slate-400 font-semibold">Blog drafts</div>
+                  <a href="/api/v1/publishing/blogs?include_unpublished=true" class="block rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm text-slate-100 border border-slate-700" target="_blank">View draft list (JSON)</a>
+                  <a href="/publishing/blogs/view" class="block rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm text-slate-100 border border-slate-700" target="_blank">View draft list (HTML)</a>
+                  <div class="flex gap-2">
+                    <input id="blogDraftId" type="text" placeholder="blog draft id" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs text-slate-100" />
+                    <button id="openBlogDraft" type="button" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-xs font-semibold text-white">Preview</button>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <div class="text-xs text-slate-400 font-semibold">Newsletters / Whitepapers</div>
+                  <a href="/publishing/newsletter/drafts" class="block rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm text-slate-100 border border-slate-700" target="_blank">Newsletter drafts (JSON)</a>
+                  <a href="/publishing/newsletter/drafts/view" class="block rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm text-slate-100 border border-slate-700" target="_blank">View draft list (HTML)</a>
+                  <div class="flex gap-2">
+                    <input id="newsletterDraftId" type="text" placeholder="newsletter draft id" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs text-slate-100" />
+                    <button id="openNewsletterDraft" type="button" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-xs font-semibold text-white">Preview</button>
+                  </div>
+                  <div class="flex gap-2">
+                    <input id="whitepaperDraftId" type="text" placeholder="whitepaper draft id" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs text-slate-100" />
+                    <button id="openWhitepaperDraft" type="button" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-xs font-semibold text-white">Download/Preview</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </section>
 
-          <div class="grid md:grid-cols-2 gap-4">
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-slate-100">Adoption</h2>
-              </div>
-              <ul id="adoption" class="text-sm text-slate-200 space-y-1"></ul>
+        <!-- AI & Training Section -->
+        <section id="section-ai" class="admin-section">
+          <div class="content-container space-y-6">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">AI & Training</h1>
+              <p class="text-sm text-slate-300 mt-1">DSPy evaluation, triage configuration, and training data export.</p>
             </div>
 
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-slate-100">Tickets</h2>
-              </div>
-              <ul id="tickets" class="text-sm text-slate-200 space-y-1"></ul>
-            </div>
-
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-slate-100">Integrations</h2>
-              </div>
-              <ul id="integrations" class="text-sm text-slate-200 space-y-1"></ul>
-            </div>
-
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-slate-100">Billing</h2>
-              </div>
-              <ul id="billing" class="text-sm text-slate-200 space-y-1"></ul>
-            </div>
-
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-slate-100">Security / Ops</h2>
-              </div>
-              <ul id="security" class="text-sm text-slate-200 space-y-1"></ul>
-            </div>
-
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-slate-100">AI Agent Health</h2>
-              </div>
-              <ul id="agentHealth" class="text-sm text-slate-200 space-y-1"></ul>
-            </div>
-
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <div class="flex items-center justify-between mb-2">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                 <div>
                   <h2 class="text-lg font-semibold text-slate-100">DSPy Eval</h2>
-                  <p class="text-xs text-slate-400">Manual overrides evaluation snapshot.</p>
+                  <p class="text-xs text-slate-400 mt-1">Manual overrides evaluation snapshot.</p>
                 </div>
+                <ul id="dspyEval" class="text-sm text-slate-200 space-y-1 mt-3"></ul>
               </div>
-              <ul id="dspyEval" class="text-sm text-slate-200 space-y-1"></ul>
             </div>
 
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 md:col-span-2">
-              <div class="flex items-center justify-between mb-2">
+            <!-- Triage Labels -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div class="flex items-center justify-between mb-3">
                 <div>
                   <h2 class="text-lg font-semibold text-slate-100">Triage Labels</h2>
-                  <p class="text-xs text-slate-400">Configure DSPy label sets without redeploys.</p>
+                  <p class="text-xs text-slate-400 mt-1">Configure DSPy label sets without redeploys.</p>
                 </div>
-                <button
-                  id="saveTriageLabelsBtn"
-                  class="inline-flex items-center gap-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-sm font-semibold text-white"
-                >
+                <button id="saveTriageLabelsBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
                   Save labels
                 </button>
               </div>
               <div id="triageLabelsStatus" class="text-xs text-slate-300 mb-2 hidden"></div>
-              <textarea
-                id="triageLabelsInput"
-                class="w-full min-h-[200px] rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs text-slate-100 font-mono"
-                spellcheck="false"
-              ></textarea>
+              <textarea id="triageLabelsInput" class="w-full min-h-[200px] rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs text-slate-100 font-mono" spellcheck="false"></textarea>
               <p class="text-xs text-slate-400 mt-2">JSON with keys: categories, priorities, sentiments, intents, action_required, teams.</p>
             </div>
 
+            <!-- Training Export -->
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-slate-100">Blog / SEO</h2>
-              </div>
-              <ul id="blogMetrics" class="text-sm text-slate-200 space-y-1"></ul>
-            </div>
-
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-              <div class="flex items-center justify-between mb-2">
-                <h2 class="text-lg font-semibold text-slate-100">Lead Sourcing</h2>
-              </div>
-              <ul id="leadSourcing" class="text-sm text-slate-200 space-y-1"></ul>
-            </div>
-
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 md:col-span-2">
-              <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center justify-between mb-3">
                 <div>
                   <h2 class="text-lg font-semibold text-slate-100">AI Training / Export</h2>
-                  <p class="text-xs text-slate-400">Own your training signals, keep engines swappable.</p>
+                  <p class="text-xs text-slate-400 mt-1">Own your training signals, keep engines swappable.</p>
                 </div>
-                <button
-                  id="exportFeedbackBtn"
-                  class="inline-flex items-center gap-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-sm font-semibold text-white"
-                >
+                <button id="exportFeedbackBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
                   Export feedback JSON
                 </button>
               </div>
               <div id="exportStatus" class="text-xs text-slate-300 mb-2 hidden"></div>
-              <div class="text-xs text-slate-400 space-y-1">
-                <p>How to use it:</p>
+              <div class="text-xs text-slate-400 space-y-2">
+                <p class="font-semibold">How to use it:</p>
                 <ul class="list-disc list-inside space-y-1 text-slate-300">
                   <li>Export training data: call GET /api/v1/inboxiq/feedback/export or use the button above.</li>
                   <li>Feed the JSON to GPT-4 (or an open model) for fine-tuning/offline distillation.</li>
@@ -212,85 +414,43 @@
                   <li>Overrides still apply on exact subject matches and bias prompts via similar cases.</li>
                 </ul>
               </div>
-              <div class="mt-3 flex items-center gap-3">
-                <button
-                  id="refreshEmbeddingsBtn"
-                  class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 px-3 py-2 text-sm font-semibold text-white"
-                >
+              <div class="mt-4 flex items-center gap-3">
+                <button id="refreshEmbeddingsBtn" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">
                   Refresh embeddings
                 </button>
                 <span id="refreshStatus" class="text-xs text-slate-300 hidden"></span>
               </div>
             </div>
+          </div>
+        </section>
 
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 md:col-span-2">
-              <div class="flex items-center justify-between mb-2">
-                <div>
-                  <h2 class="text-lg font-semibold text-slate-100">Publishing (draft review)</h2>
-                  <p class="text-xs text-slate-400">Drafts require login; only approved items should be published.</p>
-                </div>
+        <!-- System Section -->
+        <section id="section-system" class="admin-section">
+          <div class="content-container space-y-6">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">System Settings</h1>
+              <p class="text-sm text-slate-300 mt-1">Billing, security, and operational metrics.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <h2 class="text-lg font-semibold text-slate-100 mb-2">Billing</h2>
+                <ul id="billing" class="text-sm text-slate-200 space-y-1"></ul>
               </div>
-              <div class="grid md:grid-cols-2 gap-3 text-sm text-slate-200">
-                <div class="space-y-2">
-                  <div class="text-xs text-slate-400">Blog drafts</div>
-                  <a href="/api/v1/publishing/blogs?include_unpublished=true"
-                     class="inline-flex items-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-slate-100 border border-slate-700"
-                     target="_blank" rel="noopener">
-                    View draft list (JSON)
-                  </a>
-                  <a href="/publishing/blogs/view"
-                     class="inline-flex items-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-slate-100 border border-slate-700"
-                     target="_blank" rel="noopener">
-                    View draft list (HTML)
-                  </a>
-                  <div class="flex items-center gap-2">
-                    <input id="blogDraftId" type="text" placeholder="blog draft id"
-                           class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs text-slate-100 input-dark" />
-                    <button id="openBlogDraft" type="button" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-xs font-semibold text-white">
-                      Preview
-                    </button>
-                  </div>
-                  <p class="text-[11px] text-slate-400">Preview shows draft with banner; published blogs remain public.</p>
-                </div>
-                <div class="space-y-2">
-                  <div class="text-xs text-slate-400">Newsletters / Whitepapers</div>
-                  <a href="/publishing/newsletter/drafts"
-                     class="inline-flex items-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-slate-100 border border-slate-700"
-                     target="_blank" rel="noopener">
-                    Newsletter drafts (JSON)
-                  </a>
-                  <a href="/publishing/newsletter/drafts/view"
-                     class="inline-flex items-center gap-2 rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-slate-100 border border-slate-700"
-                     target="_blank" rel="noopener">
-                    View draft list (HTML)
-                  </a>
-                  <div class="flex items-center gap-2">
-                    <input id="newsletterDraftId" type="text" placeholder="newsletter draft id"
-                           class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs text-slate-100 input-dark" />
-                    <button id="openNewsletterDraft" type="button" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-xs font-semibold text-white">
-                      Preview
-                    </button>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <input id="whitepaperDraftId" type="text" placeholder="whitepaper draft id"
-                           class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs text-slate-100 input-dark" />
-                    <button id="openWhitepaperDraft" type="button" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-xs font-semibold text-white">
-                      Download/Preview
-                    </button>
-                  </div>
-                  <p class="text-[11px] text-slate-400">Draft previews require auth; publish only after human review.</p>
-                </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <h2 class="text-lg font-semibold text-slate-100 mb-2">Security / Ops</h2>
+                <ul id="security" class="text-sm text-slate-200 space-y-1"></ul>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
 
     <footer class="border-t border-slate-800 bg-slate-950/85">
-      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-[11px] text-slate-500">
+      <div class="mx-auto px-6 py-4 flex items-center justify-between text-[11px] text-slate-500">
         <div>© 2025 Kalevent · InboxIQ</div>
-        <div class="text-slate-600">Dashboard preview — not for production</div>
+        <div class="text-slate-600">Admin Dashboard</div>
       </div>
       {% include 'partials/feedback_footer.html' %}
     </footer>
@@ -299,6 +459,21 @@
   <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
   <script>
+    // Sidebar navigation
+    document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        // Remove active from all
+        document.querySelectorAll('.sidebar-nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+
+        // Add active to clicked
+        item.classList.add('active');
+        const section = item.getAttribute('data-section');
+        document.getElementById(`section-${section}`).classList.add('active');
+      });
+    });
+
+    // Publishing preview handlers
     document.addEventListener("DOMContentLoaded", () => {
       const bindOpen = (inputId, buttonId, baseUrl) => {
         const input = document.getElementById(inputId);
@@ -310,15 +485,206 @@
           if (!val) return;
           const href = baseUrl.replace("__ID__", encodeURIComponent(val));
           const win = window.open(href, "_blank", "noopener");
-          if (!win) {
-            window.location.href = href; // popup blocked fallback
-          }
+          if (!win) window.location.href = href;
         });
       };
       bindOpen("blogDraftId", "openBlogDraft", "/publishing/blog/draft/__ID__");
       bindOpen("newsletterDraftId", "openNewsletterDraft", "/publishing/preview/__ID__");
       bindOpen("whitepaperDraftId", "openWhitepaperDraft", "/publishing/whitepaper/download/__ID__");
+
+      // Funnel v2.0 handlers
+      if (document.getElementById('refreshFunnelMetrics')) {
+        document.getElementById('refreshFunnelMetrics').addEventListener('click', () => loadFunnelMetrics());
+        document.getElementById('qualifyLeadBtn').addEventListener('click', () => qualifyLead());
+        document.getElementById('interestLeadBtn').addEventListener('click', () => updateInterestScore());
+        document.getElementById('moveStageBtn').addEventListener('click', () => moveLeadStage());
+        document.getElementById('runOrchestrationBtn').addEventListener('click', () => runOrchestration());
+        document.getElementById('checkProgressionBtn').addEventListener('click', () => checkProgression());
+      }
     });
+
+    // Funnel v2.0 API Functions
+    async function loadFunnelMetrics() {
+      const container = document.getElementById('funnelMetrics');
+      const ratesContainer = document.getElementById('funnelConversionRates');
+      container.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
+
+      try {
+        const response = await fetch('/api/v1/admin/funnel/metrics', { credentials: 'include' });
+        const data = await response.json();
+
+        if (data.error) {
+          container.innerHTML = `<div class="text-red-400 text-sm">${data.error}</div>`;
+          return;
+        }
+
+        // Stage distribution
+        const stages = ['visits', 'discovery', 'consideration', 'conversion', 'retention'];
+        container.innerHTML = stages.map(stage => `
+          <div class="bg-slate-800/50 rounded-lg p-3 text-center">
+            <div class="text-2xl font-bold text-indigo-400">${data.stage_distribution[stage] || 0}</div>
+            <div class="text-xs text-slate-400 uppercase mt-1">${stage}</div>
+          </div>
+        `).join('');
+
+        // Conversion rates
+        ratesContainer.innerHTML = `
+          <div class="bg-slate-800/50 rounded-lg p-3">
+            <div class="text-sm font-semibold text-slate-300">Visits → Discovery</div>
+            <div class="text-lg font-bold text-emerald-400">${data.conversion_rates.visits_to_discovery.toFixed(1)}%</div>
+          </div>
+          <div class="bg-slate-800/50 rounded-lg p-3">
+            <div class="text-sm font-semibold text-slate-300">Discovery → Consideration</div>
+            <div class="text-lg font-bold text-emerald-400">${data.conversion_rates.discovery_to_consideration.toFixed(1)}%</div>
+          </div>
+          <div class="bg-slate-800/50 rounded-lg p-3">
+            <div class="text-sm font-semibold text-slate-300">Consideration → Conversion</div>
+            <div class="text-lg font-bold text-emerald-400">${data.conversion_rates.consideration_to_conversion.toFixed(1)}%</div>
+          </div>
+          <div class="bg-slate-800/50 rounded-lg p-3">
+            <div class="text-sm font-semibold text-slate-300">Conversion → Retention</div>
+            <div class="text-lg font-bold text-emerald-400">${data.conversion_rates.conversion_to_retention.toFixed(1)}%</div>
+          </div>
+        `;
+      } catch (err) {
+        container.innerHTML = `<div class="text-red-400 text-sm">Error loading metrics: ${err.message}</div>`;
+      }
+    }
+
+    async function qualifyLead() {
+      const leadId = document.getElementById('qualifyLeadId').value.trim();
+      const resultEl = document.getElementById('qualifyLeadResult');
+      if (!leadId) {
+        resultEl.innerHTML = '<span class="text-orange-400">Please enter a lead UUID</span>';
+        return;
+      }
+      resultEl.innerHTML = '<span class="text-slate-400">Processing...</span>';
+
+      try {
+        const response = await fetch('/api/v1/admin/funnel/qualify-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ lead_id: leadId })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          resultEl.innerHTML = `<span class="text-green-400">✓ Queued: ${data.message} (Task: ${data.task_id})</span>`;
+        } else {
+          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
+        }
+      } catch (err) {
+        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
+      }
+    }
+
+    async function updateInterestScore() {
+      const leadId = document.getElementById('interestLeadId').value.trim();
+      const resultEl = document.getElementById('interestLeadResult');
+      if (!leadId) {
+        resultEl.innerHTML = '<span class="text-orange-400">Please enter a lead UUID</span>';
+        return;
+      }
+      resultEl.innerHTML = '<span class="text-slate-400">Processing...</span>';
+
+      try {
+        const response = await fetch('/api/v1/admin/funnel/update-interest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ lead_id: leadId })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          resultEl.innerHTML = `<span class="text-green-400">✓ Queued: ${data.message} (Task: ${data.task_id})</span>`;
+        } else {
+          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
+        }
+      } catch (err) {
+        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
+      }
+    }
+
+    async function moveLeadStage() {
+      const leadId = document.getElementById('moveStageLeadId').value.trim();
+      const newStage = document.getElementById('moveStageTarget').value;
+      const resultEl = document.getElementById('moveStageResult');
+
+      if (!leadId || !newStage) {
+        resultEl.innerHTML = '<span class="text-orange-400">Please enter lead UUID and select stage</span>';
+        return;
+      }
+      resultEl.innerHTML = '<span class="text-slate-400">Processing...</span>';
+
+      try {
+        const response = await fetch('/api/v1/admin/funnel/move-stage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ lead_id: leadId, new_stage: newStage })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          resultEl.innerHTML = `<span class="text-green-400">✓ ${data.message}</span>`;
+        } else {
+          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
+        }
+      } catch (err) {
+        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
+      }
+    }
+
+    async function runOrchestration() {
+      const resultEl = document.getElementById('orchestrationResult');
+      resultEl.innerHTML = '<span class="text-slate-400">Starting orchestration...</span>';
+
+      try {
+        const response = await fetch('/api/v1/admin/funnel/orchestrate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          resultEl.innerHTML = `<span class="text-green-400">✓ ${data.message} (Task: ${data.task_id})</span>`;
+        } else {
+          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
+        }
+      } catch (err) {
+        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
+      }
+    }
+
+    async function checkProgression() {
+      const resultEl = document.getElementById('orchestrationResult');
+      resultEl.innerHTML = '<span class="text-slate-400">Checking progression...</span>';
+
+      try {
+        const response = await fetch('/api/v1/admin/funnel/check-progression', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          resultEl.innerHTML = `<span class="text-green-400">✓ ${data.message} (Task: ${data.task_id})</span>`;
+        } else {
+          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
+        }
+      } catch (err) {
+        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
+      }
+    }
+
+    // Load funnel metrics on page load if on funnel section
+    if (document.getElementById('section-funnel').classList.contains('active')) {
+      loadFunnelMetrics();
+    }
   </script>
 </body>
 </html>

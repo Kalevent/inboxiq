@@ -2,19 +2,19 @@
 DSPy training/optimization using BootstrapFewShot on manual overrides.
 """
 from __future__ import annotations
-
+import dspy
 import os
 import sys
 from typing import Any, Dict
+
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-import dspy
 import logging
 from datetime import datetime, timezone
-from dspy.teleprompt import BootstrapFewShot
+from dspy.teleprompt import BootstrapFewShot  # type: ignore[reportMissingImports]  # cspell:ignore teleprompt
 
 from src.app import create_app
 from src.models import Ticket

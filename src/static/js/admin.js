@@ -22,7 +22,7 @@ function formatPct(value) {
 
 async function loadAdmin() {
   try {
-    const [adoption, tickets, integrations, billing, security, agentHealth, dspyEval, triageLabels, blogMetrics, leadSourcing] = await Promise.all([
+    const [adoption, tickets, integrations, billing, security, agentHealth, dspyEval, triageLabels, blogMetrics] = await Promise.all([
       fetchJSON("/api/v1/admin/adoption"),
       fetchJSON("/api/v1/admin/tickets"),
       fetchJSON("/api/v1/admin/integrations"),
@@ -32,7 +32,6 @@ async function loadAdmin() {
       fetchJSON("/api/v1/admin/dspy-eval?limit=50"),
       fetchJSON("/api/v1/admin/triage-labels").catch(() => ({ config: { labels: {} } })),
       fetchJSON("/api/v1/admin/blog-metrics"),
-      fetchJSON("/api/v1/admin/lead-sourcing"),
     ]);
     renderList("adoption", [
       `Active accounts: ${adoption.active_accounts || 0}`,
@@ -90,10 +89,6 @@ async function loadAdmin() {
       }`,
       `Impressions (GSC): ${blogMetrics.impressions ?? "n/a"}`,
       `Clicks (GSC): ${blogMetrics.clicks ?? "n/a"}`,
-    ]);
-    renderList("leadSourcing", [
-      `Leads: ${leadSourcing.leads_total ?? 0} (24h: ${leadSourcing.leads_last_24h ?? 0}, 7d: ${leadSourcing.leads_last_7d ?? 0})`,
-      `Recipients: ${leadSourcing.recipients_total ?? 0} (24h: ${leadSourcing.recipients_last_24h ?? 0})`,
     ]);
   } catch (err) {
     console.error("Admin load failed", err);
@@ -246,3 +241,122 @@ document.getElementById("saveTriageLabelsBtn")?.addEventListener("click", async 
     }
   });
 })();
+
+// Content Generation: Load published posts
+async function loadPublishedPosts() {
+  const container = document.getElementById("publishedPosts");
+  if (!container) return;
+
+  container.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
+
+  try {
+    const data = await fetchJSON("/api/v1/admin/content/published-posts?limit=10");
+
+    if (!data.posts || data.posts.length === 0) {
+      container.innerHTML = '<div class="text-slate-400 text-sm">No published posts yet. Generate your first blog post!</div>';
+      return;
+    }
+
+    container.innerHTML = data.posts.map(post => {
+      const qualityBadge = post.dspy_quality_score
+        ? `<span class="text-xs px-2 py-0.5 rounded ${post.dspy_quality_score >= 0.8 ? 'bg-green-500/20 text-green-400' : post.dspy_quality_score >= 0.6 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">
+             Quality: ${Math.round(post.dspy_quality_score * 100)}%
+           </span>`
+        : '';
+
+      const autoBadge = post.auto_generated
+        ? '<span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400">🤖 Auto-generated</span>'
+        : '';
+
+      return `
+        <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="text-sm font-semibold text-slate-100">${post.title || 'Untitled'}</h3>
+                ${autoBadge}
+                ${qualityBadge}
+              </div>
+              <div class="text-xs text-slate-400 space-y-0.5">
+                <div>Slug: <span class="text-slate-300">${post.slug || 'N/A'}</span></div>
+                <div>Published: <span class="text-slate-300">${post.published_at ? new Date(post.published_at).toLocaleString() : 'N/A'}</span></div>
+                <div>Words: <span class="text-slate-300">${post.word_count || 0}</span> | Stage: <span class="text-slate-300">${post.funnel_stage || 'N/A'}</span> | Keyword: <span class="text-slate-300">${post.primary_keyword || 'N/A'}</span></div>
+              </div>
+            </div>
+            <div class="flex gap-2 ml-3">
+              <a href="/blog/${post.slug}" target="_blank" class="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200">View</a>
+              <a href="/api/v1/publishing/blogs/${post.id}" target="_blank" class="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200">JSON</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    container.innerHTML = `<div class="text-red-400 text-sm">Error loading posts: ${err.message}</div>`;
+  }
+}
+
+// Content Generation: Manual trigger
+document.getElementById("generateBlogBtn")?.addEventListener("click", async function() {
+  const btn = this;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Generating...";
+
+  try {
+    const res = await fetch("/api/v1/admin/content/generate-blog", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        auto_publish: true
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || data.message || "Generation failed");
+
+    btn.textContent = "✓ Queued!";
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }, 3000);
+
+    // Refresh blog metrics and published posts after 30 seconds
+    setTimeout(() => {
+      loadAdmin();
+      loadPublishedPosts();
+    }, 30000);
+
+    alert(`Blog generation queued!\n\nTask ID: ${data.task_id}\n\nThe blog post will be generated, auto-published, and you'll receive an email at support@kalevent.com for review.\n\nCheck back in ~2-3 minutes to see the published post.`);
+
+  } catch (err) {
+    btn.textContent = originalText;
+    btn.disabled = false;
+    alert(`Error: ${err.message}`);
+  }
+});
+
+// Content Generation: Refresh published posts
+document.getElementById("refreshPublishedBtn")?.addEventListener("click", loadPublishedPosts);
+
+// Load published posts on page load (when content section is active)
+document.addEventListener("DOMContentLoaded", () => {
+  // Load immediately if content section is visible
+  const contentSection = document.getElementById("section-content");
+  if (contentSection && contentSection.classList.contains("active")) {
+    loadPublishedPosts();
+  }
+
+  // Also load when user navigates to content section
+  document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const section = item.getAttribute('data-section');
+      if (section === 'content') {
+        loadPublishedPosts();
+      }
+    });
+  });
+});

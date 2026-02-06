@@ -21,7 +21,29 @@ def _safe_json() -> dict:
 @v1.route("/publishing/blog/draft", methods=["POST"])
 @jwt_required(optional=True)
 def api_blog_draft():
+    """
+    Create a blog draft.
+
+    DEPRECATED for manual use: Use Content Generation Agent for autonomous content creation.
+
+    This endpoint is still used internally by the Content Agent to store generated posts.
+    For manual content creation, use: POST /api/v1/content/generate
+
+    Deprecation date: 2026-02-03
+    """
     payload = _safe_json()
+
+    # Check if called by Content Agent (has agent_id or auto_generated flag in payload)
+    if not payload.get("agent_id") and not payload.get("auto_generated"):
+        return jsonify({
+            "deprecated": True,
+            "message": "Manual blog draft creation is deprecated. Use /api/v1/content/generate for autonomous content creation.",
+            "migration_guide": "docs/inboxiq/leads_funnel_v2_plan.md#content-generation-agent-architecture",
+            "deprecation_date": "2026-02-03",
+            "alternative_endpoint": "/api/v1/content/generate"
+        }), 410  # HTTP 410 Gone
+
+    # Allow Content Agent to proceed
     sync = bool(payload.get("sync", True))
     try:
         post, meta = create_blog_draft(payload, run_async=not sync)
