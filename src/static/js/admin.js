@@ -105,9 +105,20 @@ async function inviteTestimonial(evt) {
   const resultEl = document.getElementById("testimonialResult");
   resultEl.textContent = "Generating...";
   try {
+    const getCookie = (name) =>
+      document.cookie
+        .split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(name + "="))
+        ?.split("=")[1];
+    const csrf = getCookie("csrf_access_token") || getCookie("csrf_refresh_token");
+
     const res = await fetch("/api/v1/admin/actions/invite-testimonial", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-TOKEN": csrf } : {})
+      },
       credentials: "include",
       body: JSON.stringify({ account_id: accountId || null, user_id: userId || null, to_email: toEmail || null, send_email: sendEmail }),
     });
@@ -152,8 +163,17 @@ document.getElementById("refreshEmbeddingsBtn")?.addEventListener("click", async
     statusEl.textContent = "Refreshing embeddings...";
   }
   try {
+    const getCookie = (name) =>
+      document.cookie
+        .split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(name + "="))
+        ?.split("=")[1];
+    const csrf = getCookie("csrf_access_token") || getCookie("csrf_refresh_token");
+
     const res = await fetch("/api/v1/admin/actions/refresh-embeddings", {
       method: "POST",
+      headers: csrf ? { "X-CSRF-TOKEN": csrf } : {},
       credentials: "include",
     });
     const contentType = res.headers.get("content-type") || "";
@@ -187,9 +207,20 @@ document.getElementById("saveTriageLabelsBtn")?.addEventListener("click", async 
     return;
   }
   try {
+    const getCookie = (name) =>
+      document.cookie
+        .split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(name + "="))
+        ?.split("=")[1];
+    const csrf = getCookie("csrf_access_token") || getCookie("csrf_refresh_token");
+
     const res = await fetch("/api/v1/admin/triage-labels", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-TOKEN": csrf } : {})
+      },
       credentials: "include",
       body: JSON.stringify({ labels }),
     });
@@ -305,9 +336,21 @@ document.getElementById("generateBlogBtn")?.addEventListener("click", async func
   btn.textContent = "Generating...";
 
   try {
+    // Get CSRF token from cookies
+    const getCookie = (name) =>
+      document.cookie
+        .split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(name + "="))
+        ?.split("=")[1];
+    const csrf = getCookie("csrf_access_token") || getCookie("csrf_refresh_token");
+
     const res = await fetch("/api/v1/admin/content/generate-blog", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-TOKEN": csrf } : {})
+      },
       credentials: "include",
       body: JSON.stringify({
         auto_publish: true
