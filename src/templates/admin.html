@@ -6,9 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
-    integrity="sha384-GOfwVwkBSmMQvL6ZfITiHG3cmzgkNKkO3QYSLQkhU4yLTGP0SEe8JcRTqAGESSbb"
-    crossorigin="anonymous"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}?v={{ range(1000, 9999) | random }}"
   />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
   <style>
