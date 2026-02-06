@@ -1202,3 +1202,57 @@ class GeneratedContent(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+class PitchedBlogTopic(db.Model):
+    """
+    Manually pitched blog topics that can be used for content generation.
+    Allows users to submit topic ideas in addition to auto-generated topics.
+    """
+    __tablename__ = "pitched_blog_topics"
+    __table_args__ = (
+        db.Index("idx_pitched_topics_status", "status"),
+        db.Index("idx_pitched_topics_created", "created_at"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    title = db.Column(db.String(500), nullable=False, comment="Working title or topic idea")
+    description = db.Column(db.Text, nullable=True, comment="Optional description or angle")
+    target_keyword = db.Column(db.String(255), nullable=True, comment="Primary keyword to target")
+    secondary_keywords = db.Column(db.JSON, nullable=False, default=list, comment="Additional keywords")
+    funnel_stage = db.Column(db.String(50), nullable=True, comment="discovery | consideration | decision")
+    target_audience = db.Column(db.String(500), nullable=True, comment="Target audience/persona")
+    niche = db.Column(db.String(255), nullable=True, comment="Blog niche (e.g., Revenue Operations)")
+    pitch_notes = db.Column(db.Text, nullable=True, comment="Additional notes from submitter")
+
+    status = db.Column(db.String(50), nullable=False, default="pending", comment="pending | approved | rejected | generated")
+    priority = db.Column(db.SmallInteger, nullable=False, default=3, comment="1=high, 2=medium, 3=low")
+
+    # Tracking fields
+    submitted_by = db.Column(db.String(255), nullable=True, comment="Email of submitter")
+    reviewed_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    generated_content_id = db.Column(db.String(64), db.ForeignKey("generated_content.id"), nullable=True, comment="Link to generated content if used")
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "target_keyword": self.target_keyword,
+            "secondary_keywords": self.secondary_keywords or [],
+            "funnel_stage": self.funnel_stage,
+            "target_audience": self.target_audience,
+            "niche": self.niche,
+            "pitch_notes": self.pitch_notes,
+            "status": self.status,
+            "priority": self.priority,
+            "submitted_by": self.submitted_by,
+            "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,
+            "generated_content_id": self.generated_content_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }

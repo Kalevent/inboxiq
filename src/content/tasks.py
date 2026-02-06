@@ -14,7 +14,7 @@ from celery import shared_task
 import markdown
 
 from src.extensions import db
-from src.models import BlogPost, GeneratedContent
+from src.models import BlogPost, GeneratedContent, PitchedBlogTopic
 
 # Import DSPy modules
 try:
@@ -442,3 +442,216 @@ def content_generation_job():
     except Exception as e:
         results["errors"].append(str(e))
         return results
+
+
+@shared_task(name="content.generate_blog_from_pitched_topic")
+def generate_blog_from_pitched_topic(topic_id: str):
+    """
+    Generate blog post from a manually pitched topic.
+
+    Args:
+        topic_id: PitchedBlogTopic UUID
+
+    Returns:
+        Dict with generated content ID and details
+    """
+    initialize_dspy()
+
+    pitched_topic = db.session.query(PitchedBlogTopic).filter(
+        PitchedBlogTopic.id == topic_id
+    ).first()
+
+    if not pitched_topic:
+        return {"error": f"Pitched topic {topic_id} not found"}
+
+    try:
+        # Convert pitched topic into the format expected by content generation
+        selected_topic = {
+            "title": pitched_topic.title,
+            "description": pitched_topic.description or "",
+            "target_keyword": pitched_topic.target_keyword or pitched_topic.title.lower(),
+            "secondary_keywords": pitched_topic.secondary_keywords or [],
+            "target_stage": pitched_topic.funnel_stage or "discovery",
+            "angle": "professional",
+            "estimated_monthly_searches": 1000,
+            "estimated_difficulty": 50
+        }
+
+        # 1. Create outline
+        outline_module = OutlineCreatorModule()
+        outline_result = outline_module(
+            topic=json.dumps(selected_topic),
+            target_word_count=1500,
+            content_depth="intermediate"
+        )
+
+        # 2. Write content
+        writer_module = ContentWriterModule()
+        write_result = writer_module(
+            outline=outline_result.outline,
+            tone="professional",
+            include_examples=True,
+            include_stats=True
+        )
+
+        # 3. Edit content
+        editor_module = EditorModule()
+        edit_result = editor_module(
+            draft=write_result.blog_post_draft,
+            editing_focus="all"
+        )
+
+        # 4. Optimize SEO
+        seo_module = SEOOptimizerModule()
+        target_keywords = json.dumps([{
+            "keyword": selected_topic["target_keyword"],
+            "volume": selected_topic.get("estimated_monthly_searches", 1000),
+            "difficulty": selected_topic.get("estimated_difficulty", 50),
+            "priority": 1
+        }])
+        seo_result = seo_module(
+            edited_post=edit_result.edited_post,
+            target_keywords=target_keywords
+        )
+
+        # 5. Generate hero image with DALL-E 3
+        hero_image_url = None
+        hero_image_alt = None
+        try:
+            hero_image_url, hero_image_alt = _generate_hero_image(
+                title=seo_result.meta_title,
+                topic=selected_topic
+            )
+        except Exception as img_exc:
+            import logging
+            logging.getLogger(__name__).warning("Hero image generation failed: %s", img_exc)
+
+        # 6. Save to database
+        generated_content = GeneratedContent(
+            content_type="blog_post",
+            title=seo_result.meta_title,
+            slug=seo_result.slug,
+            content=seo_result.optimized_post,
+            meta_data=json.dumps({
+                "meta_title": seo_result.meta_title,
+                "meta_description": seo_result.meta_description,
+                "target_keywords": json.loads(target_keywords),
+                "seo_score": seo_result.seo_score,
+                "word_count": write_result.word_count,
+                "pitched_topic_id": topic_id
+            }),
+            generation_pipeline=json.dumps({
+                "pitched_topic": selected_topic,
+                "outline_output": json.loads(outline_result.outline),
+                "writer_output": {
+                    "word_count": write_result.word_count,
+                    "readability_score": write_result.readability_score
+                },
+                "editor_output": {
+                    "changes_summary": edit_result.changes_summary,
+                    "improvement_score": edit_result.improvement_score
+                },
+                "seo_output": {
+                    "seo_score": seo_result.seo_score,
+                    "optimization_notes": seo_result.optimization_notes
+                }
+            }),
+            dspy_version="1.0.0",
+            status="draft",
+            funnel_stage=pitched_topic.funnel_stage or "discovery",
+            target_audience_json=json.dumps({
+                "persona": pitched_topic.target_audience or "Business professionals"
+            }),
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+
+        db.session.add(generated_content)
+        db.session.flush()
+
+        # Convert markdown to HTML and sanitize against XSS
+        from src.sanitize import sanitize_html
+
+        md_converter = markdown.Markdown(extensions=['extra', 'codehilite', 'toc'])
+        raw_html = md_converter.convert(seo_result.optimized_post)
+        content_html = sanitize_html(raw_html)
+
+        # Calculate read time
+        import math
+        read_time = math.ceil(write_result.word_count / 200) if write_result.word_count else 1
+
+        # Create blog post entry
+        blog_post = BlogPost(
+            title=seo_result.meta_title,
+            slug=seo_result.slug,
+            status="ready",
+            funnel_stage=pitched_topic.funnel_stage or "discovery",
+            primary_keyword=selected_topic["target_keyword"],
+            secondary_keywords=selected_topic.get("secondary_keywords", []),
+            content_html=content_html,
+            markdown=seo_result.optimized_post,
+            meta_description=seo_result.meta_description,
+            excerpt=seo_result.meta_description,
+            hero_image_url=hero_image_url,
+            hero_image_alt=hero_image_alt,
+            word_count=write_result.word_count,
+            read_time_minutes=read_time,
+            generated_content_id=generated_content.id,
+            auto_generated=True,
+            dspy_quality_score=float(seo_result.seo_score) / 100.0,
+            published_at=None,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+
+        db.session.add(blog_post)
+
+        # Update pitched topic status
+        pitched_topic.status = "generated"
+        pitched_topic.generated_content_id = generated_content.id
+        pitched_topic.updated_at = datetime.now()
+
+        db.session.commit()
+
+        # Send email notification
+        try:
+            from src.email_utils import send_content_review_email
+
+            notification_email = os.getenv("ADMIN_EMAILS", "support@kalevent.com").split(",")[0].strip()
+            blog_url = f"{os.getenv('API_BASE_URL', 'https://api.kalevent.com')}/blog/{seo_result.slug}"
+
+            send_content_review_email(
+                to_email=notification_email,
+                title=seo_result.meta_title,
+                slug=seo_result.slug,
+                content_preview=seo_result.optimized_post[:500],
+                seo_score=seo_result.seo_score,
+                word_count=write_result.word_count,
+                readability_score=write_result.readability_score,
+                blog_url=blog_url
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning("Failed to send content review email: %s", e)
+
+        return {
+            "success": True,
+            "pitched_topic_id": topic_id,
+            "generated_content_id": generated_content.id,
+            "blog_post_id": blog_post.id,
+            "title": seo_result.meta_title,
+            "slug": seo_result.slug,
+            "word_count": write_result.word_count,
+            "seo_score": seo_result.seo_score,
+            "status": blog_post.status
+        }
+
+    except Exception as e:
+        db.session.rollback()
+        # Mark pitched topic as failed
+        try:
+            pitched_topic.pitch_notes = f"{pitched_topic.pitch_notes or ''}\n\nGeneration failed: {str(e)}".strip()
+            db.session.commit()
+        except:
+            pass
+        return {"error": str(e)}

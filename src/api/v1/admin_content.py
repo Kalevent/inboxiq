@@ -18,7 +18,7 @@ from datetime import datetime
 
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import GeneratedContent, BlogPost, User
+from src.models import GeneratedContent, BlogPost, User, PitchedBlogTopic
 from src.content.tasks import (
     generate_blog_post,
     generate_weekly_posts,
@@ -380,3 +380,247 @@ def content_stats():
         "content_last_7_days": recent_count,
         "total_content": sum(status_distribution.values())
     }), 200
+
+
+@v1.route("/admin/content/pitch-topic", methods=["POST"])
+@jwt_required()
+def pitch_topic():
+    """
+    Submit a manual blog topic pitch.
+
+    Body:
+        title: Topic title/idea (required)
+        description: Topic description or angle (optional)
+        target_keyword: Primary keyword (optional)
+        secondary_keywords: Array of secondary keywords (optional)
+        funnel_stage: discovery | consideration | decision (optional)
+        target_audience: Target audience description (optional)
+        niche: Blog niche (optional)
+        pitch_notes: Additional notes (optional)
+
+    Returns:
+        Created pitched topic
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    payload = _safe_json()
+    title = payload.get("title", "").strip()
+
+    if not title:
+        return jsonify({"error": "title is required"}), 400
+
+    user = _require_admin()
+
+    try:
+        pitched_topic = PitchedBlogTopic(
+            title=title,
+            description=payload.get("description"),
+            target_keyword=payload.get("target_keyword"),
+            secondary_keywords=payload.get("secondary_keywords", []),
+            funnel_stage=payload.get("funnel_stage"),
+            target_audience=payload.get("target_audience"),
+            niche=payload.get("niche"),
+            pitch_notes=payload.get("pitch_notes"),
+            status="pending",
+            priority=payload.get("priority", 3),
+            submitted_by=user.email,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
+        )
+
+        db.session.add(pitched_topic)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "pitched_topic": pitched_topic.to_dict(),
+            "message": "Topic pitched successfully"
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@v1.route("/admin/content/pitched-topics", methods=["GET"])
+@jwt_required()
+def list_pitched_topics():
+    """
+    List pitched blog topics.
+
+    Query params:
+        status: Filter by status (pending, approved, rejected, generated)
+        priority: Filter by priority (1, 2, 3)
+        limit: Max results (default: 50)
+        offset: Pagination offset (default: 0)
+
+    Returns:
+        List of pitched topics
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    status = request.args.get("status")
+    priority = request.args.get("priority", type=int)
+    limit = int(request.args.get("limit", 50))
+    offset = int(request.args.get("offset", 0))
+
+    query = db.session.query(PitchedBlogTopic)
+
+    if status:
+        query = query.filter(PitchedBlogTopic.status == status)
+
+    if priority:
+        query = query.filter(PitchedBlogTopic.priority == priority)
+
+    query = query.order_by(PitchedBlogTopic.priority.asc(), PitchedBlogTopic.created_at.desc())
+
+    total_count = query.count()
+    items = [item.to_dict() for item in query.limit(limit).offset(offset).all()]
+
+    return jsonify({
+        "total": total_count,
+        "limit": limit,
+        "offset": offset,
+        "items": items
+    }), 200
+
+
+@v1.route("/admin/content/pitched-topics/<topic_id>/approve", methods=["POST"])
+@jwt_required()
+def approve_pitched_topic(topic_id):
+    """
+    Approve a pitched topic and optionally generate content.
+
+    Body:
+        generate_now: Generate content immediately (default: false)
+        priority: Update priority (optional)
+
+    Returns:
+        Approval confirmation
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    user = _require_admin()
+    payload = _safe_json()
+    generate_now = payload.get("generate_now", False)
+
+    topic = db.session.query(PitchedBlogTopic).filter(
+        PitchedBlogTopic.id == topic_id
+    ).first()
+
+    if not topic:
+        return jsonify({"error": f"Pitched topic {topic_id} not found"}), 404
+
+    try:
+        topic.status = "approved"
+        topic.reviewed_by = user.id
+        topic.reviewed_at = datetime.now()
+        topic.updated_at = datetime.now()
+
+        if payload.get("priority"):
+            topic.priority = payload.get("priority")
+
+        db.session.commit()
+
+        response = {
+            "success": True,
+            "pitched_topic": topic.to_dict(),
+            "message": "Topic approved"
+        }
+
+        # Optionally generate content immediately
+        if generate_now:
+            from src.content.tasks import generate_blog_from_pitched_topic
+            task = generate_blog_from_pitched_topic.delay(topic_id=topic_id)
+            response["task_id"] = task.id
+            response["message"] = "Topic approved and content generation queued"
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@v1.route("/admin/content/pitched-topics/<topic_id>/reject", methods=["POST"])
+@jwt_required()
+def reject_pitched_topic(topic_id):
+    """
+    Reject a pitched topic.
+
+    Body:
+        reason: Rejection reason (optional)
+
+    Returns:
+        Rejection confirmation
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    user = _require_admin()
+    payload = _safe_json()
+    reason = payload.get("reason")
+
+    topic = db.session.query(PitchedBlogTopic).filter(
+        PitchedBlogTopic.id == topic_id
+    ).first()
+
+    if not topic:
+        return jsonify({"error": f"Pitched topic {topic_id} not found"}), 404
+
+    try:
+        topic.status = "rejected"
+        topic.reviewed_by = user.id
+        topic.reviewed_at = datetime.now()
+        topic.updated_at = datetime.now()
+
+        if reason:
+            topic.pitch_notes = f"{topic.pitch_notes or ''}\n\nRejection reason: {reason}".strip()
+
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "pitched_topic": topic.to_dict(),
+            "message": "Topic rejected"
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@v1.route("/admin/content/pitched-topics/<topic_id>", methods=["DELETE"])
+@jwt_required()
+def delete_pitched_topic(topic_id):
+    """
+    Delete a pitched topic.
+
+    Returns:
+        Deletion confirmation
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    topic = db.session.query(PitchedBlogTopic).filter(
+        PitchedBlogTopic.id == topic_id
+    ).first()
+
+    if not topic:
+        return jsonify({"error": f"Pitched topic {topic_id} not found"}), 404
+
+    try:
+        db.session.delete(topic)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Topic deleted"
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
