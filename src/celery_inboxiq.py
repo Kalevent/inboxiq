@@ -137,12 +137,12 @@ def make_celery(app) -> Celery:
                         "kwargs": {
                             "niche": lead_discovery_niche,
                             "max_leads": lead_discovery_max_leads,
-                            "account_id": lead_discovery_account_id,
+                            "account_id": lead_discovery_account_id,  # Optional, for future multi-tenancy
                         },
                         "options": {"queue": "leads"},
                     }
                 }
-                if lead_discovery_enabled and lead_discovery_account_id
+                if lead_discovery_enabled
                 else {}
             ),
             **(

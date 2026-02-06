@@ -35,8 +35,16 @@ def enrich_lead(self, lead_id: str) -> Dict[str, Any]:
     if not lead:
         return {"error": f"Lead {lead_id} not found"}
 
-    if not lead.company_domain:
-        return {"error": f"Lead {lead_id} has no company_domain to enrich"}
+    # Extract domain from notes (format: "Domain: example.com")
+    domain = None
+    if lead.notes:
+        import re
+        domain_match = re.search(r'Domain:\s+([^\s\n]+)', lead.notes)
+        if domain_match:
+            domain = domain_match.group(1)
+
+    if not domain:
+        return {"error": f"Lead {lead_id} has no domain in notes to enrich"}
 
     try:
         from src.mcp.lead_discovery_mcp import enrich_company
@@ -48,7 +56,7 @@ def enrich_lead(self, lead_id: str) -> Dict[str, Any]:
         try:
             enrichment_data = loop.run_until_complete(
                 enrich_company(
-                    company_domain=lead.company_domain,
+                    company_domain=domain,
                     search_depth="basic"
                 )
             )
@@ -80,14 +88,15 @@ def enrich_lead(self, lead_id: str) -> Dict[str, Any]:
             current_notes = lead.notes or ""
             lead.notes = f"{current_notes}\n\nEnriched data:\n" + "\n".join(enrichment_notes)
 
-        # Mark as enriched
-        lead.last_enrichment_at = datetime.now()
+        # Store enrichment timestamp in notes (no last_enrichment_at field in model)
+        if lead.notes:
+            lead.notes += f"\n\nLast enriched: {datetime.now().isoformat()}"
 
         db.session.commit()
 
         return {
             "lead_id": lead_id,
-            "company_domain": lead.company_domain,
+            "domain": domain,
             "pages_found": len(pages),
             "enrichment_data": enrichment_data
         }

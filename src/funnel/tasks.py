@@ -325,14 +325,11 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
     Args:
         niche: Industry/niche to target (e.g., "B2B SaaS revenue operations")
         max_leads: Maximum number of leads to discover (default: 50)
-        account_id: Account ID to assign leads to (required)
+        account_id: Account ID to assign leads to (optional, for future multi-tenancy)
 
     Returns:
         Dict with discovery results
     """
-    if not account_id:
-        return {"error": "account_id is required"}
-
     results = {
         "timestamp": datetime.now().isoformat(),
         "niche": niche,
@@ -368,27 +365,26 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
             if not domain or not company_name:
                 continue
 
-            # Check if lead already exists
+            # Check if lead already exists (by company_name since no company_domain field)
             existing = db.session.query(Lead).filter(
-                Lead.account_id == account_id,
-                Lead.company_domain == domain
+                Lead.company_name == company_name,
+                Lead.source == "searxng_discovery"
             ).first()
 
             if existing:
-                results["errors"].append(f"Lead already exists: {domain}")
+                results["errors"].append(f"Lead already exists: {company_name}")
                 continue
 
             # Create new lead
+            # Note: name and email are required fields, using placeholders for company leads
             lead = Lead(
-                account_id=account_id,
+                name=company_name,  # Use company name as lead name
+                email=f"contact@{domain}",  # Generate placeholder email from domain
                 company_name=company_name,
-                company_domain=domain,
                 source="searxng_discovery",
                 current_funnel_stage="visits",
-                stage_entered_at=datetime.now(),
-                created_at=datetime.now(),
                 fit_score=5,  # Default, will be updated by qualification
-                notes=f"Auto-discovered via search: {niche}"
+                notes=f"Auto-discovered via search: {niche}\nDomain: {domain}\nURL: {company.get('url', '')}"
             )
 
             db.session.add(lead)
@@ -408,7 +404,7 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
             # Trigger enrichment for new lead
             try:
                 from src.leads.tasks import enrich_lead
-                enrich_lead.delay(str(lead.id))
+                enrich_lead.apply_async(args=[str(lead.id)], queue='leads')
                 results["enriched"] += 1
             except ImportError:
                 # If enrichment task doesn't exist, skip
