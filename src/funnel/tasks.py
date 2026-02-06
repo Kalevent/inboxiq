@@ -376,12 +376,13 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
                 continue
 
             # Create new lead
-            # Note: name and email are required fields, using placeholders for company leads
+            # Note: name, email, and status are required fields
             lead = Lead(
                 name=company_name,  # Use company name as lead name
                 email=f"contact@{domain}",  # Generate placeholder email from domain
                 company_name=company_name,
                 source="searxng_discovery",
+                status="New Lead",  # Required enum field
                 current_funnel_stage="visits",
                 fit_score=5,  # Default, will be updated by qualification
                 notes=f"Auto-discovered via search: {niche}\nDomain: {domain}\nURL: {company.get('url', '')}"
