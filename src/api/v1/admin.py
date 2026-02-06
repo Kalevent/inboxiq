@@ -626,12 +626,10 @@ def admin_generate_blog():
         topic_index = int(payload.get("topic_index", 0))
         auto_publish = payload.get("auto_publish", True)
 
-        # Queue the task
-        task = generate_blog_post.delay(
-            niche=niche,
-            audience=audience,
-            topic_index=topic_index,
-            auto_publish=auto_publish
+        # Queue the task to the inbox queue
+        task = generate_blog_post.apply_async(
+            args=[niche, audience, topic_index, auto_publish],
+            queue='inbox'
         )
 
         return jsonify({
