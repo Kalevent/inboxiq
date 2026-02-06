@@ -187,13 +187,23 @@ jobs:
           echo "Waiting for service to become healthy..."
           for i in {1..10}; do
             if curl -fsS "${HEALTHCHECK_URL}" > /dev/null; then
-              echo "Health check passed."
+              echo "✅ Health check passed."
               exit 0
             fi
             echo "Health check attempt ${i} failed; retrying in 10s."
             sleep 10
           done
-          echo "Health check failed after retries."
+
+          echo "❌ Health check failed after retries. Rolling back deployment..."
+
+          # Rollback all deployments
+          for deploy in inboxiq inboxiq-celery-inbox-worker inboxiq-celery-inbox-beat; do
+            echo "Rolling back ${deploy}..."
+            kubectl rollout undo "deploy/${deploy}" -n "${KUBE_NAMESPACE}" || true
+            kubectl rollout status "deploy/${deploy}" -n "${KUBE_NAMESPACE}" --timeout=300s || true
+          done
+
+          echo "Deployment rolled back to previous version."
           exit 1
 
       - name: Verify deployed images
