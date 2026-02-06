@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from celery import shared_task
 
 from src.extensions import db
-from src.models import Lead, LeadFunnelStage, LeadEngagementEvent
+from src.models import Lead, LeadFunnelStage, LeadEngagementEvent, FunnelMetricsDaily
 
 # Import DSPy modules
 try:
@@ -337,5 +337,132 @@ def funnel_orchestration_job():
         return results
 
     except Exception as e:
+        results["errors"].append(str(e))
+        return results
+
+
+@shared_task(name="funnel.aggregate_daily_metrics")
+def aggregate_daily_metrics():
+    """
+    Aggregate funnel metrics for the previous day.
+
+    Populates funnel_metrics_daily table with:
+    - Entries per stage
+    - Exits per stage
+    - Conversions to next stage
+    - Conversion rates
+    - Average time in stage
+
+    Runs daily at 1am UTC.
+
+    Returns:
+        Dict with aggregation results
+    """
+    yesterday = (datetime.now() - timedelta(days=1)).date()
+
+    results = {
+        "date": yesterday.isoformat(),
+        "stages_aggregated": 0,
+        "errors": []
+    }
+
+    try:
+        # Get all stage entries for yesterday
+        stage_entries = db.session.query(
+            LeadFunnelStage.stage,
+            db.func.count(LeadFunnelStage.id).label('count')
+        ).filter(
+            db.func.date(LeadFunnelStage.entered_at) == yesterday
+        ).group_by(LeadFunnelStage.stage).all()
+
+        # Get all stage exits for yesterday
+        stage_exits = db.session.query(
+            LeadFunnelStage.stage,
+            db.func.count(LeadFunnelStage.id).label('count')
+        ).filter(
+            LeadFunnelStage.exited_at.isnot(None),
+            db.func.date(LeadFunnelStage.exited_at) == yesterday
+        ).group_by(LeadFunnelStage.stage).all()
+
+        # Convert to dicts for easy lookup
+        entries_dict = {row.stage: row.count for row in stage_entries}
+        exits_dict = {row.stage: row.count for row in stage_exits}
+
+        # Calculate average time in each stage (for stages that exited)
+        avg_times = db.session.query(
+            LeadFunnelStage.stage,
+            db.func.avg(
+                db.func.extract('epoch', LeadFunnelStage.exited_at - LeadFunnelStage.entered_at) / 3600
+            ).label('avg_hours')
+        ).filter(
+            LeadFunnelStage.exited_at.isnot(None),
+            db.func.date(LeadFunnelStage.exited_at) == yesterday
+        ).group_by(LeadFunnelStage.stage).all()
+
+        avg_times_dict = {row.stage: float(row.avg_hours) if row.avg_hours else 0 for row in avg_times}
+
+        # Calculate conversions (leads that moved to next stage)
+        # This is approximate - just count entries to next stages
+        stage_order = ['visits', 'discovery', 'consideration', 'conversion', 'retention']
+        stage_to_next = {
+            'visits': 'discovery',
+            'discovery': 'consideration',
+            'consideration': 'conversion',
+            'conversion': 'retention'
+        }
+
+        # For each stage, save or update metrics
+        for stage in stage_order:
+            entries = entries_dict.get(stage, 0)
+            exits = exits_dict.get(stage, 0)
+            avg_hours = avg_times_dict.get(stage, 0.0)
+
+            # Calculate conversions to next stage
+            next_stage = stage_to_next.get(stage)
+            conversions = entries_dict.get(next_stage, 0) if next_stage else 0
+
+            # Calculate conversion rate
+            conversion_rate = (conversions / entries * 100) if entries > 0 else 0.0
+
+            # Check if metric already exists for this date/stage
+            existing_metric = db.session.query(FunnelMetricsDaily).filter(
+                FunnelMetricsDaily.metric_date == yesterday,
+                FunnelMetricsDaily.stage == stage,
+                FunnelMetricsDaily.source.is_(None),
+                FunnelMetricsDaily.campaign.is_(None)
+            ).first()
+
+            if existing_metric:
+                # Update existing
+                existing_metric.entries = entries
+                existing_metric.exits = exits
+                existing_metric.conversions_to_next = conversions
+                existing_metric.conversion_rate = conversion_rate
+                existing_metric.avg_time_in_stage_hours = avg_hours
+            else:
+                # Create new
+                metric = FunnelMetricsDaily(
+                    metric_date=yesterday,
+                    stage=stage,
+                    source=None,  # Aggregate across all sources
+                    campaign=None,  # Aggregate across all campaigns
+                    entries=entries,
+                    exits=exits,
+                    conversions_to_next=conversions,
+                    conversion_rate=conversion_rate,
+                    avg_time_in_stage_hours=avg_hours,
+                    total_cost=None,
+                    cost_per_entry=None
+                )
+                db.session.add(metric)
+
+            results["stages_aggregated"] += 1
+
+        db.session.commit()
+
+        return results
+
+    except Exception as e:
+        db.session.rollback()
         results["errors"].append(str(e))
         return results

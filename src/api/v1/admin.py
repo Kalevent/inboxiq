@@ -390,16 +390,22 @@ def admin_web():
 @jwt_required()
 def admin_blog_metrics():
     """
-    Weekly blog metrics placeholder.
-    Replace with real Google Search Console / analytics data when available.
+    Weekly blog metrics with real GSC data.
     """
     if not _require_admin():
         return jsonify({"error": "forbidden"}), 403
+
     try:
         from src.models import BlogPost
+        from src.integrations.google_search_console import get_gsc_client
+
+        # Get blog post counts from database
         total_posts = db.session.query(func.count(BlogPost.id)).scalar() or 0
         published = (
-            db.session.query(func.count(BlogPost.id)).filter(BlogPost.status == "published").scalar() or 0
+            db.session.query(func.count(BlogPost.id))
+            .filter(BlogPost.status == "published")
+            .scalar()
+            or 0
         )
         avg_word_count = (
             db.session.query(func.avg(BlogPost.word_count))
@@ -411,47 +417,50 @@ def admin_blog_metrics():
             .filter(BlogPost.read_time_minutes.isnot(None))
             .scalar()
         )
+
+        # Get GSC data if configured
+        gsc_client = get_gsc_client()
+        gsc_data = {}
+
+        if gsc_client:
+            try:
+                gsc_data = gsc_client.get_blog_metrics(path_prefix='/blog/')
+            except Exception as gsc_error:
+                current_app.logger.warning(f"GSC fetch error: {gsc_error}")
+                gsc_data = {
+                    'impressions': None,
+                    'clicks': None,
+                    'ctr': None,
+                    'indexed_pages': None
+                }
+        else:
+            # GSC not configured - return None values
+            gsc_data = {
+                'impressions': None,
+                'clicks': None,
+                'ctr': None,
+                'indexed_pages': None
+            }
+
         return jsonify(
             {
-                "impressions": None,
-                "indexed_pages": None,
-                "clicks": None,
-                "rankings": [],
-                "signups_from_blog": None,
-                "time_on_page_seconds": None,
+                "impressions": gsc_data.get('impressions'),
+                "clicks": gsc_data.get('clicks'),
+                "ctr": gsc_data.get('ctr'),
+                "indexed_pages": gsc_data.get('indexed_pages'),
                 "total_posts": int(total_posts),
                 "published_posts": int(published),
                 "avg_word_count": float(avg_word_count) if avg_word_count else None,
                 "avg_read_time_minutes": float(avg_read_time) if avg_read_time else None,
+                "rankings": [],  # Could add top queries here
+                "signups_from_blog": None,  # Would come from GA or your analytics
+                "time_on_page_seconds": None,  # Would come from GA
             }
         )
+
     except Exception as exc:
         current_app.logger.exception("admin_blog_metrics_failed", exc_info=exc)
-        return jsonify({"error": "admin_blog_metrics_failed"}), 200
-    avg_word_count = (
-        db.session.query(func.avg(BlogPost.word_count))
-        .filter(BlogPost.word_count.isnot(None))
-        .scalar()
-    )
-    avg_read_time = (
-        db.session.query(func.avg(BlogPost.read_time_minutes))
-        .filter(BlogPost.read_time_minutes.isnot(None))
-        .scalar()
-    )
-    return jsonify(
-        {
-            "impressions": None,
-            "indexed_pages": None,
-            "clicks": None,
-            "rankings": [],
-            "signups_from_blog": None,
-            "time_on_page_seconds": None,
-            "total_posts": int(total_posts),
-            "published_posts": int(published),
-            "avg_word_count": float(avg_word_count) if avg_word_count else None,
-            "avg_read_time_minutes": float(avg_read_time) if avg_read_time else None,
-        }
-    )
+        return jsonify({"error": "admin_blog_metrics_failed"}), 500
 
 
 @v1.route("/admin/dspy-eval", methods=["GET"])

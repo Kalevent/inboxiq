@@ -15,6 +15,11 @@ src/.env.*
 src/prod.env
 certs/
 
+# Google Service Account credentials (sensitive)
+gsc-service-account.json
+*-service-account.json
+google-*.json
+
 # Local planning/implementation docs
 IMPLEMENTATION_PLAN.md
 CLAUDE.md

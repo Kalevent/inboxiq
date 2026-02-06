@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Funnel Analytics Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <main class="mx-auto max-w-7xl px-6 py-8">
+
+    <!-- Header -->
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <p class="text-sm text-indigo-200 uppercase tracking-wide">Lead Generation</p>
+        <h1 class="text-2xl font-semibold text-slate-100 mt-1">Funnel Analytics</h1>
+        <p class="text-sm text-slate-400 mt-1">Track leads through the 5-stage conversion funnel</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="refreshBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">
+          ↻ Refresh
+        </button>
+        <a href="/admin" class="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm font-semibold text-white transition-colors">
+          ← Back to Admin
+        </a>
+      </div>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="mb-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+      <div class="flex flex-wrap gap-4 items-end">
+        <div>
+          <label class="text-xs text-slate-400 uppercase tracking-wide mb-1 block">Start Date</label>
+          <input type="date" id="startDate" class="rounded-lg bg-slate-800 border border-slate-700 text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 uppercase tracking-wide mb-1 block">End Date</label>
+          <input type="date" id="endDate" class="rounded-lg bg-slate-800 border border-slate-700 text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <button id="applyFilterBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">
+          Apply Filter
+        </button>
+        <button id="resetFilterBtn" class="rounded-lg bg-slate-700 hover:bg-slate-600 px-3 py-2 text-sm font-semibold text-white transition-colors">
+          Reset to Last 30 Days
+        </button>
+      </div>
+    </div>
+
+    <!-- Stage Metrics Grid -->
+    <div class="grid md:grid-cols-5 gap-4 mb-8">
+      <!-- Visits -->
+      <div class="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-900/20 to-slate-900/70 p-4 hover:border-blue-500/50 transition-colors">
+        <div class="text-xs uppercase tracking-wide text-blue-300 mb-1">VISITS</div>
+        <p id="visitsCount" class="text-3xl font-semibold text-slate-50 mb-2">--</p>
+        <div class="text-xs text-slate-400">
+          <span id="visitsConversion" class="font-semibold text-emerald-400">--%</span> → Discovery
+        </div>
+      </div>
+
+      <!-- Discovery -->
+      <div class="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-900/20 to-slate-900/70 p-4 hover:border-cyan-500/50 transition-colors">
+        <div class="text-xs uppercase tracking-wide text-cyan-300 mb-1">DISCOVERY</div>
+        <p id="discoveryCount" class="text-3xl font-semibold text-slate-50 mb-2">--</p>
+        <div class="text-xs text-slate-400">
+          <span id="discoveryConversion" class="font-semibold text-emerald-400">--%</span> → Consideration
+        </div>
+      </div>
+
+      <!-- Consideration -->
+      <div class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/20 to-slate-900/70 p-4 hover:border-indigo-500/50 transition-colors">
+        <div class="text-xs uppercase tracking-wide text-indigo-300 mb-1">CONSIDERATION</div>
+        <p id="considerationCount" class="text-3xl font-semibold text-slate-50 mb-2">--</p>
+        <div class="text-xs text-slate-400">
+          <span id="considerationConversion" class="font-semibold text-emerald-400">--%</span> → Conversion
+        </div>
+      </div>
+
+      <!-- Conversion -->
+      <div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/20 to-slate-900/70 p-4 hover:border-emerald-500/50 transition-colors">
+        <div class="text-xs uppercase tracking-wide text-emerald-300 mb-1">CONVERSION</div>
+        <p id="conversionCount" class="text-3xl font-semibold text-slate-50 mb-2">--</p>
+        <div class="text-xs text-slate-400">
+          <span id="conversionConversionRate" class="font-semibold text-emerald-400">--%</span> → Retention
+        </div>
+      </div>
+
+      <!-- Retention -->
+      <div class="rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/20 to-slate-900/70 p-4 hover:border-purple-500/50 transition-colors">
+        <div class="text-xs uppercase tracking-wide text-purple-300 mb-1">RETENTION</div>
+        <p id="retentionCount" class="text-3xl font-semibold text-slate-50 mb-2">--</p>
+        <div class="text-xs text-slate-400">
+          Active customers
+        </div>
+      </div>
+    </div>
+
+    <!-- Overall Metrics -->
+    <div class="grid md:grid-cols-3 gap-4 mb-8">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+        <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">Total Leads</div>
+        <p id="totalLeads" class="text-2xl font-semibold text-slate-50">--</p>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+        <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">Overall Conversion Rate</div>
+        <p id="overallConversionRate" class="text-2xl font-semibold text-emerald-400">--%</p>
+        <div class="text-xs text-slate-400 mt-1">Visits → Retention</div>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+        <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">Average Funnel Time</div>
+        <p id="avgFunnelTime" class="text-2xl font-semibold text-indigo-400">-- days</p>
+        <div class="text-xs text-slate-400 mt-1">Visits → Retention</div>
+      </div>
+    </div>
+
+    <!-- Conversion Rates Detail -->
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 mb-8">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4">Stage-to-Stage Conversion Rates</h2>
+      <div class="grid md:grid-cols-4 gap-4" id="conversionRatesDetail">
+        <div class="text-center">
+          <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Loading...</div>
+          <div class="text-2xl font-semibold text-emerald-500">--%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Attribution Sources -->
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+      <!-- Top Sources -->
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+        <h2 class="text-lg font-semibold text-slate-100 mb-4">Top Sources</h2>
+        <div id="topSources" class="space-y-3">
+          <div class="text-sm text-slate-400 text-center py-4">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Top Campaigns -->
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+        <h2 class="text-lg font-semibold text-slate-100 mb-4">Top Campaigns</h2>
+        <div id="topCampaigns" class="space-y-3">
+          <div class="text-sm text-slate-400 text-center py-4">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stage Velocity -->
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 mb-8">
+      <h2 class="text-lg font-semibold text-slate-100 mb-4">Stage Velocity</h2>
+      <p class="text-xs text-slate-400 mb-4">Average time spent in each funnel stage</p>
+      <div id="velocityMetrics" class="grid md:grid-cols-5 gap-4">
+        <div class="text-center">
+          <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Loading...</div>
+          <div class="text-xl font-semibold text-indigo-400">-- days</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-slate-100">Recent Stage Movements</h2>
+        <span id="activityTimestamp" class="text-xs text-slate-500">Last updated: --</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-slate-800">
+            <tr>
+              <th class="text-left p-2 text-slate-400 font-medium">Lead</th>
+              <th class="text-left p-2 text-slate-400 font-medium">From Stage</th>
+              <th class="text-left p-2 text-slate-400 font-medium">To Stage</th>
+              <th class="text-left p-2 text-slate-400 font-medium">Date</th>
+            </tr>
+          </thead>
+          <tbody id="recentMovements" class="divide-y divide-slate-800">
+            <tr>
+              <td colspan="4" class="text-center py-8 text-slate-400">Loading recent activity...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-xs text-slate-500">
+      <p>Funnel metrics automatically refresh every 15 minutes. Click "Refresh" for latest data.</p>
+    </div>
+
+  </main>
+
+  <script>
+    // State
+    let currentFilters = {
+      start_date: null,
+      end_date: null
+    };
+
+    // Initialize date inputs with defaults (last 30 days)
+    function initializeDateInputs() {
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+
+      const endDateInput = document.getElementById('endDate');
+      const startDateInput = document.getElementById('startDate');
+
+      endDateInput.value = today.toISOString().split('T')[0];
+      startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+
+      currentFilters.start_date = startDateInput.value;
+      currentFilters.end_date = endDateInput.value;
+    }
+
+    // Load funnel metrics
+    async function loadFunnelMetrics() {
+      try {
+        const params = new URLSearchParams(currentFilters);
+        const response = await fetch(`/api/v1/funnel/metrics?${params}`, {
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Update stage counts
+        document.getElementById('visitsCount').textContent = data.stage_distribution.visits || 0;
+        document.getElementById('discoveryCount').textContent = data.stage_distribution.discovery || 0;
+        document.getElementById('considerationCount').textContent = data.stage_distribution.consideration || 0;
+        document.getElementById('conversionCount').textContent = data.stage_distribution.conversion || 0;
+        document.getElementById('retentionCount').textContent = data.stage_distribution.retention || 0;
+
+        // Update conversion rates below each stage
+        document.getElementById('visitsConversion').textContent = data.conversion_rates.visits_to_discovery.toFixed(1) + '%';
+        document.getElementById('discoveryConversion').textContent = data.conversion_rates.discovery_to_consideration.toFixed(1) + '%';
+        document.getElementById('considerationConversion').textContent = data.conversion_rates.consideration_to_conversion.toFixed(1) + '%';
+        document.getElementById('conversionConversionRate').textContent = data.conversion_rates.conversion_to_retention.toFixed(1) + '%';
+
+        // Update overall metrics
+        document.getElementById('totalLeads').textContent = data.total_leads || 0;
+
+        // Calculate overall conversion rate (retention / visits * 100)
+        const overallRate = (data.stage_distribution.visits > 0)
+          ? ((data.stage_distribution.retention / data.stage_distribution.visits) * 100).toFixed(2)
+          : '0.00';
+        document.getElementById('overallConversionRate').textContent = overallRate + '%';
+
+      } catch (error) {
+        console.error('Error loading funnel metrics:', error);
+        showError('Failed to load funnel metrics: ' + error.message);
+      }
+    }
+
+    // Load conversion rates detail
+    async function loadConversionRates() {
+      try {
+        const params = new URLSearchParams(currentFilters);
+        const response = await fetch(`/api/v1/funnel/conversion-rates?${params}`, {
+          credentials: 'include'
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        const container = document.getElementById('conversionRatesDetail');
+
+        container.innerHTML = data.conversions.map(conv => `
+          <div class="text-center">
+            <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">${conv.from_stage} → ${conv.to_stage}</div>
+            <div class="text-2xl font-semibold text-emerald-500">${conv.conversion_rate.toFixed(1)}%</div>
+            <div class="text-xs text-slate-500 mt-1">${conv.to_count} / ${conv.from_count}</div>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error('Error loading conversion rates:', error);
+      }
+    }
+
+    // Load attribution data
+    async function loadAttribution() {
+      try {
+        const params = new URLSearchParams({...currentFilters, limit: 5});
+        const response = await fetch(`/api/v1/funnel/attribution?${params}`, {
+          credentials: 'include'
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+
+        // Render top sources
+        const sourcesContainer = document.getElementById('topSources');
+        if (data.top_sources.length === 0) {
+          sourcesContainer.innerHTML = '<div class="text-sm text-slate-400 text-center py-4">No attribution data available</div>';
+        } else {
+          sourcesContainer.innerHTML = data.top_sources.map(source => `
+            <div class="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+              <div class="flex-1">
+                <div class="text-sm font-medium text-slate-100">${source.source || 'Unknown'}</div>
+                <div class="text-xs text-slate-400">${source.conversions} conversions (${source.conversion_rate}%)</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-semibold text-indigo-400">${source.leads} leads</div>
+                <div class="text-xs text-slate-500">${source.percentage}%</div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Render top campaigns
+        const campaignsContainer = document.getElementById('topCampaigns');
+        if (data.top_campaigns.length === 0) {
+          campaignsContainer.innerHTML = '<div class="text-sm text-slate-400 text-center py-4">No campaign data available</div>';
+        } else {
+          campaignsContainer.innerHTML = data.top_campaigns.map(campaign => `
+            <div class="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+              <div class="flex-1">
+                <div class="text-sm font-medium text-slate-100">${campaign.campaign || 'Unknown'}</div>
+                <div class="text-xs text-slate-400">${campaign.conversions} conversions (${campaign.conversion_rate}%)</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-semibold text-indigo-400">${campaign.leads} leads</div>
+                <div class="text-xs text-slate-500">${campaign.percentage}%</div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+      } catch (error) {
+        console.error('Error loading attribution:', error);
+      }
+    }
+
+    // Load velocity metrics
+    async function loadVelocity() {
+      try {
+        const params = new URLSearchParams(currentFilters);
+        const response = await fetch(`/api/v1/funnel/velocity?${params}`, {
+          credentials: 'include'
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        const container = document.getElementById('velocityMetrics');
+
+        if (data.velocity_by_stage.length === 0) {
+          container.innerHTML = '<div class="col-span-5 text-sm text-slate-400 text-center py-4">No velocity data available</div>';
+        } else {
+          container.innerHTML = data.velocity_by_stage.map(velocity => `
+            <div class="text-center">
+              <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">${velocity.stage}</div>
+              <div class="text-xl font-semibold text-indigo-400">${velocity.avg_days} days</div>
+              <div class="text-xs text-slate-500">${velocity.avg_hours.toFixed(1)} hours</div>
+            </div>
+          `).join('');
+        }
+
+        // Update average funnel time
+        document.getElementById('avgFunnelTime').textContent = data.overall_avg_days + ' days';
+
+      } catch (error) {
+        console.error('Error loading velocity:', error);
+      }
+    }
+
+    // Load all data
+    async function loadAllData() {
+      document.getElementById('activityTimestamp').textContent = 'Loading...';
+
+      await Promise.all([
+        loadFunnelMetrics(),
+        loadConversionRates(),
+        loadAttribution(),
+        loadVelocity()
+      ]);
+
+      const now = new Date();
+      document.getElementById('activityTimestamp').textContent = `Last updated: ${now.toLocaleTimeString()}`;
+    }
+
+    // Show error message
+    function showError(message) {
+      // Simple error display - could be enhanced with a toast notification
+      const container = document.querySelector('main');
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'fixed top-4 right-4 bg-red-900 border border-red-500 text-red-100 px-4 py-3 rounded-lg shadow-lg z-50';
+      errorDiv.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span>⚠️ ${message}</span>
+          <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-red-300 hover:text-red-100">✕</button>
+        </div>
+      `;
+      document.body.appendChild(errorDiv);
+      setTimeout(() => errorDiv.remove(), 5000);
+    }
+
+    // Event listeners
+    document.getElementById('refreshBtn').addEventListener('click', loadAllData);
+
+    document.getElementById('applyFilterBtn').addEventListener('click', () => {
+      currentFilters.start_date = document.getElementById('startDate').value;
+      currentFilters.end_date = document.getElementById('endDate').value;
+      loadAllData();
+    });
+
+    document.getElementById('resetFilterBtn').addEventListener('click', () => {
+      initializeDateInputs();
+      loadAllData();
+    });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeDateInputs();
+      loadAllData();
+    });
+  </script>
+</body>
+</html>

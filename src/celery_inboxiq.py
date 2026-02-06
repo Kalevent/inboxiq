@@ -41,6 +41,9 @@ def make_celery(app) -> Celery:
     content_gen_hour = int(os.getenv("CONTENT_GENERATION_HOUR", "6"))
     content_gen_minute = int(os.getenv("CONTENT_GENERATION_MINUTE", "0"))
 
+    funnel_orchestration_enabled = _parse_bool(os.getenv("FUNNEL_ORCHESTRATION_ENABLED"), True)
+    daily_metrics_enabled = _parse_bool(os.getenv("DAILY_METRICS_ENABLED"), True)
+
     celery_app.conf.update(
         task_serializer="json",
         accept_content=["json"],
@@ -95,6 +98,28 @@ def make_celery(app) -> Celery:
                     }
                 }
                 if content_gen_enabled
+                else {}
+            ),
+            **(
+                {
+                    "funnel_orchestration_job": {
+                        "task": "funnel.orchestration_job",
+                        "schedule": crontab(minute="*/15"),  # Every 15 minutes
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if funnel_orchestration_enabled
+                else {}
+            ),
+            **(
+                {
+                    "aggregate_funnel_metrics_daily": {
+                        "task": "funnel.aggregate_daily_metrics",
+                        "schedule": crontab(hour=1, minute=0),  # 1am daily
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if daily_metrics_enabled
                 else {}
             ),
         },

@@ -22,4 +22,6 @@ from src.api.v1 import (  # noqa: F401
     leads,
     twilio,
     source_connections,
+    funnel_analytics,
+    content,
 )

@@ -27,6 +27,11 @@ spec:
                 name: inboxiq-env
             - configMapRef:
                 name: inboxiq-config
+          volumeMounts:
+            - name: gsc-credentials
+              mountPath: /usr/src/gsc-service-account.json
+              subPath: gsc-service-account.json
+              readOnly: true
           resources:
             requests:
               cpu: 100m
@@ -34,3 +39,8 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+      volumes:
+        - name: gsc-credentials
+          secret:
+            secretName: gsc-credentials
+            optional: true

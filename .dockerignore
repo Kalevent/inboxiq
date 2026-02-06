@@ -26,6 +26,11 @@ archive/
 IMPLEMENTATION_PLAN.md
 CLAUDE.md
 
+# Google Service Account credentials (never include in images)
+gsc-service-account.json
+*-service-account.json
+google-*.json
+
 # VSCode settings
 .vscode/
 
