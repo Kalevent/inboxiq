@@ -64,8 +64,8 @@ class EditorModule(dspy.Module):
 if __name__ == "__main__":
     import dspy
 
-    lm = dspy.OpenAI(model="gpt-4", max_tokens=3000)
-    dspy.settings.configure(lm=lm)
+    from src.dspy import _configure_dspy
+    _configure_dspy()
 
     module = EditorModule()
 

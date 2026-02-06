@@ -618,7 +618,7 @@ def admin_generate_blog():
     if not _require_admin():
         return jsonify({"error": "forbidden"}), 403
     try:
-        from src.content.tasks import generate_blog_post
+        from src.celery_inboxiq import celery
 
         payload = request.get_json(silent=True) or {}
         niche = payload.get("niche", "Revenue Operations")
@@ -626,8 +626,9 @@ def admin_generate_blog():
         topic_index = int(payload.get("topic_index", 0))
         auto_publish = payload.get("auto_publish", True)
 
-        # Queue the task to the inbox queue
-        task = generate_blog_post.apply_async(
+        # Queue the task to the inbox queue using the celery instance
+        task = celery.send_task(
+            'content.generate_blog_post',
             args=[niche, audience, topic_index, auto_publish],
             queue='inbox'
         )

@@ -1,6 +1,7 @@
 import bleach
 
-# Minimal allowlist for rich-text inputs we might accept in the future.
+# Allowlist for rich-text content including markdown-generated HTML.
+# Expanded to support blog posts, knowledge base articles, etc.
 ALLOWED_TAGS = [
     "p",
     "br",
@@ -13,12 +14,32 @@ ALLOWED_TAGS = [
     "code",
     "pre",
     "span",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "blockquote",
+    "hr",
+    "table",
+    "thead",
+    "tbody",
+    "tr",
+    "th",
+    "td",
+    "img",
+    "div",
 ]
 ALLOWED_ATTRIBUTES = {
     "a": ["href", "title", "rel", "target"],
     "span": ["class"],
     "code": ["class"],
     "pre": ["class"],
+    "img": ["src", "alt", "title", "width", "height"],
+    "div": ["class"],
+    "th": ["align"],
+    "td": ["align"],
 }
 ALLOWED_PROTOCOLS = ["http", "https", "mailto"]
 

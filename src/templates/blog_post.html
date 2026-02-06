@@ -90,8 +90,8 @@
           {% endif %}
           {% if hero_src %}
             <div class="blog-hero relative bg-slate-900">
-              <img src="{{ hero_src }}" alt="{{ post.hero_image_alt or post.title or 'Unified triage layer hero' }}" class="absolute inset-0 w-full h-full object-cover">
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/30 to-transparent"></div>
+              <img src="{{ hero_src }}" alt="{{ post.hero_image_alt or post.title or 'Unified triage layer hero' }}" class="absolute inset-0 w-full h-full object-cover z-0">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/30 to-transparent z-10"></div>
             </div>
           {% else %}
             <div class="blog-hero bg-gradient-to-r from-indigo-600/40 via-fuchsia-500/30 to-slate-900"></div>

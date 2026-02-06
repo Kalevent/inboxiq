@@ -110,7 +110,7 @@ def create_app() -> Flask:
         "default-src 'self'",
         "script-src 'self' 'unsafe-inline' https://js.stripe.com",
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: https://www.gravatar.com",
+        "img-src 'self' data: https://www.gravatar.com https://files.kalevent.com",
         "font-src 'self'",
         "connect-src 'self' https://127.0.0.1:8000 https://api.kalevent.com https://files.kalevent.com",
         "form-action 'self'",

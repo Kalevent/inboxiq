@@ -80,8 +80,8 @@ if __name__ == "__main__":
     import json
 
     # Configure DSPy
-    lm = dspy.OpenAI(model="gpt-4", max_tokens=1500)
-    dspy.settings.configure(lm=lm)
+    from src.dspy import _configure_dspy
+    _configure_dspy()
 
     # Initialize module
     module = TopicGeneratorModule()

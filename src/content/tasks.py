@@ -11,6 +11,7 @@ import os
 import json
 from datetime import datetime
 from celery import shared_task
+import markdown
 
 from src.extensions import db
 from src.models import BlogPost, GeneratedContent
@@ -31,12 +32,88 @@ except ImportError:
 
 
 def initialize_dspy():
-    """Initialize DSPy with LLM configuration."""
+    """Initialize DSPy with LLM configuration for content generation."""
     if not DSPY_AVAILABLE:
         raise RuntimeError("DSPy not available")
 
-    lm = dspy.OpenAI(model=os.getenv("DSPY_MODEL", "gpt-4"), max_tokens=3000)
+    # Configure DSPy with content-generation-specific settings
+    # (higher max_tokens than the centralized config which is for triage)
+    provider = os.getenv("DSPY_PROVIDER", "openai").strip().lower()
+    model = os.getenv("DSPY_MODEL", "gpt-4o-mini")
+
+    # Use DSPy 3.x LM API with content-appropriate settings
+    if "/" not in model:
+        model = f"{provider}/{model}"
+
+    lm = dspy.LM(model=model, max_tokens=3000, temperature=0.7)
     dspy.settings.configure(lm=lm)
+
+
+def _generate_hero_image(title: str, topic: dict) -> tuple[str, str]:
+    """
+    Generate hero image using DALL-E 3 and upload to S3.
+
+    Args:
+        title: Blog post title
+        topic: Topic object with keywords and context
+
+    Returns:
+        Tuple of (image_url, alt_text)
+    """
+    import openai
+    import requests
+    from src.uploads import upload_bytes, build_public_url
+
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise RuntimeError("OPENAI_API_KEY not configured")
+
+    client = openai.OpenAI(api_key=openai_api_key)
+
+    # Craft image prompt based on blog topic
+    keyword = topic.get("target_keyword", "business automation")
+    angle = topic.get("angle", "professional")
+
+    image_prompt = f"""Professional hero image for a blog post about {keyword}.
+Style: Modern, clean, professional business illustration.
+Theme: {title}
+Mood: Innovative, trustworthy, data-driven.
+No text or words in the image.
+Perspective: Wide angle, suitable for blog header (16:9 aspect ratio feel).
+Colors: Blue, purple, white tones - corporate but approachable."""
+
+    # Generate image with DALL-E 3
+    response = client.images.generate(
+        model="dall-e-3",
+        prompt=image_prompt,
+        size="1024x1024",
+        quality="standard",
+        n=1
+    )
+
+    image_url = response.data[0].url
+
+    # Download image
+    img_response = requests.get(image_url, timeout=30)
+    img_response.raise_for_status()
+    image_bytes = img_response.content
+
+    # Upload to S3
+    from datetime import datetime
+    slug_safe = title.lower().replace(" ", "-")[:50]
+    key = f"blog/heroes/{datetime.now().strftime('%Y%m%d')}-{slug_safe}.png"
+
+    upload_bytes(
+        key=key,
+        data=image_bytes,
+        content_type="image/png",
+        content_disposition=f'inline; filename="{slug_safe}.png"'
+    )
+
+    public_url = build_public_url(key)
+    alt_text = f"Hero image for {title}"
+
+    return public_url, alt_text
 
 
 @shared_task(name="content.generate_blog_post")
@@ -111,7 +188,20 @@ def generate_blog_post(
             target_keywords=target_keywords
         )
 
-        # 6. Save to database
+        # 6. Generate hero image with DALL-E 3
+        hero_image_url = None
+        hero_image_alt = None
+        try:
+            hero_image_url, hero_image_alt = _generate_hero_image(
+                title=seo_result.meta_title,
+                topic=selected_topic
+            )
+        except Exception as img_exc:
+            # Don't fail the whole task if image generation fails
+            import logging
+            logging.getLogger(__name__).warning("Hero image generation failed: %s", img_exc)
+
+        # 7. Save to database
         generated_content = GeneratedContent(
             content_type="blog_post",
             title=seo_result.meta_title,
@@ -151,6 +241,15 @@ def generate_blog_post(
         db.session.add(generated_content)
         db.session.flush()
 
+        # Convert markdown to HTML and sanitize against XSS
+        from src.sanitize import sanitize_html
+
+        md_converter = markdown.Markdown(extensions=['extra', 'codehilite', 'toc'])
+        raw_html = md_converter.convert(seo_result.optimized_post)
+
+        # Sanitize HTML to prevent XSS attacks (defense-in-depth)
+        content_html = sanitize_html(raw_html)
+
         # Create blog post entry
         blog_post = BlogPost(
             title=seo_result.meta_title,
@@ -159,9 +258,11 @@ def generate_blog_post(
             funnel_stage=selected_topic.get("target_stage", "discovery"),
             primary_keyword=selected_topic["target_keyword"],
             secondary_keywords=selected_topic.get("secondary_keywords", []),
-            content_html=None,  # Would convert markdown to HTML
+            content_html=content_html,
             markdown=seo_result.optimized_post,
             meta_description=seo_result.meta_description,
+            hero_image_url=hero_image_url,
+            hero_image_alt=hero_image_alt,
             word_count=write_result.word_count,
             generated_content_id=generated_content.id,
             auto_generated=True,

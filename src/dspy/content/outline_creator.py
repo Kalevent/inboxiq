@@ -87,8 +87,8 @@ if __name__ == "__main__":
     import dspy
     import json
 
-    lm = dspy.OpenAI(model="gpt-4", max_tokens=2000)
-    dspy.settings.configure(lm=lm)
+    from src.dspy import _configure_dspy
+    _configure_dspy()
 
     module = OutlineCreatorModule()
 
