@@ -2,7 +2,8 @@ const path = require('path');
 
 module.exports = {
   content: [
-    path.join(process.cwd(), 'src/templates/**/*.{html,htm}')
+    './templates/**/*.{html,htm}',
+    './templates/**/**/*.{html,htm}'
   ],
   theme: {
     extend: {},
