@@ -250,6 +250,9 @@ def create_app() -> Flask:
   app.register_blueprint(publishing_bp)
   app.register_blueprint(funnel_bp)
 
+  # Register SEO cleanup handlers for old URLs
+  from src.seo_cleanup import register_seo_cleanup
+  register_seo_cleanup(app)
 
   @app.route("/", methods=["GET"])
   def root():
