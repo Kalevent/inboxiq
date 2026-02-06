@@ -250,6 +250,10 @@ def generate_blog_post(
         # Sanitize HTML to prevent XSS attacks (defense-in-depth)
         content_html = sanitize_html(raw_html)
 
+        # Calculate read time (average reading speed: 200 words/minute)
+        import math
+        read_time = math.ceil(write_result.word_count / 200) if write_result.word_count else 1
+
         # Create blog post entry
         blog_post = BlogPost(
             title=seo_result.meta_title,
@@ -261,9 +265,11 @@ def generate_blog_post(
             content_html=content_html,
             markdown=seo_result.optimized_post,
             meta_description=seo_result.meta_description,
+            excerpt=seo_result.meta_description,  # Use meta description as excerpt
             hero_image_url=hero_image_url,
             hero_image_alt=hero_image_alt,
             word_count=write_result.word_count,
+            read_time_minutes=read_time,
             generated_content_id=generated_content.id,
             auto_generated=True,
             dspy_quality_score=float(seo_result.seo_score) / 100.0,
