@@ -2,6 +2,7 @@
 Celery tasks for Funnel Orchestration Agent
 
 Automated tasks for:
+- Lead discovery via web search
 - Lead qualification
 - Interest scoring
 - Stage progression checks
@@ -9,6 +10,7 @@ Automated tasks for:
 """
 import os
 import json
+import asyncio
 from datetime import datetime, timedelta
 from celery import shared_task
 
@@ -310,6 +312,211 @@ def churn_risk_analysis():
 
     except Exception as e:
         return {"error": str(e), "results": results}
+
+
+@shared_task(name="funnel.discover_leads_via_search")
+def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str = None):
+    """
+    Discover new leads via SearXNG-powered web search.
+
+    Uses the Lead Discovery MCP server to find companies in the specified niche,
+    creates new lead records, and triggers enrichment.
+
+    Args:
+        niche: Industry/niche to target (e.g., "B2B SaaS revenue operations")
+        max_leads: Maximum number of leads to discover (default: 50)
+        account_id: Account ID to assign leads to (required)
+
+    Returns:
+        Dict with discovery results
+    """
+    if not account_id:
+        return {"error": "account_id is required"}
+
+    results = {
+        "timestamp": datetime.now().isoformat(),
+        "niche": niche,
+        "discovered": 0,
+        "enriched": 0,
+        "errors": []
+    }
+
+    try:
+        # Import lead discovery MCP tools dynamically
+        from src.mcp.lead_discovery_mcp import discover_companies
+
+        # Run async discovery in sync context
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        try:
+            discovery_results = loop.run_until_complete(
+                discover_companies(
+                    query=niche,
+                    niche=niche,
+                    max_results=max_leads
+                )
+            )
+        finally:
+            loop.close()
+
+        # Process discovered companies
+        for company in discovery_results.get("companies", []):
+            domain = company.get("domain")
+            company_name = company.get("name")
+
+            if not domain or not company_name:
+                continue
+
+            # Check if lead already exists
+            existing = db.session.query(Lead).filter(
+                Lead.account_id == account_id,
+                Lead.company_domain == domain
+            ).first()
+
+            if existing:
+                results["errors"].append(f"Lead already exists: {domain}")
+                continue
+
+            # Create new lead
+            lead = Lead(
+                account_id=account_id,
+                company_name=company_name,
+                company_domain=domain,
+                source="searxng_discovery",
+                current_funnel_stage="visits",
+                stage_entered_at=datetime.now(),
+                created_at=datetime.now(),
+                fit_score=5,  # Default, will be updated by qualification
+                notes=f"Auto-discovered via search: {niche}"
+            )
+
+            db.session.add(lead)
+            db.session.flush()  # Get the lead ID
+
+            # Create initial funnel stage entry
+            stage_entry = LeadFunnelStage(
+                lead_id=str(lead.id),
+                stage="visits",
+                entered_at=datetime.now(),
+                notes=f"Discovered via web search for: {niche}"
+            )
+            db.session.add(stage_entry)
+
+            results["discovered"] += 1
+
+            # Trigger enrichment for new lead
+            try:
+                from src.leads.tasks import enrich_lead
+                enrich_lead.delay(str(lead.id))
+                results["enriched"] += 1
+            except ImportError:
+                # If enrichment task doesn't exist, skip
+                pass
+            except Exception as e:
+                results["errors"].append(f"Enrichment failed for {lead.id}: {str(e)}")
+
+        db.session.commit()
+
+        return results
+
+    except Exception as e:
+        db.session.rollback()
+        results["errors"].append(str(e))
+        return results
+
+
+@shared_task(name="funnel.discover_buying_signals")
+def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results: int = 20):
+    """
+    Find companies showing buying signals (hiring, funding, expansion).
+
+    Identifies companies with budget availability indicators and creates
+    engagement events for existing leads or discovers new ones.
+
+    Args:
+        niche: Industry to search (e.g., "B2B SaaS")
+        signal_type: "hiring", "funding", or "expansion"
+        max_results: Maximum signals to discover (default: 20)
+
+    Returns:
+        Dict with buying signals found
+    """
+    results = {
+        "timestamp": datetime.now().isoformat(),
+        "niche": niche,
+        "signal_type": signal_type,
+        "signals_found": 0,
+        "leads_updated": 0,
+        "errors": []
+    }
+
+    try:
+        from src.mcp.lead_discovery_mcp import find_buying_signals
+
+        # Run async search
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        try:
+            signal_results = loop.run_until_complete(
+                find_buying_signals(
+                    niche=niche,
+                    signal_type=signal_type,
+                    max_results=max_results
+                )
+            )
+        finally:
+            loop.close()
+
+        # Process signals
+        for signal in signal_results.get("signals", []):
+            domain = signal.get("domain")
+            company_name = signal.get("company_name")
+
+            if not domain:
+                continue
+
+            results["signals_found"] += 1
+
+            # Find existing lead or skip
+            lead = db.session.query(Lead).filter(
+                Lead.company_domain == domain
+            ).first()
+
+            if lead:
+                # Create engagement event for buying signal
+                event = LeadEngagementEvent(
+                    lead_id=str(lead.id),
+                    event_type=f"buying_signal_{signal_type}",
+                    event_data={
+                        "signal_type": signal_type,
+                        "title": signal.get("title"),
+                        "url": signal.get("url"),
+                        "snippet": signal.get("snippet")
+                    },
+                    created_at=datetime.now()
+                )
+                db.session.add(event)
+
+                # Increment engagement count
+                lead.engagement_count = (lead.engagement_count or 0) + 1
+                lead.last_engagement_at = datetime.now()
+
+                # Boost intent score for strong buying signals
+                if signal_type == "hiring" and lead.intent_score:
+                    lead.intent_score = min(lead.intent_score + 2, 10)
+
+                results["leads_updated"] += 1
+
+        db.session.commit()
+
+        return results
+
+    except Exception as e:
+        db.session.rollback()
+        results["errors"].append(str(e))
+        return results
 
 
 @shared_task(name="funnel.orchestration_job")

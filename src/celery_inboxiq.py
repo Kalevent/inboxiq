@@ -44,6 +44,13 @@ def make_celery(app) -> Celery:
     funnel_orchestration_enabled = _parse_bool(os.getenv("FUNNEL_ORCHESTRATION_ENABLED"), True)
     daily_metrics_enabled = _parse_bool(os.getenv("DAILY_METRICS_ENABLED"), True)
 
+    # Lead Discovery configuration
+    lead_discovery_enabled = _parse_bool(os.getenv("LEAD_DISCOVERY_ENABLED"), False)
+    lead_discovery_niche = os.getenv("LEAD_DISCOVERY_NICHE", "B2B SaaS revenue operations")
+    lead_discovery_account_id = os.getenv("LEAD_DISCOVERY_ACCOUNT_ID", None)
+    lead_discovery_max_leads = int(os.getenv("LEAD_DISCOVERY_MAX_LEADS", "50"))
+    lead_discovery_hour = int(os.getenv("LEAD_DISCOVERY_HOUR", "2"))  # 2am daily
+
     celery_app.conf.update(
         task_serializer="json",
         accept_content=["json"],
@@ -120,6 +127,38 @@ def make_celery(app) -> Celery:
                     }
                 }
                 if daily_metrics_enabled
+                else {}
+            ),
+            **(
+                {
+                    "discover_leads_daily": {
+                        "task": "funnel.discover_leads_via_search",
+                        "schedule": crontab(hour=lead_discovery_hour, minute=0),  # 2am daily
+                        "kwargs": {
+                            "niche": lead_discovery_niche,
+                            "max_leads": lead_discovery_max_leads,
+                            "account_id": lead_discovery_account_id,
+                        },
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if lead_discovery_enabled and lead_discovery_account_id
+                else {}
+            ),
+            **(
+                {
+                    "discover_buying_signals_daily": {
+                        "task": "funnel.discover_buying_signals",
+                        "schedule": crontab(hour=lead_discovery_hour, minute=30),  # 2:30am daily
+                        "kwargs": {
+                            "niche": lead_discovery_niche,
+                            "signal_type": "hiring",
+                            "max_results": 20,
+                        },
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if lead_discovery_enabled
                 else {}
             ),
         },
