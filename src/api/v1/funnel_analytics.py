@@ -2,7 +2,8 @@
 Public Funnel Analytics API endpoints
 
 User-facing endpoints for funnel metrics and analytics.
-All endpoints require JWT authentication and are scoped by account_id.
+All endpoints require JWT authentication.
+Note: Multi-tenancy (account scoping) not yet implemented.
 
 Endpoints:
 - GET /api/v1/funnel/metrics - Get funnel metrics by stage/date/source
@@ -52,8 +53,8 @@ def get_funnel_metrics():
     except ValueError:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
 
-    # Build base query filtered by account
-    base_query = db.session.query(Lead).filter(Lead.account_id == account_id)
+    # Build base query (no account filtering - multi-tenancy not implemented yet)
+    base_query = db.session.query(Lead)
 
     # Apply filters if provided
     if source:
@@ -156,7 +157,7 @@ def get_conversion_rates():
         LeadFunnelStage.stage,
         func.count(LeadFunnelStage.id).label('count')
     ).join(Lead, LeadFunnelStage.lead_id == Lead.id).filter(
-        Lead.account_id == account_id,
+        
         LeadFunnelStage.entered_at >= start_date,
         LeadFunnelStage.entered_at <= end_date
     ).group_by(LeadFunnelStage.stage).all()
@@ -242,14 +243,14 @@ def get_attribution():
         Lead.first_attribution_source,
         func.count(Lead.id).label('count')
     ).filter(
-        Lead.account_id == account_id,
+        
         Lead.created_at >= start_date,
         Lead.created_at <= end_date,
         Lead.first_attribution_source.isnot(None)
     ).group_by(Lead.first_attribution_source).order_by(func.count(Lead.id).desc()).limit(limit).all()
 
     total_leads = db.session.query(func.count(Lead.id)).filter(
-        Lead.account_id == account_id,
+        
         Lead.created_at >= start_date,
         Lead.created_at <= end_date
     ).scalar()
@@ -262,7 +263,7 @@ def get_attribution():
 
         # Get conversion count for this source
         conversions = db.session.query(func.count(Lead.id)).filter(
-            Lead.account_id == account_id,
+            
             Lead.first_attribution_source == source_name,
             Lead.current_funnel_stage == 'conversion'
         ).scalar()
@@ -280,7 +281,7 @@ def get_attribution():
         Lead.first_attribution_campaign,
         func.count(Lead.id).label('count')
     ).filter(
-        Lead.account_id == account_id,
+        
         Lead.created_at >= start_date,
         Lead.created_at <= end_date,
         Lead.first_attribution_campaign.isnot(None)
@@ -293,7 +294,7 @@ def get_attribution():
         percentage = round((count / total_leads * 100) if total_leads > 0 else 0, 2)
 
         conversions = db.session.query(func.count(Lead.id)).filter(
-            Lead.account_id == account_id,
+            
             Lead.first_attribution_campaign == campaign_name,
             Lead.current_funnel_stage == 'conversion'
         ).scalar()
@@ -349,7 +350,7 @@ def get_velocity():
             func.extract('epoch', LeadFunnelStage.exited_at - LeadFunnelStage.entered_at) / 3600
         ).label('avg_hours')
     ).join(Lead, LeadFunnelStage.lead_id == Lead.id).filter(
-        Lead.account_id == account_id,
+        
         LeadFunnelStage.entered_at >= start_date,
         LeadFunnelStage.entered_at <= end_date,
         LeadFunnelStage.exited_at.isnot(None)  # Only completed stages
@@ -417,7 +418,7 @@ def get_cohorts():
 
     # Get leads that entered in the cohort period
     cohort_leads = db.session.query(Lead).filter(
-        Lead.account_id == account_id,
+        
         Lead.created_at >= entry_date_start,
         Lead.created_at <= entry_date_end
     ).all()
