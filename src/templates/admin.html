@@ -292,6 +292,56 @@
                 </div>
                 <div id="orchestrationResult" class="mt-3 text-xs text-slate-300"></div>
               </div>
+
+              <!-- Lead Discovery -->
+              <div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/20 to-slate-900/70 p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <h2 class="text-lg font-semibold text-emerald-100">🔍 Automated Lead Discovery</h2>
+                    <p class="text-xs text-slate-400 mt-1">Find companies with buying signals (hiring support agents) and create leads automatically</p>
+                  </div>
+                  <button id="refreshLeadsBtn" class="rounded-lg bg-slate-700 hover:bg-slate-600 px-3 py-2 text-sm font-semibold text-white">
+                    Refresh List
+                  </button>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-3 mb-4">
+                  <div>
+                    <label class="text-xs text-slate-400">Niche/Industry</label>
+                    <select id="discoveryNiche" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100">
+                      <option value="B2B SaaS customer support">B2B SaaS Support</option>
+                      <option value="E-commerce customer service">E-commerce</option>
+                      <option value="Healthcare customer support">Healthcare</option>
+                      <option value="Fintech customer support">Fintech</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Buying Signal</label>
+                    <select id="discoverySignal" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100">
+                      <option value="hiring">Hiring</option>
+                      <option value="funding">Funding</option>
+                      <option value="expansion">Expansion</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Max Results</label>
+                    <input id="discoveryMaxResults" type="number" value="30" min="10" max="50" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+
+                <button id="discoverLeadsBtn" class="rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all">
+                  🚀 Discover Leads Now
+                </button>
+                <div id="discoveryResult" class="mt-3 text-xs text-slate-300"></div>
+
+                <!-- Recently Discovered Leads -->
+                <div class="mt-4 pt-4 border-t border-slate-800">
+                  <h3 class="text-sm font-semibold text-slate-200 mb-2">Recently Discovered Leads</h3>
+                  <div id="recentLeadsList" class="space-y-2 max-h-64 overflow-y-auto">
+                    <p class="text-xs text-slate-400">Click "Refresh List" to load leads...</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -516,6 +566,8 @@
         document.getElementById('moveStageBtn').addEventListener('click', () => moveLeadStage());
         document.getElementById('runOrchestrationBtn').addEventListener('click', () => runOrchestration());
         document.getElementById('checkProgressionBtn').addEventListener('click', () => checkProgression());
+        document.getElementById('discoverLeadsBtn').addEventListener('click', () => discoverLeads());
+        document.getElementById('refreshLeadsBtn').addEventListener('click', () => loadRecentLeads());
       }
     });
 
@@ -694,6 +746,80 @@
         }
       } catch (err) {
         resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
+      }
+    }
+
+    async function discoverLeads() {
+      const niche = document.getElementById('discoveryNiche').value;
+      const signalType = document.getElementById('discoverySignal').value;
+      const maxResults = parseInt(document.getElementById('discoveryMaxResults').value);
+      const resultEl = document.getElementById('discoveryResult');
+      const btn = document.getElementById('discoverLeadsBtn');
+
+      btn.disabled = true;
+      btn.textContent = '🔍 Discovering...';
+      resultEl.innerHTML = '<span class="text-slate-400">🚀 Starting automated lead discovery... This will take 2-3 minutes.</span>';
+
+      try {
+        const response = await fetch('/api/v1/admin/funnel/discover-leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ niche, signal_type: signalType, max_results: maxResults })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          resultEl.innerHTML = `<span class="text-green-400">✓ ${data.message}<br>Task ID: ${data.task_id}<br>Estimated time: ${data.estimated_time}</span>`;
+          setTimeout(() => loadRecentLeads(), 180000); // Auto-refresh after 3 minutes
+        } else {
+          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
+        }
+      } catch (err) {
+        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Discover Leads Now';
+      }
+    }
+
+    async function loadRecentLeads() {
+      const container = document.getElementById('recentLeadsList');
+      container.innerHTML = '<div class="text-slate-400 text-xs">Loading...</div>';
+
+      try {
+        const response = await fetch('/api/v1/admin/funnel/leads?limit=10&source=searxng_discovery', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+
+        if (data.error) {
+          container.innerHTML = `<div class="text-red-400 text-xs">${data.error}</div>`;
+          return;
+        }
+
+        if (data.leads.length === 0) {
+          container.innerHTML = '<div class="text-slate-400 text-xs">No leads discovered yet. Click "Discover Leads Now" to start.</div>';
+          return;
+        }
+
+        container.innerHTML = data.leads.map(lead => `
+          <div class="bg-slate-800/50 rounded-lg p-2 text-xs">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="font-semibold text-slate-200">${lead.name || 'Unknown'}</span>
+                ${lead.company_name ? `<span class="text-slate-400"> @ ${lead.company_name}</span>` : ''}
+              </div>
+              <span class="text-xs px-2 py-1 rounded ${lead.current_funnel_stage === 'visits' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-500/20 text-emerald-300'}">${lead.current_funnel_stage}</span>
+            </div>
+            ${lead.notes_preview ? `<div class="text-slate-400 mt-1 line-clamp-2">${lead.notes_preview}</div>` : ''}
+            <div class="text-slate-500 text-[10px] mt-1">${new Date(lead.created_at).toLocaleString()} • ${lead.source}</div>
+          </div>
+        `).join('');
+
+        container.innerHTML += `<div class="text-slate-500 text-xs mt-2 text-center">Total in database: ${data.total_in_db} leads</div>`;
+      } catch (err) {
+        container.innerHTML = `<div class="text-red-400 text-xs">Error: ${err.message}</div>`;
       }
     }
 

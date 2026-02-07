@@ -348,3 +348,102 @@ def check_progression():
         "task_id": task.id,
         "message": "Stage progression check queued"
     }), 202
+
+
+@v1.route("/admin/funnel/discover-leads", methods=["POST"])
+@jwt_required()
+def discover_leads():
+    """
+    Trigger automated lead discovery for Automation Studio beta.
+
+    Searches for companies hiring support agents and finds decision makers.
+    Creates leads directly in the database in "visits" funnel stage.
+
+    Body (optional):
+        niches: List of niches to search (default: SaaS, E-commerce, Healthcare)
+        max_per_niche: Max companies per niche (default: 10)
+        account_id: Account ID for multi-tenancy (default: 2)
+
+    Returns:
+        Task ID and confirmation
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    payload = _safe_json()
+    niche = payload.get("niche", "B2B SaaS customer support")
+    signal_type = payload.get("signal_type", "hiring")
+    max_results = payload.get("max_results", 30)
+
+    from src.celery_inboxiq import celery
+
+    # Use existing funnel.discover_buying_signals task
+    task = celery.send_task(
+        'funnel.discover_buying_signals',
+        kwargs={
+            "niche": niche,
+            "signal_type": signal_type,
+            "max_results": max_results
+        }
+    )
+
+    return jsonify({
+        "success": True,
+        "task_id": task.id,
+        "niche": niche,
+        "signal_type": signal_type,
+        "message": f"Lead discovery started for {niche} (signal: {signal_type})",
+        "estimated_time": "2-3 minutes"
+    }), 202
+
+
+@v1.route("/admin/funnel/leads", methods=["GET"])
+@jwt_required()
+def get_recent_leads():
+    """
+    Get recently discovered leads with details.
+
+    Query params:
+        limit: Number of leads to return (default: 50)
+        source: Filter by source (e.g., "automated_discovery")
+        stage: Filter by funnel stage
+
+    Returns:
+        List of leads with details
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    limit = request.args.get("limit", 50, type=int)
+    source = request.args.get("source")
+    stage = request.args.get("stage")
+
+    query = db.session.query(Lead).order_by(Lead.created_at.desc())
+
+    if source:
+        query = query.filter(Lead.source == source)
+    if stage:
+        query = query.filter(Lead.current_funnel_stage == stage)
+
+    leads = query.limit(limit).all()
+
+    return jsonify({
+        "leads": [
+            {
+                "id": lead.id,
+                "name": lead.name,
+                "email": lead.email,
+                "company_name": lead.company_name,
+                "status": lead.status,
+                "source": lead.source,
+                "campaign": lead.campaign,
+                "current_funnel_stage": lead.current_funnel_stage,
+                "score": lead.score,
+                "created_at": lead.created_at.isoformat() if lead.created_at else None,
+                "notes_preview": (lead.notes[:200] + "...") if lead.notes and len(lead.notes) > 200 else lead.notes
+            }
+            for lead in leads
+        ],
+        "count": len(leads),
+        "total_in_db": db.session.query(Lead).count()
+    }), 200
