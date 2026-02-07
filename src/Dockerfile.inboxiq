@@ -40,6 +40,9 @@ COPY --from=builder /usr/src/.venv /usr/src/.venv
 # Copy application
 COPY src /usr/src/src
 
+# Copy lead discovery scripts
+COPY find_automation_studio_leads.py find_leads_simple.py /usr/src/
+
 # Fix ownership
 RUN chown -R appuser:appgroup /usr/src
 
