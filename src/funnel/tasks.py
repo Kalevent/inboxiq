@@ -404,11 +404,21 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
 
             # Trigger enrichment for new lead
             try:
-                from src.leads.tasks import enrich_lead
+                from src.leads.tasks import enrich_lead, enrich_lead_with_email
+
+                # Enrich company data (about page, contact page, etc.)
                 enrich_lead.apply_async(args=[str(lead.id)], queue='leads')
+
+                # Enrich email address via Hunter.io (if API key configured)
+                enrich_lead_with_email.apply_async(
+                    args=[str(lead.id), domain],
+                    queue='leads',
+                    countdown=5  # Wait 5s to avoid rate limits
+                )
+
                 results["enriched"] += 1
             except ImportError:
-                # If enrichment task doesn't exist, skip
+                # If enrichment tasks don't exist, skip
                 pass
             except Exception as e:
                 results["errors"].append(f"Enrichment failed for {lead.id}: {str(e)}")
@@ -476,10 +486,45 @@ def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results
 
             results["signals_found"] += 1
 
-            # Find existing lead or skip
+            # Find existing lead or create new one
             lead = db.session.query(Lead).filter(
-                Lead.company_domain == domain
+                Lead.company_name == company_name
             ).first()
+
+            if not lead:
+                # Create new lead from buying signal
+                lead = Lead(
+                    name=company_name,
+                    email=f"contact@{domain}",  # Placeholder - will be enriched
+                    company_name=company_name,
+                    source="buying_signal_discovery",
+                    status="New Lead",
+                    current_funnel_stage="visits",
+                    fit_score=7,  # Higher score for buying signals
+                    notes=f"Discovered via buying signal: {signal_type}\nSignal: {signal.get('title', 'N/A')}\nURL: {signal.get('url', 'N/A')}"
+                )
+                db.session.add(lead)
+                db.session.flush()
+
+                # Create initial funnel stage entry
+                stage_entry = LeadFunnelStage(
+                    lead_id=str(lead.id),
+                    stage="visits",
+                    entered_at=datetime.now(),
+                    notes=f"Discovered via {signal_type} signal in {niche}"
+                )
+                db.session.add(stage_entry)
+
+                # Trigger email enrichment for new lead
+                try:
+                    from src.leads.tasks import enrich_lead_with_email
+                    enrich_lead_with_email.apply_async(
+                        args=[str(lead.id), domain],
+                        queue='leads',
+                        countdown=10  # Wait 10s between requests
+                    )
+                except Exception as e:
+                    results["errors"].append(f"Email enrichment failed for {lead.id}: {str(e)}")
 
             if lead:
                 # Create engagement event for buying signal
