@@ -27,6 +27,8 @@ spec:
           env:
             - name: APP_ENV
               value: "production"
+            - name: SEARXNG_URL
+              value: "http://searxng:8000"
           envFrom:
             - secretRef:
                 name: inboxiq-env
