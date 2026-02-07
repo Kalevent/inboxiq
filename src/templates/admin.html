@@ -857,21 +857,22 @@
         }
 
         container.innerHTML = data.leads.map(lead => {
-          // Extract URL from notes if available
-          const urlMatch = lead.notes_preview ? lead.notes_preview.match(/https?:\/\/[^\s)]+/) : null;
-          const url = urlMatch ? urlMatch[0] : null;
+          // Use URL from API response (safely extracted and validated on backend)
+          const url = lead.url;
+          // Escape HTML entities for safe rendering
+          const escapeHtml = (text) => text ? text.replace(/[<>&"']/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]) : '';
 
           return `
           <div class="bg-slate-800/50 rounded-lg p-2 text-xs hover:bg-slate-800/70 transition-colors ${url ? 'cursor-pointer' : ''}"
-               ${url ? `onclick="window.open('${url}', '_blank')"` : ''}>
+               ${url ? `onclick="window.open('${escapeHtml(url)}', '_blank')"` : ''}>
             <div class="flex items-center justify-between">
               <div class="flex-1">
-                <span class="font-semibold text-slate-200">${lead.name || 'Unknown'}</span>
-                ${lead.company_name ? `<span class="text-slate-400"> @ ${lead.company_name}</span>` : ''}
+                <span class="font-semibold text-slate-200">${escapeHtml(lead.name || 'Unknown')}</span>
+                ${lead.company_name ? `<span class="text-slate-400"> @ ${escapeHtml(lead.company_name)}</span>` : ''}
               </div>
               <span class="text-xs px-2 py-1 rounded ${lead.current_funnel_stage === 'visits' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-500/20 text-emerald-300'}">${lead.current_funnel_stage}</span>
             </div>
-            ${lead.notes_preview ? `<div class="text-slate-400 mt-1 line-clamp-2">${lead.notes_preview}</div>` : ''}
+            ${lead.notes_preview ? `<div class="text-slate-400 mt-1 line-clamp-2">${escapeHtml(lead.notes_preview)}</div>` : ''}
             <div class="text-slate-500 text-[10px] mt-1 flex items-center justify-between">
               <span>${new Date(lead.created_at).toLocaleString()} • ${lead.source}</span>
               ${url ? '<span class="text-indigo-400">→ Click to view</span>' : ''}

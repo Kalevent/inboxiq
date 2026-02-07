@@ -428,6 +428,28 @@ def get_recent_leads():
 
     leads = query.limit(limit).all()
 
+    import re
+    from urllib.parse import urlparse
+
+    def extract_safe_url(notes):
+        """Extract and validate URL from notes."""
+        if not notes:
+            return None
+        # Look for URL: prefix or any http/https URL
+        url_match = re.search(r'URL:\s*(https?://[^\s\n]+)', notes)
+        if not url_match:
+            url_match = re.search(r'(https?://[^\s\n]+)', notes)
+        if url_match:
+            url = url_match.group(1)
+            # Validate URL has proper scheme and netloc
+            try:
+                parsed = urlparse(url)
+                if parsed.scheme in ['http', 'https'] and parsed.netloc:
+                    return url
+            except:
+                pass
+        return None
+
     return jsonify({
         "leads": [
             {
@@ -441,7 +463,8 @@ def get_recent_leads():
                 "current_funnel_stage": lead.current_funnel_stage,
                 "score": lead.score,
                 "created_at": lead.created_at.isoformat() if lead.created_at else None,
-                "notes_preview": (lead.notes[:200] + "...") if lead.notes and len(lead.notes) > 200 else lead.notes
+                "notes_preview": (lead.notes[:200] + "...") if lead.notes and len(lead.notes) > 200 else lead.notes,
+                "url": extract_safe_url(lead.notes)
             }
             for lead in leads
         ],
