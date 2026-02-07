@@ -571,6 +571,23 @@
       }
     });
 
+    // Helper function to get CSRF token from cookies
+    function getCsrfToken() {
+      const name = 'csrf_access_token=';
+      const decodedCookie = decodeURIComponent(document.cookie);
+      const ca = decodedCookie.split(';');
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') {
+          c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+          return c.substring(name.length, c.length);
+        }
+      }
+      return null;
+    }
+
     // Funnel v2.0 API Functions
     async function loadFunnelMetrics() {
       const container = document.getElementById('funnelMetrics');
@@ -629,9 +646,15 @@
       resultEl.innerHTML = '<span class="text-slate-400">Processing...</span>';
 
       try {
+        const csrfToken = getCsrfToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) {
+          headers['X-CSRF-TOKEN'] = csrfToken;
+        }
+
         const response = await fetch('/api/v1/admin/funnel/qualify-lead', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           credentials: 'include',
           body: JSON.stringify({ lead_id: leadId })
         });
@@ -657,9 +680,15 @@
       resultEl.innerHTML = '<span class="text-slate-400">Processing...</span>';
 
       try {
+        const csrfToken = getCsrfToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) {
+          headers['X-CSRF-TOKEN'] = csrfToken;
+        }
+
         const response = await fetch('/api/v1/admin/funnel/update-interest', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           credentials: 'include',
           body: JSON.stringify({ lead_id: leadId })
         });
@@ -687,9 +716,15 @@
       resultEl.innerHTML = '<span class="text-slate-400">Processing...</span>';
 
       try {
+        const csrfToken = getCsrfToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) {
+          headers['X-CSRF-TOKEN'] = csrfToken;
+        }
+
         const response = await fetch('/api/v1/admin/funnel/move-stage', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           credentials: 'include',
           body: JSON.stringify({ lead_id: leadId, new_stage: newStage })
         });
@@ -710,9 +745,15 @@
       resultEl.innerHTML = '<span class="text-slate-400">Starting orchestration...</span>';
 
       try {
+        const csrfToken = getCsrfToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) {
+          headers['X-CSRF-TOKEN'] = csrfToken;
+        }
+
         const response = await fetch('/api/v1/admin/funnel/orchestrate', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           credentials: 'include'
         });
         const data = await response.json();
@@ -732,9 +773,15 @@
       resultEl.innerHTML = '<span class="text-slate-400">Checking progression...</span>';
 
       try {
+        const csrfToken = getCsrfToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) {
+          headers['X-CSRF-TOKEN'] = csrfToken;
+        }
+
         const response = await fetch('/api/v1/admin/funnel/check-progression', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           credentials: 'include'
         });
         const data = await response.json();
@@ -761,9 +808,15 @@
       resultEl.innerHTML = '<span class="text-slate-400">🚀 Starting automated lead discovery... This will take 2-3 minutes.</span>';
 
       try {
+        const csrfToken = getCsrfToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) {
+          headers['X-CSRF-TOKEN'] = csrfToken;
+        }
+
         const response = await fetch('/api/v1/admin/funnel/discover-leads', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           credentials: 'include',
           body: JSON.stringify({ niche, signal_type: signalType, max_results: maxResults })
         });
