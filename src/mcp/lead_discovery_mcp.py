@@ -231,7 +231,7 @@ async def find_decision_makers(
             "count": len(contacts),
             "metadata": {"source": "linkedin_search", "job_titles": job_titles},
         }
-
+    
     except Exception as exc:
         logger.exception(f"[find_decision_makers] Error: {exc}")
         raise Exception(f"Decision maker search failed: {exc}") from exc
