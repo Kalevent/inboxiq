@@ -384,7 +384,8 @@ def discover_leads():
             "niche": niche,
             "signal_type": signal_type,
             "max_results": max_results
-        }
+        },
+        queue='leads'  # CRITICAL: Worker only listens to inbox, billing, leads queues
     )
 
     return jsonify({
