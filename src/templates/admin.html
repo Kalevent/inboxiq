@@ -841,7 +841,7 @@
       container.innerHTML = '<div class="text-slate-400 text-xs">Loading...</div>';
 
       try {
-        const response = await fetch('/api/v1/admin/funnel/leads?limit=10&source=searxng_discovery', {
+        const response = await fetch('/api/v1/admin/funnel/leads?limit=10&source=buying_signal_discovery', {
           credentials: 'include'
         });
         const data = await response.json();
