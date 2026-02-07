@@ -1157,6 +1157,67 @@ class FunnelMetricsDaily(db.Model):
         }
 
 
+class AutomationStudioWaitlist(db.Model):
+    """Track waitlist signups for Automation Studio beta launch."""
+    __tablename__ = "automation_studio_waitlist"
+    __table_args__ = (
+        db.Index("ix_automation_studio_waitlist_email", "email"),
+        db.Index("ix_automation_studio_waitlist_beta_qualified", "beta_qualified"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    email = db.Column(db.String(255), nullable=False, unique=True, index=True)
+
+    # Qualification data (collected during discovery call)
+    company_name = db.Column(db.String(255), nullable=True)
+    role = db.Column(db.String(128), nullable=True)
+    team_size = db.Column(db.Integer, nullable=True)
+    ticket_volume_per_week = db.Column(db.Integer, nullable=True)
+
+    # Pain points (from interview)
+    biggest_pain_point = db.Column(db.Text, nullable=True)
+    desired_rule_example = db.Column(db.Text, nullable=True)
+    pain_score = db.Column(db.SmallInteger, nullable=True)  # 1-10 scale
+
+    # Engagement tracking
+    opened_email = db.Column(db.Boolean, default=False, nullable=False)
+    clicked_demo = db.Column(db.Boolean, default=False, nullable=False)
+    scheduled_interview = db.Column(db.Boolean, default=False, nullable=False)
+    interview_completed = db.Column(db.Boolean, default=False, nullable=False)
+    beta_qualified = db.Column(db.Boolean, default=False, nullable=False)
+    beta_committed = db.Column(db.Boolean, default=False, nullable=False)
+
+    # Source tracking
+    source = db.Column(db.String(64), nullable=True)  # "homepage", "linkedin", "email"
+    utm_source = db.Column(db.String(128), nullable=True)
+    utm_campaign = db.Column(db.String(128), nullable=True)
+    utm_medium = db.Column(db.String(128), nullable=True)
+
+    # Timestamps
+    signed_up_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    interview_scheduled_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    interview_completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    beta_committed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "email": self.email,
+            "company_name": self.company_name,
+            "role": self.role,
+            "team_size": self.team_size,
+            "pain_score": self.pain_score,
+            "beta_qualified": self.beta_qualified,
+            "beta_committed": self.beta_committed,
+            "source": self.source,
+            "signed_up_at": self.signed_up_at.isoformat() if self.signed_up_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class GeneratedContent(db.Model):
     """
     Tracks all DSPy-generated content (blogs, emails, case studies, landing pages).

@@ -14,13 +14,19 @@ from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urljoin, urlparse
 
 try:
-    from mcp.server.fastmcp import FastMCP, Context, ToolError
+    from fastmcp import FastMCP, Context
+    from fastmcp.exceptions import ToolError
 except ImportError:  # pragma: no cover - fallback for environments without fastmcp
-    from mcp.server.fastmcp import FastMCP, Context  # type: ignore
-
-    class ToolError(Exception):  # type: ignore
-        """Fallback ToolError."""
-        pass
+    try:
+        from fastmcp import FastMCP, Context
+        class ToolError(Exception):  # type: ignore
+            """Fallback ToolError."""
+            pass
+    except ImportError:
+        from mcp.server.fastmcp import FastMCP, Context  # type: ignore
+        class ToolError(Exception):  # type: ignore
+            """Fallback ToolError."""
+            pass
 
 # Provide an aiohttp stub if it's missing to keep the server lightweight.
 try:

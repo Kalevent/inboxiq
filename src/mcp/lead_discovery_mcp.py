@@ -1,10 +1,10 @@
 """
-Lead Discovery MCP Server - Autonomous lead generation using SearXNG.
+Lead Discovery Module - Autonomous lead generation using SearXNG.
 
-This MCP server provides tools for discovering potential leads through web search,
+This module provides functions for discovering potential leads through web search,
 finding decision makers, identifying buying signals, and enriching company data.
 
-Tools:
+Functions:
 - discover_companies: Find companies in a specific niche/industry
 - find_decision_makers: Locate decision makers at target companies
 - find_buying_signals: Identify companies showing buying intent
@@ -13,22 +13,13 @@ Tools:
 from __future__ import annotations
 
 import logging
+import os
 import re
+import requests
 from typing import Any, Dict, List, Optional
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 
-try:
-    from mcp.server.fastmcp import FastMCP, Context, ToolError
-except ImportError:
-    from mcp.server.fastmcp import FastMCP, Context
-
-    class ToolError(Exception):
-        """Fallback ToolError."""
-        pass
-
-
-logger = logging.getLogger("ranger.lead_discovery_mcp")
-mcp = FastMCP("lead-discovery")
+logger = logging.getLogger("ranger.lead_discovery")
 
 
 def extract_domain(url: str) -> str:
@@ -52,13 +43,30 @@ def extract_company_name(title: str) -> str:
     return name.strip()
 
 
-@mcp.tool()
+def _search_web(query: str, max_results: int = 25) -> List[Dict[str, Any]]:
+    """Search using SearXNG."""
+    searxng_url = os.getenv("SEARXNG_URL", "https://ranger-search.kalevent.com")
+
+    try:
+        url = f"{searxng_url}/search?q={quote(query)}&format=json"
+        response = requests.get(url, timeout=30)
+
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("results", [])[:max_results]
+        else:
+            logger.error(f"Search failed with status {response.status_code}")
+            return []
+    except Exception as e:
+        logger.error(f"Search error: {e}")
+        return []
+
+
 async def discover_companies(
     query: str,
     niche: str = "",
     location: str = "",
     max_results: int = 25,
-    mcp_context: Context | None = None,
 ) -> Dict[str, Any]:
     """
     Discover companies in a specific niche using web search.
@@ -76,9 +84,6 @@ async def discover_companies(
         Dictionary with discovered companies and metadata
     """
     try:
-        # Import search tool dynamically to avoid circular imports
-        from src.mcp.search_mcp import _search_tool, _ctx
-
         # Build search query
         search_query = query
         if niche:
@@ -92,7 +97,7 @@ async def discover_companies(
         logger.info(f"[discover_companies] Searching: {search_query}")
 
         # Execute search
-        results = await _search_tool.search(_ctx, search_query, context=None)
+        results = _search_web(search_query, max_results=max_results * 2)  # Get more to filter
 
         # Process results into company records
         companies = []
@@ -145,15 +150,13 @@ async def discover_companies(
 
     except Exception as exc:
         logger.exception(f"[discover_companies] Error: {exc}")
-        raise ToolError(f"Company discovery failed: {exc}") from exc
+        raise Exception(f"Company discovery failed: {exc}") from exc
 
 
-@mcp.tool()
 async def find_decision_makers(
     company_domain: str,
     job_titles: Optional[List[str]] = None,
     max_results: int = 10,
-    mcp_context: Context | None = None,
 ) -> Dict[str, Any]:
     """
     Find decision makers at a company via LinkedIn search.
@@ -170,8 +173,6 @@ async def find_decision_makers(
         Dictionary with discovered contacts and LinkedIn profiles
     """
     try:
-        from src.mcp.search_mcp import _search_tool, _ctx
-
         if not job_titles:
             job_titles = ["VP", "Vice President", "Director", "Head of", "Chief", "Manager"]
 
@@ -183,7 +184,7 @@ async def find_decision_makers(
         logger.info(f"[find_decision_makers] Searching: {search_query}")
 
         # Execute search
-        results = await _search_tool.search(_ctx, search_query, context=None)
+        results = _search_web(search_query, max_results=max_results * 2)
 
         # Process results into contact records
         contacts = []
@@ -233,15 +234,13 @@ async def find_decision_makers(
 
     except Exception as exc:
         logger.exception(f"[find_decision_makers] Error: {exc}")
-        raise ToolError(f"Decision maker search failed: {exc}") from exc
+        raise Exception(f"Decision maker search failed: {exc}") from exc
 
 
-@mcp.tool()
 async def find_buying_signals(
     niche: str,
     signal_type: str = "hiring",
     max_results: int = 20,
-    mcp_context: Context | None = None,
 ) -> Dict[str, Any]:
     """
     Find companies showing buying signals (hiring, funding, expansion).
@@ -258,8 +257,6 @@ async def find_buying_signals(
         Dictionary with companies showing buying signals
     """
     try:
-        from src.mcp.search_mcp import _search_tool, _ctx
-
         # Define search queries for different signal types
         queries = {
             "hiring": f'site:linkedin.com/jobs "{niche}" OR site:greenhouse.io "{niche}"',
@@ -272,7 +269,7 @@ async def find_buying_signals(
         logger.info(f"[find_buying_signals] Searching: {search_query}")
 
         # Execute search
-        results = await _search_tool.search(_ctx, search_query, context=None)
+        results = _search_web(search_query, max_results=max_results * 2)
 
         # Process results into signal records
         signals = []
@@ -322,14 +319,12 @@ async def find_buying_signals(
 
     except Exception as exc:
         logger.exception(f"[find_buying_signals] Error: {exc}")
-        raise ToolError(f"Buying signal search failed: {exc}") from exc
+        raise Exception(f"Buying signal search failed: {exc}") from exc
 
 
-@mcp.tool()
 async def enrich_company(
     company_domain: str,
     search_depth: str = "basic",
-    mcp_context: Context | None = None,
 ) -> Dict[str, Any]:
     """
     Enrich company data by searching for additional information.
@@ -345,8 +340,6 @@ async def enrich_company(
         Dictionary with enriched company information
     """
     try:
-        from src.mcp.search_mcp import _search_tool, _ctx
-
         enriched_data = {
             "domain": company_domain,
             "pages": {},
@@ -371,9 +364,9 @@ async def enrich_company(
         # Execute searches
         for page_type, query in searches.items():
             try:
-                results = await _search_tool.search(_ctx, query, context=None)
+                results = _search_web(query, max_results=5)
 
-                if results and not any("error" in r for r in results):
+                if results and not any("error" in str(r) for r in results):
                     top_result = results[0]
                     enriched_data["pages"][page_type] = {
                         "url": top_result.get("url"),
@@ -386,9 +379,9 @@ async def enrich_company(
         # General company search for metadata
         try:
             general_query = f'"{company_domain}" company'
-            results = await _search_tool.search(_ctx, general_query, context=None)
+            results = _search_web(general_query, max_results=5)
 
-            if results and not any("error" in r for r in results):
+            if results and not any("error" in str(r) for r in results):
                 enriched_data["metadata"]["description"] = results[0].get("snippet", "")[:300]
         except Exception as e:
             logger.warning(f"[enrich_company] Failed to fetch general metadata: {e}")
@@ -399,8 +392,4 @@ async def enrich_company(
 
     except Exception as exc:
         logger.exception(f"[enrich_company] Error: {exc}")
-        raise ToolError(f"Company enrichment failed: {exc}") from exc
-
-
-if __name__ == "__main__":
-    mcp.run(transport="stdio")
+        raise Exception(f"Company enrichment failed: {exc}") from exc
