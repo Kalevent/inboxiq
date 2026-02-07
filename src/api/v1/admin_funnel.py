@@ -437,7 +437,7 @@ def get_recent_leads():
                 "company_name": lead.company_name,
                 "status": lead.status,
                 "source": lead.source,
-                "campaign": lead.campaign,
+                "utm_campaign": lead.utm_campaign,
                 "current_funnel_stage": lead.current_funnel_stage,
                 "score": lead.score,
                 "created_at": lead.created_at.isoformat() if lead.created_at else None,
