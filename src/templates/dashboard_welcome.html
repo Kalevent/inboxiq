@@ -49,6 +49,31 @@
       opacity: 0 !important;
       visibility: hidden !important;
     }
+
+    /* Ensure no modal elements are oversized */
+    #formsConnectModal svg {
+      max-width: 2rem !important;
+      max-height: 2rem !important;
+    }
+
+    /* Hide decorative blurred gradients inside modal */
+    #formsConnectModal .blur-3xl {
+      display: none !important;
+    }
+
+    /* Remove any pseudo-element decorations in modal */
+    #formsConnectModal *::before,
+    #formsConnectModal *::after {
+      content: none !important;
+      display: none !important;
+    }
+
+    /* Prevent any background images in modal sections */
+    #formsConnectModal .space-y-4,
+    #formsConnectModal .space-y-6,
+    #formsConnectModal .rounded-xl {
+      background-image: none !important;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-50 antialiased">
