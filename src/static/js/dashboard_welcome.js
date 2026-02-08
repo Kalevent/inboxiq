@@ -21,6 +21,27 @@
   const markFormsConnectedModal = document.getElementById('markFormsConnectedModal');
   const formsConnectStatusModal = document.getElementById('formsConnectStatusModal');
   let formsConnectTriggerBtn = null;
+  const twilioConnectModal = document.getElementById('twilioConnectModal');
+  const closeTwilioModalBtn = document.getElementById('closeTwilioModal');
+  const cancelTwilioModalBtn = document.getElementById('cancelTwilioModal');
+  const twilioModalBackdrop = document.getElementById('twilioModalBackdrop');
+  const twilioConnectionForm = document.getElementById('twilioConnectionForm');
+  const twilioConnectStatus = document.getElementById('twilioConnectStatus');
+  let twilioConnectTriggerBtn = null;
+  const socialConnectModal = document.getElementById('socialConnectModal');
+  const closeSocialModalBtn = document.getElementById('closeSocialModal');
+  const cancelSocialModalBtn = document.getElementById('cancelSocialModal');
+  const socialModalBackdrop = document.getElementById('socialModalBackdrop');
+  const socialConnectionForm = document.getElementById('socialConnectionForm');
+  const socialConnectStatus = document.getElementById('socialConnectStatus');
+  let socialConnectTriggerBtn = null;
+  const chatConnectModal = document.getElementById('chatConnectModal');
+  const closeChatModalBtn = document.getElementById('closeChatModal');
+  const cancelChatModalBtn = document.getElementById('cancelChatModal');
+  const chatModalBackdrop = document.getElementById('chatModalBackdrop');
+  const chatConnectionForm = document.getElementById('chatConnectionForm');
+  const chatConnectStatus = document.getElementById('chatConnectStatus');
+  let chatConnectTriggerBtn = null;
   const rawConnectionId = connectStatus?.dataset?.connectionId;
   const normalizedConnectionId = (rawConnectionId || '').trim();
   const hasConnectionId = normalizedConnectionId && !['none', 'null', 'undefined'].includes(normalizedConnectionId.toLowerCase());
@@ -104,6 +125,524 @@
     }
     if (headerEl) {
       headerEl.style.visibility = '';
+    }
+  }
+
+  function openTwilioModal(triggerBtn) {
+    if (!twilioConnectModal) return;
+    twilioConnectTriggerBtn = triggerBtn || null;
+    if (twilioConnectStatus) twilioConnectStatus.textContent = '';
+
+    // Close user menu if open
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu && !userMenu.classList.contains('hidden')) {
+      userMenu.classList.add('hidden');
+    }
+
+    // Hide main content and header to prevent decorative elements from overlaying
+    const mainEl = document.querySelector('main');
+    const headerEl = document.querySelector('header');
+    if (mainEl) {
+      mainEl.style.visibility = 'hidden';
+    }
+    if (headerEl) {
+      headerEl.style.visibility = 'hidden';
+    }
+
+    twilioConnectModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeTwilioModal() {
+    if (!twilioConnectModal) return;
+    twilioConnectModal.classList.add('hidden');
+    document.body.style.overflow = '';
+
+    // Restore main content and header visibility
+    const mainEl = document.querySelector('main');
+    const headerEl = document.querySelector('header');
+    if (mainEl) {
+      mainEl.style.visibility = '';
+    }
+    if (headerEl) {
+      headerEl.style.visibility = '';
+    }
+
+    // Reset form
+    if (twilioConnectionForm) {
+      twilioConnectionForm.reset();
+    }
+    if (twilioConnectStatus) {
+      twilioConnectStatus.classList.add('hidden');
+    }
+  }
+
+  function setTwilioStatus(type, message) {
+    if (!twilioConnectStatus) return;
+    const map = {
+      success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+      error: 'border-rose-400/40 bg-rose-500/10 text-rose-100',
+      info: 'border-indigo-400/40 bg-indigo-500/10 text-indigo-100',
+    };
+    twilioConnectStatus.className = `text-xs px-4 py-3 rounded-xl border ${map[type] || map.info}`;
+    twilioConnectStatus.textContent = message;
+    twilioConnectStatus.classList.remove('hidden');
+  }
+
+  async function handleTwilioSubmit(event) {
+    event.preventDefault();
+
+    const formData = new FormData(twilioConnectionForm);
+    formData.append('action', 'save_voice');
+
+    const submitBtn = document.getElementById('saveTwilioBtn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+    }
+
+    setTwilioStatus('info', 'Saving Twilio configuration...');
+
+    try {
+      const csrf = getCookie('csrf_access_token') || getCookie('csrf_refresh_token');
+      const response = await fetch('/integrations/webhooks', {
+        method: 'POST',
+        credentials: 'include',
+        headers: csrf ? { 'X-CSRF-TOKEN': csrf } : {},
+        body: formData,
+      });
+
+      if (response.ok) {
+        setTwilioStatus('success', '✅ Twilio connected successfully! Your voice/IVR integration is now active.');
+
+        // Mark voice channel as connected
+        await handleSourceConnect('voice', twilioConnectTriggerBtn);
+
+        setTimeout(() => {
+          closeTwilioModal();
+          setConnectSourcesStatus('success', 'Voice/IVR connected via Twilio');
+        }, 2000);
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setTwilioStatus('error', data.error || data.message || 'Failed to save Twilio configuration');
+      }
+    } catch (err) {
+      setTwilioStatus('error', err.message || 'Network error. Please try again.');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & Connect';
+      }
+    }
+  }
+
+  function openSocialModal(triggerBtn) {
+    if (!socialConnectModal) return;
+    socialConnectTriggerBtn = triggerBtn || null;
+    if (socialConnectStatus) socialConnectStatus.textContent = '';
+
+    // Close user menu if open
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu && !userMenu.classList.contains('hidden')) {
+      userMenu.classList.add('hidden');
+    }
+
+    // Hide main content and header
+    const mainEl = document.querySelector('main');
+    const headerEl = document.querySelector('header');
+    if (mainEl) mainEl.style.visibility = 'hidden';
+    if (headerEl) headerEl.style.visibility = 'hidden';
+
+    socialConnectModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSocialModal() {
+    if (!socialConnectModal) return;
+    socialConnectModal.classList.add('hidden');
+    document.body.style.overflow = '';
+
+    // Restore visibility
+    const mainEl = document.querySelector('main');
+    const headerEl = document.querySelector('header');
+    if (mainEl) mainEl.style.visibility = '';
+    if (headerEl) headerEl.style.visibility = '';
+
+    // Reset form
+    if (socialConnectionForm) socialConnectionForm.reset();
+    if (socialConnectStatus) socialConnectStatus.classList.add('hidden');
+
+    // Reset to default view
+    updateSocialLabels('whatsapp', 'meta_cloud_api');
+  }
+
+  function setSocialStatus(type, message) {
+    if (!socialConnectStatus) return;
+    const map = {
+      success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+      error: 'border-rose-400/40 bg-rose-500/10 text-rose-100',
+      info: 'border-indigo-400/40 bg-indigo-500/10 text-indigo-100',
+    };
+    socialConnectStatus.className = `text-xs px-4 py-3 rounded-xl border ${map[type] || map.info}`;
+    socialConnectStatus.textContent = message;
+    socialConnectStatus.classList.remove('hidden');
+  }
+
+  function updateSocialLabels(platform, gateway) {
+    const apiKeyLabel = document.getElementById('socialApiKeyLabel');
+    const apiSecretLabel = document.getElementById('socialApiSecretLabel');
+    const apiKeyHelp = document.getElementById('socialApiKeyHelp');
+    const identifierLabel = document.getElementById('socialIdentifierLabel');
+    const identifierHelp = document.getElementById('socialIdentifierHelp');
+    const identifierSection = document.getElementById('socialIdentifierSection');
+    const gatewaySection = document.getElementById('whatsappGatewaySection');
+    const webhookInstructions = document.getElementById('socialWebhookInstructions');
+    const setupTitle = document.getElementById('socialSetupTitle');
+    const setupDesc = document.getElementById('socialSetupDesc');
+
+    const config = {
+      whatsapp: {
+        apiKey: 'API Key / App ID',
+        apiSecret: 'API Secret / Access Token',
+        apiKeyHelp: 'Find this in your WhatsApp Business API settings.',
+        identifier: 'WhatsApp Phone Number',
+        identifierHelp: 'Your WhatsApp Business phone number (e.g., +1234567890).',
+        showIdentifier: true,
+        showGateway: true,
+        showWebhook: true,
+        setupTitle: 'WhatsApp Webhook Setup',
+        setupDesc: 'Configure your WhatsApp webhook to send messages to:',
+      },
+      facebook: {
+        apiKey: 'Facebook App ID',
+        apiSecret: 'Page Access Token',
+        apiKeyHelp: 'Find this in Facebook Developer Console → Your App → Settings.',
+        identifier: 'Facebook Page ID',
+        identifierHelp: 'Your Facebook Page ID (numeric).',
+        showIdentifier: true,
+        showGateway: false,
+        showWebhook: true,
+        setupTitle: 'Facebook Messenger Webhook',
+        setupDesc: 'Configure webhook in Facebook App → Messenger → Settings:',
+      },
+      instagram: {
+        apiKey: 'Instagram Business Account ID',
+        apiSecret: 'Access Token',
+        apiKeyHelp: 'Find this in Facebook Developer Console → Instagram Settings.',
+        identifier: 'Instagram Username',
+        identifierHelp: 'Your Instagram Business account username.',
+        showIdentifier: true,
+        showGateway: false,
+        showWebhook: true,
+        setupTitle: 'Instagram Webhook Setup',
+        setupDesc: 'Configure webhook in Facebook App → Instagram → Settings:',
+      },
+      twitter: {
+        apiKey: 'Twitter API Key',
+        apiSecret: 'API Secret Key',
+        apiKeyHelp: 'Find this in Twitter Developer Portal → Your App → Keys.',
+        identifier: 'Twitter Account ID',
+        identifierHelp: 'Your Twitter account ID (numeric).',
+        showIdentifier: true,
+        showGateway: false,
+        showWebhook: true,
+        setupTitle: 'Twitter Webhook Setup',
+        setupDesc: 'Register webhook URL in Twitter Developer Portal:',
+      },
+      other: {
+        apiKey: 'API Key / Client ID',
+        apiSecret: 'API Secret / Token',
+        apiKeyHelp: 'Enter your platform\'s API credentials.',
+        identifier: 'Account Identifier',
+        identifierHelp: 'Your account ID, phone number, or username.',
+        showIdentifier: true,
+        showGateway: false,
+        showWebhook: false,
+      },
+    };
+
+    const platformConfig = config[platform] || config.other;
+
+    if (apiKeyLabel) apiKeyLabel.textContent = platformConfig.apiKey;
+    if (apiSecretLabel) apiSecretLabel.textContent = platformConfig.apiSecret;
+    if (apiKeyHelp) apiKeyHelp.textContent = platformConfig.apiKeyHelp;
+    if (identifierLabel) identifierLabel.textContent = platformConfig.identifier;
+    if (identifierHelp) identifierHelp.textContent = platformConfig.identifierHelp;
+
+    if (identifierSection) {
+      identifierSection.style.display = platformConfig.showIdentifier ? 'block' : 'none';
+    }
+    if (gatewaySection) {
+      gatewaySection.style.display = platformConfig.showGateway ? 'block' : 'none';
+    }
+    if (webhookInstructions) {
+      webhookInstructions.style.display = platformConfig.showWebhook ? 'block' : 'none';
+    }
+    if (platformConfig.showWebhook) {
+      if (setupTitle) setupTitle.textContent = platformConfig.setupTitle;
+      if (setupDesc) setupDesc.textContent = platformConfig.setupDesc;
+    }
+  }
+
+  async function handleSocialSubmit(event) {
+    event.preventDefault();
+
+    const platform = document.getElementById('socialPlatform')?.value || 'whatsapp';
+    const gateway = document.getElementById('whatsappGateway')?.value || 'meta_cloud_api';
+
+    const formData = new FormData(socialConnectionForm);
+    formData.append('action', 'save_social');
+    formData.append('channel', platform);
+    formData.append('provider', platform === 'whatsapp' ? gateway : platform);
+
+    const submitBtn = document.getElementById('saveSocialBtn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+    }
+
+    setSocialStatus('info', `Saving ${platform} configuration...`);
+
+    try {
+      const csrf = getCookie('csrf_access_token') || getCookie('csrf_refresh_token');
+      const response = await fetch('/integrations/webhooks', {
+        method: 'POST',
+        credentials: 'include',
+        headers: csrf ? { 'X-CSRF-TOKEN': csrf } : {},
+        body: formData,
+      });
+
+      if (response.ok) {
+        setSocialStatus('success', `✅ ${platform} connected successfully! Your social messaging integration is now active.`);
+
+        // Mark social channel as connected
+        await handleSourceConnect('social', socialConnectTriggerBtn);
+
+        setTimeout(() => {
+          closeSocialModal();
+          setConnectSourcesStatus('success', `Social messaging connected via ${platform}`);
+        }, 2000);
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setSocialStatus('error', data.error || data.message || `Failed to save ${platform} configuration`);
+      }
+    } catch (err) {
+      setSocialStatus('error', err.message || 'Network error. Please try again.');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & Connect';
+      }
+    }
+  }
+
+  function openChatModal(triggerBtn) {
+    if (!chatConnectModal) return;
+    chatConnectTriggerBtn = triggerBtn || null;
+    if (chatConnectStatus) chatConnectStatus.textContent = '';
+
+    // Close user menu if open
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu && !userMenu.classList.contains('hidden')) {
+      userMenu.classList.add('hidden');
+    }
+
+    // Hide main content and header
+    const mainEl = document.querySelector('main');
+    const headerEl = document.querySelector('header');
+    if (mainEl) mainEl.style.visibility = 'hidden';
+    if (headerEl) headerEl.style.visibility = 'hidden';
+
+    chatConnectModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeChatModal() {
+    if (!chatConnectModal) return;
+    chatConnectModal.classList.add('hidden');
+    document.body.style.overflow = '';
+
+    // Restore visibility
+    const mainEl = document.querySelector('main');
+    const headerEl = document.querySelector('header');
+    if (mainEl) mainEl.style.visibility = '';
+    if (headerEl) headerEl.style.visibility = '';
+
+    // Reset form
+    if (chatConnectionForm) chatConnectionForm.reset();
+    if (chatConnectStatus) chatConnectStatus.classList.add('hidden');
+
+    // Reset to default view (InboxIQ Native)
+    const inboxiqSection = document.getElementById('inboxiqChatSection');
+    const externalSection = document.getElementById('externalChatSection');
+    const platformSelect = document.getElementById('chatPlatform');
+    if (platformSelect) platformSelect.value = 'inboxiq';
+    if (inboxiqSection) inboxiqSection.style.display = 'block';
+    if (externalSection) externalSection.classList.add('hidden');
+  }
+
+  function setChatStatus(type, message) {
+    if (!chatConnectStatus) return;
+    const map = {
+      success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+      error: 'border-rose-400/40 bg-rose-500/10 text-rose-100',
+      info: 'border-indigo-400/40 bg-indigo-500/10 text-indigo-100',
+    };
+    chatConnectStatus.className = `text-xs px-4 py-3 rounded-xl border ${map[type] || map.info}`;
+    chatConnectStatus.textContent = message;
+    chatConnectStatus.classList.remove('hidden');
+  }
+
+  function updateChatLabels(platform) {
+    const inboxiqSection = document.getElementById('inboxiqChatSection');
+    const externalSection = document.getElementById('externalChatSection');
+    const apiKeyLabel = document.getElementById('chatApiKeyLabel');
+    const apiSecretLabel = document.getElementById('chatApiSecretLabel');
+    const apiKeyHelp = document.getElementById('chatApiKeyHelp');
+    const webhookInstructions = document.getElementById('chatWebhookInstructions');
+    const setupTitle = document.getElementById('chatSetupTitle');
+    const setupDesc = document.getElementById('chatSetupDesc');
+
+    // Show/hide sections based on platform
+    const isNative = platform === 'inboxiq';
+    if (inboxiqSection) inboxiqSection.style.display = isNative ? 'block' : 'none';
+    if (externalSection) {
+      if (isNative) {
+        externalSection.classList.add('hidden');
+      } else {
+        externalSection.classList.remove('hidden');
+      }
+    }
+
+    // Platform-specific configurations for external platforms
+    const config = {
+      intercom: {
+        apiKey: 'Intercom App ID',
+        apiSecret: 'Access Token',
+        apiKeyHelp: 'Find this in Intercom → Settings → App Settings.',
+        showWebhook: true,
+        setupTitle: 'Intercom Webhook Setup',
+        setupDesc: 'Configure webhook in Intercom → Settings → Webhooks:',
+      },
+      drift: {
+        apiKey: 'Drift OAuth App ID',
+        apiSecret: 'OAuth Token',
+        apiKeyHelp: 'Find this in Drift → Settings → App Credentials.',
+        showWebhook: true,
+        setupTitle: 'Drift Webhook Setup',
+        setupDesc: 'Configure webhook in Drift → Settings → Webhooks:',
+      },
+      zendesk: {
+        apiKey: 'Zendesk API Key',
+        apiSecret: 'API Token',
+        apiKeyHelp: 'Find this in Zendesk Admin → Channels → API.',
+        showWebhook: true,
+        setupTitle: 'Zendesk Chat Webhook',
+        setupDesc: 'Configure webhook in Zendesk Chat settings:',
+      },
+      freshchat: {
+        apiKey: 'Freshchat App ID',
+        apiSecret: 'API Token',
+        apiKeyHelp: 'Find this in Freshchat → Settings → API Tokens.',
+        showWebhook: true,
+        setupTitle: 'Freshchat Webhook Setup',
+        setupDesc: 'Configure webhook in Freshchat settings:',
+      },
+      crisp: {
+        apiKey: 'Crisp Website ID',
+        apiSecret: 'API Key',
+        apiKeyHelp: 'Find this in Crisp → Website Settings → Setup.',
+        showWebhook: true,
+        setupTitle: 'Crisp Webhook Setup',
+        setupDesc: 'Configure webhook in Crisp Integrations:',
+      },
+      livechat: {
+        apiKey: 'LiveChat Account ID',
+        apiSecret: 'Access Token',
+        apiKeyHelp: 'Find this in LiveChat → Settings → Integrations.',
+        showWebhook: true,
+        setupTitle: 'LiveChat Webhook Setup',
+        setupDesc: 'Configure webhook in LiveChat settings:',
+      },
+      olark: {
+        apiKey: 'Olark Site ID',
+        apiSecret: 'API Key',
+        apiKeyHelp: 'Find this in Olark → Settings → Integrations.',
+        showWebhook: true,
+        setupTitle: 'Olark Webhook Setup',
+        setupDesc: 'Configure webhook in Olark settings:',
+      },
+      other: {
+        apiKey: 'API Key / App ID',
+        apiSecret: 'API Secret / Access Token',
+        apiKeyHelp: 'Enter your chat platform\'s API credentials.',
+        showWebhook: false,
+      },
+    };
+
+    const platformConfig = config[platform] || config.other;
+
+    if (apiKeyLabel) apiKeyLabel.textContent = platformConfig.apiKey;
+    if (apiSecretLabel) apiSecretLabel.textContent = platformConfig.apiSecret;
+    if (apiKeyHelp) apiKeyHelp.textContent = platformConfig.apiKeyHelp;
+
+    if (webhookInstructions) {
+      webhookInstructions.style.display = platformConfig.showWebhook ? 'block' : 'none';
+    }
+    if (platformConfig.showWebhook) {
+      if (setupTitle) setupTitle.textContent = platformConfig.setupTitle;
+      if (setupDesc) setupDesc.textContent = platformConfig.setupDesc;
+    }
+  }
+
+  async function handleChatSubmit(event) {
+    event.preventDefault();
+
+    const platform = document.getElementById('chatPlatform')?.value || 'inboxiq';
+    const isNative = platform === 'inboxiq';
+
+    const formData = new FormData(chatConnectionForm);
+    formData.append('action', 'save_chat');
+    formData.append('platform', platform);
+
+    const submitBtn = document.getElementById('saveChatBtn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+    }
+
+    setChatStatus('info', `Saving ${isNative ? 'InboxIQ native chat' : platform} configuration...`);
+
+    try {
+      const csrf = getCookie('csrf_access_token') || getCookie('csrf_refresh_token');
+      const response = await fetch('/integrations/webhooks', {
+        method: 'POST',
+        credentials: 'include',
+        headers: csrf ? { 'X-CSRF-TOKEN': csrf } : {},
+        body: formData,
+      });
+
+      if (response.ok) {
+        setChatStatus('success', `✅ ${isNative ? 'InboxIQ chat widget' : platform} connected successfully! Your chat integration is now active.`);
+
+        // Mark chat channel as connected
+        await handleSourceConnect('chat', chatConnectTriggerBtn);
+
+        setTimeout(() => {
+          closeChatModal();
+          setConnectSourcesStatus('success', `Chat connected via ${isNative ? 'InboxIQ native widget' : platform}`);
+        }, 2000);
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setChatStatus('error', data.error || data.message || `Failed to save ${platform} configuration`);
+      }
+    } catch (err) {
+      setChatStatus('error', err.message || 'Network error. Please try again.');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & Connect';
+      }
     }
   }
 
@@ -253,6 +792,21 @@
           openFormsModal(btn);
           return;
         }
+        if (btn.dataset.channel === 'voice') {
+          setConnectSourcesStatus('info', 'Opening Voice/IVR connect…');
+          openTwilioModal(btn);
+          return;
+        }
+        if (btn.dataset.channel === 'social') {
+          setConnectSourcesStatus('info', 'Opening Social messaging connect…');
+          openSocialModal(btn);
+          return;
+        }
+        if (btn.dataset.channel === 'chat') {
+          setConnectSourcesStatus('info', 'Opening Chat connect…');
+          openChatModal(btn);
+          return;
+        }
         handleSourceConnect(btn.dataset.channel, btn);
       });
     });
@@ -273,6 +827,113 @@
 
   // Auto-refresh recent triage every 10 seconds
   let refreshInterval = null;
+
+  function updateTwilioLabels(provider) {
+    const accountIdLabel = document.getElementById('accountIdLabel');
+    const authTokenLabel = document.getElementById('authTokenLabel');
+    const accountIdHelp = document.getElementById('accountIdHelp');
+    const accountIdInput = document.getElementById('accountIdInput');
+    const webhookSetupTitle = document.getElementById('webhookSetupTitle');
+    const webhookSetupDesc = document.getElementById('webhookSetupDesc');
+    const webhookInstructions = document.getElementById('twilioWebhookInstructions');
+
+    const labelMap = {
+      twilio: {
+        accountId: 'Twilio Account SID',
+        authToken: 'Twilio Auth Token',
+        help: 'Find this in your Twilio console dashboard.',
+        placeholder: 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        showWebhook: true,
+        webhookTitle: 'Twilio Webhook Setup',
+        webhookDesc: 'After saving, configure your Twilio phone numbers to send webhooks to:',
+      },
+      tesco_mobile: {
+        accountId: 'Tesco Mobile Account ID',
+        authToken: 'API Token',
+        help: 'Find this in your Tesco Mobile portal.',
+        placeholder: 'Enter your account ID',
+        showWebhook: false,
+      },
+      aircall: {
+        accountId: 'Aircall API ID',
+        authToken: 'Aircall API Token',
+        help: 'Find this in Aircall Settings → Integrations & API.',
+        placeholder: 'Enter your API ID',
+        showWebhook: false,
+      },
+      dialpad: {
+        accountId: 'Dialpad API Key',
+        authToken: 'API Secret',
+        help: 'Find this in Dialpad Admin → Integrations.',
+        placeholder: 'Enter your API key',
+        showWebhook: false,
+      },
+      five9: {
+        accountId: 'Five9 Account ID',
+        authToken: 'API Key',
+        help: 'Find this in Five9 Admin Console → API Credentials.',
+        placeholder: 'Enter your account ID',
+        showWebhook: false,
+      },
+      other: {
+        accountId: 'Account ID / API Key',
+        authToken: 'Auth Token / API Secret',
+        help: 'Enter your provider\'s authentication credentials.',
+        placeholder: 'Enter your account identifier',
+        showWebhook: false,
+      },
+    };
+
+    const config = labelMap[provider] || labelMap.other;
+
+    if (accountIdLabel) accountIdLabel.textContent = config.accountId;
+    if (authTokenLabel) authTokenLabel.textContent = config.authToken;
+    if (accountIdHelp) accountIdHelp.textContent = config.help;
+    if (accountIdInput) accountIdInput.placeholder = config.placeholder;
+
+    if (webhookInstructions) {
+      webhookInstructions.style.display = config.showWebhook ? 'block' : 'none';
+    }
+    if (config.showWebhook) {
+      if (webhookSetupTitle) webhookSetupTitle.textContent = config.webhookTitle;
+      if (webhookSetupDesc) webhookSetupDesc.textContent = config.webhookDesc;
+    }
+  }
+
+  function bindTwilioModalHandlers() {
+    // Close modal button
+    if (closeTwilioModalBtn) {
+      closeTwilioModalBtn.addEventListener('click', closeTwilioModal);
+    }
+    // Cancel button
+    if (cancelTwilioModalBtn) {
+      cancelTwilioModalBtn.addEventListener('click', closeTwilioModal);
+    }
+    // Close on backdrop click
+    if (twilioModalBackdrop) {
+      twilioModalBackdrop.addEventListener('click', closeTwilioModal);
+    }
+    // Form submission
+    if (twilioConnectionForm) {
+      twilioConnectionForm.addEventListener('submit', handleTwilioSubmit);
+    }
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && twilioConnectModal && !twilioConnectModal.classList.contains('hidden')) {
+        closeTwilioModal();
+      }
+    });
+
+    // Update labels when provider changes
+    const providerSelect = document.getElementById('twilioProvider');
+    if (providerSelect) {
+      providerSelect.addEventListener('change', (e) => {
+        updateTwilioLabels(e.target.value);
+      });
+      // Initialize with current selection
+      updateTwilioLabels(providerSelect.value);
+    }
+  }
 
   function bindFormsModalHandlers() {
     // Close modal button
@@ -333,7 +994,112 @@
       });
     }
   }
+
+  function bindSocialModalHandlers() {
+    // Close modal button
+    if (closeSocialModalBtn) {
+      closeSocialModalBtn.addEventListener('click', closeSocialModal);
+    }
+    // Cancel button
+    if (cancelSocialModalBtn) {
+      cancelSocialModalBtn.addEventListener('click', closeSocialModal);
+    }
+    // Close on backdrop click
+    if (socialModalBackdrop) {
+      socialModalBackdrop.addEventListener('click', closeSocialModal);
+    }
+    // Form submission
+    if (socialConnectionForm) {
+      socialConnectionForm.addEventListener('submit', handleSocialSubmit);
+    }
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && socialConnectModal && !socialConnectModal.classList.contains('hidden')) {
+        closeSocialModal();
+      }
+    });
+
+    // Update labels when platform or gateway changes
+    const platformSelect = document.getElementById('socialPlatform');
+    const gatewaySelect = document.getElementById('whatsappGateway');
+
+    if (platformSelect) {
+      platformSelect.addEventListener('change', (e) => {
+        const gateway = gatewaySelect?.value || 'meta_cloud_api';
+        updateSocialLabels(e.target.value, gateway);
+      });
+    }
+
+    if (gatewaySelect) {
+      gatewaySelect.addEventListener('change', (e) => {
+        const platform = platformSelect?.value || 'whatsapp';
+        updateSocialLabels(platform, e.target.value);
+      });
+    }
+
+    // Initialize with current selection
+    if (platformSelect && gatewaySelect) {
+      updateSocialLabels(platformSelect.value, gatewaySelect.value);
+    }
+  }
+
+  function bindChatModalHandlers() {
+    // Close modal button
+    if (closeChatModalBtn) {
+      closeChatModalBtn.addEventListener('click', closeChatModal);
+    }
+    // Cancel button
+    if (cancelChatModalBtn) {
+      cancelChatModalBtn.addEventListener('click', closeChatModal);
+    }
+    // Close on backdrop click
+    if (chatModalBackdrop) {
+      chatModalBackdrop.addEventListener('click', closeChatModal);
+    }
+    // Form submission
+    if (chatConnectionForm) {
+      chatConnectionForm.addEventListener('submit', handleChatSubmit);
+    }
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && chatConnectModal && !chatConnectModal.classList.contains('hidden')) {
+        closeChatModal();
+      }
+    });
+
+    // Update labels and sections when platform changes
+    const platformSelect = document.getElementById('chatPlatform');
+    if (platformSelect) {
+      platformSelect.addEventListener('change', (e) => {
+        updateChatLabels(e.target.value);
+      });
+      // Initialize with current selection
+      updateChatLabels(platformSelect.value);
+    }
+
+    // Copy embed code button
+    const copyChatEmbedCodeBtn = document.getElementById('copyChatEmbedCode');
+    if (copyChatEmbedCodeBtn) {
+      copyChatEmbedCodeBtn.addEventListener('click', async () => {
+        const embedCode = document.getElementById('chatEmbedCode');
+        const value = embedCode?.textContent || '';
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          copyChatEmbedCodeBtn.textContent = 'Copied!';
+          setTimeout(() => { copyChatEmbedCodeBtn.textContent = 'Copy'; }, 2000);
+        } catch (err) {
+          copyChatEmbedCodeBtn.textContent = 'Failed';
+          setTimeout(() => { copyChatEmbedCodeBtn.textContent = 'Copy'; }, 2000);
+        }
+      });
+    }
+  }
+
   bindFormsModalHandlers();
+  bindTwilioModalHandlers();
+  bindSocialModalHandlers();
+  bindChatModalHandlers();
 
   async function refreshTickets() {
     try {

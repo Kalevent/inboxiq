@@ -582,6 +582,140 @@ def integrations_webhooks():
         voice_prefill=voice_prefill,
         voice_saved=True,
       )
+    if action == "save_social" and account_id:
+      platform = (request.form.get("social_platform") or "whatsapp").strip().lower()
+      provider = (request.form.get("provider") or platform).strip().lower()
+      api_key = (request.form.get("social_api_key") or "").strip()
+      api_secret = (request.form.get("social_api_secret") or "").strip()
+      identifier = (request.form.get("social_identifier") or "").strip()
+      webhook_url = (request.form.get("social_webhook_url") or "").strip()
+      status = "connected" if (api_key or api_secret) else "pending"
+
+      # Check if social connection already exists
+      social_connection = InboxConnection.query.filter_by(account_id=account_id, provider="social").first()
+
+      metadata = (social_connection.metadata_json or {}) if social_connection else {}
+      metadata.update(
+        {
+          "channel": "social",
+          "platform": platform,
+          "provider": provider,
+        }
+      )
+      if api_key:
+        metadata["api_key_enc"] = encrypt_value(api_key)
+        metadata.pop("api_key", None)
+      if api_secret:
+        metadata["api_secret_enc"] = encrypt_value(api_secret)
+        metadata.pop("api_secret", None)
+      if identifier:
+        metadata["identifier_enc"] = encrypt_value(identifier)
+        metadata.pop("identifier", None)
+      if webhook_url:
+        metadata["webhook_url_enc"] = encrypt_value(webhook_url)
+        metadata.pop("webhook_url", None)
+
+      if social_connection:
+        social_connection.metadata_json = metadata
+        social_connection.status = status
+      else:
+        social_connection = InboxConnection(
+          user_id=user.id if user else None,
+          account_id=account_id,
+          provider="social",
+          status=status,
+          metadata_json=metadata,
+        )
+        db.session.add(social_connection)
+      db.session.commit()
+      return render_template(
+        "settings/index.html",
+        active_tab="integrations",
+        integrations_view="webhooks",
+        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
+        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
+        new_token=None,
+        team_view=None,
+        billing_view=None,
+        security_view=None,
+        api_allowed=api_allowed,
+        account_id=account_id,
+        voice_connection=voice_connection,
+        voice_prefill=voice_prefill,
+        social_saved=True,
+      )
+    if action == "save_chat" and account_id:
+      platform = (request.form.get("platform") or "inboxiq").strip().lower()
+      api_key = (request.form.get("chat_api_key") or "").strip()
+      api_secret = (request.form.get("chat_api_secret") or "").strip()
+      webhook_url = (request.form.get("chat_webhook_url") or "").strip()
+
+      # InboxIQ native widget settings
+      capture_leads = request.form.get("chat_capture_leads") == "on"
+      show_on_all_pages = request.form.get("chat_show_on_all_pages") == "on"
+      require_email = request.form.get("chat_require_email") == "on"
+      welcome_message = (request.form.get("chat_welcome_message") or "").strip()
+
+      status = "connected" if (platform == "inboxiq" or api_key or api_secret) else "pending"
+
+      # Check if chat connection already exists
+      chat_connection = InboxConnection.query.filter_by(account_id=account_id, provider="chat").first()
+
+      metadata = (chat_connection.metadata_json or {}) if chat_connection else {}
+      metadata.update(
+        {
+          "channel": "chat",
+          "platform": platform,
+        }
+      )
+
+      # External platform credentials
+      if api_key:
+        metadata["api_key_enc"] = encrypt_value(api_key)
+        metadata.pop("api_key", None)
+      if api_secret:
+        metadata["api_secret_enc"] = encrypt_value(api_secret)
+        metadata.pop("api_secret", None)
+      if webhook_url:
+        metadata["webhook_url_enc"] = encrypt_value(webhook_url)
+        metadata.pop("webhook_url", None)
+
+      # InboxIQ native widget settings
+      if platform == "inboxiq":
+        metadata["capture_leads"] = capture_leads
+        metadata["show_on_all_pages"] = show_on_all_pages
+        metadata["require_email"] = require_email
+        metadata["welcome_message"] = welcome_message
+
+      if chat_connection:
+        chat_connection.metadata_json = metadata
+        chat_connection.status = status
+      else:
+        chat_connection = InboxConnection(
+          user_id=user.id if user else None,
+          account_id=account_id,
+          provider="chat",
+          status=status,
+          metadata_json=metadata,
+        )
+        db.session.add(chat_connection)
+      db.session.commit()
+      return render_template(
+        "settings/index.html",
+        active_tab="integrations",
+        integrations_view="webhooks",
+        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
+        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
+        new_token=None,
+        team_view=None,
+        billing_view=None,
+        security_view=None,
+        api_allowed=api_allowed,
+        account_id=account_id,
+        voice_connection=voice_connection,
+        voice_prefill=voice_prefill,
+        chat_saved=True,
+      )
     if action == "generate" and account_id and api_allowed:
       token_value = str(uuid4())
       token_hash = hashlib.sha256(token_value.encode("utf-8")).hexdigest()

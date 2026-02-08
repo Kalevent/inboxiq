@@ -860,5 +860,23 @@
 
   <script src="{{ url_for('static', filename='js/landing.js', v='landing-menu-4') }}"></script>
   <script src="{{ url_for('static', filename='js/cookie-consent.js') }}"></script>
+
+  <!-- InboxIQ Native Chat Widget -->
+  <script>
+    (function(w,d,s){
+      w.InboxIQ=w.InboxIQ||{};
+      w.InboxIQ.account='{{ g.current_account_id if g and g.current_account_id else "2" }}';
+      w.InboxIQ.config={
+        welcomeMessage:'Hi! 👋 Welcome to InboxIQ. How can we help you today?',
+        captureLeads:true,
+        requireEmail:true,
+        primaryColor:'#6366f1'
+      };
+      var f=d.getElementsByTagName(s)[0],j=d.createElement(s);
+      j.async=true;
+      j.src='{{ url_for("static", filename="js/chat-widget.js") }}';
+      f.parentNode.insertBefore(j,f);
+    })(window,document,'script');
+  </script>
 </body>
 </html>

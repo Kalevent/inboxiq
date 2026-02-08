@@ -296,3 +296,168 @@ def intake_shim():
         return jsonify(resp_json), resp.status_code
     except requests.RequestException as exc:
         return jsonify({"error": "forward_failed", "message": str(exc)}), 502
+
+
+# Rate limiting for chat endpoint (per IP)
+_CHAT_RATE_LIMIT_WINDOW = 60  # seconds
+_CHAT_RATE_LIMIT_MAX = 10  # messages per IP per window
+_CHAT_RATE_LIMITS = defaultdict(list)
+
+
+@v1.route("/chat/submit", methods=["POST"])
+def chat_submit():
+    """
+    Public endpoint for InboxIQ native chat widget submissions.
+    Security: Rate limited, input sanitized, size restricted.
+    """
+    # Rate limit by IP address
+    remote_ip = request.remote_addr or "unknown"
+    now = int(time.time())
+    window_start = now - _CHAT_RATE_LIMIT_WINDOW
+
+    entries = _CHAT_RATE_LIMITS[remote_ip]
+    entries[:] = [t for t in entries if t >= window_start]
+
+    if len(entries) >= _CHAT_RATE_LIMIT_MAX:
+        return jsonify({"error": "rate_limited", "message": "Too many messages. Please wait a moment."}), 429
+
+    entries.append(now)
+
+    # Parse and validate payload
+    payload = request.get_json(silent=True) or {}
+    context = payload.get("context") or {}
+
+    # Extract and sanitize inputs
+    account_id = str(context.get("account_id", "2")).strip()[:20]  # Limit length
+    name = sanitize_html(str(context.get("name", "")).strip())[:100]  # Max 100 chars
+    email = str(context.get("email", "")).strip().lower()[:200]  # Max 200 chars
+    company = sanitize_html(str(context.get("company", "")).strip())[:100]  # Max 100 chars
+    message = sanitize_html(str(payload.get("body", "")).strip())[:5000]  # Max 5000 chars
+
+    # Validate required fields
+    if not message:
+        return jsonify({"error": "validation_error", "message": "Message is required"}), 400
+
+    if len(message) < 2:
+        return jsonify({"error": "validation_error", "message": "Message too short"}), 400
+
+    # Validate email format if provided
+    if email and ("@" not in email or "." not in email.split("@")[-1]):
+        return jsonify({"error": "validation_error", "message": "Invalid email format"}), 400
+
+    # Validate account_id is numeric
+    try:
+        account_id_int = int(account_id)
+        if account_id_int < 1:
+            return jsonify({"error": "validation_error", "message": "Invalid account"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "validation_error", "message": "Invalid account"}), 400
+
+    # Build subject from visitor info
+    if name and email:
+        subject = f"Chat from {name} ({email})"
+    elif email:
+        subject = f"Chat from {email}"
+    elif name:
+        subject = f"Chat from {name}"
+    else:
+        subject = "Chat from visitor"
+
+    # Sanitize subject
+    subject = sanitize_html(subject)[:500]
+
+    # Create from_email (sanitized)
+    if email:
+        from_email = email
+    else:
+        # Use IP-based identifier if no email provided
+        from_email = f"chat-{hashlib.md5(remote_ip.encode()).hexdigest()[:8]}@inboxiq.local"
+
+    # Build triage input with sanitized data
+    triage_input = {
+        "subject": subject,
+        "from_email": from_email,
+        "body": message,  # Already sanitized above
+        "provider": "inboxiq",
+        "source": "chat",
+        "channel": "chat",
+        "use_case": "support",
+        "provider_thread_url": None,
+        "message_id": payload.get("message_id", f"chat-{now}-{hashlib.md5(message.encode()).hexdigest()[:8]}"),
+        "received_at": None,
+        "context": {
+            "name": name,  # Already sanitized
+            "email": email,
+            "company": company,  # Already sanitized
+            "capture_lead": context.get("capture_lead", True),
+            "remote_ip": remote_ip,  # Store for audit
+        },
+    }
+
+    # Normalize payload
+    try:
+        normalized = normalize_email_payload(triage_input)
+    except Exception as exc:
+        current_app.logger.warning("chat intake validation failed: %s", exc)
+        return jsonify({"error": "validation_error", "message": "Invalid message format"}), 400
+
+    # Queue to Celery for processing
+    try:
+        task = _celery_client().send_task(
+            "inboxiq.process_incoming_email",
+            args=[{"email": normalized, "user_id": None, "account_id": account_id_int}],
+            queue="inbox",
+        )
+
+        # Ensure chat connection exists (non-blocking)
+        try:
+            _ensure_chat_connection(account_id_int)
+        except Exception:
+            pass  # Don't fail submission if connection update fails
+
+        current_app.logger.info(
+            f"Chat message queued: account={account_id_int}, task={task.id}, ip={remote_ip}"
+        )
+
+    except Exception as exc:
+        current_app.logger.exception("failed to enqueue chat message", exc_info=exc)
+        return jsonify({"error": "server_error", "message": "Unable to send message"}), 500
+
+    return jsonify({"success": True, "status": "queued", "task_id": task.id}), 202
+
+
+def _ensure_chat_connection(account_id: int) -> None:
+    """Ensure a chat connection exists for the account."""
+    if not account_id:
+        return
+
+    conn = InboxConnection.query.filter_by(
+        account_id=account_id,
+        provider="chat"
+    ).first()
+
+    if conn:
+        # Update existing connection
+        conn.status = "connected"
+        metadata = conn.metadata_json or {}
+        metadata["last_message_at"] = datetime.now(timezone.utc).isoformat()
+        metadata.setdefault("channel", "chat")
+        metadata.setdefault("platform", "inboxiq")
+        conn.metadata_json = metadata
+        db.session.commit()
+        return
+
+    # Create new chat connection
+    conn = InboxConnection(
+        user_id=None,
+        account_id=account_id,
+        provider="chat",
+        status="connected",
+        metadata_json={
+            "channel": "chat",
+            "platform": "inboxiq",
+            "last_message_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    db.session.add(conn)
+    db.session.commit()
