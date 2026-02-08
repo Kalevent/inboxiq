@@ -477,6 +477,25 @@ def create_app() -> Flask:
     connection_email = getattr(last_connection, "email_address", None)
     connection_status = getattr(last_connection, "status", None)
     connection_id = getattr(last_connection, "id", None)
+
+    # Query connection status for each integration type for dashboard cards
+    def _has_connection(provider_list):
+      """Check if any connected provider exists for the given list"""
+      return InboxConnection.query.filter(
+        InboxConnection.account_id == account_id,
+        InboxConnection.status == "connected",
+        InboxConnection.provider.in_(provider_list)
+      ).first() is not None
+
+    integration_status = {
+      "voice": _has_connection(["voice", "ivr", "twilio", "vonage"]),
+      "social": _has_connection(["social", "facebook", "twitter", "instagram", "linkedin", "whatsapp"]),
+      "forms": _has_connection(["forms", "typeform", "jotform", "googleforms"]),
+      "chat": _has_connection(["chat", "inboxiq", "intercom", "drift", "livechat", "zendesk_chat"]),
+      "crm": _has_connection(["crm", "salesforce", "hubspot", "pipedrive"]),
+      "api": _has_connection(["api", "webhook", "webhooks"]),
+    }
+
     banner_first_batch = total_tickets >= 5
     allowed = set(
       e.strip().lower()
@@ -624,6 +643,8 @@ def create_app() -> Flask:
       connection_status=connection_status,
       has_admin_access=has_admin_access,
       scope=scope,
+      integration_status=integration_status,
+      account_id=account_id,
     )
 
   @app.route("/home", methods=["GET"])

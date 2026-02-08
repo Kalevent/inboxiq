@@ -807,6 +807,18 @@
           openChatModal(btn);
           return;
         }
+        if (btn.dataset.channel === 'crm') {
+          setConnectSourcesStatus('info', 'Opening CRM connect…');
+          // Redirect to settings integrations page and auto-open CRM modal
+          window.location.href = '/settings/integrations?openCrm=true';
+          return;
+        }
+        if (btn.dataset.channel === 'api') {
+          setConnectSourcesStatus('info', 'Opening API/Webhooks setup…');
+          // Redirect to webhooks configuration page
+          window.location.href = '/integrations/webhooks';
+          return;
+        }
         handleSourceConnect(btn.dataset.channel, btn);
       });
     });

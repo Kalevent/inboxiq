@@ -928,6 +928,21 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                   </div>
 
                   <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2 settings-span-2">
+                    <div class="text-sm font-semibold text-slate-100">CRM</div>
+                    <p class="text-sm text-slate-300 mt-2">
+                      Connect your CRM (Salesforce, HubSpot, Pipedrive) to sync customer data and enrich draft replies with account context.
+                    </p>
+                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                      <button onclick="document.getElementById('crmModal').classList.remove('hidden')" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                        Connect CRM →
+                      </button>
+                      <span class="text-xs text-slate-400">
+                        Status: {% if crm_connection and crm_connection.status == 'connected' %}<span class="text-emerald-300">connected</span>{% else %}<span class="text-amber-300">not configured</span>{% endif %}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2 settings-span-2">
                     <div class="text-sm font-semibold text-slate-100">Knowledge Base</div>
                     <p class="text-sm text-slate-300 mt-2">
                       Upload documentation to help AI generate better draft replies. Supports Markdown, TXT, HTML, and PDF files.
@@ -1116,6 +1131,177 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
     </footer>
 
   </div>
+
+  <!-- CRM Connection Modal -->
+  <div id="crmModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="sticky top-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-slate-100">Connect CRM</h3>
+          <p class="text-sm text-slate-400 mt-1">Sync customer data to enrich draft replies</p>
+        </div>
+        <button onclick="document.getElementById('crmModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-100">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <form method="post" class="p-6 space-y-6">
+        <input type="hidden" name="action" value="save_crm" />
+
+        {% if crm_saved %}
+          <div class="rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+            CRM settings saved successfully.
+          </div>
+        {% endif %}
+
+        <!-- CRM Platform Selection -->
+        <div class="space-y-2">
+          <label class="block">
+            <span class="text-sm font-semibold text-slate-100">CRM Platform</span>
+            <select name="crm_platform" id="crmPlatform" class="w-full mt-2 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2 text-sm text-slate-100" onchange="updateCrmFields()">
+              <option value="">Select a platform...</option>
+              <option value="salesforce" {% if crm_prefill and crm_prefill.platform == 'salesforce' %}selected{% endif %}>Salesforce</option>
+              <option value="hubspot" {% if crm_prefill and crm_prefill.platform == 'hubspot' %}selected{% endif %}>HubSpot</option>
+              <option value="pipedrive" {% if crm_prefill and crm_prefill.platform == 'pipedrive' %}selected{% endif %}>Pipedrive</option>
+              <option value="zendesk_sell" disabled>Zendesk Sell (coming soon)</option>
+              <option value="zoho_crm" disabled>Zoho CRM (coming soon)</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Salesforce Fields -->
+        <div id="salesforceFields" class="hidden space-y-4">
+          <div class="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+            <div class="text-sm font-semibold text-slate-100 mb-3">Salesforce Configuration</div>
+            <div class="space-y-3">
+              <label class="block">
+                <span class="text-xs text-slate-400">Instance URL</span>
+                <input name="crm_instance_url" type="url" class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="https://your-instance.salesforce.com" value="{{ crm_prefill.instance_url if crm_prefill and crm_prefill.platform == 'salesforce' }}" />
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-400">Client ID (Consumer Key)</span>
+                <input name="crm_client_id" type="text" class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="Enter Client ID" value="{{ crm_prefill.client_id if crm_prefill and crm_prefill.platform == 'salesforce' }}" />
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-400">Client Secret (Consumer Secret)</span>
+                <input name="crm_client_secret" type="password" class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="Enter to update" />
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-400">Access Token</span>
+                <input name="crm_access_token" type="password" class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="Enter access token" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- HubSpot Fields -->
+        <div id="hubspotFields" class="hidden space-y-4">
+          <div class="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+            <div class="text-sm font-semibold text-slate-100 mb-3">HubSpot Configuration</div>
+            <div class="space-y-3">
+              <label class="block">
+                <span class="text-xs text-slate-400">Private App Access Token</span>
+                <input name="crm_api_key" type="password" class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="Enter HubSpot access token" />
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-400">Hub ID</span>
+                <input name="crm_hub_id" type="text" class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="12345678" value="{{ crm_prefill.hub_id if crm_prefill and crm_prefill.platform == 'hubspot' }}" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pipedrive Fields -->
+        <div id="pipedriveFields" class="hidden space-y-4">
+          <div class="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+            <div class="text-sm font-semibold text-slate-100 mb-3">Pipedrive Configuration</div>
+            <div class="space-y-3">
+              <label class="block">
+                <span class="text-xs text-slate-400">API Token</span>
+                <input name="crm_api_key" type="password" class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="Enter Pipedrive API token" />
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-400">Company Domain</span>
+                <input name="crm_domain" type="text" class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="yourcompany" value="{{ crm_prefill.domain if crm_prefill and crm_prefill.platform == 'pipedrive' }}" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sync Settings -->
+        <div class="space-y-2">
+          <div class="text-sm font-semibold text-slate-100">Sync Settings</div>
+          <label class="flex items-center gap-3 text-sm text-slate-300">
+            <input type="checkbox" name="crm_sync_contacts" class="accent-indigo-500" {% if crm_prefill and crm_prefill.sync_contacts %}checked{% endif %} />
+            <span>Sync contacts for context in replies</span>
+          </label>
+          <label class="flex items-center gap-3 text-sm text-slate-300">
+            <input type="checkbox" name="crm_sync_accounts" class="accent-indigo-500" {% if crm_prefill and crm_prefill.sync_accounts %}checked{% endif %} />
+            <span>Sync accounts (companies) for context</span>
+          </label>
+          <label class="flex items-center gap-3 text-sm text-slate-300">
+            <input type="checkbox" name="crm_sync_deals" class="accent-indigo-500" {% if crm_prefill and crm_prefill.sync_deals %}checked{% endif %} />
+            <span>Sync deals (opportunities) for context</span>
+          </label>
+        </div>
+
+        <!-- Info Box -->
+        <div class="rounded-xl border border-indigo-400/30 bg-indigo-500/10 px-4 py-3 text-sm text-indigo-100">
+          <div class="font-semibold mb-1">How CRM integration enhances replies:</div>
+          <ul class="space-y-1 text-xs text-indigo-200">
+            <li>• AI accesses customer profile data (name, company, deal stage)</li>
+            <li>• Past interactions and notes inform reply context</li>
+            <li>• Account health and priority automatically considered</li>
+            <li>• Draft replies reference specific deals and opportunities</li>
+          </ul>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <button type="button" onclick="document.getElementById('crmModal').classList.add('hidden')" class="rounded-xl border border-slate-700 bg-slate-950/40 hover:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200">
+            Cancel
+          </button>
+          <button type="submit" class="rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+            Save & Connect
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function updateCrmFields() {
+      const platform = document.getElementById('crmPlatform').value;
+      document.getElementById('salesforceFields').classList.add('hidden');
+      document.getElementById('hubspotFields').classList.add('hidden');
+      document.getElementById('pipedriveFields').classList.add('hidden');
+
+      if (platform === 'salesforce') {
+        document.getElementById('salesforceFields').classList.remove('hidden');
+      } else if (platform === 'hubspot') {
+        document.getElementById('hubspotFields').classList.remove('hidden');
+      } else if (platform === 'pipedrive') {
+        document.getElementById('pipedriveFields').classList.remove('hidden');
+      }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateCrmFields();
+
+      // Auto-open CRM modal if redirected from dashboard
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('openCrm') === 'true') {
+        document.getElementById('crmModal')?.classList.remove('hidden');
+        // Remove the query parameter from URL without reloading
+        const url = new URL(window.location);
+        url.searchParams.delete('openCrm');
+        window.history.replaceState({}, '', url);
+      }
+    });
+  </script>
 
   <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
 </body>

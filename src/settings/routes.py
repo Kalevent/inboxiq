@@ -103,6 +103,24 @@ def settings_page(tab):
     draft_reply_enabled = feature_flags.draft_reply_enabled if feature_flags else False
     draft_reply_has_access = check_draft_reply_access(account_id)
 
+  # Get CRM connection for integrations tab
+  crm_connection = None
+  crm_prefill = {}
+  if tab == "integrations" and account_id:
+    crm_connection = InboxConnection.query.filter_by(account_id=account_id, provider="crm").first()
+    if crm_connection and crm_connection.metadata_json:
+      meta = crm_connection.metadata_json
+      crm_prefill = {
+        "platform": meta.get("platform", ""),
+        "instance_url": meta.get("instance_url", ""),
+        "client_id": meta.get("client_id", ""),
+        "hub_id": meta.get("hub_id", ""),
+        "domain": meta.get("domain", ""),
+        "sync_contacts": meta.get("sync_contacts", False),
+        "sync_accounts": meta.get("sync_accounts", False),
+        "sync_deals": meta.get("sync_deals", False),
+      }
+
   if tab == "security":
     user = getattr(g, "current_user", None)
     if user:
@@ -123,6 +141,8 @@ def settings_page(tab):
     plan_name=plan_name,
     draft_reply_enabled=draft_reply_enabled,
     draft_reply_has_access=draft_reply_has_access,
+    crm_connection=crm_connection,
+    crm_prefill=crm_prefill,
   )
 
 
@@ -485,6 +505,8 @@ def integrations_webhooks():
   api_allowed = account_allows_api(account_id) if account_id else False
   voice_connection = None
   voice_prefill = {"account_sid": "", "webhook_url": ""}
+  crm_connection = None
+  crm_prefill = {}
   if account_id:
     voice_connection = InboxConnection.query.filter_by(account_id=account_id, provider="voice").first()
     if voice_connection and voice_connection.metadata_json:
@@ -497,6 +519,21 @@ def integrations_webhooks():
         voice_prefill["webhook_url"] = decrypt_value(meta.get("webhook_url_enc")) or ""
       elif meta.get("webhook_url"):
         voice_prefill["webhook_url"] = meta.get("webhook_url") or ""
+
+    # Load CRM connection data
+    crm_connection = InboxConnection.query.filter_by(account_id=account_id, provider="crm").first()
+    if crm_connection and crm_connection.metadata_json:
+      meta = crm_connection.metadata_json
+      crm_prefill = {
+        "platform": meta.get("platform", ""),
+        "instance_url": meta.get("instance_url", ""),
+        "client_id": meta.get("client_id", ""),
+        "hub_id": meta.get("hub_id", ""),
+        "domain": meta.get("domain", ""),
+        "sync_contacts": meta.get("sync_contacts", False),
+        "sync_accounts": meta.get("sync_accounts", False),
+        "sync_deals": meta.get("sync_deals", False),
+      }
   if request.method == "POST":
     action = (request.form.get("action") or "").strip()
     label = (request.form.get("label") or "").strip() or None
@@ -581,6 +618,8 @@ def integrations_webhooks():
         voice_connection=voice_connection,
         voice_prefill=voice_prefill,
         voice_saved=True,
+        crm_connection=crm_connection,
+        crm_prefill=crm_prefill,
       )
     if action == "save_social" and account_id:
       platform = (request.form.get("social_platform") or "whatsapp").strip().lower()
@@ -643,6 +682,8 @@ def integrations_webhooks():
         voice_connection=voice_connection,
         voice_prefill=voice_prefill,
         social_saved=True,
+        crm_connection=crm_connection,
+        crm_prefill=crm_prefill,
       )
     if action == "save_chat" and account_id:
       platform = (request.form.get("platform") or "inboxiq").strip().lower()
@@ -715,6 +756,116 @@ def integrations_webhooks():
         voice_connection=voice_connection,
         voice_prefill=voice_prefill,
         chat_saved=True,
+        crm_connection=crm_connection,
+        crm_prefill=crm_prefill,
+      )
+    if action == "save_crm" and account_id:
+      platform = (request.form.get("crm_platform") or "").strip().lower()
+
+      # Platform-specific fields
+      instance_url = (request.form.get("crm_instance_url") or "").strip()
+      client_id = (request.form.get("crm_client_id") or "").strip()
+      client_secret = (request.form.get("crm_client_secret") or "").strip()
+      access_token = (request.form.get("crm_access_token") or "").strip()
+      api_key = (request.form.get("crm_api_key") or "").strip()
+      hub_id = (request.form.get("crm_hub_id") or "").strip()
+      domain = (request.form.get("crm_domain") or "").strip()
+
+      # Sync settings
+      sync_contacts = request.form.get("crm_sync_contacts") == "on"
+      sync_accounts = request.form.get("crm_sync_accounts") == "on"
+      sync_deals = request.form.get("crm_sync_deals") == "on"
+
+      if not platform:
+        return render_template(
+          "settings/index.html",
+          active_tab="integrations",
+          integrations_view="webhooks",
+          intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
+          tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
+          new_token=None,
+          team_view=None,
+          billing_view=None,
+          security_view=None,
+          api_allowed=api_allowed,
+          account_id=account_id,
+          voice_connection=voice_connection,
+          voice_prefill=voice_prefill,
+          crm_connection=crm_connection,
+          crm_prefill=crm_prefill,
+        )
+
+      status = "connected" if (api_key or access_token or client_secret) else "pending"
+
+      # Check if CRM connection already exists
+      crm_connection = InboxConnection.query.filter_by(account_id=account_id, provider="crm").first()
+
+      metadata = (crm_connection.metadata_json or {}) if crm_connection else {}
+      metadata.update(
+        {
+          "channel": "crm",
+          "platform": platform,
+          "sync_contacts": sync_contacts,
+          "sync_accounts": sync_accounts,
+          "sync_deals": sync_deals,
+        }
+      )
+
+      # Encrypt credentials based on platform
+      if platform == "salesforce":
+        if instance_url:
+          metadata["instance_url"] = instance_url
+        if client_id:
+          metadata["client_id"] = client_id
+        if client_secret:
+          metadata["client_secret_enc"] = encrypt_value(client_secret)
+          metadata.pop("client_secret", None)
+        if access_token:
+          metadata["access_token_enc"] = encrypt_value(access_token)
+          metadata.pop("access_token", None)
+      elif platform == "hubspot":
+        if api_key:
+          metadata["api_key_enc"] = encrypt_value(api_key)
+          metadata.pop("api_key", None)
+        if hub_id:
+          metadata["hub_id"] = hub_id
+      elif platform == "pipedrive":
+        if api_key:
+          metadata["api_key_enc"] = encrypt_value(api_key)
+          metadata.pop("api_key", None)
+        if domain:
+          metadata["domain"] = domain
+
+      if crm_connection:
+        crm_connection.metadata_json = metadata
+        crm_connection.status = status
+      else:
+        crm_connection = InboxConnection(
+          user_id=user.id if user else None,
+          account_id=account_id,
+          provider="crm",
+          status=status,
+          metadata_json=metadata,
+        )
+        db.session.add(crm_connection)
+      db.session.commit()
+
+      return render_template(
+        "settings/index.html",
+        active_tab="integrations",
+        integrations_view=None,
+        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
+        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
+        new_token=None,
+        team_view=None,
+        billing_view=None,
+        security_view=None,
+        api_allowed=api_allowed,
+        account_id=account_id,
+        voice_connection=voice_connection,
+        voice_prefill=voice_prefill,
+        crm_connection=crm_connection,
+        crm_saved=True,
       )
     if action == "generate" and account_id and api_allowed:
       token_value = str(uuid4())
@@ -742,6 +893,8 @@ def integrations_webhooks():
         account_id=account_id,
         voice_connection=voice_connection,
         voice_prefill=voice_prefill,
+        crm_connection=crm_connection,
+        crm_prefill=crm_prefill,
       )
   active_tokens = IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all() if account_id else []
   intake_token_set = bool(active_tokens)
@@ -759,6 +912,8 @@ def integrations_webhooks():
     account_id=account_id,
     voice_connection=voice_connection,
     voice_prefill=voice_prefill,
+    crm_connection=crm_connection,
+    crm_prefill=crm_prefill,
   )
 
 
