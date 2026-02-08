@@ -24,4 +24,5 @@ from src.api.v1 import (  # noqa: F401
     source_connections,
     funnel_analytics,
     content,
+    outreach,
 )

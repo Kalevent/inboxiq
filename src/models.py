@@ -1320,3 +1320,108 @@ class PitchedBlogTopic(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+class EmailCampaign(db.Model):
+    """
+    Email campaign for automated outreach to leads.
+    Supports multi-step sequences with personalization and tracking.
+    """
+    __tablename__ = "email_campaigns"
+    __table_args__ = (
+        db.Index("idx_email_campaign_status", "status"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=True, comment="Multi-tenancy support")
+
+    # Campaign details
+    name = db.Column(db.String(255), nullable=False, comment="Campaign name (e.g., 'Automation Studio Beta Outreach')")
+    subject_template = db.Column(db.String(500), nullable=False, comment="Email subject with {{variables}}")
+    body_template = db.Column(db.Text, nullable=False, comment="Email body HTML/text with {{variables}}")
+    from_email = db.Column(db.String(255), nullable=False, comment="Sender email address")
+    from_name = db.Column(db.String(255), nullable=True, comment="Sender display name")
+
+    # Sequence configuration
+    follow_up_enabled = db.Column(db.Boolean, server_default="true", comment="Enable automated follow-ups")
+    follow_up_delay_days = db.Column(db.JSON, nullable=False, default=list, comment="Follow-up delays: [3, 7] for Day 3 and Day 7")
+
+    # Targeting
+    target_funnel_stage = db.Column(db.String(50), nullable=True, comment="Target leads in this stage")
+    target_source = db.Column(db.String(100), nullable=True, comment="Target leads from this source")
+
+    # Campaign status
+    status = db.Column(
+        db.Enum("draft", "active", "paused", "completed", name="campaign_status_enum"),
+        server_default="draft",
+        nullable=False
+    )
+    max_recipients = db.Column(db.Integer, nullable=True, comment="Stop after X recipients (e.g., 10 for beta)")
+
+    # Tracking
+    total_sent = db.Column(db.Integer, server_default="0", nullable=False)
+    total_opened = db.Column(db.Integer, server_default="0", nullable=False)
+    total_clicked = db.Column(db.Integer, server_default="0", nullable=False)
+    total_replied = db.Column(db.Integer, server_default="0", nullable=False)
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    started_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+
+class EmailOutreach(db.Model):
+    """
+    Individual email sent as part of a campaign.
+    Tracks delivery, opens, clicks, and replies.
+    """
+    __tablename__ = "email_outreaches"
+    __table_args__ = (
+        db.Index("idx_email_outreach_campaign", "campaign_id"),
+        db.Index("idx_email_outreach_lead", "lead_id"),
+        db.Index("idx_email_outreach_status", "status"),
+        db.Index("idx_email_outreach_next_followup", "next_followup_at"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    campaign_id = db.Column(db.String(64), db.ForeignKey("email_campaigns.id", ondelete="CASCADE"), nullable=False)
+    lead_id = db.Column(db.String(64), db.ForeignKey("leads.id", ondelete="CASCADE"), nullable=False)
+
+    # Email content
+    sequence_step = db.Column(db.Integer, server_default="0", nullable=False, comment="0=initial, 1=first follow-up, 2=second follow-up")
+    subject = db.Column(db.String(500), nullable=False, comment="Rendered subject line")
+    body_html = db.Column(db.Text, nullable=True, comment="Rendered HTML body")
+    body_text = db.Column(db.Text, nullable=False, comment="Rendered plain text body")
+
+    # Recipient info
+    recipient_email = db.Column(db.String(255), nullable=False)
+    recipient_name = db.Column(db.String(255), nullable=True)
+
+    # Delivery status
+    status = db.Column(
+        db.Enum("pending", "sent", "delivered", "opened", "clicked", "replied", "bounced", "failed", name="outreach_status_enum"),
+        server_default="pending",
+        nullable=False
+    )
+
+    # AWS SES tracking
+    ses_message_id = db.Column(db.String(255), nullable=True, comment="AWS SES Message ID")
+    sent_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    delivered_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    first_opened_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    first_clicked_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    replied_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    # Engagement tracking
+    open_count = db.Column(db.Integer, server_default="0", nullable=False)
+    click_count = db.Column(db.Integer, server_default="0", nullable=False)
+
+    # Follow-up scheduling
+    next_followup_at = db.Column(db.DateTime(timezone=True), nullable=True, comment="When to send next follow-up")
+    followup_sent = db.Column(db.Boolean, server_default="false", nullable=False)
+
+    # Error handling
+    error_message = db.Column(db.Text, nullable=True)
+    retry_count = db.Column(db.Integer, server_default="0", nullable=False)
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
