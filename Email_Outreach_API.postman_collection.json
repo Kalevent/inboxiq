@@ -1,0 +1,138 @@
+{
+  "info": {
+    "name": "Email Outreach API",
+    "description": "Automated email outreach campaigns for Automation Studio beta signups",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.kalevent.com",
+      "type": "string"
+    },
+    {
+      "key": "apiPrefix",
+      "value": "api",
+      "type": "string"
+    },
+    {
+      "key": "apiVersion",
+      "value": "v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "campaign_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Campaign",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('campaign_id', response.campaign_id);",
+              "    console.log('Campaign ID saved:', response.campaign_id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Automation Studio Beta Outreach\",\n  \"subject_template\": \"Quick question about {{CompanyName}}\",\n  \"body_template\": \"Hi {{FirstName}},\\n\\nSaw {{CompanyName}} is {{signal}}. Quick question: drowning in support tickets yet?\\n\\nI built Automation Studio to handle 80% of routine tickets automatically using AI. Early customers seeing 15-hour/week savings.\\n\\nOffering free beta access to 10 companies this month. 5 spots left.\\n\\nWant a 10-min demo?\\n\\nBest,\\nKofi\",\n  \"from_email\": \"support@kalevent.com\",\n  \"from_name\": \"Kofi - Automation Studio\",\n  \"max_recipients\": 10,\n  \"follow_up_delay_days\": [3, 7],\n  \"target_source\": \"buying_signal_discovery\"\n}"
+        },
+        "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/outreach/campaigns",
+        "description": "Create a new email campaign with follow-up sequence"
+      },
+      "response": []
+    },
+    {
+      "name": "2. List All Campaigns",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/outreach/campaigns",
+        "description": "Get all campaigns with stats"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Activate Campaign (Start Sending)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/outreach/campaigns/{{campaign_id}}/activate",
+        "description": "Activate campaign and start sending emails automatically"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Pause Campaign",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/outreach/campaigns/{{campaign_id}}/pause",
+        "description": "Pause an active campaign"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get Campaign Stats",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/outreach/campaigns/{{campaign_id}}/stats",
+        "description": "Get detailed analytics for a campaign"
+      },
+      "response": []
+    },
+    {
+      "name": "6. List Campaign Outreaches",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/outreach/campaigns/{{campaign_id}}/outreaches?limit=50",
+          "query": [
+            {
+              "key": "limit",
+              "value": "50"
+            }
+          ]
+        },
+        "description": "Get all emails sent for a campaign"
+      },
+      "response": []
+    }
+  ]
+}
