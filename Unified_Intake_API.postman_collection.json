@@ -1,0 +1,488 @@
+{
+  "info": {
+    "name": "Unified Intake API",
+    "description": "Unified intake for webhooks, forms, chat, CRM events, and third-party integrations",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.kalevent.com",
+      "type": "string"
+    },
+    {
+      "key": "apiPrefix",
+      "value": "api",
+      "type": "string"
+    },
+    {
+      "key": "apiVersion",
+      "value": "v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "intake_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "task_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Webhook Intake (External)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Generate HMAC signature for secure intake",
+              "const token = pm.collectionVariables.get('intake_token');",
+              "const timestamp = Math.floor(Date.now() / 1000).toString();",
+              "const body = pm.request.body.raw;",
+              "",
+              "// Create signature: HMAC-SHA256(token, timestamp + '.' + body)",
+              "const message = timestamp + '.' + body;",
+              "const signature = CryptoJS.HmacSHA256(message, token).toString(CryptoJS.enc.Hex);",
+              "",
+              "pm.collectionVariables.set('current_timestamp', timestamp);",
+              "pm.collectionVariables.set('current_signature', signature);"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 202) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('task_id', response.task_id);",
+              "    console.log('Task ID saved:', response.task_id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Intake-Token",
+            "value": "{{intake_token}}",
+            "description": "Your intake token from dashboard"
+          },
+          {
+            "key": "X-Timestamp",
+            "value": "{{current_timestamp}}",
+            "description": "Unix timestamp (auto-generated)"
+          },
+          {
+            "key": "X-Signature",
+            "value": "{{current_signature}}",
+            "description": "HMAC signature (auto-generated)"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Support Request from Contact Form\",\n  \"body\": \"Customer is experiencing login issues and needs immediate assistance.\",\n  \"from_email\": \"customer@example.com\",\n  \"source\": \"website_contact_form\",\n  \"provider\": \"custom_form\",\n  \"channel\": \"web\",\n  \"provider_thread_url\": \"https://example.com/submissions/12345\",\n  \"context\": {\n    \"user_agent\": \"Mozilla/5.0\",\n    \"referrer\": \"https://example.com/pricing\",\n    \"utm_source\": \"google\",\n    \"utm_campaign\": \"support\"\n  }\n}"
+        },
+        "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/intake",
+        "description": "Send external webhooks/API requests with HMAC authentication. Use this for:\n- Website contact forms\n- CRM webhooks (HubSpot, Salesforce)\n- Chat platforms (Intercom, Drift)\n- Custom integrations"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Form Submit (Authenticated)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 202) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('task_id', response.task_id);",
+              "    console.log('Task ID saved:', response.task_id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"form_name\": \"support_request\",\n  \"subject\": \"Help with integration\",\n  \"message\": \"I need help setting up the Slack integration. The bot is not responding to mentions.\",\n  \"context\": \"User is on Business plan, Slack workspace: acme-corp\",\n  \"use_case\": \"slack_integration_support\"\n}"
+        },
+        "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/inboxiq/forms/submit",
+        "description": "Submit in-app forms from authenticated users. Use this for:\n- Support request forms within your app\n- Feedback forms\n- Help center contact forms\n- User-initiated inquiries\n\nRequires JWT authentication (logged-in user)."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Webhook Shim (Legacy)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 202) {",
+              "    const response = pm.response.json();",
+              "    pm.collectionVariables.set('task_id', response.task_id);",
+              "    console.log('Task ID saved:', response.task_id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"Legacy system alert\",\n  \"body\": \"Server load is high. Investigate immediately.\",\n  \"source\": \"monitoring_system\"\n}"
+        },
+        "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/intake/shim",
+        "description": "Compatibility adapter for legacy systems that can't generate HMAC signatures.\n\n⚠️ IMPORTANT: This endpoint is less secure. Use the main /intake endpoint when possible.\n\nThe shim automatically:\n1. Accepts simple JSON or form data\n2. Generates HMAC signature\n3. Forwards to /intake with proper auth\n\nRequires INTAKE_TOKEN environment variable on server."
+      },
+      "response": []
+    },
+    {
+      "name": "Examples",
+      "item": [
+        {
+          "name": "Example: HubSpot Form Webhook",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.collectionVariables.get('intake_token');",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const body = pm.request.body.raw;",
+                  "const message = timestamp + '.' + body;",
+                  "const signature = CryptoJS.HmacSHA256(message, token).toString(CryptoJS.enc.Hex);",
+                  "pm.collectionVariables.set('current_timestamp', timestamp);",
+                  "pm.collectionVariables.set('current_signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Intake-Token",
+                "value": "{{intake_token}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{current_timestamp}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{current_signature}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"New lead from HubSpot\",\n  \"body\": \"Company: Acme Corp\\nContact: John Smith\\nInterest: Enterprise plan\\nMessage: We're looking to implement automation for our 50-person support team.\",\n  \"from_email\": \"john.smith@acme.com\",\n  \"source\": \"hubspot\",\n  \"provider\": \"hubspot\",\n  \"channel\": \"web_form\",\n  \"provider_thread_url\": \"https://app.hubspot.com/contacts/123456/contact/987654\",\n  \"context\": {\n    \"company_size\": \"50-200\",\n    \"industry\": \"SaaS\",\n    \"lifecycle_stage\": \"opportunity\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/intake"
+          },
+          "response": []
+        },
+        {
+          "name": "Example: Intercom Chat Message",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.collectionVariables.get('intake_token');",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const body = pm.request.body.raw;",
+                  "const message = timestamp + '.' + body;",
+                  "const signature = CryptoJS.HmacSHA256(message, token).toString(CryptoJS.enc.Hex);",
+                  "pm.collectionVariables.set('current_timestamp', timestamp);",
+                  "pm.collectionVariables.set('current_signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Intake-Token",
+                "value": "{{intake_token}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{current_timestamp}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{current_signature}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Chat: Billing question\",\n  \"body\": \"Hi, I was charged twice this month for my subscription. Can you help?\",\n  \"from_email\": \"sarah@startup.io\",\n  \"source\": \"intercom\",\n  \"provider\": \"intercom\",\n  \"channel\": \"chat\",\n  \"provider_thread_url\": \"https://app.intercom.com/a/apps/abc123/inbox/inbox/conversation/456789\",\n  \"message_id\": \"intercom_msg_123456\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/intake"
+          },
+          "response": []
+        },
+        {
+          "name": "Example: Slack Mention",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.collectionVariables.get('intake_token');",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const body = pm.request.body.raw;",
+                  "const message = timestamp + '.' + body;",
+                  "const signature = CryptoJS.HmacSHA256(message, token).toString(CryptoJS.enc.Hex);",
+                  "pm.collectionVariables.set('current_timestamp', timestamp);",
+                  "pm.collectionVariables.set('current_signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Intake-Token",
+                "value": "{{intake_token}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{current_timestamp}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{current_signature}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Slack: @support request\",\n  \"body\": \"@support The API is returning 500 errors for /api/v1/tickets endpoint. Started 10 minutes ago.\",\n  \"from_email\": \"mike@engineering.com\",\n  \"source\": \"slack\",\n  \"provider\": \"slack\",\n  \"channel\": \"slack\",\n  \"provider_thread_url\": \"https://acme-corp.slack.com/archives/C123456/p1234567890\",\n  \"context\": {\n    \"channel_name\": \"#support\",\n    \"user_id\": \"U123456\",\n    \"team_id\": \"T123456\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/intake"
+          },
+          "response": []
+        }
+      ],
+      "description": "Real-world examples for common integrations"
+    },
+    {
+      "name": "External Forms (Typeform/Webflow)",
+      "item": [
+        {
+          "name": "Typeform Contact Form",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.collectionVariables.get('intake_token');",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const body = pm.request.body.raw;",
+                  "const message = timestamp + '.' + body;",
+                  "const signature = CryptoJS.HmacSHA256(message, token).toString(CryptoJS.enc.Hex);",
+                  "pm.collectionVariables.set('current_timestamp', timestamp);",
+                  "pm.collectionVariables.set('current_signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Intake-Token",
+                "value": "{{intake_token}}",
+                "description": "No cookies needed - works from any domain!"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{current_timestamp}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{current_signature}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Contact Form: New inquiry\",\n  \"body\": \"Name: Sarah Johnson\\nEmail: sarah@startup.io\\nCompany: Startup Inc\\nMessage: Interested in your automation platform for our customer support team. We handle ~200 tickets/day and need better triaging.\",\n  \"from_email\": \"sarah@startup.io\",\n  \"source\": \"typeform\",\n  \"provider\": \"typeform\",\n  \"channel\": \"web_form\",\n  \"provider_thread_url\": \"https://admin.typeform.com/form/abc123/results\",\n  \"context\": {\n    \"form_name\": \"Contact Us\",\n    \"form_id\": \"typeform_abc123\",\n    \"submitted_at\": \"2026-02-08T17:05:00Z\",\n    \"utm_source\": \"google\",\n    \"utm_campaign\": \"automation_search\",\n    \"page_url\": \"https://yoursite.com/contact\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/intake",
+            "description": "✅ External forms use /intake endpoint (NOT /forms/submit)\n✅ Works from any domain (no cookies)\n✅ Uses intake token + HMAC auth\n\nConfigure Typeform webhook:\n1. Form Settings → Integrations → Webhooks\n2. URL: https://api.kalevent.com/api/v1/intake\n3. Add custom headers (see Headers tab)\n4. Map form fields to body"
+          },
+          "response": []
+        },
+        {
+          "name": "Webflow Form Submit",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.collectionVariables.get('intake_token');",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const body = pm.request.body.raw;",
+                  "const message = timestamp + '.' + body;",
+                  "const signature = CryptoJS.HmacSHA256(message, token).toString(CryptoJS.enc.Hex);",
+                  "pm.collectionVariables.set('current_timestamp', timestamp);",
+                  "pm.collectionVariables.set('current_signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Intake-Token",
+                "value": "{{intake_token}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{current_timestamp}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{current_signature}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Demo Request from Webflow\",\n  \"body\": \"Name: Michael Chen\\nEmail: michael@enterprise.com\\nCompany: Enterprise Corp\\nEmployees: 500+\\nMessage: We need to schedule a demo for our executive team. Looking to replace our current ticketing system.\",\n  \"from_email\": \"michael@enterprise.com\",\n  \"source\": \"webflow\",\n  \"provider\": \"webflow\",\n  \"channel\": \"web_form\",\n  \"context\": {\n    \"form_name\": \"Demo Request\",\n    \"site_id\": \"webflow_xyz789\",\n    \"company_size\": \"500+\",\n    \"industry\": \"Enterprise SaaS\",\n    \"referrer\": \"https://yoursite.com/features\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/intake",
+            "description": "✅ Webflow forms use /intake endpoint\n✅ No JWT cookies needed\n✅ Works cross-domain\n\nWebflow setup:\n1. Add custom code to form submit\n2. Generate HMAC signature client-side\n3. POST to /api/v1/intake\n\nSee documentation for full JavaScript example."
+          },
+          "response": []
+        },
+        {
+          "name": "HubSpot Form Submission",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const token = pm.collectionVariables.get('intake_token');",
+                  "const timestamp = Math.floor(Date.now() / 1000).toString();",
+                  "const body = pm.request.body.raw;",
+                  "const message = timestamp + '.' + body;",
+                  "const signature = CryptoJS.HmacSHA256(message, token).toString(CryptoJS.enc.Hex);",
+                  "pm.collectionVariables.set('current_timestamp', timestamp);",
+                  "pm.collectionVariables.set('current_signature', signature);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Intake-Token",
+                "value": "{{intake_token}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{current_timestamp}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{current_signature}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"HubSpot Lead: Enterprise Inquiry\",\n  \"body\": \"Contact: David Martinez\\nCompany: TechCorp\\nTitle: VP of Operations\\nEmail: david@techcorp.io\\nPhone: +1-555-0123\\n\\nInterested in: Enterprise plan\\nCurrent tool: Zendesk\\nTeam size: 25 agents\\n\\nMessage: Looking to consolidate our support tools. Need AI-powered triage and routing.\",\n  \"from_email\": \"david@techcorp.io\",\n  \"source\": \"hubspot\",\n  \"provider\": \"hubspot\",\n  \"channel\": \"web_form\",\n  \"provider_thread_url\": \"https://app.hubspot.com/contacts/123456/contact/789012\",\n  \"context\": {\n    \"lifecycle_stage\": \"opportunity\",\n    \"lead_score\": 85,\n    \"company_size\": \"50-200\",\n    \"industry\": \"Technology\",\n    \"deal_amount\": 50000,\n    \"form_guid\": \"hubspot-form-abc\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/intake",
+            "description": "✅ HubSpot workflow webhooks use /intake\n✅ Automatically triggered on form submit\n✅ Includes lead scoring and metadata\n\nHubSpot Workflow Setup:\n1. Workflows → Create workflow\n2. Trigger: Form submission\n3. Action: Send webhook to POST URL\n4. Use webhook action with custom headers\n\nSee docs for workflow webhook code example."
+          },
+          "response": []
+        }
+      ],
+      "description": "🎯 Use these for external form providers\n\n✅ Works cross-domain (no cookies)\n✅ Uses intake token + HMAC (secure)\n✅ Perfect for: Typeform, Webflow, HubSpot, custom forms"
+    }
+  ]
+}

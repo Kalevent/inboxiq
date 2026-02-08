@@ -12,9 +12,23 @@ from datetime import datetime
 
 
 def _require_admin():
-    """Check if current user is admin (account_id = 2)."""
+    """Check if current user is admin."""
+    from src.models import User
+    from flask import current_app
+
     identity = get_jwt_identity()
-    return identity == 2
+    if not identity:
+        return False
+
+    user = db.session.get(User, identity)
+    if not user:
+        return False
+
+    # Check if user email is in ADMIN_EMAILS config
+    admin_emails = current_app.config.get("ADMIN_EMAILS", "support@kalevent.com")
+    allowed = set(e.strip().lower() for e in admin_emails.split(",") if e.strip())
+
+    return user.email.lower() in allowed
 
 
 @v1.route("/outreach/campaigns", methods=["GET"])
