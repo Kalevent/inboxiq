@@ -70,6 +70,23 @@
     if (!formsConnectModal) return;
     formsConnectTriggerBtn = triggerBtn || null;
     formsConnectStatusModal && (formsConnectStatusModal.textContent = '');
+
+    // Close user menu if open
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu && !userMenu.classList.contains('hidden')) {
+      userMenu.classList.add('hidden');
+    }
+
+    // Hide main content and header to prevent decorative elements from overlaying
+    const mainEl = document.querySelector('main');
+    const headerEl = document.querySelector('header');
+    if (mainEl) {
+      mainEl.style.visibility = 'hidden';
+    }
+    if (headerEl) {
+      headerEl.style.visibility = 'hidden';
+    }
+
     formsConnectModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
   }
@@ -78,6 +95,16 @@
     if (!formsConnectModal) return;
     formsConnectModal.classList.add('hidden');
     document.body.style.overflow = '';
+
+    // Restore main content and header visibility
+    const mainEl = document.querySelector('main');
+    const headerEl = document.querySelector('header');
+    if (mainEl) {
+      mainEl.style.visibility = '';
+    }
+    if (headerEl) {
+      headerEl.style.visibility = '';
+    }
   }
 
   async function postJSON(url, body) {
