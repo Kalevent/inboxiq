@@ -12,13 +12,14 @@
   const sourceTestBtns = Array.from(document.querySelectorAll('.source-test-btn'));
   const formsConnectBtn = document.getElementById('formsConnectBtn');
   const formsCopyBtns = Array.from(document.querySelectorAll('.copy-forms-url'));
-  const formsConnectInline = document.getElementById('formsConnectInline');
-  const closeFormsConnectInline = document.getElementById('closeFormsConnectInline');
-  const formsIntakeUrlInline = document.getElementById('formsIntakeUrlInline');
-  const formsShimUrlInline = document.getElementById('formsShimUrlInline');
-  const formsPayloadSampleInline = document.getElementById('formsPayloadSampleInline');
-  const markFormsConnectedInline = document.getElementById('markFormsConnectedInline');
-  const formsConnectStatusInline = document.getElementById('formsConnectStatusInline');
+  const formsConnectModal = document.getElementById('formsConnectModal');
+  const closeFormsModalBtn = document.getElementById('closeFormsModal');
+  const formsModalBackdrop = document.getElementById('formsModalBackdrop');
+  const formsIntakeUrlModal = document.getElementById('formsIntakeUrlModal');
+  const formsShimUrlModal = document.getElementById('formsShimUrlModal');
+  const formsPayloadSampleModal = document.getElementById('formsPayloadSampleModal');
+  const markFormsConnectedModal = document.getElementById('markFormsConnectedModal');
+  const formsConnectStatusModal = document.getElementById('formsConnectStatusModal');
   let formsConnectTriggerBtn = null;
   const rawConnectionId = connectStatus?.dataset?.connectionId;
   const normalizedConnectionId = (rawConnectionId || '').trim();
@@ -66,16 +67,17 @@
   }
 
   function openFormsModal(triggerBtn) {
-    if (!formsConnectInline) return;
+    if (!formsConnectModal) return;
     formsConnectTriggerBtn = triggerBtn || null;
-    formsConnectStatusInline && (formsConnectStatusInline.textContent = '');
-    formsConnectInline.classList.remove('hidden');
-    formsConnectInline.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    formsConnectStatusModal && (formsConnectStatusModal.textContent = '');
+    formsConnectModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
   }
 
   function closeFormsModal() {
-    if (!formsConnectInline) return;
-    formsConnectInline.classList.add('hidden');
+    if (!formsConnectModal) return;
+    formsConnectModal.classList.add('hidden');
+    document.body.style.overflow = '';
   }
 
   async function postJSON(url, body) {
@@ -246,19 +248,32 @@
   let refreshInterval = null;
 
   function bindFormsModalHandlers() {
-    if (formsConnectInline && closeFormsConnectInline) {
-      closeFormsConnectInline.addEventListener('click', () => {
-        formsConnectInline.classList.add('hidden');
-      });
+    // Close modal button
+    if (closeFormsModalBtn) {
+      closeFormsModalBtn.addEventListener('click', closeFormsModal);
     }
-    if (formsIntakeUrlInline) {
-      const origin = window.location.origin;
-      formsIntakeUrlInline.value = `${origin}/api/v1/intake`;
+    // Close on backdrop click
+    if (formsModalBackdrop) {
+      formsModalBackdrop.addEventListener('click', closeFormsModal);
     }
-    if (formsShimUrlInline) {
-      const origin = window.location.origin;
-      formsShimUrlInline.value = `${origin}/api/v1/intake/shim`;
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && formsConnectModal && !formsConnectModal.classList.contains('hidden')) {
+        closeFormsModal();
+      }
+    });
+
+    // Populate URLs
+    if (formsIntakeUrlModal) {
+      const origin = window.location.origin.replace('127.0.0.1', 'api.kalevent.com').replace(':8000', '');
+      formsIntakeUrlModal.value = `${origin}/api/v1/intake`;
     }
+    if (formsShimUrlModal) {
+      const origin = window.location.origin.replace('127.0.0.1', 'api.kalevent.com').replace(':8000', '');
+      formsShimUrlModal.value = `${origin}/api/v1/intake/shim`;
+    }
+
+    // Copy buttons
     if (formsCopyBtns.length) {
       formsCopyBtns.forEach((btn) => {
         btn.addEventListener('click', async () => {
@@ -268,18 +283,26 @@
           if (!value) return;
           try {
             await navigator.clipboard.writeText(value);
-            if (formsConnectStatusInline) formsConnectStatusInline.textContent = 'Copied.';
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
           } catch (err) {
-            if (formsConnectStatusInline) formsConnectStatusInline.textContent = 'Copy failed.';
+            btn.textContent = 'Failed';
+            setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
           }
         });
       });
     }
-    if (markFormsConnectedInline) {
-      markFormsConnectedInline.addEventListener('click', async () => {
-        if (formsConnectStatusInline) formsConnectStatusInline.textContent = 'Marking connected...';
+
+    // Mark connected button
+    if (markFormsConnectedModal) {
+      markFormsConnectedModal.addEventListener('click', async () => {
+        if (formsConnectStatusModal) formsConnectStatusModal.textContent = 'Marking connected...';
         await handleSourceConnect('forms', formsConnectTriggerBtn);
-        if (formsConnectStatusInline) formsConnectStatusInline.textContent = 'Forms marked as connected.';
+        if (formsConnectStatusModal) {
+          formsConnectStatusModal.textContent = '✅ Forms marked as connected.';
+          formsConnectStatusModal.className = 'text-xs text-emerald-400';
+        }
+        setTimeout(closeFormsModal, 1500);
       });
     }
   }
