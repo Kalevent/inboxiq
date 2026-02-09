@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from flask import current_app, g, jsonify, redirect, render_template, request, url_for
 
-from src.extensions import db
+from src.extensions import db, limiter
 from src.models import IntakeToken, User, Passkey, TOTPDevice, Account, InboxConnection
 from src.crypto import encrypt_value, decrypt_value
 from src.api.v1.access_control import account_allows_api
@@ -495,6 +495,7 @@ def _legacy_settings_redirect(tab="team"):
 
 @bp.route("/integrations/webhooks", methods=["GET", "POST"])
 @login_required_settings
+@limiter.limit("20 per minute", methods=["POST"])  # Rate limit: 20 provider configurations per minute
 def integrations_webhooks():
   import hashlib
   from werkzeug.utils import secure_filename
@@ -867,6 +868,154 @@ def integrations_webhooks():
         crm_connection=crm_connection,
         crm_saved=True,
       )
+    if action == "add_provider" and account_id:
+      import re
+      from urllib.parse import urlparse
+      from src.sanitize import sanitize_html
+
+      provider = (request.form.get("provider") or "").strip()
+
+      # Validate provider against whitelist (prevent injection)
+      allowed_providers = ['sage', 'quickbooks', 'slack', 'custom']
+      if not provider or provider not in allowed_providers:
+        return render_template(
+          "settings/index.html",
+          active_tab="integrations",
+          integrations_view="webhooks",
+          intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
+          tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
+          new_token=None,
+          team_view=None,
+          billing_view=None,
+          security_view=None,
+          api_allowed=api_allowed,
+          account_id=account_id,
+          voice_connection=voice_connection,
+          voice_prefill=voice_prefill,
+          crm_connection=crm_connection,
+          crm_prefill=crm_prefill,
+          webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).all(),
+        )
+
+      # Collect form fields into metadata with validation
+      metadata = {}
+      for key in request.form:
+        if key not in ['action', 'provider']:
+          value = request.form.get(key, '').strip()
+
+          # Input validation and sanitization
+          if key == 'label':
+            # Sanitize label (remove HTML, limit length)
+            value = sanitize_html(value)
+            value = re.sub(r'<[^>]*>', '', value)  # Strip all HTML tags
+            value = value[:100]  # Max 100 chars
+
+          elif key in ['endpoint_url', 'webhook_url']:
+            # Validate URLs (prevent javascript:, data:, vbscript: protocols)
+            if value:
+              try:
+                parsed = urlparse(value)
+                # Only allow http and https protocols
+                if parsed.scheme not in ['http', 'https', '']:
+                  logger.warning(f"Blocked unsafe URL protocol: {parsed.scheme}")
+                  continue  # Skip this field
+                # Limit URL length
+                value = value[:2000]
+              except Exception as e:
+                logger.warning(f"Invalid URL provided: {value}")
+                continue  # Skip invalid URLs
+
+          elif key == 'channel':
+            # Validate Slack channel format (#channel-name)
+            if value and not re.match(r'^#?[a-z0-9_-]{1,80}$', value, re.I):
+              logger.warning(f"Invalid channel format: {value}")
+              value = re.sub(r'[^a-z0-9_-]', '', value.lower())[:80]
+
+          elif key in ['company_id', 'client_id', 'environment']:
+            # Alphanumeric + basic chars only, max 255 chars
+            value = re.sub(r'[^\w\s.-]', '', value)[:255]
+
+          # Encrypt sensitive fields
+          if key in ['api_key', 'client_secret', 'auth_token', 'webhook_url', 'auth_header']:
+            if value:
+              metadata[f"{key}_enc"] = encrypt_value(value)
+          else:
+            metadata[key] = value
+
+      # Check if provider connection already exists for this account
+      existing_connection = InboxConnection.query.filter_by(
+        account_id=account_id,
+        provider=provider
+      ).first()
+
+      if existing_connection:
+        # Update existing connection
+        existing_connection.metadata_json = metadata
+        existing_connection.status = "connected"
+      else:
+        # Create new connection
+        new_connection = InboxConnection(
+          user_id=user.id if user else None,
+          account_id=account_id,
+          provider=provider,
+          status="connected",
+          metadata_json=metadata,
+        )
+        db.session.add(new_connection)
+
+      db.session.commit()
+
+      return render_template(
+        "settings/index.html",
+        active_tab="integrations",
+        integrations_view="webhooks",
+        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
+        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
+        new_token=None,
+        team_view=None,
+        billing_view=None,
+        security_view=None,
+        api_allowed=api_allowed,
+        account_id=account_id,
+        voice_connection=voice_connection,
+        voice_prefill=voice_prefill,
+        crm_connection=crm_connection,
+        crm_prefill=crm_prefill,
+        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).all(),
+        provider_saved=True,
+      )
+
+    if action == "delete_provider" and account_id:
+      provider_id = request.form.get("provider_id", "").strip()
+      if provider_id:
+        connection = InboxConnection.query.filter_by(
+          id=provider_id,
+          account_id=account_id
+        ).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).first()
+
+        if connection:
+          db.session.delete(connection)
+          db.session.commit()
+
+      return render_template(
+        "settings/index.html",
+        active_tab="integrations",
+        integrations_view="webhooks",
+        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
+        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
+        new_token=None,
+        team_view=None,
+        billing_view=None,
+        security_view=None,
+        api_allowed=api_allowed,
+        account_id=account_id,
+        voice_connection=voice_connection,
+        voice_prefill=voice_prefill,
+        crm_connection=crm_connection,
+        crm_prefill=crm_prefill,
+        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).all(),
+      )
+
     if action == "generate" and account_id and api_allowed:
       token_value = str(uuid4())
       token_hash = hashlib.sha256(token_value.encode("utf-8")).hexdigest()
@@ -895,9 +1044,11 @@ def integrations_webhooks():
         voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_prefill=crm_prefill,
+        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).all(),
       )
   active_tokens = IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all() if account_id else []
   intake_token_set = bool(active_tokens)
+  webhook_providers = InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).all() if account_id else []
   return render_template(
     "settings/index.html",
     active_tab="integrations",
@@ -914,6 +1065,7 @@ def integrations_webhooks():
     voice_prefill=voice_prefill,
     crm_connection=crm_connection,
     crm_prefill=crm_prefill,
+    webhook_providers=webhook_providers,
   )
 
 

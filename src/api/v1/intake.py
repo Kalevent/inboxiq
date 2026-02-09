@@ -13,7 +13,7 @@ import requests
 from src.api.v1 import v1
 from src.inboxiq_logic import normalize_email_payload
 from src.models import IntakeToken, InboxConnection, User
-from src.extensions import db
+from src.extensions import db, limiter
 from src.sanitize import sanitize_html
 from datetime import datetime, timezone
 from src.api.v1.inboxiq import _get_account_id
@@ -103,9 +103,16 @@ def intake():
     user_id = get_jwt_identity()
     payload = request.get_json(silent=True) or {}
 
-    subject = (payload.get("subject") or payload.get("title") or "Inbound request")[:500]
-    body = (payload.get("body") or payload.get("message") or "").strip()
-    if not body and not payload.get("summary"):
+    # Sanitize incoming webhook data to prevent XSS from external providers
+    raw_subject = payload.get("subject") or payload.get("title") or "Inbound request"
+    raw_body = payload.get("body") or payload.get("message") or ""
+    raw_summary = payload.get("summary") or ""
+
+    subject = sanitize_html(str(raw_subject).strip())[:500]
+    body = sanitize_html(str(raw_body).strip())
+    summary = sanitize_html(str(raw_summary).strip())
+
+    if not body and not summary:
         return jsonify({"error": "validation_error", "message": "body or message required"}), 400
 
     from_email = (payload.get("from_email") or payload.get("sender") or "intake@webhook.local").strip()
@@ -113,10 +120,17 @@ def intake():
     thread_url = payload.get("provider_thread_url") or payload.get("thread_url")
     account_id = payload.get("account_id") or getattr(g, "intake_account_id", None) or _get_account_id(user_id)
 
+    # Sanitize metadata if present (can contain data from external APIs like Sage, QuickBooks)
+    sanitized_context = payload.get("context")
+    if sanitized_context and isinstance(sanitized_context, dict):
+        for key, value in list(sanitized_context.items()):
+            if isinstance(value, str):
+                sanitized_context[key] = sanitize_html(value.strip())
+
     triage_input = {
         "subject": subject,
         "from_email": from_email,
-        "body": body or payload.get("summary", ""),
+        "body": body or summary,
         "provider": provider,
         "source": payload.get("source") or provider,
         "channel": payload.get("channel") or payload.get("source") or provider,
@@ -124,7 +138,7 @@ def intake():
         "provider_thread_url": thread_url,
         "message_id": payload.get("message_id"),
         "received_at": payload.get("received_at"),
-        "context": payload.get("context"),
+        "context": sanitized_context,
     }
 
     try:
@@ -184,6 +198,7 @@ def _ensure_forms_connection(account_id: int | None, user_id: int | None, form_n
 
 @v1.route("/inboxiq/forms/submit", methods=["POST"])
 @jwt_required()
+@limiter.limit("30 per minute")  # Rate limit: 30 submissions per minute per user
 def submit_form():
     """
     In-app form intake: accepts JSON from authenticated users and routes

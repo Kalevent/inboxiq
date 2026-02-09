@@ -738,6 +738,30 @@
   "provider_thread_url": "https://crm.example.com/leads/abc"
 }
                     </pre>
+                    <pre class="text-xs text-slate-200 bg-slate-950/60 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
+{
+  "subject": "Invoice: Acme Corp - $500.00",
+  "body": "Invoice #INV-001 created via automation studio",
+  "source": "automation_studio",
+  "metadata": {
+    "invoice_number": "INV-001",
+    "customer_name": "Acme Corp",
+    "amount": 500.00
+  }
+}
+                    </pre>
+                    <pre class="text-xs text-slate-200 bg-slate-950/60 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">
+{
+  "subject": "Receipt: Payment received - $250.00",
+  "body": "Payment from John Doe via Credit Card",
+  "source": "automation_studio",
+  "metadata": {
+    "receipt_number": "RCP-123",
+    "payment_amount": 250.00,
+    "payment_method": "Credit Card"
+  }
+}
+                    </pre>
                   </div>
 
                   <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
@@ -819,6 +843,50 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                         <span class="text-xs text-slate-400">Auth tokens are encrypted before storage.</span>
                       </div>
                     </form>
+                  </div>
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
+                    <div class="flex items-center justify-between">
+                      <div class="text-sm font-semibold text-slate-100">Configured Providers</div>
+                      <button type="button" onclick="openProviderModal()" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow">
+                        + Add Provider
+                      </button>
+                    </div>
+                    <p class="text-xs text-slate-400">
+                      Configure Sage, QuickBooks, Slack, or custom webhooks to send data directly from automation studio.
+                      <a href="/docs/automation_studio_accounting" class="text-indigo-300 hover:text-indigo-200 underline ml-1">See examples & guide →</a>
+                    </p>
+                    <div class="text-xs text-slate-300">
+                      {% if webhook_providers and webhook_providers|length > 0 %}
+                        <ul class="mt-2 space-y-2">
+                          {% for provider in webhook_providers %}
+                            <li class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-lg p-3">
+                              <div class="flex flex-col">
+                                <span class="font-semibold text-slate-100">
+                                  {% if provider.provider == 'sage' %}Sage Accounting
+                                  {% elif provider.provider == 'quickbooks' %}Intuit QuickBooks
+                                  {% elif provider.provider == 'slack' %}Slack
+                                  {% elif provider.provider == 'custom' %}Custom Webhook
+                                  {% else %}{{ provider.provider|title }}
+                                  {% endif %}
+                                </span>
+                                <span class="text-slate-400">{{ (provider.metadata_json.get('label', 'Unnamed') if provider.metadata_json else 'Unnamed') | escape }}</span>
+                                <span class="text-slate-500 text-[10px] mt-1">Added {{ provider.created_at.strftime('%Y-%m-%d') }}</span>
+                              </div>
+                              <form method="post" style="display:inline;">
+                                <input type="hidden" name="action" value="delete_provider" />
+                                <input type="hidden" name="provider_id" value="{{ provider.id }}" />
+                                <button type="submit" onclick="return confirm('Delete this provider configuration?');" class="text-xs text-red-400 hover:text-red-300 px-3 py-1 rounded border border-red-800 hover:border-red-700">
+                                  Delete
+                                </button>
+                              </form>
+                            </li>
+                          {% endfor %}
+                        </ul>
+                      {% else %}
+                        <div class="text-slate-500 mt-1">No providers configured. Click "Add Provider" to connect Sage, QuickBooks, Slack, etc.</div>
+                      {% endif %}
+                    </div>
                   </div>
 
                   <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
@@ -1301,7 +1369,142 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
         window.history.replaceState({}, '', url);
       }
     });
+
+    // Provider Configuration Modal Functions
+    function openProviderModal() {
+      document.getElementById('providerModal')?.classList.remove('hidden');
+    }
+
+    function closeProviderModal() {
+      const modal = document.getElementById('providerModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        document.getElementById('providerSelect').value = '';
+        document.getElementById('providerFields').innerHTML = '';
+      }
+    }
+
+    function updateProviderFields() {
+      const provider = document.getElementById('providerSelect').value;
+      const fieldsContainer = document.getElementById('providerFields');
+
+      const providerConfigs = {
+        sage: {
+          fields: [
+            { name: 'label', label: 'Configuration Name', type: 'text', placeholder: 'e.g., Production Sage', required: true },
+            { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Your Sage API key', required: true },
+            { name: 'company_id', label: 'Company ID', type: 'text', placeholder: 'Your Sage company ID', required: true },
+            { name: 'environment', label: 'Environment', type: 'select', options: ['production', 'sandbox'], required: true },
+            { name: 'endpoint_url', label: 'API Endpoint', type: 'text', placeholder: 'https://api.sage.com/v3.1/invoices', required: false }
+          ]
+        },
+        quickbooks: {
+          fields: [
+            { name: 'label', label: 'Configuration Name', type: 'text', placeholder: 'e.g., QuickBooks Production', required: true },
+            { name: 'client_id', label: 'Client ID', type: 'text', placeholder: 'Your QuickBooks Client ID', required: true },
+            { name: 'client_secret', label: 'Client Secret', type: 'password', placeholder: 'Your QuickBooks Client Secret', required: true },
+            { name: 'company_id', label: 'Company ID (Realm ID)', type: 'text', placeholder: 'Your QuickBooks Company/Realm ID', required: true },
+            { name: 'environment', label: 'Environment', type: 'select', options: ['production', 'sandbox'], required: true }
+          ]
+        },
+        slack: {
+          fields: [
+            { name: 'label', label: 'Configuration Name', type: 'text', placeholder: 'e.g., Engineering Slack', required: true },
+            { name: 'webhook_url', label: 'Webhook URL', type: 'text', placeholder: 'https://hooks.slack.com/services/...', required: true },
+            { name: 'channel', label: 'Default Channel', type: 'text', placeholder: '#notifications', required: false }
+          ]
+        },
+        custom: {
+          fields: [
+            { name: 'label', label: 'Configuration Name', type: 'text', placeholder: 'e.g., Custom API', required: true },
+            { name: 'endpoint_url', label: 'Webhook URL', type: 'text', placeholder: 'https://your-api.com/webhook', required: true },
+            { name: 'auth_header', label: 'Authorization Header (optional)', type: 'text', placeholder: 'Bearer your-token', required: false },
+            { name: 'custom_headers', label: 'Custom Headers (JSON, optional)', type: 'textarea', placeholder: '{"X-Custom": "value"}', required: false }
+          ]
+        }
+      };
+
+      if (!provider || !providerConfigs[provider]) {
+        fieldsContainer.innerHTML = '';
+        return;
+      }
+
+      const config = providerConfigs[provider];
+      let html = '';
+
+      config.fields.forEach(field => {
+        html += `<div>`;
+        html += `<label class="block text-sm font-medium text-slate-200 mb-2">${field.label}${field.required ? ' *' : ''}</label>`;
+
+        if (field.type === 'select') {
+          html += `<select name="${field.name}" ${field.required ? 'required' : ''} class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">`;
+          field.options.forEach(opt => {
+            html += `<option value="${opt}">${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`;
+          });
+          html += `</select>`;
+        } else if (field.type === 'textarea') {
+          html += `<textarea name="${field.name}" ${field.required ? 'required' : ''} placeholder="${field.placeholder}" rows="3" class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"></textarea>`;
+        } else {
+          html += `<input type="${field.type}" name="${field.name}" ${field.required ? 'required' : ''} placeholder="${field.placeholder}" class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />`;
+        }
+        html += `</div>`;
+      });
+
+      fieldsContainer.innerHTML = html;
+    }
+
+    // Close provider modal on outside click
+    document.getElementById('providerModal')?.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeProviderModal();
+      }
+    });
   </script>
+
+  <!-- Provider Configuration Modal -->
+  <div id="providerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-slate-100">Configure Provider</h2>
+          <button type="button" onclick="closeProviderModal()" class="text-slate-400 hover:text-slate-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <form method="post" class="space-y-4">
+          <input type="hidden" name="action" value="add_provider" />
+
+          <!-- Provider Selection -->
+          <div>
+            <label class="block text-sm font-medium text-slate-200 mb-2">Select Provider</label>
+            <select name="provider" id="providerSelect" onchange="updateProviderFields()" required class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+              <option value="">-- Choose Provider --</option>
+              <option value="sage">Sage Accounting</option>
+              <option value="quickbooks">Intuit QuickBooks</option>
+              <option value="slack">Slack</option>
+              <option value="custom">Custom Webhook</option>
+            </select>
+          </div>
+
+          <!-- Dynamic Fields Container -->
+          <div id="providerFields" class="space-y-4"></div>
+
+          <!-- Submit Button -->
+          <div class="flex gap-3 pt-2">
+            <button type="button" onclick="closeProviderModal()" class="flex-1 rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800">
+              Cancel
+            </button>
+            <button type="submit" class="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow">
+              Save Provider
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
 </body>

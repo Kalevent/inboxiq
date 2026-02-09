@@ -189,7 +189,7 @@ def docs_page(doc_name, lc=None):
             title = title_line.replace("# ", "")
 
         # Related docs: only show InboxIQ-relevant pages (whitelist) and never legacy MCP entries.
-        whitelist = ["index", "users_guide", "email_outreach_postman_guide", "unified_intake_postman_guide", "service_integrations", "channel_intake_guide", "invite_teammates", "security_auth"]
+        whitelist = ["index", "users_guide", "email_outreach_postman_guide", "unified_intake_postman_guide", "service_integrations", "channel_intake_guide", "invite_teammates", "security_auth", "automation_studio_accounting"]
         base_id = doc_name.replace(".md", "")
         related = []
         related_ids = whitelist

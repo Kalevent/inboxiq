@@ -113,19 +113,23 @@ def create_app() -> Flask:
         "script-src 'self' 'unsafe-inline' https://js.stripe.com",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: https://www.gravatar.com https://files.kalevent.com",
-        "font-src 'self'",
+        "font-src 'self' data:",
         "connect-src 'self' https://127.0.0.1:8000 https://api.kalevent.com https://files.kalevent.com",
         "form-action 'self'",
         "frame-ancestors 'none'",
         "base-uri 'self'",
         "object-src 'none'",
         "frame-src 'self' https://js.stripe.com",
+        "upgrade-insecure-requests",
+        "block-all-mixed-content",
       ]
     )
     response.headers.setdefault("Content-Security-Policy", csp)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("X-XSS-Protection", "1; mode=block")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
     return response
 
   @app.context_processor

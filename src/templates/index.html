@@ -325,21 +325,21 @@
                 <!-- Rule example -->
                 <div class="bg-slate-950/80 border border-slate-700 rounded-lg p-4">
                   <div class="text-slate-400 mb-2">When:</div>
-                  <div class="text-indigo-300 pl-4">→ Ticket is created</div>
+                  <div class="text-indigo-300 pl-4">→ Email has PDF attachment</div>
                 </div>
 
                 <div class="bg-slate-950/80 border border-slate-700 rounded-lg p-4">
                   <div class="text-slate-400 mb-2">If:</div>
-                  <div class="text-emerald-300 pl-4">→ Subject contains "refund"</div>
-                  <div class="text-slate-500 pl-4 text-xs">AND</div>
-                  <div class="text-emerald-300 pl-4">→ Customer tier = "VIP"</div>
+                  <div class="text-emerald-300 pl-4">→ Subject contains "invoice"</div>
+                  <div class="text-slate-500 pl-4 text-xs">OR</div>
+                  <div class="text-emerald-300 pl-4">→ Attachment filename contains "receipt"</div>
                 </div>
 
                 <div class="bg-slate-950/80 border border-slate-700 rounded-lg p-4">
                   <div class="text-slate-400 mb-2">Then:</div>
-                  <div class="text-fuchsia-300 pl-4">→ Assign to "Billing Team"</div>
-                  <div class="text-fuchsia-300 pl-4">→ Set priority to "P1"</div>
-                  <div class="text-fuchsia-300 pl-4">→ Notify #billing-urgent on Slack</div>
+                  <div class="text-fuchsia-300 pl-4">→ Extract invoice data (AI)</div>
+                  <div class="text-fuchsia-300 pl-4">→ Send to Sage Accounting</div>
+                  <div class="text-fuchsia-300 pl-4">→ Tag email "invoice_processed"</div>
                 </div>
 
                 <div class="flex items-center justify-between pt-2">
@@ -875,6 +875,43 @@
                 <div class="text-center">
                   <div class="font-semibold text-slate-100 mb-1">LinkedIn</div>
                   <div class="text-xs text-slate-400">Professional network</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sage -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="8" fill="#00DC06"/>
+                    <path d="M24 14L14 19V29L24 34L34 29V19L24 14Z" fill="white"/>
+                    <path d="M24 24V34L34 29V19L24 24Z" fill="#00A000" opacity="0.7"/>
+                    <path d="M14 19L24 24V34L14 29V19Z" fill="white" opacity="0.9"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Sage</div>
+                  <div class="text-xs text-slate-400">Accounting software</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Intuit QuickBooks -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="8" fill="#2CA01C"/>
+                    <circle cx="16" cy="24" r="6" fill="white"/>
+                    <circle cx="32" cy="24" r="6" fill="white"/>
+                    <path d="M16 18V30M32 18V30" stroke="#2CA01C" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M22 24H26" stroke="#2CA01C" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">QuickBooks</div>
+                  <div class="text-xs text-slate-400">Intuit accounting</div>
                 </div>
               </div>
             </div>
