@@ -20,7 +20,106 @@ InboxIQ's Automation Studio can automatically:
 
 ---
 
-## Example 1: Invoice Extraction → Sage
+## Two Integration Approaches
+
+InboxIQ supports **two distinct methods** for processing invoices and receipts. Choose the approach that best fits your workflow:
+
+### Approach 1: Email-Based Processing (Default)
+
+**How it works:**
+```
+Payment Processor → Email Receipt → Your Gmail/Outlook → InboxIQ (Email Integration)
+→ AI Extracts Data → Automation Rule → Sage/QuickBooks API
+```
+
+**Best for:**
+- Processing receipts from payment processors (Stripe, Square, PayPal, etc.) that send email confirmations
+- Vendor invoices received via email
+- Historical email data already in your inbox
+- Simple setup with no additional API configuration
+
+**Configuration:**
+1. Connect your email account (Gmail/Outlook) to InboxIQ
+2. Configure automation rules to detect invoices/receipts by:
+   - Sender email (e.g., `payment@stripe.com`, `receipts@square.com`)
+   - Subject keywords (e.g., "invoice", "receipt", "payment confirmation")
+   - Attachment type (PDF, images)
+3. Configure destination accounting software (Sage/QuickBooks)
+
+**Supported Payment Processors (Email):**
+- Stripe (`payment@stripe.com`)
+- Square (`receipts@square.com`)
+- PayPal (`service@paypal.com`)
+- Braintree (`donotreply@braintree.com`)
+- Authorize.net (`noreply@authorize.net`)
+
+---
+
+### Approach 2: Direct API Integration (Advanced)
+
+**How it works:**
+```
+Payment Processor Webhook → InboxIQ /api/v1/intake → Verify Signature
+→ Transform Data → Sage/QuickBooks API (Real-time)
+```
+
+**Best for:**
+- Real-time payment processing (no email delay)
+- High transaction volumes
+- Webhook-based integrations
+- Pulling historical transaction data for reconciliation
+- Direct data flow without email intermediary
+
+**Configuration:**
+1. **In InboxIQ**: Add payment processor to [Provider Configurations](/settings/integrations?tab=integrations&view=webhooks)
+   - **Stripe**: Webhook signing secret + optional API key
+   - **Square**: Webhook signature key + optional access token
+   - **PayPal**: Webhook ID + optional client credentials
+2. **In Payment Processor Dashboard**: Configure webhook URL pointing to InboxIQ:
+   ```
+   https://yourdomain.com/api/v1/intake
+   ```
+3. **Webhook Verification**: InboxIQ automatically verifies webhook signatures for security
+4. **Destination**: Configure where to send data (Sage, QuickBooks, Slack)
+
+**Features:**
+- ✅ **Real-time**: Process payments instantly (no email delay)
+- ✅ **Signature Verification**: Secure webhook authentication
+- ✅ **Historical Data**: Pull past transactions using API credentials
+- ✅ **Reconciliation**: Sync data on-demand for auditing
+- ✅ **Higher Reliability**: No dependency on email delivery
+
+**Example Stripe Configuration:**
+```javascript
+// In Stripe Dashboard → Webhooks
+Webhook URL: https://yourdomain.com/api/v1/intake
+Events: payment_intent.succeeded, charge.succeeded
+
+// In InboxIQ Provider Modal
+Provider: Stripe
+Webhook Signing Secret: whsec_xxxxx (for signature verification)
+API Key (optional): sk_live_xxxxx (for pulling historical data)
+Destination: Sage Accounting
+```
+
+---
+
+## Choosing the Right Approach
+
+| Feature | Email-Based | Direct API |
+|---------|-------------|------------|
+| **Setup Complexity** | Simple | Moderate |
+| **Real-time Processing** | No (email delay) | Yes |
+| **Historical Data Sync** | Manual | Automated |
+| **Reliability** | Depends on email | High |
+| **Security** | Email forwarding | Webhook signatures |
+| **Best For** | Small businesses, simple workflows | High-volume, real-time needs |
+
+**Recommendation**: Start with **Email-Based** for simplicity, then migrate to **Direct API** as transaction volume grows or real-time processing becomes critical.
+
+---
+
+## Example 1: Invoice Extraction → Sage (Email-Based)
 
 **Use Case**: Automatically extract invoice data from vendor emails and create invoices in Sage Accounting.
 
@@ -79,9 +178,9 @@ Actions:
 
 ---
 
-## Example 2: Receipt Extraction → QuickBooks
+## Example 2: Receipt Extraction → QuickBooks (Email-Based)
 
-**Use Case**: Capture payment receipts from Stripe, PayPal, Square and sync to QuickBooks.
+**Use Case**: Capture payment receipts from Stripe, PayPal, Square email confirmations and sync to QuickBooks.
 
 ### Rule Configuration
 
@@ -192,6 +291,114 @@ Actions:
 
 ---
 
+## Example 4: Direct Stripe Integration → Sage (API-Based)
+
+**Use Case**: Real-time payment processing - Stripe webhooks send payment data directly to InboxIQ, which immediately forwards to Sage Accounting.
+
+### Configuration Steps
+
+**Step 1: Configure Stripe Provider in InboxIQ**
+
+Navigate to **Settings → Integrations → Webhooks** → Click **"+ Add Provider"** → Select **"Stripe"**
+
+```
+Configuration Name: Production Stripe
+Webhook Signing Secret: whsec_xxxxxxxxxxxxx (from Stripe Dashboard → Webhooks)
+API Key (optional): sk_live_xxxxxxxxxxxxx (for pulling historical transactions)
+Destination: Sage Accounting
+```
+
+**Step 2: Configure Webhook in Stripe Dashboard**
+
+1. Go to Stripe Dashboard → **Developers** → **Webhooks**
+2. Click **"Add endpoint"**
+3. Configure webhook:
+   ```
+   Endpoint URL: https://yourdomain.com/api/v1/intake
+   Events to send:
+     - payment_intent.succeeded
+     - charge.succeeded
+     - invoice.payment_succeeded
+   ```
+4. Copy the **Signing Secret** (whsec_...) and add it to InboxIQ provider configuration
+
+**Step 3: How It Works**
+
+```
+Stripe Payment → Webhook Fired → InboxIQ /api/v1/intake
+→ Verify Stripe Signature (using webhook_secret)
+→ Extract Payment Data (amount, customer, payment method)
+→ Transform to Sage Invoice Format
+→ POST to Sage API (using configured credentials)
+→ Tag as "stripe_processed" in InboxIQ
+```
+
+### Webhook Payload Example
+
+**Stripe sends to InboxIQ:**
+```json
+{
+  "type": "payment_intent.succeeded",
+  "data": {
+    "object": {
+      "id": "pi_3AbCdEf123",
+      "amount": 50000,
+      "currency": "usd",
+      "customer": "cus_xxxxx",
+      "description": "Invoice #INV-001",
+      "receipt_email": "customer@example.com"
+    }
+  }
+}
+```
+
+**InboxIQ transforms and sends to Sage:**
+```json
+{
+  "invoice_number": "INV-001",
+  "customer_name": "Acme Corp",
+  "amount": 500.00,
+  "currency": "USD",
+  "payment_method": "Credit Card",
+  "payment_date": "2026-02-09",
+  "transaction_id": "pi_3AbCdEf123",
+  "source": "stripe_webhook",
+  "metadata": {
+    "stripe_customer_id": "cus_xxxxx",
+    "receipt_email": "customer@example.com"
+  }
+}
+```
+
+### Benefits Over Email-Based
+
+| Feature | Email-Based | Direct API |
+| --- | --- | --- |
+| **Processing Speed** | 1-5 minutes (email delay) | <1 second (instant) |
+| **Reliability** | 99% (email delivery) | 99.9% (direct webhook) |
+| **Data Accuracy** | AI extraction from email text | Structured API data |
+| **Historical Sync** | Manual | Automated (via API key) |
+| **Transaction Volume** | Up to 1000/day | Unlimited |
+
+### Reconciliation & Historical Data
+
+If you provided the **API Key (optional)** during configuration, InboxIQ can pull historical transactions for reconciliation:
+
+**Manual Reconciliation:**
+1. Go to **Settings → Integrations → Webhooks**
+2. Click on your Stripe provider
+3. Click **"Sync Historical Data"**
+4. Select date range (e.g., last 30 days)
+5. InboxIQ pulls all transactions from Stripe API and syncs to Sage
+
+**Automated Daily Reconciliation:**
+- Configure a scheduled Celery task to run daily
+- Pulls previous day's transactions from Stripe
+- Compares with Sage records
+- Reports discrepancies to Slack
+
+---
+
 ## Configuring Webhook Providers
 
 ### Step 1: Add Provider
@@ -203,28 +410,58 @@ Actions:
 ### Step 2: Select Provider Type
 
 Choose from:
+
+**Accounting Software (Destinations):**
 - **Sage Accounting** - Sage API integration
 - **Intuit QuickBooks** - QuickBooks Online API
+
+**Payment Processors (Sources):**
+- **Stripe** - Real-time payment webhooks + API
+- **Square** - Payment processor integration
+- **PayPal** - Payment notifications and API
+
+**Notifications & Custom:**
 - **Slack** - Send notifications to Slack channels
 - **Custom Webhook** - Any REST API endpoint
 
 ### Step 3: Enter Credentials
 
-**For Sage:**
+**For Sage (Destination):**
 - Configuration Name (e.g., "Production Sage")
 - API Key (encrypted)
 - Company ID
 - Environment (production/sandbox)
 - API Endpoint URL
 
-**For QuickBooks:**
+**For QuickBooks (Destination):**
 - Configuration Name (e.g., "QuickBooks Production")
 - Client ID
 - Client Secret (encrypted)
 - Company ID (Realm ID)
 - Environment (production/sandbox)
 
-**For Slack:**
+**For Stripe (Source):**
+- Configuration Name (e.g., "Production Stripe")
+- Webhook Signing Secret (whsec_...) - Required for webhook verification
+- API Key (sk_live_... or sk_test_...) - Optional, for pulling historical data
+- Destination Provider (where to send data: Sage, QuickBooks, Slack, or Custom)
+
+**For Square (Source):**
+- Configuration Name (e.g., "Production Square")
+- Webhook Signature Key - Required for webhook verification
+- Access Token - Optional, for pulling historical payments
+- Environment (production/sandbox)
+- Destination Provider (Sage, QuickBooks, Slack, or Custom)
+
+**For PayPal (Source):**
+- Configuration Name (e.g., "Production PayPal")
+- Webhook ID - Required for webhook verification
+- Client ID - Optional, for API access
+- Client Secret - Optional, for API access
+- Environment (production/sandbox)
+- Destination Provider (Sage, QuickBooks, Slack, or Custom)
+
+**For Slack (Notification):**
 - Configuration Name
 - Webhook URL (from Slack app)
 - Default Channel (optional)

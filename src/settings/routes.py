@@ -876,7 +876,7 @@ def integrations_webhooks():
       provider = (request.form.get("provider") or "").strip()
 
       # Validate provider against whitelist (prevent injection)
-      allowed_providers = ['sage', 'quickbooks', 'slack', 'custom']
+      allowed_providers = ['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal']
       if not provider or provider not in allowed_providers:
         return render_template(
           "settings/index.html",
@@ -894,7 +894,7 @@ def integrations_webhooks():
           voice_prefill=voice_prefill,
           crm_connection=crm_connection,
           crm_prefill=crm_prefill,
-          webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).all(),
+          webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).all(),
         )
 
       # Collect form fields into metadata with validation
@@ -981,7 +981,7 @@ def integrations_webhooks():
         voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_prefill=crm_prefill,
-        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).all(),
+        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).all(),
         provider_saved=True,
       )
 
@@ -991,7 +991,7 @@ def integrations_webhooks():
         connection = InboxConnection.query.filter_by(
           id=provider_id,
           account_id=account_id
-        ).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).first()
+        ).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).first()
 
         if connection:
           db.session.delete(connection)
@@ -1013,7 +1013,7 @@ def integrations_webhooks():
         voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_prefill=crm_prefill,
-        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).all(),
+        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).all(),
       )
 
     if action == "generate" and account_id and api_allowed:
@@ -1044,11 +1044,11 @@ def integrations_webhooks():
         voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_prefill=crm_prefill,
-        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).all(),
+        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).all(),
       )
   active_tokens = IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all() if account_id else []
   intake_token_set = bool(active_tokens)
-  webhook_providers = InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom'])).all() if account_id else []
+  webhook_providers = InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).all() if account_id else []
   return render_template(
     "settings/index.html",
     active_tab="integrations",

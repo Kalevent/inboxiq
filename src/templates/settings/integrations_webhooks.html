@@ -140,6 +140,9 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                         <span class="font-semibold text-slate-100">
                           {% if provider.provider == 'sage' %}Sage Accounting
                           {% elif provider.provider == 'quickbooks' %}Intuit QuickBooks
+                          {% elif provider.provider == 'stripe' %}Stripe
+                          {% elif provider.provider == 'square' %}Square
+                          {% elif provider.provider == 'paypal' %}PayPal
                           {% elif provider.provider == 'slack' %}Slack
                           {% elif provider.provider == 'custom' %}Custom Webhook
                           {% else %}{{ provider.provider|title }}
@@ -240,10 +243,19 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
             <label class="block text-sm font-medium text-slate-200 mb-2">Select Provider</label>
             <select name="provider" id="providerSelect" onchange="updateProviderFields()" required class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
               <option value="">-- Choose Provider --</option>
-              <option value="sage">Sage Accounting</option>
-              <option value="quickbooks">Intuit QuickBooks</option>
-              <option value="slack">Slack</option>
-              <option value="custom">Custom Webhook</option>
+              <optgroup label="Accounting Software (Destinations)">
+                <option value="sage">Sage Accounting</option>
+                <option value="quickbooks">Intuit QuickBooks</option>
+              </optgroup>
+              <optgroup label="Payment Processors (Sources)">
+                <option value="stripe">Stripe</option>
+                <option value="square">Square</option>
+                <option value="paypal">PayPal</option>
+              </optgroup>
+              <optgroup label="Notifications & Custom">
+                <option value="slack">Slack</option>
+                <option value="custom">Custom Webhook</option>
+              </optgroup>
             </select>
           </div>
 
@@ -302,6 +314,36 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
           { name: 'endpoint_url', label: 'Webhook URL', type: 'text', placeholder: 'https://your-api.com/webhook', required: true },
           { name: 'auth_header', label: 'Authorization Header (optional)', type: 'text', placeholder: 'Bearer your-token', required: false },
           { name: 'custom_headers', label: 'Custom Headers (JSON, optional)', type: 'textarea', placeholder: '{"X-Custom": "value"}', required: false }
+        ]
+      },
+      stripe: {
+        label: 'Stripe',
+        fields: [
+          { name: 'label', label: 'Configuration Name', type: 'text', placeholder: 'e.g., Production Stripe', required: true },
+          { name: 'webhook_secret', label: 'Webhook Signing Secret', type: 'password', placeholder: 'whsec_...', required: true, help: 'Found in Stripe Dashboard → Webhooks' },
+          { name: 'api_key', label: 'Secret API Key (optional)', type: 'password', placeholder: 'sk_live_... or sk_test_...', required: false, help: 'For pulling historical transactions' },
+          { name: 'destination_provider', label: 'Send Data To', type: 'select', options: ['sage', 'quickbooks', 'slack', 'custom'], required: true }
+        ]
+      },
+      square: {
+        label: 'Square',
+        fields: [
+          { name: 'label', label: 'Configuration Name', type: 'text', placeholder: 'e.g., Production Square', required: true },
+          { name: 'webhook_signature_key', label: 'Webhook Signature Key', type: 'password', placeholder: 'Your Square signature key', required: true, help: 'Found in Square Dashboard → Webhooks' },
+          { name: 'access_token', label: 'Access Token (optional)', type: 'password', placeholder: 'Your Square access token', required: false, help: 'For pulling historical payments' },
+          { name: 'environment', label: 'Environment', type: 'select', options: ['production', 'sandbox'], required: true },
+          { name: 'destination_provider', label: 'Send Data To', type: 'select', options: ['sage', 'quickbooks', 'slack', 'custom'], required: true }
+        ]
+      },
+      paypal: {
+        label: 'PayPal',
+        fields: [
+          { name: 'label', label: 'Configuration Name', type: 'text', placeholder: 'e.g., Production PayPal', required: true },
+          { name: 'webhook_id', label: 'Webhook ID', type: 'text', placeholder: 'Your PayPal webhook ID', required: true, help: 'Found in PayPal Developer Dashboard' },
+          { name: 'client_id', label: 'Client ID (optional)', type: 'text', placeholder: 'Your PayPal Client ID', required: false },
+          { name: 'client_secret', label: 'Client Secret (optional)', type: 'password', placeholder: 'Your PayPal Client Secret', required: false, help: 'For pulling historical transactions' },
+          { name: 'environment', label: 'Environment', type: 'select', options: ['production', 'sandbox'], required: true },
+          { name: 'destination_provider', label: 'Send Data To', type: 'select', options: ['sage', 'quickbooks', 'slack', 'custom'], required: true }
         ]
       }
     };
