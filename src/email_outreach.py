@@ -131,12 +131,19 @@ def send_email_via_ses(
         message['Body']['Html'] = {'Data': body_html, 'Charset': 'UTF-8'}
 
     try:
-        response = ses.send_email(
-            Source=source,
-            Destination={'ToAddresses': [to_email]},
-            Message=message,
-            ConfigurationSetName=os.getenv('SES_CONFIGURATION_SET'),  # For tracking
-        )
+        # Build send_email kwargs
+        send_kwargs = {
+            'Source': source,
+            'Destination': {'ToAddresses': [to_email]},
+            'Message': message,
+        }
+
+        # Only add ConfigurationSetName if configured (for tracking)
+        config_set = os.getenv('SES_CONFIGURATION_SET')
+        if config_set:
+            send_kwargs['ConfigurationSetName'] = config_set
+
+        response = ses.send_email(**send_kwargs)
 
         return {
             "success": True,
@@ -283,7 +290,10 @@ def process_campaign_outreach(campaign_id: str, max_emails: int = 10) -> Dict[st
         return {"message": "Campaign completed (max recipients reached)", "sent": 0}
 
     # Find leads to contact
-    query = db.session.query(Lead).filter(Lead.email.isnot(None))
+    query = db.session.query(Lead).filter(
+        Lead.email.isnot(None),
+        ~Lead.email.startswith('contact@')  # Filter out generic emails at DB level
+    )
 
     # Apply targeting filters
     if campaign.target_funnel_stage:
@@ -301,8 +311,8 @@ def process_campaign_outreach(campaign_id: str, max_emails: int = 10) -> Dict[st
     if contacted_lead_ids:
         query = query.filter(~Lead.id.in_(contacted_lead_ids))
 
-    # Get leads
-    leads = query.limit(max_emails).all()
+    # Get leads (fetch extra to account for any additional filtering)
+    leads = query.limit(max_emails * 2).all()[:max_emails]
 
     results = {
         "campaign_id": campaign_id,
