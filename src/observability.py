@@ -9,28 +9,41 @@ This module provides:
 """
 import os
 import logging
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.instrumentation.flask import FlaskInstrumentor
-from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
-from opentelemetry.instrumentation.celery import CeleryInstrumentor
-from opentelemetry.instrumentation.redis import RedisInstrumentor
-from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 logger = logging.getLogger(__name__)
+
+# Conditional imports - only load OTel libraries if enabled
+try:
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.instrumentation.flask import FlaskInstrumentor
+    from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+    from opentelemetry.instrumentation.celery import CeleryInstrumentor
+    from opentelemetry.instrumentation.redis import RedisInstrumentor
+    from opentelemetry.instrumentation.requests import RequestsInstrumentor
+    OTEL_AVAILABLE = True
+except ImportError:
+    logger.info("OpenTelemetry libraries not installed, tracing disabled")
+    OTEL_AVAILABLE = False
+    # Create a no-op tracer for when OTel is not available
+    class NoOpTracer:
+        def start_as_current_span(self, *args, **kwargs):
+            from contextlib import nullcontext
+            return nullcontext()
+    trace = type('trace', (), {'get_tracer': lambda *args, **kwargs: NoOpTracer()})()  # noqa
 
 
 def is_otel_enabled():
     """
-    Check if OpenTelemetry is enabled via environment variable.
+    Check if OpenTelemetry is enabled and libraries are available.
 
     Returns:
-        bool: True if OTEL_ENABLED=true, False otherwise
+        bool: True if OTEL_ENABLED=true AND libraries are installed, False otherwise
     """
-    return os.getenv("OTEL_ENABLED", "false").lower() == "true"
+    return OTEL_AVAILABLE and os.getenv("OTEL_ENABLED", "false").lower() == "true"
 
 
 def init_otel(app=None, service_name="inboxiq"):
@@ -74,6 +87,10 @@ def init_otel(app=None, service_name="inboxiq"):
             span.set_attribute("user.id", user_id)
             do_work()
     """
+    if not OTEL_AVAILABLE:
+        logger.debug("OpenTelemetry libraries not available")
+        return trace.get_tracer(__name__)  # Return no-op tracer
+
     if not is_otel_enabled():
         logger.info("OpenTelemetry is disabled (OTEL_ENABLED=false)")
         return trace.get_tracer(__name__)  # Return no-op tracer
