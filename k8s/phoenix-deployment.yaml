@@ -1,0 +1,214 @@
+# Phoenix UI - OpenTelemetry Trace Viewer
+# Open-source trace visualization and AI observability platform
+# https://github.com/Arize-ai/phoenix
+
+---
+# Service - Exposes Phoenix UI and OTLP receiver
+apiVersion: v1
+kind: Service
+metadata:
+  name: phoenix
+  namespace: kaley
+  labels:
+    app: phoenix
+    component: observability
+spec:
+  selector:
+    app: phoenix
+  ports:
+    # HTTP UI (web interface)
+    - name: http
+      port: 6006
+      targetPort: 6006
+      protocol: TCP
+    # OTLP gRPC receiver (for OTel Collector)
+    - name: grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+  type: ClusterIP  # Internal only (use Ingress for external access)
+
+---
+# Deployment - Phoenix application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phoenix
+  namespace: kaley
+  labels:
+    app: phoenix
+    component: observability
+spec:
+  replicas: 1  # Single instance (stateful, backed by PVC)
+  strategy:
+    type: Recreate  # Use Recreate for stateful apps with PVC
+  selector:
+    matchLabels:
+      app: phoenix
+  template:
+    metadata:
+      labels:
+        app: phoenix
+        component: observability
+    spec:
+      containers:
+        - name: phoenix
+          image: arizephoenix/phoenix:latest
+          imagePullPolicy: Always
+
+          ports:
+            # HTTP UI
+            - containerPort: 6006
+              name: http
+              protocol: TCP
+            # OTLP gRPC receiver
+            - containerPort: 4317
+              name: grpc
+              protocol: TCP
+
+          env:
+            # Phoenix configuration
+            - name: PHOENIX_PORT
+              value: "6006"
+            - name: PHOENIX_GRPC_PORT
+              value: "4317"
+
+            # Database configuration
+            # Option 1: SQLite (default, simplest for getting started)
+            - name: PHOENIX_WORKING_DIR
+              value: /phoenix/data
+
+            # Option 2: PostgreSQL (recommended for production)
+            # Uncomment these and comment out PHOENIX_WORKING_DIR above
+            # - name: PHOENIX_SQL_DATABASE_URL
+            #   value: postgresql://phoenix:password@postgres:5432/phoenix
+            # - name: PHOENIX_SQL_DATABASE_SCHEMA
+            #   value: public
+
+            # Logging
+            - name: PHOENIX_LOG_LEVEL
+              value: info
+
+            # CORS (if accessing Phoenix from different domain)
+            # - name: PHOENIX_ENABLE_CORS
+            #   value: "true"
+
+          volumeMounts:
+            - name: phoenix-data
+              mountPath: /phoenix/data
+
+          resources:
+            requests:
+              memory: "256Mi"  # Reduced for limited cluster
+              cpu: "100m"
+            limits:
+              memory: "512Mi"  # Reduced for limited cluster
+              cpu: "250m"
+
+          # Liveness probe - restart if Phoenix is unhealthy
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 6006
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Readiness probe - only route traffic when ready
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 6006
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+
+      volumes:
+        - name: phoenix-data
+          emptyDir: {}  # Temporary storage (data lost on pod restart)
+          # persistentVolumeClaim:
+          #   claimName: phoenix-pvc  # Uncomment for production
+
+---
+# PersistentVolumeClaim - Storage for Phoenix data (SQLite DB, logs)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: phoenix-pvc
+  namespace: kaley
+  labels:
+    app: phoenix
+    component: observability
+spec:
+  accessModes:
+    - ReadWriteOnce  # Single pod, single node
+  resources:
+    requests:
+      storage: 10Gi  # Adjust based on expected trace volume
+  # storageClassName: standard  # Uncomment and set your storage class
+
+---
+# Optional: Ingress for external access to Phoenix UI
+# Uncomment if you want to access Phoenix from outside the cluster
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: phoenix-ingress
+#   namespace: kaley
+#   annotations:
+#     # Add your ingress controller annotations here
+#     # Example for nginx-ingress:
+#     # nginx.ingress.kubernetes.io/rewrite-target: /
+#     # cert-manager.io/cluster-issuer: letsencrypt-prod
+# spec:
+#   ingressClassName: nginx
+#   rules:
+#     - host: phoenix.yourdomain.com  # Replace with your domain
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: phoenix
+#                 port:
+#                   number: 6006
+#   # TLS configuration (optional)
+#   # tls:
+#   #   - hosts:
+#   #       - phoenix.yourdomain.com
+#   #     secretName: phoenix-tls
+
+---
+# Optional: NetworkPolicy to restrict Phoenix access
+# Uncomment to add network security
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: phoenix-network-policy
+#   namespace: kaley
+# spec:
+#   podSelector:
+#     matchLabels:
+#       app: phoenix
+#   policyTypes:
+#     - Ingress
+#   ingress:
+#     # Allow traffic from OTel Collector (within same namespace)
+#     - from:
+#         - podSelector:
+#             matchLabels:
+#               app: inboxiq  # Pods with this label can send traces
+#       ports:
+#         - protocol: TCP
+#           port: 4317
+#     # Allow traffic from Ingress controller (for UI access)
+#     - from:
+#         - namespaceSelector:
+#             matchLabels:
+#               name: ingress-nginx
+#       ports:
+#         - protocol: TCP
+#           port: 6006

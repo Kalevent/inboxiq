@@ -29,3 +29,18 @@ cloudpickle==3.0.0
 google-api-python-client>=2.0.0
 google-auth-httplib2>=0.1.0
 google-auth-oauthlib>=0.5.0
+
+# OpenTelemetry - Observability & Tracing
+opentelemetry-api==1.23.0
+opentelemetry-sdk==1.23.0
+opentelemetry-exporter-otlp==1.23.0
+
+# OpenTelemetry Auto-instrumentation
+opentelemetry-instrumentation-flask==0.44b0
+opentelemetry-instrumentation-sqlalchemy==0.44b0
+opentelemetry-instrumentation-celery==0.44b0
+opentelemetry-instrumentation-redis==0.44b0
+opentelemetry-instrumentation-requests==0.44b0
+
+# OpenTelemetry Distro (convenience wrapper)
+opentelemetry-distro==0.44b0

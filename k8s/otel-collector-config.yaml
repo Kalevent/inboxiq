@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: kaley
+data:
+  otel-collector-config.yaml: |
+    # OpenTelemetry Collector Configuration for InboxIQ
+    # This collector runs as a sidecar in the InboxIQ pod
+    # Receives traces from app via OTLP, exports to Phoenix
+
+    receivers:
+      # OTLP receiver - accepts traces from InboxIQ app
+      otlp:
+        protocols:
+          # gRPC endpoint (default: 4317)
+          grpc:
+            endpoint: 0.0.0.0:4317
+          # HTTP endpoint (default: 4318)
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      # Batch spans for efficiency (reduces network overhead)
+      batch:
+        timeout: 10s           # Send batch every 10 seconds
+        send_batch_size: 100   # Or when 100 spans accumulated
+
+      # Add resource attributes (service metadata)
+      resource:
+        attributes:
+          - key: service.name
+            value: inboxiq
+            action: upsert
+          - key: deployment.environment
+            value: ${ENVIRONMENT}
+            action: upsert
+          - key: k8s.cluster.name
+            value: ${K8S_CLUSTER_NAME}
+            action: upsert
+          - key: k8s.namespace.name
+            value: kaley
+            action: upsert
+
+      # Memory limiter (prevent OOM)
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 200        # Max 200MB memory
+        spike_limit_mib: 50   # Allow 50MB spikes
+
+      # Probabilistic sampler (for high-volume endpoints)
+      # NOTE: Disabled by default - enable in production if needed
+      # probabilistic_sampler:
+      #   sampling_percentage: 10  # Sample 10% of traces
+      #   hash_seed: 22
+
+    exporters:
+      # Export to Phoenix (primary destination)
+      otlp:
+        endpoint: phoenix.kaley.svc.cluster.local:4317
+        tls:
+          insecure: true  # No TLS within cluster (use TLS in production)
+
+      # Debug logging (disable in production)
+      logging:
+        loglevel: info
+        sampling_initial: 5      # Log first 5 spans
+        sampling_thereafter: 200 # Then 1 every 200 spans
+
+    service:
+      # Telemetry configuration
+      telemetry:
+        logs:
+          level: info
+        metrics:
+          address: 0.0.0.0:8888  # Prometheus metrics endpoint
+
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch, resource]
+          exporters: [otlp, logging]
+
+    # Extensions (health check, performance profiler)
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133  # Health check endpoint
+      pprof:
+        endpoint: 0.0.0.0:1777   # Performance profiler
+      zpages:
+        endpoint: 0.0.0.0:55679  # zPages diagnostics
