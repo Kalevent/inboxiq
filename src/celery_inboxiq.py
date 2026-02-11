@@ -180,6 +180,10 @@ app = create_app()
 celery = make_celery(app)
 celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content"])
 
+# Initialize OpenTelemetry for Celery workers
+from src.observability import init_otel
+init_otel(service_name="inboxiq-celery")
+
 
 def _redact_body_preview(text: str) -> str:
     if not text:

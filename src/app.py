@@ -92,6 +92,10 @@ def create_app() -> Flask:
   limiter.init_app(app)
   configure_crash_email(app)
 
+  # Initialize OpenTelemetry (must be after Flask app + extensions init)
+  from src.observability import init_otel
+  init_otel(app, service_name="inboxiq-flask")
+
   cors_origins_raw = app.config.get("CORS_ORIGINS", "")
   cors_origins = [o.strip() for o in cors_origins_raw.split(",") if o.strip()]
   if cors_origins:
