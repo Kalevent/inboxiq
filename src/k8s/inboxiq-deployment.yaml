@@ -84,64 +84,14 @@ spec:
               cpu: 500m
               memory: 512Mi
 
-        # OTel Collector sidecar - receives traces from app, exports to Phoenix
-        # COMMENTED OUT: Uncomment after building new image with OTel packages
-        # - name: otel-collector
-          image: otel/opentelemetry-collector-contrib:0.96.0
-          imagePullPolicy: IfNotPresent
-          args:
-            - --config=/conf/otel-collector-config.yaml
-          ports:
-            - containerPort: 4317  # OTLP gRPC receiver
-              name: otlp-grpc
-              protocol: TCP
-            - containerPort: 4318  # OTLP HTTP receiver
-              name: otlp-http
-              protocol: TCP
-            - containerPort: 8888  # Prometheus metrics
-              name: metrics
-              protocol: TCP
-            - containerPort: 13133  # Health check
-              name: health
-              protocol: TCP
-          env:
-            - name: ENVIRONMENT
-              value: "production"
-            - name: K8S_CLUSTER_NAME
-              value: "inboxiq-prod"
-          volumeMounts:
-            - name: otel-collector-config
-              mountPath: /conf
-          resources:
-            requests:
-              cpu: 50m      # Reduced for limited cluster
-              memory: 64Mi  # Reduced for limited cluster
-            limits:
-              cpu: 100m
-              memory: 128Mi
-          # Health check
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 13133
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 3
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 13133
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 2
+        # OTel Collector sidecar - DISABLED until new image is built
+        # Uncomment after: 1) Building image with OTel packages, 2) Updating app.py to init OTel
 
       volumes:
         - name: gsc-credentials
           secret:
             secretName: gsc-credentials
             optional: true
-        - name: otel-collector-config
-          configMap:
-            name: otel-collector-config
+        # - name: otel-collector-config  # Re-enable with sidecar
+        #   configMap:
+        #     name: otel-collector-config
