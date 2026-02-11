@@ -32,7 +32,7 @@ spec:
 
             # OpenTelemetry configuration
             - name: OTEL_ENABLED
-              value: "false"  # Disabled until new image is built
+              value: "true"  # Enabled - OTel libraries installed
             - name: OTEL_SERVICE_NAME
               value: "inboxiq-app"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -84,14 +84,36 @@ spec:
               cpu: 500m
               memory: 512Mi
 
-        # OTel Collector sidecar - DISABLED until new image is built
-        # Uncomment after: 1) Building image with OTel packages, 2) Updating app.py to init OTel
+        # OTel Collector sidecar - aggregates and forwards traces to Phoenix
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.96.0
+          args:
+            - "--config=/conf/otel-collector-config.yaml"
+          ports:
+            - containerPort: 4317  # OTLP gRPC receiver
+              name: otlp-grpc
+            - containerPort: 4318  # OTLP HTTP receiver
+              name: otlp-http
+            - containerPort: 8888  # Prometheus metrics
+              name: metrics
+            - containerPort: 13133  # Health check
+              name: health
+          volumeMounts:
+            - name: otel-collector-config
+              mountPath: /conf
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
 
       volumes:
         - name: gsc-credentials
           secret:
             secretName: gsc-credentials
             optional: true
-        # - name: otel-collector-config  # Re-enable with sidecar
-        #   configMap:
-        #     name: otel-collector-config
+        - name: otel-collector-config
+          configMap:
+            name: otel-collector-config
