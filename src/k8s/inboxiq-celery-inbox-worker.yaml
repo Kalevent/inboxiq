@@ -29,6 +29,24 @@ spec:
               value: "production"
             - name: SEARXNG_URL
               value: "http://searxng:8000"
+
+            # OpenTelemetry configuration (send traces directly to Phoenix)
+            - name: OTEL_ENABLED
+              value: "true"
+            - name: OTEL_SERVICE_NAME
+              value: "inboxiq-celery-inbox-worker"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://phoenix.kaley.svc.cluster.local:4317"
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: OTEL_TRACES_SAMPLER
+              value: "parentbased_traceidratio"
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "1.0"
+            - name: ENVIRONMENT
+              value: "production"
+            - name: K8S_CLUSTER_NAME
+              value: "inboxiq-prod"
           envFrom:
             - secretRef:
                 name: inboxiq-env

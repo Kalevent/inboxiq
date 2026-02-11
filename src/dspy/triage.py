@@ -26,8 +26,11 @@ from src.dspy.draft_reply import (
     sanitize_reply,
     compute_reply_confidence,
 )
+from src.observability import get_tracer
+from src.observability_sanitizer import safe_span_attribute
 
 logger = logging.getLogger(__name__)
+tracer = get_tracer(__name__)
 
 
 def run_dspy_triage(
@@ -59,8 +62,31 @@ def run_dspy_triage(
         - content: Nested dict with all decision fields
         - All content fields flattened to top level
     """
+    with tracer.start_as_current_span("dspy.triage") as span:
+        # Add input context attributes (sanitized)
+        safe_span_attribute(span, "account_id", account_id)
+        safe_span_attribute(span, "payload.provider", payload.get("provider"))
+        safe_span_attribute(span, "payload.source", payload.get("source"))
+        safe_span_attribute(span, "payload.subject_length", len(payload.get("subject", "")))
+        safe_span_attribute(span, "payload.body_length", len(payload.get("body", "")))
+
+        return _run_dspy_triage_impl(span, payload, context, labels, account_id)
+
+
+def _run_dspy_triage_impl(
+    span,
+    payload: Dict[str, Any],
+    context: Dict[str, Any] | None,
+    labels: Dict[str, Any] | None,
+    account_id: int | None,
+) -> Dict[str, Any]:
+    """Internal implementation of run_dspy_triage with span context."""
     model, model_id, dspy = configure_dspy()
     label_config = labels or {}
+
+    # Record model information
+    safe_span_attribute(span, "dspy.model", model)
+    safe_span_attribute(span, "dspy.model_id", model_id)
 
     # Format payload for DSPy prompt
     prompt_payload = format_payload(payload, context)
@@ -245,6 +271,33 @@ def run_dspy_triage(
         "workflow_json": workflow_json,
         "escalation_json": escalation_json,
     }
+
+    # Record triage decision results (sanitized)
+    safe_span_attribute(span, "triage.category", content["category"])
+    safe_span_attribute(span, "triage.priority", content["priority"])
+    safe_span_attribute(span, "triage.sentiment", content["sentiment"])
+    safe_span_attribute(span, "triage.email_type", content["email_type"])
+    safe_span_attribute(span, "triage.is_automated", content["is_automated"])
+    safe_span_attribute(span, "triage.action_required", str(content["action_required"]))
+    safe_span_attribute(span, "triage.decision_outcome", content["decision_outcome"])
+
+    # Record decision trace (first 5 steps to avoid bloat)
+    if decision_trace:
+        span.set_attribute("triage.decision_trace", ",".join(decision_trace[:5]))
+
+    # Record draft reply status if enabled
+    if reply_text:
+        span.set_attribute("triage.draft_reply_generated", True)
+        safe_span_attribute(span, "triage.reply_confidence", reply_confidence)
+        span.set_attribute("triage.reply_requires_review", reply_confidence < 0.7 if reply_confidence else True)
+
+    # Add span event for audit trail
+    span.add_event("triage_completed", {
+        "category": content["category"],
+        "priority": content["priority"],
+        "action_required": str(content["action_required"]),
+        "decision_outcome": content["decision_outcome"],
+    })
 
     return {
         "provider": "dspy",

@@ -181,8 +181,11 @@ celery = make_celery(app)
 celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content"])
 
 # Initialize OpenTelemetry for Celery workers
-from src.observability import init_otel
+from src.observability import init_otel, get_tracer
+from src.observability_sanitizer import safe_span_attribute
+
 init_otel(service_name="inboxiq-celery")
+tracer = get_tracer(__name__)
 
 
 def _redact_body_preview(text: str) -> str:
@@ -223,26 +226,49 @@ def process_incoming_email_task(self, payload: dict) -> dict:
       6) merge agent + DSPy decisions
       7) persist ticket with merged decision
     """
-    email_payload = (payload or {}).get("email") or (payload or {})
-    account_id = (payload or {}).get("account_id")
-    user_id = (payload or {}).get("user_id")
+    with tracer.start_as_current_span("celery.process_incoming_email") as span:
+        email_payload = (payload or {}).get("email") or (payload or {})
+        account_id = (payload or {}).get("account_id")
+        user_id = (payload or {}).get("user_id")
 
-    try:
-        normalized = normalize_email_payload(email_payload)
-    except Exception as exc:
-        return {"status": "rejected", "error": str(exc)}
+        # Record task context
+        safe_span_attribute(span, "account_id", account_id)
+        safe_span_attribute(span, "user_id", user_id)
+        safe_span_attribute(span, "task_id", self.request.id)
 
-    existing = (
-        Ticket.query.filter_by(
-            message_id=normalized.get("message_id"),
-            provider=normalized.get("provider"),
-        ).first()
-    )
-    if existing:
-        return {"status": "duplicate", "ticket_id": existing.id}
+        try:
+            normalized = normalize_email_payload(email_payload)
+        except Exception as exc:
+            span.set_attribute("error", True)
+            span.set_attribute("error.type", "normalization_failed")
+            span.record_exception(exc)
+            return {"status": "rejected", "error": str(exc)}
 
-    # Pre-filter check: skip full triage for obvious spam/marketing/auto-replies
-    skip_triage, pre_filter_type, pre_filter_reason = should_skip_triage(normalized)
+        # Record email metadata (sanitized)
+        safe_span_attribute(span, "email.provider", normalized.get("provider"))
+        safe_span_attribute(span, "email.message_id", normalized.get("message_id"))
+        safe_span_attribute(span, "email.subject_length", len(normalized.get("subject", "")))
+
+        # Check for duplicates
+        existing = (
+            Ticket.query.filter_by(
+                message_id=normalized.get("message_id"),
+                provider=normalized.get("provider"),
+            ).first()
+        )
+        if existing:
+            span.set_attribute("email.duplicate", True)
+            span.set_attribute("email.existing_ticket_id", str(existing.id))
+            return {"status": "duplicate", "ticket_id": existing.id}
+
+        span.set_attribute("email.duplicate", False)
+
+        # Pre-filter check: skip full triage for obvious spam/marketing/auto-replies
+        skip_triage, pre_filter_type, pre_filter_reason = should_skip_triage(normalized)
+        span.set_attribute("email.skip_triage", skip_triage)
+        if skip_triage:
+            safe_span_attribute(span, "email.pre_filter_type", pre_filter_type)
+            safe_span_attribute(span, "email.pre_filter_reason", pre_filter_reason)
 
     agent_result = None
     agent_decision = None
@@ -340,19 +366,38 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         logging.getLogger(__name__).exception("failed to persist inbound email ticket: %s", exc)
         raise self.retry(exc=exc)
 
-    logging.getLogger(__name__).info(
-        "ticket created: id=%s status=%s action_required=%s email_type=%s",
-        ticket.id, status, action_required, email_type
-    )
+        logging.getLogger(__name__).info(
+            "ticket created: id=%s status=%s action_required=%s email_type=%s",
+            ticket.id, status, action_required, email_type
+        )
 
-    return {
-        "status": "created" if status != "auto_handled" else "auto_handled",
-        "ticket_id": ticket.id,
-        "category": category,
-        "priority": priority,
-        "action_required": action_required,
-        "email_type": email_type,
-    }
+        # Record final ticket details (sanitized)
+        span.set_attribute("ticket.id", str(ticket.id))
+        span.set_attribute("ticket.status", status)
+        safe_span_attribute(span, "ticket.category", category)
+        safe_span_attribute(span, "ticket.priority", priority)
+        safe_span_attribute(span, "ticket.sentiment", sentiment)
+        safe_span_attribute(span, "ticket.email_type", email_type)
+        span.set_attribute("ticket.is_automated", is_automated)
+        span.set_attribute("ticket.action_required", str(action_required))
+
+        # Add completion event for audit trail
+        span.add_event("ticket_created", {
+            "ticket_id": str(ticket.id),
+            "status": status,
+            "category": category,
+            "priority": priority,
+            "action_required": str(action_required),
+        })
+
+        return {
+            "status": "created" if status != "auto_handled" else "auto_handled",
+            "ticket_id": ticket.id,
+            "category": category,
+            "priority": priority,
+            "action_required": action_required,
+            "email_type": email_type,
+        }
 
 
 @celery.task(

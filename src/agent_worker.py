@@ -23,6 +23,11 @@ from typing import Any, Dict
 
 import requests
 
+from src.observability import get_tracer
+from src.observability_sanitizer import safe_span_attribute
+
+tracer = get_tracer(__name__)
+
 
 def _invoke_agent(agent_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -53,61 +58,109 @@ def process_email_with_agents(raw_email: Dict[str, Any]) -> Dict[str, Any]:
       TRIAGE_AGENT_ID - Triage agent for classification
       ENRICH_AGENT_ID - Enrichment agent (optional)
     """
-    intake_id = os.getenv("INTAKE_AGENT_ID")
-    triage_id = os.getenv("TRIAGE_AGENT_ID")
-    enrich_id = os.getenv("ENRICH_AGENT_ID")  # optional
+    with tracer.start_as_current_span("agents.pipeline") as span:
+        # Record pipeline configuration
+        intake_id = os.getenv("INTAKE_AGENT_ID")
+        triage_id = os.getenv("TRIAGE_AGENT_ID")
+        enrich_id = os.getenv("ENRICH_AGENT_ID")  # optional
 
-    # CHANGED: Agent pipeline is now optional - skip gracefully if not configured
-    if not intake_id or not triage_id:
-        logging.getLogger(__name__).debug(
-            "Agent pipeline skipped: INTAKE_AGENT_ID=%s TRIAGE_AGENT_ID=%s not fully configured",
-            "set" if intake_id else "unset",
-            "set" if triage_id else "unset"
-        )
-        # Return empty result - DSPy triage will handle classification
-        return {
-            "raw": raw_email,
-            "skipped": True,
-            "reason": "agent_ids_not_configured",
-            "decision": {},
-        }
+        span.set_attribute("agents.intake_configured", bool(intake_id))
+        span.set_attribute("agents.triage_configured", bool(triage_id))
+        span.set_attribute("agents.enrich_configured", bool(enrich_id))
 
-    result: Dict[str, Any] = {"raw": raw_email, "skipped": False}
+        # Record email metadata (sanitized)
+        safe_span_attribute(span, "email.provider", raw_email.get("provider"))
+        safe_span_attribute(span, "email.subject_length", len(raw_email.get("subject", "")))
+        safe_span_attribute(span, "email.body_length", len(raw_email.get("body", "")))
 
-    try:
-        # Intake (LLM)
-        intake_payload = {"input": json.dumps(raw_email), "use_llm": True}
-        intake_resp = _invoke_agent(intake_id, intake_payload)
-        normalized = intake_resp.get("result") or intake_resp.get("llm_result") or {}
-        result["intake"] = intake_resp
-        result["normalized"] = normalized
+        # CHANGED: Agent pipeline is now optional - skip gracefully if not configured
+        if not intake_id or not triage_id:
+            logging.getLogger(__name__).debug(
+                "Agent pipeline skipped: INTAKE_AGENT_ID=%s TRIAGE_AGENT_ID=%s not fully configured",
+                "set" if intake_id else "unset",
+                "set" if triage_id else "unset"
+            )
+            # Record skip reason
+            span.set_attribute("agents.skipped", True)
+            span.set_attribute("agents.skip_reason", "agent_ids_not_configured")
 
-        # Enrichment (optional)
-        enriched: Dict[str, Any] = normalized
-        if enrich_id:
-            try:
-                enrich_payload = {"input": json.dumps(normalized), "use_llm": True}
-                enrich_resp = _invoke_agent(enrich_id, enrich_payload)
-                enriched = {**normalized, "context": enrich_resp.get("result") or enrich_resp.get("llm_result")}
-                result["enrich"] = enrich_resp
-                result["enriched"] = enriched
-            except Exception as exc:
-                result["enrich_error"] = str(exc)
-                enriched = normalized
+            # Return empty result - DSPy triage will handle classification
+            return {
+                "raw": raw_email,
+                "skipped": True,
+                "reason": "agent_ids_not_configured",
+                "decision": {},
+            }
 
-        # Triage (LLM)
-        triage_payload = {"input": json.dumps(enriched), "use_llm": True}
-        triage_resp = _invoke_agent(triage_id, triage_payload)
-        decision = triage_resp.get("result") or triage_resp.get("llm_result") or {}
-        result["triage"] = triage_resp
-        result["decision"] = decision
+        result: Dict[str, Any] = {"raw": raw_email, "skipped": False}
+        span.set_attribute("agents.skipped", False)
 
-    except Exception as exc:
-        logging.getLogger(__name__).warning("Agent pipeline failed: %s", exc)
-        result["error"] = str(exc)
-        result["decision"] = {}
+        try:
+            # Intake (LLM)
+            with tracer.start_as_current_span("agents.intake") as intake_span:
+                safe_span_attribute(intake_span, "agent.id", intake_id)
+                intake_payload = {"input": json.dumps(raw_email), "use_llm": True}
+                intake_resp = _invoke_agent(intake_id, intake_payload)
+                normalized = intake_resp.get("result") or intake_resp.get("llm_result") or {}
+                result["intake"] = intake_resp
+                result["normalized"] = normalized
 
-    return result
+                intake_span.set_attribute("agent.success", True)
+                intake_span.add_event("intake_completed")
+
+            # Enrichment (optional)
+            enriched: Dict[str, Any] = normalized
+            if enrich_id:
+                try:
+                    with tracer.start_as_current_span("agents.enrich") as enrich_span:
+                        safe_span_attribute(enrich_span, "agent.id", enrich_id)
+                        enrich_payload = {"input": json.dumps(normalized), "use_llm": True}
+                        enrich_resp = _invoke_agent(enrich_id, enrich_payload)
+                        enriched = {**normalized, "context": enrich_resp.get("result") or enrich_resp.get("llm_result")}
+                        result["enrich"] = enrich_resp
+                        result["enriched"] = enriched
+
+                        enrich_span.set_attribute("agent.success", True)
+                        enrich_span.add_event("enrichment_completed")
+                except Exception as exc:
+                    result["enrich_error"] = str(exc)
+                    enriched = normalized
+                    span.set_attribute("agents.enrich_failed", True)
+                    span.set_attribute("agents.enrich_error", str(exc)[:200])
+
+            # Triage (LLM)
+            with tracer.start_as_current_span("agents.triage") as triage_span:
+                safe_span_attribute(triage_span, "agent.id", triage_id)
+                triage_payload = {"input": json.dumps(enriched), "use_llm": True}
+                triage_resp = _invoke_agent(triage_id, triage_payload)
+                decision = triage_resp.get("result") or triage_resp.get("llm_result") or {}
+                result["triage"] = triage_resp
+                result["decision"] = decision
+
+                # Record decision results (sanitized)
+                if decision:
+                    safe_span_attribute(triage_span, "decision.category", decision.get("category"))
+                    safe_span_attribute(triage_span, "decision.priority", decision.get("priority"))
+                    safe_span_attribute(triage_span, "decision.sentiment", decision.get("sentiment"))
+
+                triage_span.set_attribute("agent.success", True)
+                triage_span.add_event("triage_completed")
+
+            span.set_attribute("agents.pipeline_success", True)
+            span.add_event("pipeline_completed", {
+                "has_decision": bool(decision),
+            })
+
+        except Exception as exc:
+            logging.getLogger(__name__).warning("Agent pipeline failed: %s", exc)
+            result["error"] = str(exc)
+            result["decision"] = {}
+
+            span.set_attribute("agents.pipeline_success", False)
+            span.set_attribute("error", True)
+            span.record_exception(exc)
+
+        return result
 
 
 # -----------------------------------------------------------------------------

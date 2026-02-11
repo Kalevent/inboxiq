@@ -1425,3 +1425,183 @@ class EmailOutreach(db.Model):
 
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+# ============================================================================
+# Automation Studio Models
+# ============================================================================
+
+
+class AutomationRule(db.Model):
+    """
+    User-created automation rules for Automation Studio.
+
+    Allows users to create custom workflows through the UI with:
+    - Triggers (when to run)
+    - Conditions (what to check)
+    - Actions (what to do)
+
+    Each rule execution is traced with OpenTelemetry for debugging.
+    """
+    __tablename__ = "automation_rules"
+    __table_args__ = (
+        db.Index("ix_automation_rules_account_enabled", "account_id", "enabled"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False, index=True)
+
+    # Basic metadata
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    enabled = db.Column(db.Boolean, default=True, nullable=False, index=True)
+
+    # Rule definition (JSON)
+    trigger = db.Column(db.JSON, nullable=False)
+    # {"event": "ticket.created", "object": "ticket"}
+
+    conditions = db.Column(db.JSON, nullable=False, default=list)
+    # [
+    #   {"field": "priority", "operator": "equals", "value": "P1"},
+    #   {"field": "category", "operator": "equals", "value": "billing"}
+    # ]
+
+    condition_logic = db.Column(db.String(16), default="AND", nullable=False)
+    # "AND" or "OR"
+
+    actions = db.Column(db.JSON, nullable=False, default=list)
+    # [
+    #   {"type": "assign", "team": "finance"},
+    #   {"type": "notify", "channel": "slack", "message": "..."}
+    # ]
+
+    # Execution control
+    stop_on_error = db.Column(db.Boolean, default=False, nullable=False)
+
+    # Template metadata
+    is_template = db.Column(db.Boolean, default=False, nullable=False)
+    template_category = db.Column(db.String(64), nullable=True)  # "routing", "escalation", "notification"
+    cloned_from_template_id = db.Column(db.String(64), nullable=True)
+
+    # Analytics
+    execution_count = db.Column(db.Integer, default=0, nullable=False)
+    success_count = db.Column(db.Integer, default=0, nullable=False)
+    error_count = db.Column(db.Integer, default=0, nullable=False)
+    last_executed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    # Performance tracking
+    avg_execution_time_ms = db.Column(db.Float, nullable=True)
+    estimated_time_saved_hours = db.Column(db.Float, default=0.0, nullable=False)
+
+    # Audit
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relationships
+    account = db.relationship("Account", backref="automation_rules")
+    created_by = db.relationship("User", foreign_keys=[created_by_user_id])
+    executions = db.relationship("AutomationRuleExecution", backref="rule", cascade="all, delete-orphan")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "name": self.name,
+            "description": self.description,
+            "enabled": self.enabled,
+            "trigger": self.trigger,
+            "conditions": self.conditions,
+            "condition_logic": self.condition_logic,
+            "actions": self.actions,
+            "stop_on_error": self.stop_on_error,
+            "is_template": self.is_template,
+            "template_category": self.template_category,
+            "execution_count": self.execution_count,
+            "success_count": self.success_count,
+            "error_count": self.error_count,
+            "last_executed_at": self.last_executed_at.isoformat() if self.last_executed_at else None,
+            "avg_execution_time_ms": self.avg_execution_time_ms,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class AutomationRuleExecution(db.Model):
+    """
+    Log of automation rule executions for debugging and analytics.
+
+    Stores:
+    - Execution results (matched, executed, success)
+    - Condition evaluation details
+    - Action execution results
+    - OpenTelemetry trace ID for deep debugging
+
+    Users can view execution history with links to Phoenix traces.
+    """
+    __tablename__ = "automation_rule_executions"
+    __table_args__ = (
+        db.Index("ix_automation_rule_executions_rule_id", "rule_id"),
+        db.Index("ix_automation_rule_executions_ticket_id", "ticket_id"),
+        db.Index("ix_automation_rule_executions_trace_id", "trace_id"),
+        db.Index("ix_automation_rule_executions_created_at", "created_at"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    rule_id = db.Column(db.String(64), db.ForeignKey("automation_rules.id"), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False, index=True)
+
+    # OpenTelemetry trace ID (hex string, 32 chars) - CRITICAL for debugging
+    trace_id = db.Column(db.String(32), nullable=False, index=True)
+
+    # Context
+    ticket_id = db.Column(db.String(64), db.ForeignKey("inboxiq_tickets.id"), nullable=True)
+    lead_id = db.Column(db.String(64), db.ForeignKey("leads.id"), nullable=True)
+    trigger_event = db.Column(db.String(64), nullable=False)  # "ticket.created", "ticket.updated", etc.
+
+    # Execution details
+    matched = db.Column(db.Boolean, nullable=False)  # Did conditions match?
+    executed = db.Column(db.Boolean, nullable=False)  # Did actions execute?
+    success = db.Column(db.Boolean, nullable=False)  # Did actions succeed?
+    error_message = db.Column(db.Text, nullable=True)
+
+    # Performance
+    execution_time_ms = db.Column(db.Float, nullable=True)
+
+    # Trigger context (SANITIZED - no PII)
+    trigger_type = db.Column(db.String(50))  # email, webhook, stripe, manual, etc.
+    trigger_context = db.Column(db.JSON, nullable=True)  # Sanitized trigger data
+
+    # Audit trail (detailed results)
+    conditions_evaluated = db.Column(db.JSON, nullable=True)
+    # [{"field": "priority", "expected": "P1", "actual": "P1", "matched": true}]
+
+    actions_executed = db.Column(db.JSON, nullable=True)
+    # [{"type": "assign", "success": true, "result": "Assigned to team: finance"}]
+
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    # Relationships
+    account = db.relationship("Account")
+    ticket = db.relationship("Ticket", foreign_keys=[ticket_id])
+    lead = db.relationship("Lead", foreign_keys=[lead_id])
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "rule_id": self.rule_id,
+            "account_id": self.account_id,
+            "trace_id": self.trace_id,
+            "ticket_id": self.ticket_id,
+            "lead_id": self.lead_id,
+            "trigger_event": self.trigger_event,
+            "trigger_type": self.trigger_type,
+            "matched": self.matched,
+            "executed": self.executed,
+            "success": self.success,
+            "error_message": self.error_message,
+            "execution_time_ms": self.execution_time_ms,
+            "conditions_evaluated": self.conditions_evaluated,
+            "actions_executed": self.actions_executed,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
