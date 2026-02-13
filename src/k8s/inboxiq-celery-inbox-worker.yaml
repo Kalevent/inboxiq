@@ -8,8 +8,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1  # Allow 1 extra pod during rollout
-      maxUnavailable: 0  # Never take down old pods until new ones are ready
+      maxSurge: 0  # Don't create extra pods during rollout (resource constrained)
+      maxUnavailable: 1  # Allow old pod to terminate before new one starts
   selector:
     matchLabels:
       app: inboxiq-celery-inbox-worker
