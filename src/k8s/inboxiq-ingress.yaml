@@ -45,3 +45,13 @@ spec:
                 name: inboxiq
                 port:
                   number: 80
+    - host: phoenix.kalevent.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: phoenix
+                port:
+                  number: 6006
