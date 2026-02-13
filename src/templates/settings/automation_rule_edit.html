@@ -85,48 +85,52 @@
 
     <!-- Conditions Section -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <div class="flex justify-between items-center mb-4">
-        <div>
-          <h2 class="text-xl font-semibold text-gray-900">Conditions</h2>
-          <p class="text-xs text-gray-500 mt-1">Define when this rule should trigger. Leave empty to always trigger.</p>
+      <div class="mb-6">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900 mb-1">Conditions (Optional)</h2>
+            <p class="text-sm text-gray-600">Conditions determine when the rule triggers</p>
+          </div>
+          <button type="button" onclick="addCondition()"
+                  class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-sm">
+            + Add Condition
+          </button>
         </div>
-        <button type="button" onclick="addCondition()"
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-          + Add Condition
-        </button>
-      </div>
 
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Condition Logic</label>
-        <select name="condition_logic"
-                class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
-                style="color: #111827 !important; background-color: #ffffff !important;">
-          <option value="AND" {% if rule.condition_logic == 'AND' %}selected{% endif %}>All conditions must match (AND)</option>
-          <option value="OR" {% if rule.condition_logic == 'OR' %}selected{% endif %}>Any condition can match (OR)</option>
-        </select>
-        <p class="text-xs text-gray-500 mt-1">Determines how multiple conditions are evaluated together</p>
-      </div>
+        <div id="conditionsList" class="space-y-3 mb-4">
+          <!-- Conditions will be added here dynamically -->
+        </div>
 
-      <div id="conditionsList" class="space-y-3">
-        <!-- Conditions will be added here dynamically -->
+        <div class="mt-4 pt-4 border-t border-gray-200">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Condition Logic (for multiple conditions)</label>
+          <select name="condition_logic"
+                  class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                  style="color: #111827 !important; background-color: #ffffff !important;">
+            <option value="AND" {% if rule.condition_logic == 'AND' %}selected{% endif %}>All conditions must match (AND)</option>
+            <option value="OR" {% if rule.condition_logic == 'OR' %}selected{% endif %}>Any condition can match (OR)</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1">Determines how multiple conditions are evaluated together</p>
+        </div>
       </div>
     </div>
 
     <!-- Actions Section -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <div class="flex justify-between items-center mb-4">
-        <div>
-          <h2 class="text-xl font-semibold text-gray-900">Actions</h2>
-          <p class="text-xs text-gray-500 mt-1">Define what happens when the rule triggers. At least one action is required.</p>
+      <div class="mb-6">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900 mb-1">Actions (Required)</h2>
+            <p class="text-sm text-gray-600">Actions define what happens when the rule triggers</p>
+          </div>
+          <button type="button" onclick="addAction()"
+                  class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold shadow-sm">
+            + Add Action
+          </button>
         </div>
-        <button type="button" onclick="addAction()"
-                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">
-          + Add Action
-        </button>
-      </div>
 
-      <div id="actionsList" class="space-y-3">
-        <!-- Actions will be added here dynamically -->
+        <div id="actionsList" class="space-y-3">
+          <!-- Actions will be added here dynamically -->
+        </div>
       </div>
     </div>
 
@@ -155,46 +159,55 @@ function renderConditions() {
   container.innerHTML = '';
 
   if (conditions.length === 0) {
-    container.innerHTML = '<p class="text-gray-500 text-sm italic">No conditions added yet. Rule will trigger for all events.</p>';
+    container.innerHTML = `
+      <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+        <p class="text-gray-600 font-medium mb-1">No conditions added yet</p>
+        <p class="text-sm text-gray-500">Click "+ Add Condition" above to specify when this rule should trigger</p>
+        <p class="text-xs text-gray-400 mt-2">Example: "subject contains urgent" or "from equals support@example.com"</p>
+      </div>
+    `;
     return;
   }
 
   conditions.forEach((condition, index) => {
     container.innerHTML += `
-      <div class="border border-gray-200 rounded-md p-4 bg-gray-50">
+      <div class="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
         <div class="flex justify-between items-start mb-3">
-          <span class="text-sm font-medium text-gray-700">Condition ${index + 1}</span>
+          <span class="text-sm font-semibold text-blue-900">Condition ${index + 1}</span>
           <button type="button" onclick="removeCondition(${index})"
-                  class="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                  class="text-red-600 hover:text-red-800 text-sm font-medium">Remove</button>
         </div>
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-3 gap-4">
           <div>
-            <label class="block text-xs text-gray-600 mb-1">Field</label>
+            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Field</label>
             <input type="text" value="${condition.field || ''}"
                    onchange="updateCondition(${index}, 'field', this.value)"
-                   placeholder="e.g., subject, from, body"
-                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded">
-            <p class="text-xs text-gray-400 mt-1">The field to check</p>
+                   placeholder="e.g., subject"
+                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
+                   style="color: #111827 !important; background-color: #ffffff !important;">
+            <p class="text-xs text-gray-500 mt-1">What to check (subject, from, body, etc.)</p>
           </div>
           <div>
-            <label class="block text-xs text-gray-600 mb-1">Operator</label>
+            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Operator</label>
             <select onchange="updateCondition(${index}, 'operator', this.value)"
-                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded">
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
+                    style="color: #111827 !important; background-color: #ffffff !important;">
               <option value="contains" ${condition.operator === 'contains' ? 'selected' : ''}>contains</option>
               <option value="equals" ${condition.operator === 'equals' ? 'selected' : ''}>equals</option>
               <option value="starts_with" ${condition.operator === 'starts_with' ? 'selected' : ''}>starts with</option>
               <option value="ends_with" ${condition.operator === 'ends_with' ? 'selected' : ''}>ends with</option>
               <option value="regex" ${condition.operator === 'regex' ? 'selected' : ''}>matches regex</option>
             </select>
-            <p class="text-xs text-gray-400 mt-1">How to compare</p>
+            <p class="text-xs text-gray-500 mt-1">How to compare</p>
           </div>
           <div>
-            <label class="block text-xs text-gray-600 mb-1">Value</label>
+            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Value</label>
             <input type="text" value="${condition.value || ''}"
                    onchange="updateCondition(${index}, 'value', this.value)"
-                   placeholder="e.g., urgent, support@"
-                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded">
-            <p class="text-xs text-gray-400 mt-1">The value to match</p>
+                   placeholder="e.g., urgent"
+                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
+                   style="color: #111827 !important; background-color: #ffffff !important;">
+            <p class="text-xs text-gray-500 mt-1">What to look for</p>
           </div>
         </div>
       </div>
@@ -208,38 +221,55 @@ function renderActions() {
   container.innerHTML = '';
 
   if (actions.length === 0) {
-    container.innerHTML = '<p class="text-gray-500 text-sm italic">No actions added yet. Add at least one action.</p>';
+    container.innerHTML = `
+      <div class="border-2 border-dashed border-red-200 rounded-lg p-6 text-center bg-red-50">
+        <p class="text-red-700 font-medium mb-1">⚠️ No actions added yet</p>
+        <p class="text-sm text-red-600">Click "+ Add Action" above to define what happens when the rule triggers</p>
+        <p class="text-xs text-red-500 mt-2">Example: Send to Slack, Add Tag, Assign to Team, or Call Webhook</p>
+      </div>
+    `;
     return;
   }
 
   actions.forEach((action, index) => {
+    // Get action-specific config example
+    const configExamples = {
+      'send_email': '{\n  "to": "user@example.com",\n  "subject": "Alert"\n}',
+      'webhook': '{\n  "url": "https://api.example.com/webhook"\n}',
+      'tag': '{\n  "tag": "urgent"\n}',
+      'assign': '{\n  "team": "support"\n}',
+      'slack_notify': '{\n  "channel": "#general",\n  "message": "New ticket"\n}'
+    };
+
     container.innerHTML += `
-      <div class="border border-gray-200 rounded-md p-4 bg-gray-50">
+      <div class="border-2 border-green-200 rounded-lg p-4 bg-green-50">
         <div class="flex justify-between items-start mb-3">
-          <span class="text-sm font-medium text-gray-700">Action ${index + 1}</span>
+          <span class="text-sm font-semibold text-green-900">Action ${index + 1}</span>
           <button type="button" onclick="removeAction(${index})"
-                  class="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                  class="text-red-600 hover:text-red-800 text-sm font-medium">Remove</button>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs text-gray-600 mb-1">Action Type</label>
+            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Action Type</label>
             <select onchange="updateAction(${index}, 'type', this.value)"
-                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded">
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
+                    style="color: #111827 !important; background-color: #ffffff !important;">
               <option value="send_email" ${action.type === 'send_email' ? 'selected' : ''}>Send Email</option>
               <option value="webhook" ${action.type === 'webhook' ? 'selected' : ''}>Call Webhook</option>
               <option value="tag" ${action.type === 'tag' ? 'selected' : ''}>Add Tag</option>
               <option value="assign" ${action.type === 'assign' ? 'selected' : ''}>Assign To</option>
               <option value="slack_notify" ${action.type === 'slack_notify' ? 'selected' : ''}>Send to Slack</option>
             </select>
-            <p class="text-xs text-gray-400 mt-1">What to do</p>
+            <p class="text-xs text-gray-500 mt-1">What to do when rule triggers</p>
           </div>
           <div>
-            <label class="block text-xs text-gray-600 mb-1">Config (JSON)</label>
+            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Config (JSON)</label>
             <textarea onchange="updateAction(${index}, 'config', JSON.parse(this.value))"
-                      placeholder='{"to": "user@example.com"}'
-                      class="w-full px-2 py-1 text-sm border border-gray-300 rounded font-mono"
-                      rows="2">${JSON.stringify(action.config || {}, null, 2)}</textarea>
-            <p class="text-xs text-gray-400 mt-1">Action parameters</p>
+                      placeholder='${configExamples[action.type] || configExamples['send_email']}'
+                      class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md font-mono bg-white text-gray-900"
+                      style="color: #111827 !important; background-color: #ffffff !important;"
+                      rows="3">${JSON.stringify(action.config || {}, null, 2)}</textarea>
+            <p class="text-xs text-gray-500 mt-1">Action-specific parameters (JSON format)</p>
           </div>
         </div>
       </div>
