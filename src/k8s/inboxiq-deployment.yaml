@@ -4,12 +4,12 @@ metadata:
   name: inboxiq
   namespace: kaley
 spec:
-  replicas: 2
+  replicas: 1  # Reduced to 1 due to memory constraints
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 0  # Never take down old pods until new ones are ready
-      maxSurge: 1  # Allow 1 extra pod during rollout
+      maxUnavailable: 1  # Allow old pod to terminate (brief downtime acceptable)
+      maxSurge: 0  # Don't create extra pods during rollout
   selector:
     matchLabels:
       app: inboxiq
