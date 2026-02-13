@@ -162,6 +162,12 @@
             <button data-dashboard-section="impact" class="dashboard-tab rounded-full border border-slate-800 bg-slate-900/40 px-4 py-2 text-slate-300">Decision outcomes</button>
             <button data-dashboard-section="training" class="dashboard-tab rounded-full border border-slate-800 bg-slate-900/40 px-4 py-2 text-slate-300">Training metrics</button>
             <button data-dashboard-section="search" class="dashboard-tab rounded-full border border-slate-800 bg-slate-900/40 px-4 py-2 text-slate-300">Search</button>
+            <button data-dashboard-section="automation" class="dashboard-tab rounded-full border border-slate-800 bg-slate-900/40 px-4 py-2 text-slate-300 inline-flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Automation Studio
+            </button>
           </div>
 
           <section data-dashboard-section-panel="connections">
@@ -943,6 +949,118 @@
               </div>
             </div>
           </div>
+          </section>
+
+          <section data-dashboard-section-panel="automation" class="hidden">
+            <div class="flex flex-col gap-3 mb-4">
+              <h3 class="text-lg font-semibold text-slate-50 leading-tight">Automation Studio</h3>
+              <p class="text-xs text-slate-400">
+                AI-powered workflow automation that triggers on events, evaluates conditions, and executes actions automatically.
+              </p>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <div class="text-xs text-slate-400">Active Rules</div>
+                </div>
+                <div class="text-2xl font-bold text-slate-100">0</div>
+                <div class="text-xs text-slate-500 mt-1">No rules configured yet</div>
+              </div>
+
+              <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <div class="text-xs text-slate-400">Executions (30d)</div>
+                </div>
+                <div class="text-2xl font-bold text-slate-100">0</div>
+                <div class="text-xs text-slate-500 mt-1">Waiting for first execution</div>
+              </div>
+
+              <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div class="text-xs text-slate-400">Time Saved (30d)</div>
+                </div>
+                <div class="text-2xl font-bold text-slate-100">0h</div>
+                <div class="text-xs text-slate-500 mt-1">Start automating to track ROI</div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5 mb-6">
+              <div class="text-sm font-semibold text-slate-100 mb-3">Quick Actions</div>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <a href="/integrations/automation" class="flex items-center gap-3 p-3 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-colors">
+                  <div class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-slate-100">Create Rule</div>
+                    <div class="text-xs text-slate-400">Natural language or manual</div>
+                  </div>
+                </a>
+
+                <a href="/automation/analytics" class="flex items-center gap-3 p-3 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-colors">
+                  <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-slate-100">View Analytics</div>
+                    <div class="text-xs text-slate-400">ROI & performance metrics</div>
+                  </div>
+                </a>
+
+                <a href="/integrations/webhooks" class="flex items-center gap-3 p-3 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors">
+                  <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold text-slate-100">Configure Webhooks</div>
+                    <div class="text-xs text-slate-400">Sage, QuickBooks, Slack</div>
+                  </div>
+                </a>
+              </div>
+            </div>
+
+            <!-- Getting Started -->
+            <div class="rounded-xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/20 to-slate-900/60 p-5">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <div class="text-sm font-semibold text-indigo-100 mb-1">Get Started with Automation</div>
+                  <p class="text-xs text-slate-300 mb-3">
+                    Automate repetitive workflows like extracting invoice data, routing to accounting systems, sending Slack notifications, and more. Use natural language to describe what you want, and AI will create the rule.
+                  </p>
+                  <div class="flex flex-wrap gap-2">
+                    <a href="/integrations/automation" class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors">
+                      Create Your First Rule →
+                    </a>
+                    <a href="/docs/automation_studio" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors">
+                      View Documentation
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
 
         </div>

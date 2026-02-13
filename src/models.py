@@ -1493,6 +1493,19 @@ class AutomationRule(db.Model):
     avg_execution_time_ms = db.Column(db.Float, nullable=True)
     estimated_time_saved_hours = db.Column(db.Float, default=0.0, nullable=False)
 
+    # ROI tracking (added for Automation Studio)
+    baseline_time_per_execution = db.Column(db.Integer, default=180)  # seconds (default: 3 minutes)
+    baseline_cost_per_execution = db.Column(db.Numeric(10, 2), default=0.75)  # dollars per execution
+    total_time_saved_seconds = db.Column(db.Integer, default=0)
+    total_cost_saved = db.Column(db.Numeric(10, 2), default=0)
+    accuracy_rate = db.Column(db.Numeric(5, 2))  # percentage (0.00-1.00)
+    total_executions = db.Column(db.Integer, default=0)  # Total executions
+    successful_executions = db.Column(db.Integer, default=0)  # Successful executions
+
+    # Discovery metadata (how was this rule created?)
+    source = db.Column(db.String(32), default="user_created")  # "ai_suggested", "user_created", "template"
+    suggestion_id = db.Column(db.String(64), db.ForeignKey("automation_suggestions.id"), nullable=True)
+
     # Audit
     created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -1579,6 +1592,10 @@ class AutomationRuleExecution(db.Model):
     actions_executed = db.Column(db.JSON, nullable=True)
     # [{"type": "assign", "success": true, "result": "Assigned to team: finance"}]
 
+    # ROI tracking (for accuracy calculation)
+    ticket_reassigned = db.Column(db.Boolean, default=False)  # Was ticket manually reassigned after automation?
+    reassignment_timestamp = db.Column(db.DateTime(timezone=True), nullable=True)
+
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Relationships
@@ -1604,4 +1621,149 @@ class AutomationRuleExecution(db.Model):
             "conditions_evaluated": self.conditions_evaluated,
             "actions_executed": self.actions_executed,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class WebhookProvider(db.Model):
+    """
+    Stores encrypted credentials for external integrations (Sage, QuickBooks, Stripe, etc.)
+    Supports both source providers (Stripe, Square, PayPal) and destination providers (Sage, QuickBooks)
+    """
+    __tablename__ = "webhook_providers"
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False, index=True)
+
+    # Provider configuration
+    provider_type = db.Column(db.String(64), nullable=False)  # "sage", "quickbooks", "stripe", "square", "paypal", "slack", "custom"
+    configuration_name = db.Column(db.String(255), nullable=False)  # User-friendly name (e.g., "Production Sage")
+    environment = db.Column(db.String(16), default="production")  # "production" or "sandbox"
+
+    # Encrypted credentials (stored as encrypted JSON blob)
+    # Example for Sage: {"api_key": "xxx", "company_id": "123", "endpoint": "https://api.sage.com/v3"}
+    # Example for QuickBooks: {"client_id": "xxx", "client_secret": "yyy", "realm_id": "zzz"}
+    credentials_encrypted = db.Column(db.Text, nullable=False)
+
+    # For source providers (Stripe, Square, PayPal) that send webhooks TO InboxIQ
+    webhook_signing_secret_encrypted = db.Column(db.Text, nullable=True)  # For signature verification
+    api_key_encrypted = db.Column(db.Text, nullable=True)  # For pulling historical data (optional)
+    destination_provider_id = db.Column(db.String(64), db.ForeignKey("webhook_providers.id"), nullable=True)  # Where to route data
+
+    # Metadata
+    enabled = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+    last_used_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    # Usage tracking
+    total_requests = db.Column(db.Integer, default=0)
+    failed_requests = db.Column(db.Integer, default=0)
+
+    # Relationships
+    account = db.relationship("Account")
+    destination_provider = db.relationship("WebhookProvider", remote_side=[id], foreign_keys=[destination_provider_id])
+
+    def to_dict(self, include_credentials=False):
+        """
+        Convert to dictionary for API responses
+        By default, credentials are NOT included for security
+        """
+        result = {
+            "id": self.id,
+            "account_id": self.account_id,
+            "provider_type": self.provider_type,
+            "configuration_name": self.configuration_name,
+            "environment": self.environment,
+            "enabled": self.enabled,
+            "destination_provider_id": self.destination_provider_id,
+            "total_requests": self.total_requests,
+            "failed_requests": self.failed_requests,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "last_used_at": self.last_used_at.isoformat() if self.last_used_at else None,
+        }
+
+        # Only include credentials if explicitly requested (for internal use)
+        if include_credentials:
+            result["has_credentials"] = bool(self.credentials_encrypted)
+            result["has_webhook_secret"] = bool(self.webhook_signing_secret_encrypted)
+            result["has_api_key"] = bool(self.api_key_encrypted)
+
+        return result
+
+
+class AutomationSuggestion(db.Model):
+    """
+    AI-discovered automation patterns suggested to users
+    Generated by analyzing historical ticket/email routing patterns
+    """
+    __tablename__ = "automation_suggestions"
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False, index=True)
+
+    # Pattern details
+    pattern_type = db.Column(db.String(64), nullable=False)  # "routing", "prioritization", "tagging", "escalation"
+    confidence = db.Column(db.Numeric(5, 2), nullable=False)  # 0.00-1.00 (e.g., 0.87 = 87% confidence)
+
+    # Human-readable suggestion
+    plain_english = db.Column(db.Text, nullable=False)
+    # Example: "I noticed 87% of billing tickets get assigned to Sarah. Want me to automate this?"
+
+    # Generated workflow structure (ready to activate)
+    workflow_json = db.Column(db.JSON, nullable=False)
+    # Complete AutomationRule structure that can be saved directly
+
+    # ROI estimates
+    estimated_time_saved_per_week = db.Column(db.Integer, nullable=True)  # minutes
+    estimated_cost_savings_per_month = db.Column(db.Numeric(10, 2), nullable=True)  # dollars
+    estimated_accuracy = db.Column(db.Numeric(5, 2), nullable=True)  # percentage
+
+    # Supporting evidence
+    sample_ticket_ids = db.Column(db.JSON, nullable=True)  # List of ticket IDs that match this pattern
+    pattern_occurrences = db.Column(db.Integer, default=0)  # How many times pattern occurred
+    total_analyzed = db.Column(db.Integer, default=0)  # Total tickets analyzed
+
+    # Status tracking
+    status = db.Column(db.String(16), default="pending", nullable=False)  # "pending", "approved", "dismissed"
+    dismissed_reason = db.Column(db.Text, nullable=True)
+    approved_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    dismissed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_rule_id = db.Column(db.String(64), db.ForeignKey("automation_rules.id"), nullable=True)  # If approved
+
+    # Metadata
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+
+    # Discovery metadata (how was this pattern found?)
+    discovery_method = db.Column(db.String(64), default="dspy_pattern_extraction")  # "dspy_pattern_extraction", "rule_mining", "manual"
+    lookback_days = db.Column(db.Integer, default=90)  # How many days of history analyzed
+
+    # Relationships
+    account = db.relationship("Account")
+    created_rule = db.relationship("AutomationRule", foreign_keys=[created_rule_id])
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "pattern_type": self.pattern_type,
+            "confidence": float(self.confidence) if self.confidence else None,
+            "plain_english": self.plain_english,
+            "workflow_json": self.workflow_json,
+            "estimated_time_saved_per_week": self.estimated_time_saved_per_week,
+            "estimated_cost_savings_per_month": float(self.estimated_cost_savings_per_month) if self.estimated_cost_savings_per_month else None,
+            "estimated_accuracy": float(self.estimated_accuracy) if self.estimated_accuracy else None,
+            "sample_ticket_ids": self.sample_ticket_ids,
+            "pattern_occurrences": self.pattern_occurrences,
+            "total_analyzed": self.total_analyzed,
+            "status": self.status,
+            "dismissed_reason": self.dismissed_reason,
+            "approved_at": self.approved_at.isoformat() if self.approved_at else None,
+            "dismissed_at": self.dismissed_at.isoformat() if self.dismissed_at else None,
+            "created_rule_id": self.created_rule_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "discovery_method": self.discovery_method,
+            "lookback_days": self.lookback_days,
         }

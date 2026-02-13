@@ -1,248 +1,534 @@
-# Automation Studio - Dynamic Workflow Engine
+# Automation Studio - AI-Powered Support Triage Automation
 
-## Overview
+## The InboxIQ Difference
 
-This module implements **Phase 3.5** of the observability implementation plan: **Dynamic Automation Studio workflow instrumentation**.
+**Traditional approach:** Spend weeks building complex rule engines, hiring engineers to code logic trees.
 
-Unlike hardcoded operations, this engine allows users to create **custom workflows through the UI** (no-code automation builder), and the system **automatically traces ANY workflow they create** with full OpenTelemetry observability.
+**InboxIQ approach:** 3-minute setup. AI analyzes your tickets, suggests automation rules in plain English, you click "Yes."
+
+> "We're making manual support triage socially unacceptable—the same way manual data entry became obsolete."
+
+## Core Value Proposition
+
+Unlike Zendesk/Freshdesk's static rule builders or AI chatbots that replace agents, InboxIQ is the **intelligence layer that makes existing teams 10x more efficient**.
+
+### 1. AI Writes the Rules for You
+
+Our system analyzes your last 90 days of tickets and says:
+
+> "I noticed your team always routes billing questions to Sarah. Want me to automate that?"
+
+You just click **"Yes."** No coding, no complex logic trees.
+
+### 2. Plain English Rule Builder
+
+Need something custom? Type it like you'd explain it to a coworker:
+
+- *"Send refund requests to the billing team if over $500"*
+- *"Flag tickets mentioning 'lawsuit' or 'attorney' as urgent"*
+- *"Route integration questions to developers during business hours"*
+
+Our LLM converts your natural language → executable workflow → starts working immediately.
+
+### 3. See Your ROI in Real-Time
+
+Every rule shows:
+- ⏱️ **Time saved per week** (e.g., "32 hours saved this month")
+- 💰 **Cost reduction** (e.g., "$4,800 saved by avoiding mis-routes")
+- 📊 **Accuracy rate** (e.g., "94% of auto-routed tickets stayed in assigned team")
+
+No more guessing if automation is working.
+
+### 4. Industry Templates
+
+Start with proven rules for your industry:
+
+**E-commerce:**
+- Return/refund automation
+- Shipping escalations
+- VIP customer routing
+
+**SaaS:**
+- Technical vs. non-technical split
+- Trial user prioritization
+- Integration support routing
+
+**Healthcare:**
+- HIPAA-compliant routing
+- Appointment scheduling
+- Prescription requests
 
 ## Architecture
 
 ```
-User creates workflow → Stored as JSON → Engine executes dynamically → Traced with OTel
-     (via UI)           (AutomationRule)    (workflow_engine.py)      (Phoenix UI)
+Historical Tickets (90 days)
+    ↓
+[1] ML Pattern Discovery (DSPy-based)
+    ↓
+Rule Suggestions (plain English)
+    ↓
+[2] User Approval (one-click) OR Natural Language Input
+    ↓
+[3] LLM Translation (GPT-4: natural language → workflow JSON)
+    ↓
+AutomationRule (stored in database)
+    ↓
+[4] Workflow Engine (executes with OTel tracing)
+    ↓
+[5] ROI Tracking (time/cost/accuracy metrics)
 ```
 
-## Key Features
+## Key Components
 
-### ✅ **Dynamic Workflow Execution**
-- Users create workflows through UI (stored as JSON in `AutomationRule` model)
-- Engine executes ANY workflow configuration users create
-- No code changes needed for new workflow types
+### 1. Pattern Discovery Service (`src/automation/discovery.py`)
 
-### ✅ **Full OpenTelemetry Instrumentation**
-- **Workflow-level span**: Overall execution
-- **Condition-level spans**: Per-condition evaluation with actual vs expected values
-- **Action-level spans**: Per-action execution with success/failure/duration
-- **Trace ID capture**: Stored in `AutomationRuleExecution` for user visibility
+**Purpose:** Analyze historical tickets and identify automation opportunities
 
-### ✅ **Security & Compliance**
-- All user data sanitized using `safe_span_attribute()`
-- PII redaction (emails, phone numbers, SSN, credit cards)
-- Credential filtering (API keys, tokens, passwords)
-- Trigger context sanitization before storage
+**How it works:**
+- Analyzes routing patterns across 90-day ticket history
+- Uses DSPy to extract common patterns (e.g., "billing emails → Sarah 87% of the time")
+- Generates plain English suggestions ranked by confidence and impact
+- Estimates time savings for each suggested rule
 
-### ✅ **User-Facing Execution History**
-- Every execution stored with trace ID
-- Users can view execution history with links to Phoenix traces
-- Condition evaluation details (which conditions matched/failed)
-- Action execution results (success/failure/error messages)
+**Example output:**
+```python
+{
+    "suggestion_id": "suggest-001",
+    "confidence": 0.87,
+    "pattern": "Billing questions are routed to Sarah",
+    "plain_english": "I noticed 87% of billing-related tickets get assigned to Sarah. Want me to automate this?",
+    "estimated_time_saved_per_week": "4.5 hours",
+    "estimated_cost_savings_per_month": "$720",
+    "sample_tickets": ["ticket-123", "ticket-456", "ticket-789"]
+}
+```
 
-## Database Models
+**Implementation:**
+- Uses DSPy signature: `TicketPatternExtractor`
+- Compiled module: `dspy_artifacts/pattern_discovery_compiled.pkl`
+- Runs as scheduled Celery task: `automation.discover_patterns`
+- Suggests 3-5 highest-impact rules per account
 
-### AutomationRule
-Stores user-created workflows:
-- **Triggers**: When to run (e.g., "ticket.created")
-- **Conditions**: What to check (e.g., "priority equals P1")
-- **Actions**: What to do (e.g., "assign to team: finance")
-- **Analytics**: Execution count, success rate, avg execution time
+### 2. Natural Language Parser (`src/automation/nl_parser.py`)
 
-### AutomationRuleExecution
-Stores execution history:
-- **Trace ID**: Links to OpenTelemetry trace in Phoenix UI
-- **Execution results**: Matched, executed, success
-- **Condition details**: Which conditions matched/failed
-- **Action details**: Which actions succeeded/failed
-- **Performance**: Execution time in milliseconds
+**Purpose:** Convert user's natural language input → structured workflow JSON
 
-## Usage Example
+**How it works:**
+- User types: *"Send refund requests over $500 to billing team"*
+- LLM (GPT-4) parses intent and extracts:
+  - **Trigger:** Ticket created
+  - **Conditions:** `category contains 'refund'` AND `amount > 500`
+  - **Actions:** `assign to team: billing`
+- Validates generated workflow (checks field names, operators)
+- Returns structured JSON ready for execution
 
-### 1. Creating a Workflow (User via UI)
+**Example:**
 
-User creates workflow through Automation Studio UI:
+Input:
+```
+"Flag tickets mentioning 'lawsuit' or 'attorney' as urgent and notify legal team"
+```
 
+Output:
 ```json
 {
-  "name": "Escalate High Priority Billing Issues",
-  "trigger": {"event": "ticket.created", "object": "ticket"},
-  "conditions": [
-    {"field": "priority", "operator": "equals", "value": "P1"},
-    {"field": "category", "operator": "equals", "value": "billing"}
-  ],
-  "condition_logic": "AND",
-  "actions": [
-    {"type": "assign", "config": {"team": "finance"}},
-    {"type": "notify", "config": {
-      "channel": "slack",
-      "recipient": "#urgent-billing",
-      "message": "🚨 High priority billing issue: {{ticket.subject}}"
-    }}
-  ]
+    "name": "Legal escalation",
+    "trigger": {"event": "ticket.created", "object": "ticket"},
+    "conditions": [
+        {"field": "body", "operator": "contains", "value": "lawsuit"},
+        {"field": "body", "operator": "contains", "value": "attorney"}
+    ],
+    "condition_logic": "OR",
+    "actions": [
+        {"type": "update_field", "config": {"field": "priority", "value": "urgent"}},
+        {"type": "notify", "config": {"channel": "slack", "recipient": "#legal-alerts"}}
+    ]
 }
 ```
 
-This is stored as JSON in the `AutomationRule` model.
+**Implementation:**
+- Uses OpenAI GPT-4 with structured output (function calling)
+- Validates against AutomationRule schema
+- Returns user-friendly error messages for invalid rules
+- Supports context-aware suggestions (e.g., knows your team names, custom fields)
 
-### 2. Executing the Workflow (Automatic)
+### 3. One-Click Approval Flow
 
-When a ticket is created, the workflow engine automatically executes:
+**UI Flow:**
+
+```
+┌────────────────────────────────────────────────────────┐
+│ 💡 Suggested Automation                                │
+│                                                         │
+│ "I noticed 87% of billing tickets get assigned to      │
+│ Sarah. Want me to automate this?"                      │
+│                                                         │
+│ ⏱️  Saves ~4.5 hours/week                              │
+│ 💰 Saves ~$720/month                                   │
+│                                                         │
+│ [✓ Activate Rule]  [View Details]  [Dismiss]          │
+└────────────────────────────────────────────────────────┘
+```
+
+When user clicks "Activate Rule":
+1. Creates `AutomationRule` record (enabled=True)
+2. Starts tracking executions immediately
+3. Shows in dashboard with real-time metrics
+
+### 4. Workflow Engine (`src/automation/workflow_engine.py`) ✅ **IMPLEMENTED**
+
+**Purpose:** Execute automation rules with full observability
+
+**Already implemented features:**
+- Dynamic workflow execution (ANY user-created rule)
+- Full OpenTelemetry instrumentation (trace every execution)
+- Security: PII redaction, credential filtering
+- Execution history with trace IDs
+
+See [Workflow Engine Implementation](#workflow-engine-implementation) below.
+
+### 5. ROI Calculator (`src/automation/roi_calculator.py`)
+
+**Purpose:** Calculate and display real-time ROI metrics for each rule
+
+**Metrics tracked:**
+
+1. **Time Saved**
+   - Baseline: Average time to manually route ticket (e.g., 3 minutes)
+   - Calculation: `executions_count × 3 minutes`
+   - Display: "Saved 32 hours this month"
+
+2. **Cost Reduction**
+   - Baseline: Average cost per manual action (e.g., $15/hour → $0.75/ticket)
+   - Calculation: `executions_count × $0.75`
+   - Display: "Saved $4,800 this quarter"
+
+3. **Accuracy Rate**
+   - Tracks: How many auto-routed tickets stayed in assigned team vs. reassigned
+   - Calculation: `(tickets_stayed / total_executions) × 100`
+   - Display: "94% accuracy (847/900 tickets)"
+
+4. **Response Time Impact**
+   - Tracks: Average time-to-first-response before/after automation
+   - Calculation: Compare pre-automation vs. post-automation SLA metrics
+   - Display: "Response time improved by 23%"
+
+**Database schema additions needed:**
 
 ```python
-from src.automation import execute_automation_workflow
+class AutomationRule(db.Model):
+    # ... existing fields ...
 
-# Trigger context (email, webhook, event data)
-trigger_context = {
-    "type": "email",
-    "ticket_id": "ticket-123",
-    "ticket": {
-        "id": "ticket-123",
-        "subject": "Cannot access billing portal",
-        "priority": "P1",
-        "category": "billing",
-        "from": "customer@example.com",
-        "body": "..."
-    }
+    # ROI tracking (added)
+    baseline_time_per_execution = db.Column(db.Integer, default=180)  # seconds
+    baseline_cost_per_execution = db.Column(db.Numeric(10, 2), default=0.75)  # dollars
+    total_time_saved_seconds = db.Column(db.Integer, default=0)
+    total_cost_saved = db.Column(db.Numeric(10, 2), default=0)
+    accuracy_rate = db.Column(db.Numeric(5, 2))  # percentage
+
+class AutomationRuleExecution(db.Model):
+    # ... existing fields ...
+
+    # ROI tracking (added)
+    ticket_reassigned = db.Column(db.Boolean, default=False)  # for accuracy tracking
+    reassignment_timestamp = db.Column(db.DateTime)
+```
+
+### 6. Industry Templates (`src/automation/templates/`)
+
+**Purpose:** Pre-built automation rules for different industries
+
+**Structure:**
+```
+src/automation/templates/
+├── ecommerce.json        # Returns, refunds, shipping, VIP routing
+├── saas.json             # Tech support, trial users, integrations
+├── healthcare.json       # HIPAA routing, appointments, prescriptions
+├── financial.json        # Fraud alerts, compliance, escalations
+└── education.json        # Student support, enrollment, IT requests
+```
+
+**Example template (SaaS):**
+```json
+{
+    "templates": [
+        {
+            "id": "saas-technical-split",
+            "name": "Route technical questions to engineering",
+            "description": "Automatically identifies technical support requests and routes to your engineering team",
+            "trigger": {"event": "ticket.created"},
+            "conditions": [
+                {"field": "body", "operator": "contains", "value": "API"},
+                {"field": "body", "operator": "contains", "value": "integration"},
+                {"field": "body", "operator": "contains", "value": "webhook"},
+                {"field": "body", "operator": "contains", "value": "authentication"}
+            ],
+            "condition_logic": "OR",
+            "actions": [
+                {"type": "assign", "config": {"team": "engineering"}},
+                {"type": "tag", "config": {"tags": ["technical", "engineering"]}}
+            ],
+            "estimated_time_saved_per_week": "8 hours",
+            "estimated_accuracy": "91%"
+        }
+    ]
 }
-
-# Execute workflow
-result = execute_automation_workflow(
-    workflow_id="workflow-abc-123",
-    trigger_context=trigger_context,
-    trigger_event="ticket.created"
-)
-
-# Result includes trace ID for debugging
-print(result)
-# {
-#     "executed": True,
-#     "trace_id": "a1b2c3d4e5f6789012345678901234567890abcdef",
-#     "results": [
-#         {"action": "assign", "success": True, "result": {...}},
-#         {"action": "notify", "success": True, "result": {...}}
-#     ],
-#     "success": True,
-#     "execution_time_ms": 245.3
-# }
 ```
 
-### 3. OpenTelemetry Trace Structure
+**User activation:**
+- Browse templates by industry
+- One-click to activate
+- Templates auto-configure with your team names/fields
 
-The execution creates a hierarchical trace:
+## Workflow Engine Implementation
+
+### Database Models ✅ **IMPLEMENTED**
+
+**AutomationRule** - Stores automation rules
+```python
+class AutomationRule(db.Model):
+    id = db.Column(db.String(64), primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"))
+    name = db.Column(db.String(255))
+    trigger = db.Column(db.JSON)  # {"event": "ticket.created"}
+    conditions = db.Column(db.JSON)  # [{"field": "priority", "operator": "equals", "value": "P1"}]
+    condition_logic = db.Column(db.String(16))  # "AND" or "OR"
+    actions = db.Column(db.JSON)  # [{"type": "assign", "config": {...}}]
+    enabled = db.Column(db.Boolean, default=True)
+
+    # Analytics (calculated from executions)
+    total_executions = db.Column(db.Integer, default=0)
+    successful_executions = db.Column(db.Integer, default=0)
+    avg_execution_time_ms = db.Column(db.Integer)
+
+    # Discovery metadata
+    source = db.Column(db.String(32))  # "ai_suggested", "user_created", "template"
+    suggestion_id = db.Column(db.String(64))  # links back to suggestion
+```
+
+**AutomationRuleExecution** - Stores execution history with trace IDs
+```python
+class AutomationRuleExecution(db.Model):
+    id = db.Column(db.String(64), primary_key=True)
+    rule_id = db.Column(db.String(64), db.ForeignKey("automation_rules.id"))
+    trace_id = db.Column(db.String(32), index=True)  # OpenTelemetry trace ID
+
+    triggered_by = db.Column(db.String(32))  # "email", "webhook", "manual"
+    trigger_context_sanitized = db.Column(db.JSON)  # sanitized trigger data
+
+    conditions_matched = db.Column(db.Boolean)
+    conditions_detail = db.Column(db.JSON)  # which conditions passed/failed
+
+    executed = db.Column(db.Boolean)
+    success = db.Column(db.Boolean)
+    actions_detail = db.Column(db.JSON)  # action execution results
+
+    execution_time_ms = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+```
+
+### Core Functions ✅ **IMPLEMENTED**
+
+See `src/automation/workflow_engine.py`:
+
+- `execute_automation_workflow(workflow_id, trigger_context, trigger_event)` - Main entry point
+- `evaluate_workflow_conditions(workflow, context, parent_span)` - Evaluates conditions with tracing
+- `execute_workflow_actions(workflow, context, parent_span)` - Executes actions with tracing
+
+### OpenTelemetry Tracing ✅ **IMPLEMENTED**
+
+Every workflow execution creates hierarchical traces:
 
 ```
-automation.workflow (trace_id: a1b2c3d4...)
+automation.workflow (trace_id: abc123...)
 ├── automation.evaluate_conditions
 │   ├── condition.field_match (priority equals P1) ✅ matched
 │   └── condition.field_match (category equals billing) ✅ matched
 └── automation.execute_actions
-    ├── action.assign (team: finance) ✅ success
-    └── action.notify (channel: slack) ✅ success
+    ├── action.assign (team: finance) ✅ success (145ms)
+    └── action.notify (slack: #urgent-billing) ✅ success (89ms)
 ```
 
-### 4. User Views Execution History
+Users can view traces in Phoenix UI to debug why rules didn't fire or actions failed.
 
-Users can view execution history in the UI:
+### Security ✅ **IMPLEMENTED**
 
+- PII redaction in spans (emails, phones, SSN, credit cards)
+- Credential filtering (API keys, tokens, passwords)
+- Sanitized trigger context (email bodies NOT stored)
+
+## Implementation Roadmap
+
+### Phase 1: Pattern Discovery (Not Yet Implemented)
+**Goal:** AI analyzes tickets and suggests automation rules
+
+**Files to create:**
+- `src/automation/discovery.py` - ML pattern detection
+- `src/automation/dspy/pattern_extractor.py` - DSPy signature for pattern extraction
+- `src/tasks/automation_discovery.py` - Celery task to run discovery daily
+- `src/api/v1/automation_suggestions.py` - API to fetch/approve suggestions
+
+**Key functions:**
+```python
+def discover_automation_patterns(account_id, lookback_days=90):
+    """Analyze ticket routing patterns and suggest automation rules"""
+    pass
+
+def rank_suggestions_by_impact(suggestions):
+    """Rank suggestions by estimated time/cost savings"""
+    pass
 ```
-Workflow: "Escalate High Priority Billing Issues"
 
-┌─────────────────────────────────────────────────────────────┐
-│ ✅ Executed 2025-02-11 14:23:45 UTC                         │
-│                                                              │
-│ Actions executed: 2                                          │
-│ Triggered by: email                                          │
-│                                                              │
-│ 🔍 Trace ID: a1b2c3d4e5f6789012345678901234567890abcdef    │
-│ [View detailed trace in Phoenix →]                          │
-└─────────────────────────────────────────────────────────────┘
+**Database additions:**
+```python
+class AutomationSuggestion(db.Model):
+    id = db.Column(db.String(64), primary_key=True)
+    account_id = db.Column(db.Integer)
+    pattern_type = db.Column(db.String(64))  # "routing", "prioritization", "tagging"
+    plain_english = db.Column(db.Text)  # Human-readable suggestion
+    confidence = db.Column(db.Numeric(5, 2))  # 0.0-1.0
+    estimated_time_saved_per_week = db.Column(db.Integer)  # minutes
+    estimated_cost_savings_per_month = db.Column(db.Numeric(10, 2))
+    sample_ticket_ids = db.Column(db.JSON)  # Example tickets matching pattern
+    status = db.Column(db.String(16))  # "pending", "approved", "dismissed"
+    workflow_json = db.Column(db.JSON)  # Generated workflow structure
 ```
 
-Clicking the trace link opens Phoenix UI with full trace details.
+### Phase 2: Natural Language Parser (Not Yet Implemented)
+**Goal:** Convert user's natural language → executable workflow
 
-## Supported Operators
+**Files to create:**
+- `src/automation/nl_parser.py` - LLM-based NL→JSON conversion
+- `src/automation/validators.py` - Validate generated workflows
+- `src/api/v1/automation_nl.py` - API endpoint for NL rule creation
 
-### Condition Operators
-- `equals`, `not_equals`
-- `contains`, `not_contains`
-- `starts_with`, `ends_with`
-- `greater_than`, `less_than`, `greater_than_or_equal`, `less_than_or_equal`
-- `in_list`
-- `is_empty`, `is_not_empty`
+**Key functions:**
+```python
+def parse_natural_language_rule(user_input, account_context):
+    """Convert natural language → AutomationRule JSON using GPT-4"""
+    pass
 
-### Field Extraction
-Uses dot notation to extract nested fields:
-- `ticket.priority` → extracts priority from ticket object
-- `email.from` → extracts sender email address
-- `lead.fit_score` → extracts lead fit score
+def validate_workflow_structure(workflow_json, account_id):
+    """Validate workflow has valid fields/operators/actions"""
+    pass
+```
 
-## Security Considerations
+**Example usage:**
+```python
+workflow = parse_natural_language_rule(
+    user_input="Send refund requests over $500 to billing team",
+    account_context={
+        "teams": ["billing", "support", "sales"],
+        "custom_fields": ["refund_amount", "customer_tier"],
+        "priorities": ["P0", "P1", "P2", "P3"]
+    }
+)
+# Returns validated AutomationRule JSON ready for storage
+```
 
-### PII Redaction
-All spans automatically redact PII:
-- Emails → `[EMAIL_REDACTED]`
-- Phone numbers → `[PHONE_REDACTED]`
-- SSN → `[SSN_REDACTED]`
-- Credit cards → `[CARD_REDACTED]`
+### Phase 3: ROI Calculator (Not Yet Implemented)
+**Goal:** Track and display real-time ROI metrics
 
-### Credential Filtering
-Sensitive fields are automatically redacted:
-- `api_key`, `access_token`, `secret`, `password` → `[REDACTED:field_name]`
-- Webhook payloads are NOT stored (only metadata)
-- OAuth tokens are NOT traced
+**Files to create:**
+- `src/automation/roi_calculator.py` - Calculate time/cost savings
+- `src/tasks/automation_metrics.py` - Daily metrics aggregation
+- `src/api/v1/automation_analytics.py` - API for ROI dashboard
 
-### Trigger Context Sanitization
-Before storing in database:
-- Email bodies → NOT stored (only subject_length, body_length)
-- Webhook payloads → NOT stored (only provider, event_type, payload_size)
-- Payment data → Hashed transaction IDs, amounts OK (numeric)
+**Key functions:**
+```python
+def calculate_rule_roi(rule_id, time_period="month"):
+    """Calculate time saved, cost reduction, accuracy rate for a rule"""
+    pass
 
-## Performance
+def track_ticket_reassignment(ticket_id, automation_execution_id):
+    """Mark execution as inaccurate if ticket was manually reassigned"""
+    pass
+```
 
-- **Average execution time**: ~250ms per workflow
-- **Condition evaluation**: ~5ms per condition
-- **Action execution**: Varies by action type
-- **Trace overhead**: <10ms per execution
+**Database migrations needed:**
+```bash
+flask db migrate -m "Add ROI tracking fields to AutomationRule and AutomationRuleExecution"
+```
 
-## Next Steps
+### Phase 4: Industry Templates (Not Yet Implemented)
+**Goal:** Pre-built rules for different industries
 
-### Implement Action Handlers
-The workflow engine currently has placeholder action handlers. Implement:
+**Files to create:**
+- `src/automation/templates/*.json` - Template definitions
+- `src/automation/template_installer.py` - Install templates for account
+- `src/api/v1/automation_templates.py` - Browse/activate templates
 
-1. **Ticket Actions** (`src/automation/actions/ticket_actions.py`)
-   - `assign`: Assign ticket to team/user
-   - `update_field`: Update ticket fields
-   - `tag`: Add tags to ticket
-   - `priority`: Change ticket priority
-   - `status`: Change ticket status
+**Template structure:**
+```json
+{
+    "industry": "ecommerce",
+    "templates": [
+        {
+            "id": "ecommerce-returns",
+            "name": "Automate return requests",
+            "description": "Routes return/refund requests to appropriate team based on order value",
+            "trigger": {"event": "ticket.created"},
+            "conditions": [...],
+            "actions": [...]
+        }
+    ]
+}
+```
 
-2. **Notification Actions** (`src/automation/actions/notification_actions.py`)
-   - `notify_slack`: Send Slack message
-   - `notify_email`: Send email notification
-   - `notify_teams`: Send Microsoft Teams message
+### Phase 5: UI Components (Not Yet Implemented)
+**Goal:** User interface for Automation Studio
 
-3. **Integration Actions** (`src/automation/actions/integration_actions.py`)
-   - `send_to_hubspot`: Create HubSpot ticket
-   - `send_to_salesforce`: Create Salesforce case
-   - `send_to_jira`: Create Jira issue
+**Files to create:**
+- `src/templates/automation_studio/dashboard.html` - Main dashboard
+- `src/templates/automation_studio/suggestions.html` - AI suggestions list
+- `src/templates/automation_studio/nl_builder.html` - Natural language input
+- `src/templates/automation_studio/analytics.html` - ROI metrics
+- `src/settings/automation_routes.py` - Flask routes
 
-4. **Webhook Actions** (`src/automation/actions/webhook_actions.py`)
-   - `webhook`: Call external HTTP webhook
+**UI pages needed:**
+1. **Suggestions Dashboard** - Show AI-discovered patterns with one-click approval
+2. **Natural Language Builder** - Text input for custom rules
+3. **Rule List** - All active rules with enable/disable toggles
+4. **Execution History** - Per-rule execution log with trace links
+5. **Analytics Dashboard** - Time saved, cost reduction, accuracy charts
 
-### Create UI Components
-1. **Workflow Builder** (`src/templates/automation_studio/workflow_builder.html`)
-   - Drag-and-drop interface for creating workflows
-   - Condition builder with field selection
-   - Action builder with integration selection
+## Testing Strategy
 
-2. **Execution History** (`src/templates/automation_studio/execution_history.html`)
-   - List of workflow executions
-   - Filter by success/failure/date
-   - Links to Phoenix traces
+### 1. Pattern Discovery Tests
+```python
+def test_discover_billing_routing_pattern():
+    # Given: 90 days of tickets where 87% of billing tickets → Sarah
+    # When: discover_automation_patterns(account_id=1)
+    # Then: Should suggest "Route billing tickets to Sarah"
+    pass
+```
 
-3. **Analytics Dashboard** (`src/templates/automation_studio/analytics.html`)
-   - Workflow performance metrics
-   - Time saved by automation
-   - Success rate trends
+### 2. Natural Language Parser Tests
+```python
+def test_parse_refund_rule():
+    input = "Send refund requests over $500 to billing team"
+    workflow = parse_natural_language_rule(input, account_context)
+
+    assert workflow["conditions"] == [
+        {"field": "category", "operator": "contains", "value": "refund"},
+        {"field": "amount", "operator": "greater_than", "value": 500}
+    ]
+    assert workflow["actions"] == [
+        {"type": "assign", "config": {"team": "billing"}}
+    ]
+```
+
+### 3. ROI Calculator Tests
+```python
+def test_calculate_time_savings():
+    # Given: Rule executed 120 times this month, baseline 3 min/ticket
+    # When: calculate_rule_roi(rule_id, time_period="month")
+    # Then: Should return "6 hours saved"
+    pass
+```
+
+### 4. Workflow Engine Tests ✅ **IMPLEMENTED**
+See existing tests in `src/automation/workflow_engine.py`
 
 ## Migration
 
@@ -253,48 +539,59 @@ flask db migrate -m "Add AutomationRule and AutomationRuleExecution models"
 flask db upgrade
 ```
 
-## Testing
+To add ROI tracking fields (Phase 3):
 
-Example test case:
-
-```python
-from src.automation import execute_automation_workflow
-from src.models import AutomationRule, db
-
-def test_workflow_execution_with_tracing():
-    # Create workflow
-    workflow = AutomationRule(
-        id="test-workflow-123",
-        account_id=1,
-        name="Test Workflow",
-        trigger={"event": "ticket.created"},
-        conditions=[{"field": "priority", "operator": "equals", "value": "P1"}],
-        actions=[{"type": "assign", "config": {"team": "support"}}],
-        enabled=True
-    )
-    db.session.add(workflow)
-    db.session.commit()
-
-    # Execute workflow
-    result = execute_automation_workflow(
-        workflow_id="test-workflow-123",
-        trigger_context={
-            "type": "ticket",
-            "ticket": {"priority": "P1"}
-        },
-        trigger_event="ticket.created"
-    )
-
-    # Verify execution
-    assert result["executed"] == True
-    assert result["success"] == True
-    assert "trace_id" in result
-    assert len(result["trace_id"]) == 32  # 32 hex chars
+```bash
+flask db migrate -m "Add ROI tracking fields to automation models"
+flask db upgrade
 ```
+
+## API Endpoints (To Be Implemented)
+
+### Suggestions API
+- `GET /api/v1/automation/suggestions` - List AI-discovered patterns
+- `POST /api/v1/automation/suggestions/{id}/approve` - Activate suggested rule
+- `POST /api/v1/automation/suggestions/{id}/dismiss` - Dismiss suggestion
+
+### Natural Language API
+- `POST /api/v1/automation/rules/from-natural-language` - Create rule from NL input
+- `POST /api/v1/automation/rules/validate` - Validate workflow structure
+
+### Rules Management API
+- `GET /api/v1/automation/rules` - List all rules
+- `GET /api/v1/automation/rules/{id}` - Get rule details
+- `PATCH /api/v1/automation/rules/{id}` - Update rule (enable/disable)
+- `DELETE /api/v1/automation/rules/{id}` - Delete rule
+
+### Analytics API
+- `GET /api/v1/automation/analytics/overview` - Overall ROI metrics
+- `GET /api/v1/automation/rules/{id}/analytics` - Per-rule ROI metrics
+- `GET /api/v1/automation/rules/{id}/executions` - Execution history with traces
+
+### Templates API
+- `GET /api/v1/automation/templates` - Browse industry templates
+- `POST /api/v1/automation/templates/{id}/install` - Install template
 
 ## References
 
-- **Observability Plan**: `/Users/kofi/inboxiq/docs/inboxiq/observability_implementation_plan.md` (Phase 3.5)
-- **Automation Studio Plan**: `/Users/kofi/inboxiq/docs/automation-studio-implementation-plan.md`
-- **OpenTelemetry Docs**: https://opentelemetry.io/docs/
-- **Phoenix UI**: Deployed at `http://phoenix.kaley.svc.cluster.local:6006`
+- **Observability Implementation Plan**: Phase 3.5 - Dynamic workflow tracing
+- **OpenTelemetry**: Full instrumentation for debugging automation rules
+- **Phoenix UI**: `http://phoenix.kaley.svc.cluster.local:6006` for trace visualization
+- **DSPy Documentation**: https://dspy-docs.vercel.app/ for pattern extraction
+- **Project Instructions**: `/Users/kofi/inboxiq/CLAUDE.md` - coding standards and patterns
+
+## Summary: What Makes InboxIQ Different
+
+**Traditional automation:**
+- Weeks to implement
+- Requires engineers to code rules
+- Static logic that doesn't learn
+- No visibility into ROI
+
+**InboxIQ automation:**
+- 3-minute setup
+- AI suggests rules, you click "Yes"
+- ML gets smarter with every ticket (data moat)
+- Real-time ROI metrics (time/cost/accuracy)
+
+**The result:** Manual support triage becomes as obsolete as manual data entry. InboxIQ is the solution that makes it happen.

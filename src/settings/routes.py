@@ -1,10 +1,11 @@
+import os
 from datetime import datetime
 from uuid import uuid4
 
 from flask import current_app, g, jsonify, redirect, render_template, request, url_for
 
 from src.extensions import db, limiter
-from src.models import IntakeToken, User, Passkey, TOTPDevice, Account, InboxConnection
+from src.models import IntakeToken, User, Passkey, TOTPDevice, Account, InboxConnection, WebhookProvider
 from src.crypto import encrypt_value, decrypt_value
 from src.api.v1.access_control import account_allows_api
 from src.settings import bp, login_required_settings
@@ -870,6 +871,7 @@ def integrations_webhooks():
       )
     if action == "add_provider" and account_id:
       import re
+      import json
       from urllib.parse import urlparse
       from src.sanitize import sanitize_html
 
@@ -894,11 +896,14 @@ def integrations_webhooks():
           voice_prefill=voice_prefill,
           crm_connection=crm_connection,
           crm_prefill=crm_prefill,
-          webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).all(),
+          webhook_providers=WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all(),
         )
 
-      # Collect form fields into metadata with validation
-      metadata = {}
+      # Collect form fields into credentials dict with validation
+      credentials = {}
+      configuration_name = None
+      environment = 'production'
+
       for key in request.form:
         if key not in ['action', 'provider']:
           value = request.form.get(key, '').strip()
@@ -909,6 +914,12 @@ def integrations_webhooks():
             value = sanitize_html(value)
             value = re.sub(r'<[^>]*>', '', value)  # Strip all HTML tags
             value = value[:100]  # Max 100 chars
+            configuration_name = value or f"{provider.title()} Integration"
+            continue  # Don't store in credentials
+
+          elif key == 'environment':
+            environment = value if value in ['production', 'sandbox'] else 'production'
+            continue  # Don't store in credentials
 
           elif key in ['endpoint_url', 'webhook_url']:
             # Validate URLs (prevent javascript:, data:, vbscript: protocols)
@@ -917,51 +928,84 @@ def integrations_webhooks():
                 parsed = urlparse(value)
                 # Only allow http and https protocols
                 if parsed.scheme not in ['http', 'https', '']:
-                  logger.warning(f"Blocked unsafe URL protocol: {parsed.scheme}")
+                  current_app.logger.warning(f"Blocked unsafe URL protocol: {parsed.scheme}")
                   continue  # Skip this field
                 # Limit URL length
                 value = value[:2000]
               except Exception as e:
-                logger.warning(f"Invalid URL provided: {value}")
+                current_app.logger.warning(f"Invalid URL provided: {value}")
                 continue  # Skip invalid URLs
 
           elif key == 'channel':
             # Validate Slack channel format (#channel-name)
             if value and not re.match(r'^#?[a-z0-9_-]{1,80}$', value, re.I):
-              logger.warning(f"Invalid channel format: {value}")
+              current_app.logger.warning(f"Invalid channel format: {value}")
               value = re.sub(r'[^a-z0-9_-]', '', value.lower())[:80]
 
           elif key in ['company_id', 'client_id', 'environment']:
             # Alphanumeric + basic chars only, max 255 chars
             value = re.sub(r'[^\w\s.-]', '', value)[:255]
 
-          # Encrypt sensitive fields
-          if key in ['api_key', 'client_secret', 'auth_token', 'webhook_url', 'auth_header']:
-            if value:
-              metadata[f"{key}_enc"] = encrypt_value(value)
-          else:
-            metadata[key] = value
+          # Store all fields in credentials (will be encrypted as a whole)
+          if value:
+            credentials[key] = value
 
-      # Check if provider connection already exists for this account
-      existing_connection = InboxConnection.query.filter_by(
+      if not configuration_name:
+        configuration_name = f"{provider.title()} Integration"
+
+      # Encrypt the entire credentials object
+      credentials_json = json.dumps(credentials)
+      credentials_encrypted = encrypt_value(credentials_json)
+
+      # Check if provider already exists for this account
+      existing_provider = WebhookProvider.query.filter_by(
         account_id=account_id,
-        provider=provider
+        provider_type=provider
       ).first()
 
-      if existing_connection:
-        # Update existing connection
-        existing_connection.metadata_json = metadata
-        existing_connection.status = "connected"
+      if existing_provider:
+        # Update existing provider
+        existing_provider.configuration_name = configuration_name
+        existing_provider.environment = environment
+        existing_provider.credentials_encrypted = credentials_encrypted
+        existing_provider.enabled = True
+
+        # Update webhook signing secrets for source providers
+        if 'webhook_secret' in credentials:
+          existing_provider.webhook_signing_secret_encrypted = encrypt_value(credentials['webhook_secret'])
+        if 'webhook_signature_key' in credentials:
+          existing_provider.webhook_signing_secret_encrypted = encrypt_value(credentials['webhook_signature_key'])
+
+        # Update API keys
+        if 'api_key' in credentials:
+          existing_provider.api_key_encrypted = encrypt_value(credentials['api_key'])
+        if 'access_token' in credentials:
+          existing_provider.api_key_encrypted = encrypt_value(credentials['access_token'])
       else:
-        # Create new connection
-        new_connection = InboxConnection(
-          user_id=user.id if user else None,
+        # Create new provider
+        new_provider = WebhookProvider(
+          id=str(uuid4()),
           account_id=account_id,
-          provider=provider,
-          status="connected",
-          metadata_json=metadata,
+          provider_type=provider,
+          configuration_name=configuration_name,
+          environment=environment,
+          credentials_encrypted=credentials_encrypted,
+          enabled=True,
         )
-        db.session.add(new_connection)
+
+        # Handle webhook signing secrets for source providers
+        if 'webhook_secret' in credentials:
+          new_provider.webhook_signing_secret_encrypted = encrypt_value(credentials['webhook_secret'])
+        if 'webhook_signature_key' in credentials:
+          new_provider.webhook_signing_secret_encrypted = encrypt_value(credentials['webhook_signature_key'])
+
+        # Handle API keys
+        if 'api_key' in credentials:
+          new_provider.api_key_encrypted = encrypt_value(credentials['api_key'])
+        if 'access_token' in credentials:
+          new_provider.api_key_encrypted = encrypt_value(credentials['access_token'])
+
+        db.session.add(new_provider)
 
       db.session.commit()
 
@@ -981,20 +1025,20 @@ def integrations_webhooks():
         voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_prefill=crm_prefill,
-        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).all(),
+        webhook_providers=WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all(),
         provider_saved=True,
       )
 
     if action == "delete_provider" and account_id:
       provider_id = request.form.get("provider_id", "").strip()
       if provider_id:
-        connection = InboxConnection.query.filter_by(
+        provider = WebhookProvider.query.filter_by(
           id=provider_id,
           account_id=account_id
-        ).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).first()
+        ).first()
 
-        if connection:
-          db.session.delete(connection)
+        if provider:
+          db.session.delete(provider)
           db.session.commit()
 
       return render_template(
@@ -1013,7 +1057,7 @@ def integrations_webhooks():
         voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_prefill=crm_prefill,
-        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).all(),
+        webhook_providers=WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all(),
       )
 
     if action == "generate" and account_id and api_allowed:
@@ -1044,11 +1088,11 @@ def integrations_webhooks():
         voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_prefill=crm_prefill,
-        webhook_providers=InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).all(),
+        webhook_providers=WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all(),
       )
   active_tokens = IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all() if account_id else []
   intake_token_set = bool(active_tokens)
-  webhook_providers = InboxConnection.query.filter_by(account_id=account_id).filter(InboxConnection.provider.in_(['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal'])).all() if account_id else []
+  webhook_providers = WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all() if account_id else []
   return render_template(
     "settings/index.html",
     active_tab="integrations",
@@ -1066,6 +1110,186 @@ def integrations_webhooks():
     crm_connection=crm_connection,
     crm_prefill=crm_prefill,
     webhook_providers=webhook_providers,
+  )
+
+
+@bp.route("/integrations/automation", methods=["GET", "POST"])
+@login_required_settings
+def integrations_automation():
+  """Automation Studio - Manage automation rules and workflows."""
+  from src.models import AutomationRule
+
+  account_id = getattr(g, "current_account_id", None)
+  api_allowed = account_allows_api(account_id) if account_id else False
+
+  if not account_id:
+    return redirect(url_for("settings.index"))
+
+  if request.method == "POST":
+    action = (request.form.get("action") or "").strip()
+
+    if action == "toggle_rule" and account_id:
+      rule_id = request.form.get("rule_id", "").strip()
+      if rule_id:
+        rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
+        if rule:
+          rule.enabled = not rule.enabled
+          db.session.commit()
+
+    elif action == "delete_rule" and account_id:
+      rule_id = request.form.get("rule_id", "").strip()
+      if rule_id:
+        rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
+        if rule:
+          db.session.delete(rule)
+          db.session.commit()
+
+    elif action == "create_rule" and account_id:
+      name = request.form.get("name", "").strip()
+      description = request.form.get("description", "").strip()
+
+      if not name:
+        return render_template(
+          "settings/index.html",
+          active_tab="integrations",
+          integrations_view="automation",
+          api_allowed=api_allowed,
+          account_id=account_id,
+          rules=AutomationRule.query.filter_by(account_id=account_id).order_by(AutomationRule.created_at.desc()).all(),
+          webhook_providers=WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all(),
+          error="Rule name is required",
+        )
+
+      # Parse trigger, conditions, and actions from form
+      trigger_event = request.form.get("trigger_event", "").strip()
+      trigger_object = request.form.get("trigger_object", "").strip()
+
+      if not trigger_event or not trigger_object:
+        return render_template(
+          "settings/index.html",
+          active_tab="integrations",
+          integrations_view="automation",
+          api_allowed=api_allowed,
+          account_id=account_id,
+          rules=AutomationRule.query.filter_by(account_id=account_id).order_by(AutomationRule.created_at.desc()).all(),
+          webhook_providers=WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all(),
+          error="Trigger event and object are required",
+        )
+
+      trigger = {
+        "event": trigger_event,
+        "object": trigger_object,
+      }
+
+      # For now, create a simple rule with empty conditions and actions
+      # The full form builder will be added in the next iteration
+      rule = AutomationRule(
+        id=str(uuid4()),
+        account_id=account_id,
+        name=name,
+        description=description,
+        trigger=trigger,
+        conditions=[],
+        condition_logic="AND",
+        actions=[],
+        enabled=True,
+        source="user_created",
+      )
+
+      db.session.add(rule)
+      db.session.commit()
+
+  # Get all automation rules for this account
+  rules = AutomationRule.query.filter_by(account_id=account_id).order_by(
+    AutomationRule.created_at.desc()
+  ).all()
+
+  # Get webhook providers for rule creation
+  webhook_providers = WebhookProvider.query.filter_by(account_id=account_id).order_by(
+    WebhookProvider.created_at.desc()
+  ).all()
+
+  return render_template(
+    "settings/index.html",
+    active_tab="integrations",
+    integrations_view="automation",
+    api_allowed=api_allowed,
+    account_id=account_id,
+    rules=rules,
+    webhook_providers=webhook_providers,
+    phoenix_url=os.environ.get('PHOENIX_URL'),
+    flask_env=os.environ.get('FLASK_ENV', 'production'),
+  )
+
+
+@bp.route("/automation/analytics", methods=["GET"])
+@login_required_settings
+def automation_analytics():
+  """Automation Studio ROI Analytics Dashboard."""
+  from src.models import AutomationRule, AutomationRuleExecution
+  from src.automation.roi_calculator import calculate_account_roi
+  from datetime import datetime, timedelta
+  import json
+
+  account_id = getattr(g, "current_account_id", None)
+
+  if not account_id:
+    return redirect(url_for("settings.index"))
+
+  # Get time period from query params (default: month)
+  time_period = request.args.get('period', 'month')
+
+  # Calculate account-level ROI
+  try:
+    roi_data = calculate_account_roi(account_id, time_period)
+  except Exception as e:
+    current_app.logger.error(f"Failed to calculate ROI: {e}")
+    roi_data = {
+      "total_time_saved": {"hours": 0, "display": "0 hours"},
+      "total_cost_saved": {"amount": 0, "display": "$0"},
+      "overall_accuracy": {"rate": 0, "display": "0%"},
+      "rules_breakdown": []
+    }
+
+  # Get all rules for the account
+  rules = AutomationRule.query.filter_by(account_id=account_id).all()
+
+  # Get execution history for chart (last 30 days)
+  thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+  executions = AutomationRuleExecution.query.filter(
+    AutomationRuleExecution.account_id == account_id,
+    AutomationRuleExecution.created_at >= thirty_days_ago
+  ).order_by(AutomationRuleExecution.created_at).all()
+
+  # Group executions by date for chart
+  execution_dates = {}
+  for execution in executions:
+    date_key = execution.created_at.strftime('%Y-%m-%d')
+    if date_key not in execution_dates:
+      execution_dates[date_key] = {"total": 0, "successful": 0, "failed": 0}
+    execution_dates[date_key]["total"] += 1
+    if execution.success:
+      execution_dates[date_key]["successful"] += 1
+    else:
+      execution_dates[date_key]["failed"] += 1
+
+  # Convert to chart data
+  chart_data = {
+    "labels": list(execution_dates.keys()),
+    "total": [execution_dates[k]["total"] for k in execution_dates.keys()],
+    "successful": [execution_dates[k]["successful"] for k in execution_dates.keys()],
+    "failed": [execution_dates[k]["failed"] for k in execution_dates.keys()]
+  }
+
+  return render_template(
+    "settings/index.html",
+    active_tab="integrations",
+    integrations_view="automation_analytics",
+    account_id=account_id,
+    roi_data=roi_data,
+    rules=rules,
+    chart_data=json.dumps(chart_data),
+    time_period=time_period,
   )
 
 

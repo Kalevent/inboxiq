@@ -672,23 +672,18 @@ def execute_single_action(
     span
 ) -> Dict[str, Any]:
     """
-    Execute a single action. Route to appropriate handler based on action type.
+    Execute a single action using registered action handlers.
 
-    This is a placeholder implementation. In production, you would implement
-    specific handlers for each action type (assign, notify, webhook, etc.).
-
-    Action types to implement:
-    - assign: Assign ticket to team/user
-    - update_field: Update ticket/lead field
-    - notify: Send notification (email, Slack, Teams)
-    - webhook: Call external webhook
-    - tag: Add tags to ticket
-    - priority: Change ticket priority
-    - status: Change ticket status
+    Supports all action types defined in src/automation/actions/:
+    - Data extraction: extract_invoice_data, extract_receipt_data, extract_expense_data
+    - Webhooks: send_webhook, conditional_webhook
+    - Email: tag_email, move_to_folder, create_note, send_email
+    - Storage: upload_to_s3, generate_public_url
+    - Ticket: assign, update_field, tag, priority, status
 
     Args:
-        action: Action definition dict
-        trigger_context: Execution context (ticket, lead, account)
+        action: Action definition dict with 'type' and 'config'
+        trigger_context: Execution context (email, extracted, ticket, lead, account_id)
         span: OpenTelemetry span for recording attributes
 
     Returns:
@@ -697,45 +692,44 @@ def execute_single_action(
     action_type = action.get("type")
     config = action.get("config", {})
 
-    logger.debug(f"Executing action: type={action_type}, config={config}")
+    logger.debug(f"Executing action: type={action_type}, config keys={list(config.keys())}")
 
-    # TODO: Implement actual action handlers
-    # For now, return a placeholder success result
+    # Import action executor
+    from src.automation.actions import execute_action
 
-    if action_type == "assign":
-        # TODO: Implement actual assignment logic
+    try:
+        # Execute action using registered handler
+        result = execute_action(action_type, trigger_context, config)
+
+        # Add result attributes to span
+        if result.get("success"):
+            span.set_attribute("action.success", True)
+            # Add action-specific metrics if available
+            if "duration_ms" in result.get("result", {}):
+                span.set_attribute("action.duration_ms", result["result"]["duration_ms"])
+        else:
+            span.set_attribute("action.success", False)
+            span.set_attribute("action.error", result.get("error", "Unknown error"))
+
+        return result.get("result", {})
+
+    except ValueError as e:
+        # Unknown action type
+        logger.warning(f"Unknown action type: {action_type} - {str(e)}")
+        span.set_attribute("action.success", False)
+        span.set_attribute("action.error", str(e))
         return {
-            "summary": f"Assigned to {config.get('team') or config.get('user')}",
-            "team": config.get("team"),
-            "user": config.get("user"),
+            "summary": f"Action type '{action_type}' not supported",
+            "error": str(e)
         }
 
-    elif action_type == "update_field":
-        # TODO: Implement actual field update logic
+    except Exception as e:
+        # Action execution failed
+        logger.error(f"Action execution failed: {action_type} - {str(e)}", exc_info=True)
+        span.set_attribute("action.success", False)
+        span.set_attribute("action.error", str(e))
+        span.record_exception(e)
         return {
-            "summary": f"Updated {config.get('field')} to {config.get('value')}",
-            "field": config.get("field"),
-            "value": config.get("value"),
-        }
-
-    elif action_type == "notify":
-        # TODO: Implement actual notification logic
-        return {
-            "summary": f"Sent notification to {config.get('recipient')} via {config.get('channel')}",
-            "channel": config.get("channel"),
-            "recipient": config.get("recipient"),
-        }
-
-    elif action_type == "webhook":
-        # TODO: Implement actual webhook logic
-        return {
-            "summary": f"Called webhook: {config.get('url')}",
-            "status_code": 200,
-            "response_time_ms": 100,
-        }
-
-    else:
-        logger.warning(f"Unknown action type: {action_type}")
-        return {
-            "summary": f"Action type '{action_type}' not implemented",
+            "summary": f"Action '{action_type}' failed",
+            "error": str(e)
         }

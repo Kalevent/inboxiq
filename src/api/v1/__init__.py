@@ -25,4 +25,6 @@ from src.api.v1 import (  # noqa: F401
     funnel_analytics,
     content,
     outreach,
+    automation_rules,
+    webhook_providers,
 )

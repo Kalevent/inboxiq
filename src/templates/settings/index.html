@@ -863,14 +863,14 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                             <li class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-lg p-3">
                               <div class="flex flex-col">
                                 <span class="font-semibold text-slate-100">
-                                  {% if provider.provider == 'sage' %}Sage Accounting
-                                  {% elif provider.provider == 'quickbooks' %}Intuit QuickBooks
-                                  {% elif provider.provider == 'slack' %}Slack
-                                  {% elif provider.provider == 'custom' %}Custom Webhook
-                                  {% else %}{{ provider.provider|title }}
+                                  {% if provider.provider_type == 'sage' %}Sage Accounting
+                                  {% elif provider.provider_type == 'quickbooks' %}Intuit QuickBooks
+                                  {% elif provider.provider_type == 'slack' %}Slack
+                                  {% elif provider.provider_type == 'custom' %}Custom Webhook
+                                  {% else %}{{ provider.provider_type|title }}
                                   {% endif %}
                                 </span>
-                                <span class="text-slate-400">{{ (provider.metadata_json.get('label', 'Unnamed') if provider.metadata_json else 'Unnamed') | escape }}</span>
+                                <span class="text-slate-400">{{ provider.configuration_name | escape }}</span>
                                 <span class="text-slate-500 text-[10px] mt-1">Added {{ provider.created_at.strftime('%Y-%m-%d') }}</span>
                               </div>
                               <form method="post" style="display:inline;">
@@ -945,6 +945,364 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                     </div>
                   </div>
                 </div>
+
+              {% elif integrations_view == 'automation' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+                    Integrations • Automation Studio
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Automation Rules</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Create intelligent automation workflows that trigger on events, evaluate conditions, and execute actions. Send data to external systems, extract information from emails, and route tickets automatically.
+                  </p>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                  <!-- Natural Language Rule Builder -->
+                  <div class="rounded-2xl border border-indigo-500/40 bg-gradient-to-br from-indigo-900/30 to-slate-900/70 p-5 lg:p-6 shadow-xl shadow-indigo-950/30 overflow-hidden">
+                    <div class="flex items-start gap-3 mb-4">
+                      <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <div class="flex-1">
+                        <div class="text-sm font-semibold text-indigo-100">✨ Build with Natural Language</div>
+                        <p class="text-xs text-slate-300 mt-1">
+                          Describe what you want to automate in plain English, and AI will create the rule for you.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="space-y-3">
+                      <textarea
+                        id="nlRuleInput"
+                        rows="3"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                        placeholder="Example: When an invoice email arrives with amount over $500, extract the invoice data and send it to QuickBooks, then notify the #accounting Slack channel"
+                      ></textarea>
+
+                      <div class="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onclick="generateRuleFromNL()"
+                          id="nlGenerateBtn"
+                          class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          Generate Rule
+                        </button>
+                        <span class="text-xs text-slate-400">Powered by GPT-4</span>
+                      </div>
+
+                      <!-- Rule Preview -->
+                      <div id="nlRulePreview" class="hidden mt-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                          <div class="text-sm font-semibold text-emerald-200">✓ Rule Generated Successfully</div>
+                          <button type="button" onclick="closeNLPreview()" class="text-slate-400 hover:text-slate-200">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div class="text-xs text-emerald-100 space-y-2">
+                          <div><strong>Name:</strong> <span id="nlPreviewName"></span></div>
+                          <div><strong>Trigger:</strong> <span id="nlPreviewTrigger"></span></div>
+                          <div><strong>Conditions:</strong> <span id="nlPreviewConditions"></span></div>
+                          <div><strong>Actions:</strong> <span id="nlPreviewActions"></span></div>
+                        </div>
+                        <div class="flex gap-2">
+                          <button
+                            type="button"
+                            onclick="saveNLRule()"
+                            class="flex-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-sm font-semibold text-white"
+                          >
+                            Save Rule
+                          </button>
+                          <button
+                            type="button"
+                            onclick="closeNLPreview()"
+                            class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Error Display -->
+                      <div id="nlRuleError" class="hidden mt-4 rounded-lg border border-red-500/40 bg-red-500/10 p-4">
+                        <div class="flex items-start gap-2">
+                          <svg class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div class="text-xs text-red-200" id="nlErrorMessage"></div>
+                        </div>
+                      </div>
+
+                      <!-- Examples -->
+                      <details class="text-xs text-slate-400">
+                        <summary class="cursor-pointer hover:text-slate-300">Show example prompts</summary>
+                        <ul class="mt-2 space-y-1 list-disc list-inside text-slate-500">
+                          <li>"When a ticket is created with priority P1, send it to Slack #urgent channel"</li>
+                          <li>"Extract invoice data from emails and send to Sage accounting system"</li>
+                          <li>"When payment receipts arrive, parse the amount and customer name, then create a lead"</li>
+                          <li>"If ticket contains 'refund' and amount > $500, assign to billing team and tag as high-value"</li>
+                        </ul>
+                      </details>
+                    </div>
+                  </div>
+
+                  <!-- ROI Summary Card -->
+                  <div class="rounded-2xl border border-slate-800 bg-gradient-to-br from-indigo-900/20 to-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div class="text-center p-4 rounded-xl bg-slate-950/40 border border-slate-800">
+                        <div class="text-2xl font-bold text-indigo-300">{{ rules|length }}</div>
+                        <div class="text-xs text-slate-400 mt-1">Active Rules</div>
+                      </div>
+                      <div class="text-center p-4 rounded-xl bg-slate-950/40 border border-slate-800">
+                        <div class="text-2xl font-bold text-emerald-300">0</div>
+                        <div class="text-xs text-slate-400 mt-1">Executions (30d)</div>
+                      </div>
+                      <div class="text-center p-4 rounded-xl bg-slate-950/40 border border-slate-800">
+                        <div class="text-2xl font-bold text-amber-300">0h</div>
+                        <div class="text-xs text-slate-400 mt-1">Time Saved (30d)</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Automation Rules List -->
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-4">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="text-sm font-semibold text-slate-100">Your Automation Rules</div>
+                        <p class="text-xs text-slate-400 mt-1">
+                          Rules execute automatically when trigger conditions are met.
+                        </p>
+                      </div>
+                      <button type="button" onclick="openAutomationRuleModal()" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow">
+                        + Create Rule
+                      </button>
+                    </div>
+
+                    {% if rules and rules|length > 0 %}
+                      <div class="space-y-2">
+                        {% for rule in rules %}
+                          <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors">
+                            <div class="flex-1">
+                              <div class="flex items-center gap-3">
+                                <span class="font-semibold text-slate-100">{{ rule.name }}</span>
+                                {% if rule.enabled %}
+                                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">Active</span>
+                                {% else %}
+                                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/30">Disabled</span>
+                                {% endif %}
+                              </div>
+                              {% if rule.description %}
+                                <p class="text-sm text-slate-400 mt-1">{{ rule.description }}</p>
+                              {% endif %}
+                              <div class="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                                <span>Trigger: {{ rule.trigger.event }} ({{ rule.trigger.object }})</span>
+                                <span>Conditions: {{ rule.conditions|length }}</span>
+                                <span>Actions: {{ rule.actions|length }}</span>
+                                <span>Created: {{ rule.created_at.strftime('%Y-%m-%d') }}</span>
+                              </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                              <form method="post" style="display:inline;">
+                                <input type="hidden" name="action" value="toggle_rule" />
+                                <input type="hidden" name="rule_id" value="{{ rule.id }}" />
+                                <button type="submit" class="text-xs {% if rule.enabled %}text-slate-400 hover:text-slate-300{% else %}text-indigo-400 hover:text-indigo-300{% endif %} px-3 py-1 rounded border border-slate-700 hover:border-slate-600">
+                                  {% if rule.enabled %}Disable{% else %}Enable{% endif %}
+                                </button>
+                              </form>
+                              <a href="/api/v1/automation/rules/{{ rule.id }}/analytics" target="_blank" class="text-xs text-slate-400 hover:text-slate-300 px-3 py-1 rounded border border-slate-700 hover:border-slate-600">
+                                Analytics
+                              </a>
+                              <form method="post" style="display:inline;">
+                                <input type="hidden" name="action" value="delete_rule" />
+                                <input type="hidden" name="rule_id" value="{{ rule.id }}" />
+                                <button type="submit" onclick="return confirm('Delete this automation rule?');" class="text-xs text-red-400 hover:text-red-300 px-3 py-1 rounded border border-red-800 hover:border-red-700">
+                                  Delete
+                                </button>
+                              </form>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      <div class="text-center py-12 text-slate-500">
+                        <svg class="mx-auto h-12 w-12 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-slate-400">No automation rules yet</h3>
+                        <p class="mt-1 text-sm text-slate-500">Get started by creating your first automation rule.</p>
+                        <div class="mt-6">
+                          <button type="button" onclick="openAutomationRuleModal()" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow">
+                            + Create Your First Rule
+                          </button>
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  <!-- Quick Links -->
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-xl shadow-slate-950/30">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <a href="{{ url_for('settings.integrations_webhooks') }}" class="flex items-center gap-3 p-3 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-slate-700 transition-colors">
+                        <svg class="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <div class="flex-1">
+                          <div class="text-sm font-semibold text-slate-100">Webhook Providers</div>
+                          <div class="text-xs text-slate-400">Configure Sage, QuickBooks, Slack integrations</div>
+                        </div>
+                      </a>
+                      <a href="/automation/analytics" class="flex items-center gap-3 p-3 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-slate-700 transition-colors">
+                        <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <div class="flex-1">
+                          <div class="text-sm font-semibold text-slate-100">View ROI Analytics</div>
+                          <div class="text-xs text-slate-400">Time saved, cost reduction, accuracy metrics</div>
+                        </div>
+                      </a>
+                      {% if phoenix_url and flask_env != 'production' %}
+                      <a href="{{ phoenix_url }}" target="_blank" rel="noopener" class="flex items-center gap-3 p-3 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-slate-700 transition-colors">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14v-4z" />
+                        </svg>
+                        <div class="flex-1">
+                          <div class="text-sm font-semibold text-slate-100 flex items-center gap-1">
+                            View Traces
+                            <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </div>
+                          <div class="text-xs text-slate-400">Phoenix observability (dev only)</div>
+                        </div>
+                      </a>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-3">
+                    <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="text-sm text-indigo-200 hover:text-white">
+                      ← Back to integrations
+                    </a>
+                  </div>
+                </div>
+
+              {% elif integrations_view == 'automation_analytics' %}
+                <div class="space-y-3">
+                  <p class="text-sm text-emerald-200 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1">
+                    Automation Studio • ROI Analytics
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Return on Investment</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Track the time saved, cost reduction, and accuracy of your automation rules. Measure real-world impact.
+                  </p>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                  <!-- Time Period Selector -->
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400">Time Period:</span>
+                    <select onchange="window.location.href='?period=' + this.value" class="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-1 text-sm text-slate-100">
+                      <option value="week" {% if time_period == 'week' %}selected{% endif %}>Last 7 Days</option>
+                      <option value="month" {% if time_period == 'month' %}selected{% endif %}>Last 30 Days</option>
+                      <option value="quarter" {% if time_period == 'quarter' %}selected{% endif %}>Last 90 Days</option>
+                      <option value="year" {% if time_period == 'year' %}selected{% endif %}>Last Year</option>
+                      <option value="all_time" {% if time_period == 'all_time' %}selected{% endif %}>All Time</option>
+                    </select>
+                  </div>
+
+                  <!-- Key Metrics Cards -->
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Time Saved -->
+                    <div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/30 to-slate-900/70 p-6 shadow-xl shadow-emerald-950/20">
+                      <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                          <svg class="w-5 h-5 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div class="text-sm font-semibold text-emerald-100">Time Saved</div>
+                      </div>
+                      <div class="text-3xl font-bold text-emerald-300">{{ roi_data.total_time_saved.hours }}h</div>
+                      <div class="text-xs text-slate-400 mt-1">{{ roi_data.total_time_saved.display }}</div>
+                    </div>
+
+                    <!-- Cost Saved -->
+                    <div class="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-900/30 to-slate-900/70 p-6 shadow-xl shadow-amber-950/20">
+                      <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                          <svg class="w-5 h-5 text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div class="text-sm font-semibold text-amber-100">Cost Reduction</div>
+                      </div>
+                      <div class="text-3xl font-bold text-amber-300">${{ roi_data.total_cost_saved.amount }}</div>
+                      <div class="text-xs text-slate-400 mt-1">{{ roi_data.total_cost_saved.display }}</div>
+                    </div>
+
+                    <!-- Accuracy Rate -->
+                    <div class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/30 to-slate-900/70 p-6 shadow-xl shadow-indigo-950/20">
+                      <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                          <svg class="w-5 h-5 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div class="text-sm font-semibold text-indigo-100">Accuracy Rate</div>
+                      </div>
+                      <div class="text-3xl font-bold text-indigo-300">{{ (roi_data.overall_accuracy.rate * 100)|round|int }}%</div>
+                      <div class="text-xs text-slate-400 mt-1">{{ roi_data.overall_accuracy.display }}</div>
+                    </div>
+                  </div>
+
+                  <!-- Execution History Chart -->
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30">
+                    <div class="text-sm font-semibold text-slate-100 mb-4">Execution History (Last 30 Days)</div>
+                    <canvas id="executionChart" class="w-full" style="max-height: 300px;"></canvas>
+                  </div>
+
+                  <!-- Top Performing Rules -->
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30">
+                    <div class="text-sm font-semibold text-slate-100 mb-4">Top Performing Rules</div>
+                    {% if roi_data.rules_breakdown and roi_data.rules_breakdown|length > 0 %}
+                      <div class="space-y-3">
+                        {% for rule in roi_data.rules_breakdown %}
+                          <div class="flex items-center justify-between p-3 rounded-lg bg-slate-950/40 border border-slate-800">
+                            <div class="flex-1">
+                              <div class="text-sm font-medium text-slate-100">{{ rule.rule_name }}</div>
+                              <div class="text-xs text-slate-400 mt-1">
+                                {{ rule.executions }} executions • {{ rule.time_saved_hours }}h saved
+                              </div>
+                            </div>
+                            <div class="text-right">
+                              <div class="text-sm font-semibold text-emerald-300">${{ rule.cost_saved }}</div>
+                              <div class="text-xs text-slate-400">saved</div>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      <div class="text-center py-8 text-slate-500">
+                        <p class="text-sm">No execution data yet. Create automation rules to see analytics.</p>
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  <div class="flex items-center gap-3">
+                    <a href="{{ url_for('settings.integrations_automation') }}" class="text-sm text-indigo-200 hover:text-white">
+                      ← Back to automation rules
+                    </a>
+                  </div>
+                </div>
+
               {% else %}
                 <div class="space-y-3">
                   <h2 class="text-xl font-semibold">Integrations</h2>
@@ -1019,6 +1377,25 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                       <a href="{{ url_for('settings.knowledge_base_integration') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
                         Manage Knowledge Base →
                       </a>
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/30 to-slate-900/70 p-5 md:col-span-2 settings-span-2">
+                    <div class="flex items-start justify-between">
+                      <div class="flex-1">
+                        <div class="text-sm font-semibold text-indigo-100">✨ Automation Studio</div>
+                        <p class="text-sm text-slate-300 mt-2">
+                          Create intelligent automation workflows that trigger on events, evaluate conditions, and execute actions. Extract invoice data, route to accounting systems (Sage, QuickBooks), send Slack notifications, and more.
+                        </p>
+                        <div class="mt-4 flex flex-wrap items-center gap-3">
+                          <a href="{{ url_for('settings.integrations_automation') }}" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow">
+                            Manage Automation Rules →
+                          </a>
+                          <a href="/docs/automation_studio" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
+                            View Documentation
+                          </a>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1542,6 +1919,272 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
       </div>
     </div>
   </div>
+
+  <!-- Automation Rule Modal -->
+  <div id="automationRuleModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-slate-100">Create Automation Rule</h2>
+          <button type="button" onclick="closeAutomationRuleModal()" class="text-slate-400 hover:text-slate-200">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form method="post" class="space-y-4">
+          <input type="hidden" name="action" value="create_rule" />
+
+          <!-- Rule Name & Description -->
+          <div class="space-y-4">
+            <label class="block">
+              <span class="text-xs text-slate-400">Rule Name *</span>
+              <input name="name" type="text" required class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="e.g., Send invoices to QuickBooks" />
+            </label>
+
+            <label class="block">
+              <span class="text-xs text-slate-400">Description (optional)</span>
+              <textarea name="description" rows="2" class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="Describe what this rule does..."></textarea>
+            </label>
+          </div>
+
+          <!-- Trigger Configuration -->
+          <div class="rounded-xl border border-slate-800 bg-slate-950/40 p-4 space-y-3">
+            <div class="text-sm font-semibold text-slate-100">Trigger</div>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="block">
+                <span class="text-xs text-slate-400">Event *</span>
+                <select name="trigger_event" required class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100">
+                  <option value="">Select event...</option>
+                  <option value="ticket.created">Ticket Created</option>
+                  <option value="ticket.updated">Ticket Updated</option>
+                  <option value="email.received">Email Received</option>
+                  <option value="lead.created">Lead Created</option>
+                </select>
+              </label>
+              <label class="block">
+                <span class="text-xs text-slate-400">Object *</span>
+                <select name="trigger_object" required class="w-full mt-1 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100">
+                  <option value="">Select object...</option>
+                  <option value="ticket">Ticket</option>
+                  <option value="email">Email</option>
+                  <option value="lead">Lead</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <!-- Notice -->
+          <div class="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
+            <strong>Note:</strong> This simplified form creates a basic rule. Use the <a href="/api/v1/automation/rules/from-natural-language" class="underline hover:text-amber-200" target="_blank">Natural Language API</a> or edit the rule via API to add conditions and actions.
+          </div>
+
+          <!-- Submit Button -->
+          <div class="flex gap-3 pt-2">
+            <button type="button" onclick="closeAutomationRuleModal()" class="flex-1 rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800">
+              Cancel
+            </button>
+            <button type="submit" class="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow">
+              Create Rule
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Automation Rule Modal Functions
+    function openAutomationRuleModal() {
+      document.getElementById('automationRuleModal')?.classList.remove('hidden');
+    }
+
+    function closeAutomationRuleModal() {
+      const modal = document.getElementById('automationRuleModal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    // Natural Language Rule Generation
+    let generatedRuleData = null;
+
+    async function generateRuleFromNL() {
+      const input = document.getElementById('nlRuleInput').value.trim();
+      const btn = document.getElementById('nlGenerateBtn');
+      const preview = document.getElementById('nlRulePreview');
+      const error = document.getElementById('nlRuleError');
+
+      if (!input) {
+        showNLError('Please describe what you want to automate');
+        return;
+      }
+
+      // Hide previous results
+      preview.classList.add('hidden');
+      error.classList.add('hidden');
+
+      // Disable button and show loading
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating...';
+
+      try {
+        const response = await fetch('/api/v1/automation/rules/from-natural-language', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ user_input: input })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to generate rule');
+        }
+
+        // Store the generated rule
+        generatedRuleData = data.rule;
+
+        // Display preview
+        document.getElementById('nlPreviewName').textContent = generatedRuleData.name;
+        document.getElementById('nlPreviewTrigger').textContent =
+          `${generatedRuleData.trigger.event} (${generatedRuleData.trigger.object})`;
+        document.getElementById('nlPreviewConditions').textContent =
+          generatedRuleData.conditions.length > 0
+            ? generatedRuleData.conditions.map(c => `${c.field} ${c.operator} ${c.value}`).join(', ')
+            : 'None';
+        document.getElementById('nlPreviewActions').textContent =
+          generatedRuleData.actions.map(a => a.type).join(', ');
+
+        preview.classList.remove('hidden');
+
+      } catch (err) {
+        showNLError(err.message || 'Failed to generate rule. Please try again.');
+      } finally {
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> Generate Rule';
+      }
+    }
+
+    async function saveNLRule() {
+      if (!generatedRuleData) {
+        showNLError('No rule to save');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/v1/automation/rules', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(generatedRuleData)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to save rule');
+        }
+
+        // Reload page to show the new rule
+        window.location.reload();
+
+      } catch (err) {
+        showNLError(err.message || 'Failed to save rule. Please try again.');
+      }
+    }
+
+    function closeNLPreview() {
+      document.getElementById('nlRulePreview').classList.add('hidden');
+      document.getElementById('nlRuleError').classList.add('hidden');
+      generatedRuleData = null;
+    }
+
+    function showNLError(message) {
+      const error = document.getElementById('nlRuleError');
+      document.getElementById('nlErrorMessage').textContent = message;
+      error.classList.remove('hidden');
+    }
+  </script>
+
+  <!-- Chart.js for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    // Render execution history chart if on analytics page
+    document.addEventListener('DOMContentLoaded', function() {
+      const chartCanvas = document.getElementById('executionChart');
+      if (chartCanvas) {
+        const chartData = {{ chart_data|safe }};
+
+        const ctx = chartCanvas.getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: chartData.labels,
+            datasets: [
+              {
+                label: 'Successful',
+                data: chartData.successful,
+                borderColor: 'rgb(52, 211, 153)',
+                backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                tension: 0.3,
+                fill: true
+              },
+              {
+                label: 'Failed',
+                data: chartData.failed,
+                borderColor: 'rgb(248, 113, 113)',
+                backgroundColor: 'rgba(248, 113, 113, 0.1)',
+                tension: 0.3,
+                fill: true
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                  color: 'rgb(148, 163, 184)',
+                  font: { size: 12 }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: 'rgb(100, 116, 139)',
+                  font: { size: 11 }
+                },
+                grid: {
+                  color: 'rgba(51, 65, 85, 0.3)'
+                }
+              },
+              x: {
+                ticks: {
+                  color: 'rgb(100, 116, 139)',
+                  font: { size: 11 },
+                  maxRotation: 45,
+                  minRotation: 45
+                },
+                grid: {
+                  display: false
+                }
+              }
+            }
+          }
+        });
+      }
+    });
+  </script>
 
   <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
 </body>
