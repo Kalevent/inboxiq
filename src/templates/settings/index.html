@@ -797,7 +797,6 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                       </div>
                     </div>
                     <form method="post" enctype="multipart/form-data" class="space-y-4">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                       <input type="hidden" name="action" value="save_voice" />
                       <div class="grid gap-4 md:grid-cols-2">
                         <label class="block">
@@ -875,7 +874,6 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                                 <span class="text-slate-500 text-[10px] mt-1">Added {{ provider.created_at.strftime('%Y-%m-%d') }}</span>
                               </div>
                               <form method="post" style="display:inline;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <input type="hidden" name="action" value="delete_provider" />
                                 <input type="hidden" name="provider_id" value="{{ provider.id }}" />
                                 <button type="submit" onclick="return confirm('Delete this provider configuration?');" class="text-xs text-red-400 hover:text-red-300 px-3 py-1 rounded border border-red-800 hover:border-red-700">
@@ -894,7 +892,6 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                   <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
                     <div class="text-sm font-semibold text-slate-100">Manage tokens (per account)</div>
                     <form method="post" class="flex flex-col sm:flex-row gap-3 items-start sm:items-center" {% if not api_allowed %}aria-disabled="true" onsubmit="return false;"{% endif %}>
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                       <input type="hidden" name="action" value="generate" />
                       <label class="w-full sm:w-auto">
                         <span class="text-xs text-slate-400">Label (optional)</span>
@@ -1114,7 +1111,6 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                             </div>
                             <div class="flex items-center gap-2">
                               <form method="post" style="display:inline;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <input type="hidden" name="action" value="toggle_rule" />
                                 <input type="hidden" name="rule_id" value="{{ rule.id }}" />
                                 <button type="submit" class="text-xs {% if rule.enabled %}text-slate-400 hover:text-slate-300{% else %}text-indigo-400 hover:text-indigo-300{% endif %} px-3 py-1 rounded border border-slate-700 hover:border-slate-600">
@@ -1125,7 +1121,6 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                                 Analytics
                               </a>
                               <form method="post" style="display:inline;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <input type="hidden" name="action" value="delete_rule" />
                                 <input type="hidden" name="rule_id" value="{{ rule.id }}" />
                                 <button type="submit" onclick="return confirm('Delete this automation rule?');" class="text-xs text-red-400 hover:text-red-300 px-3 py-1 rounded border border-red-800 hover:border-red-700">
@@ -1598,7 +1593,6 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
       </div>
 
       <form method="post" class="p-6 space-y-6">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="action" value="save_crm" />
 
         {% if crm_saved %}
@@ -1886,7 +1880,6 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
         </div>
 
         <form method="post" class="space-y-4">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <input type="hidden" name="action" value="add_provider" />
 
           <!-- Provider Selection -->
