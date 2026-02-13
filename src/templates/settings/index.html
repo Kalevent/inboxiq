@@ -1934,6 +1934,7 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
         </div>
 
         <form method="post" class="space-y-4">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <input type="hidden" name="action" value="create_rule" />
 
           <!-- Rule Name & Description -->
