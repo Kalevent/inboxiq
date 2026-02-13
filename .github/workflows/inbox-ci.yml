@@ -180,11 +180,26 @@ jobs:
 
       - name: Post-deploy health check
         run: |
-          # DISABLED: External health check not needed - pod readiness checks already verify health
-          # The ingress controller has IAM permission issues preventing ALB updates
-          # For now, we rely on Kubernetes readiness probes which are working correctly
-          echo "✅ Deployment succeeded - pods passed readiness probes"
-          exit 0
+          echo "Checking if pods are healthy..."
+
+          # Check if inboxiq deployment is ready
+          if ! kubectl rollout status deployment/inboxiq -n "${KUBE_NAMESPACE}" --timeout=180s; then
+            echo "❌ inboxiq deployment failed health checks. Rolling back..."
+            kubectl rollout undo deployment/inboxiq -n "${KUBE_NAMESPACE}"
+            kubectl rollout status deployment/inboxiq -n "${KUBE_NAMESPACE}" --timeout=180s
+            echo "Deployment rolled back to previous version."
+            exit 1
+          fi
+
+          # Check if celery worker deployment is ready
+          if ! kubectl rollout status deployment/inboxiq-celery-inbox-worker -n "${KUBE_NAMESPACE}" --timeout=180s; then
+            echo "❌ celery-inbox-worker deployment failed. Rolling back..."
+            kubectl rollout undo deployment/inboxiq-celery-inbox-worker -n "${KUBE_NAMESPACE}"
+            kubectl rollout status deployment/inboxiq-celery-inbox-worker -n "${KUBE_NAMESPACE}" --timeout=180s
+            exit 1
+          fi
+
+          echo "✅ All deployments healthy - pods passed readiness probes"
 
       - name: Verify deployed images
         run: |
