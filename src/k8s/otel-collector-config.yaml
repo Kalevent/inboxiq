@@ -29,9 +29,8 @@ data:
       # Add resource attributes (service metadata)
       resource:
         attributes:
-          - key: service.name
-            value: inboxiq
-            action: upsert
+          # DON'T override service.name - preserve it from apps
+          # Each app sets its own: inboxiq-app, inboxiq-celery-inbox-worker, etc.
           - key: deployment.environment
             value: ${ENVIRONMENT}
             action: upsert

@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Rule: {{ rule.name }} - InboxIQ{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="mb-6">
+    <a href="{{ url_for('settings.integrations_automation') }}" class="text-blue-600 hover:text-blue-800 text-sm mb-2 inline-block">
+      ← Back to Automation Rules
+    </a>
+    <h1 class="text-3xl font-bold text-gray-900">Edit Rule: {{ rule.name }}</h1>
+    <p class="text-gray-600 mt-2">Add conditions and actions to complete your automation rule</p>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" id="ruleForm">
+    <input type="hidden" name="action" value="update_rule">
+    <input type="hidden" name="conditions_json" id="conditions_json" value="{{ rule.conditions | tojson }}">
+    <input type="hidden" name="actions_json" id="actions_json" value="{{ rule.actions | tojson }}">
+
+    <!-- Basic Info -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Basic Information</h2>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Rule Name</label>
+        <input type="text" name="name" value="{{ rule.name }}"
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Description (optional)</label>
+        <textarea name="description" rows="2"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">{{ rule.description or '' }}</textarea>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Trigger</label>
+        <div class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-700">
+          <strong>When:</strong> {{ rule.trigger.event }} on {{ rule.trigger.object }}
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Trigger cannot be changed after creation</p>
+      </div>
+    </div>
+
+    <!-- Conditions Section -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h2 class="text-xl font-semibold">Conditions</h2>
+          <p class="text-xs text-gray-500 mt-1">Define when this rule should trigger. Leave empty to always trigger.</p>
+        </div>
+        <button type="button" onclick="addCondition()"
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+          + Add Condition
+        </button>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Condition Logic</label>
+        <select name="condition_logic"
+                class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="AND" {% if rule.condition_logic == 'AND' %}selected{% endif %}>All conditions must match (AND)</option>
+          <option value="OR" {% if rule.condition_logic == 'OR' %}selected{% endif %}>Any condition can match (OR)</option>
+        </select>
+        <p class="text-xs text-gray-500 mt-1">Determines how multiple conditions are evaluated together</p>
+      </div>
+
+      <div id="conditionsList" class="space-y-3">
+        <!-- Conditions will be added here dynamically -->
+      </div>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h2 class="text-xl font-semibold">Actions</h2>
+          <p class="text-xs text-gray-500 mt-1">Define what happens when the rule triggers. At least one action is required.</p>
+        </div>
+        <button type="button" onclick="addAction()"
+                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">
+          + Add Action
+        </button>
+      </div>
+
+      <div id="actionsList" class="space-y-3">
+        <!-- Actions will be added here dynamically -->
+      </div>
+    </div>
+
+    <!-- Save/Cancel -->
+    <div class="flex justify-end gap-3">
+      <a href="{{ url_for('settings.integrations_automation') }}"
+         class="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+        Cancel
+      </a>
+      <button type="submit"
+              class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">
+        Save Rule
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+// Load existing conditions and actions
+let conditions = {{ rule.conditions | tojson }};
+let actions = {{ rule.actions | tojson }};
+
+// Render existing conditions
+function renderConditions() {
+  const container = document.getElementById('conditionsList');
+  container.innerHTML = '';
+
+  if (conditions.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-sm italic">No conditions added yet. Rule will trigger for all events.</p>';
+    return;
+  }
+
+  conditions.forEach((condition, index) => {
+    container.innerHTML += `
+      <div class="border border-gray-200 rounded-md p-4 bg-gray-50">
+        <div class="flex justify-between items-start mb-3">
+          <span class="text-sm font-medium text-gray-700">Condition ${index + 1}</span>
+          <button type="button" onclick="removeCondition(${index})"
+                  class="text-red-600 hover:text-red-800 text-sm">Remove</button>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Field</label>
+            <input type="text" value="${condition.field || ''}"
+                   onchange="updateCondition(${index}, 'field', this.value)"
+                   placeholder="e.g., subject, from, body"
+                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded">
+            <p class="text-xs text-gray-400 mt-1">The field to check</p>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Operator</label>
+            <select onchange="updateCondition(${index}, 'operator', this.value)"
+                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded">
+              <option value="contains" ${condition.operator === 'contains' ? 'selected' : ''}>contains</option>
+              <option value="equals" ${condition.operator === 'equals' ? 'selected' : ''}>equals</option>
+              <option value="starts_with" ${condition.operator === 'starts_with' ? 'selected' : ''}>starts with</option>
+              <option value="ends_with" ${condition.operator === 'ends_with' ? 'selected' : ''}>ends with</option>
+              <option value="regex" ${condition.operator === 'regex' ? 'selected' : ''}>matches regex</option>
+            </select>
+            <p class="text-xs text-gray-400 mt-1">How to compare</p>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Value</label>
+            <input type="text" value="${condition.value || ''}"
+                   onchange="updateCondition(${index}, 'value', this.value)"
+                   placeholder="e.g., urgent, support@"
+                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded">
+            <p class="text-xs text-gray-400 mt-1">The value to match</p>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// Render existing actions
+function renderActions() {
+  const container = document.getElementById('actionsList');
+  container.innerHTML = '';
+
+  if (actions.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-sm italic">No actions added yet. Add at least one action.</p>';
+    return;
+  }
+
+  actions.forEach((action, index) => {
+    container.innerHTML += `
+      <div class="border border-gray-200 rounded-md p-4 bg-gray-50">
+        <div class="flex justify-between items-start mb-3">
+          <span class="text-sm font-medium text-gray-700">Action ${index + 1}</span>
+          <button type="button" onclick="removeAction(${index})"
+                  class="text-red-600 hover:text-red-800 text-sm">Remove</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Action Type</label>
+            <select onchange="updateAction(${index}, 'type', this.value)"
+                    class="w-full px-2 py-1 text-sm border border-gray-300 rounded">
+              <option value="send_email" ${action.type === 'send_email' ? 'selected' : ''}>Send Email</option>
+              <option value="webhook" ${action.type === 'webhook' ? 'selected' : ''}>Call Webhook</option>
+              <option value="tag" ${action.type === 'tag' ? 'selected' : ''}>Add Tag</option>
+              <option value="assign" ${action.type === 'assign' ? 'selected' : ''}>Assign To</option>
+              <option value="slack_notify" ${action.type === 'slack_notify' ? 'selected' : ''}>Send to Slack</option>
+            </select>
+            <p class="text-xs text-gray-400 mt-1">What to do</p>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Config (JSON)</label>
+            <textarea onchange="updateAction(${index}, 'config', JSON.parse(this.value))"
+                      placeholder='{"to": "user@example.com"}'
+                      class="w-full px-2 py-1 text-sm border border-gray-300 rounded font-mono"
+                      rows="2">${JSON.stringify(action.config || {}, null, 2)}</textarea>
+            <p class="text-xs text-gray-400 mt-1">Action parameters</p>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// Add new condition
+function addCondition() {
+  conditions.push({ field: '', operator: 'contains', value: '' });
+  renderConditions();
+  syncHiddenFields();
+}
+
+// Add new action
+function addAction() {
+  actions.push({ type: 'send_email', config: {} });
+  renderActions();
+  syncHiddenFields();
+}
+
+// Remove condition
+function removeCondition(index) {
+  conditions.splice(index, 1);
+  renderConditions();
+  syncHiddenFields();
+}
+
+// Remove action
+function removeAction(index) {
+  actions.splice(index, 1);
+  renderActions();
+  syncHiddenFields();
+}
+
+// Update condition field
+function updateCondition(index, field, value) {
+  conditions[index][field] = value;
+  syncHiddenFields();
+}
+
+// Update action field
+function updateAction(index, field, value) {
+  actions[index][field] = value;
+  syncHiddenFields();
+}
+
+// Sync to hidden form fields
+function syncHiddenFields() {
+  document.getElementById('conditions_json').value = JSON.stringify(conditions);
+  document.getElementById('actions_json').value = JSON.stringify(actions);
+}
+
+// Initial render
+renderConditions();
+renderActions();
+</script>
+
+{% endblock %}

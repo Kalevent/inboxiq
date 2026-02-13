@@ -1095,7 +1095,7 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                           <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors">
                             <div class="flex-1">
                               <div class="flex items-center gap-3">
-                                <span class="font-semibold text-slate-100">{{ rule.name }}</span>
+                                <a href="{{ url_for('settings.edit_automation_rule', rule_id=rule.id) }}" class="font-semibold text-slate-100 hover:text-indigo-400 transition-colors cursor-pointer">{{ rule.name }}</a>
                                 {% if rule.enabled %}
                                   <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">Active</span>
                                 {% else %}
@@ -1113,6 +1113,9 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                               </div>
                             </div>
                             <div class="flex items-center gap-2">
+                              <a href="{{ url_for('settings.edit_automation_rule', rule_id=rule.id) }}" class="text-xs text-indigo-400 hover:text-indigo-300 px-3 py-1 rounded border border-slate-700 hover:border-slate-600">
+                                Edit
+                              </a>
                               <form method="post" style="display:inline;">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <input type="hidden" name="action" value="toggle_rule" />

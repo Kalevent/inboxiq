@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from uuid import uuid4
 
-from flask import current_app, g, jsonify, redirect, render_template, request, url_for
+from flask import current_app, flash, g, jsonify, redirect, render_template, request, url_for
 
 from src.extensions import db, limiter
 from src.models import IntakeToken, User, Passkey, TOTPDevice, Account, InboxConnection, WebhookProvider
@@ -1219,6 +1219,64 @@ def integrations_automation():
     webhook_providers=webhook_providers,
     phoenix_url=os.environ.get('PHOENIX_URL'),
     flask_env=os.environ.get('FLASK_ENV', 'production'),
+  )
+
+
+@bp.route("/integrations/automation/rule/<rule_id>", methods=["GET", "POST"])
+@login_required_settings
+def edit_automation_rule(rule_id):
+  """Edit an automation rule - add/edit conditions and actions."""
+  from src.models import AutomationRule, WebhookProvider
+  import json
+
+  account_id = getattr(g, "current_account_id", None)
+  if not account_id:
+    return redirect(url_for("settings.index"))
+
+  rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
+  if not rule:
+    flash("Rule not found", "error")
+    return redirect(url_for("settings.integrations_automation"))
+
+  if request.method == "POST":
+    action = request.form.get("action", "").strip()
+
+    if action == "update_rule":
+      # Update basic info
+      rule.name = request.form.get("name", "").strip() or rule.name
+      rule.description = request.form.get("description", "").strip()
+
+      # Update conditions (JSON from form)
+      conditions_json = request.form.get("conditions_json", "[]")
+      try:
+        rule.conditions = json.loads(conditions_json)
+      except:
+        flash("Invalid conditions format", "error")
+        return redirect(url_for("settings.edit_automation_rule", rule_id=rule_id))
+
+      # Update actions (JSON from form)
+      actions_json = request.form.get("actions_json", "[]")
+      try:
+        rule.actions = json.loads(actions_json)
+      except:
+        flash("Invalid actions format", "error")
+        return redirect(url_for("settings.edit_automation_rule", rule_id=rule_id))
+
+      # Update condition logic
+      rule.condition_logic = request.form.get("condition_logic", "AND")
+
+      db.session.commit()
+      flash("Rule updated successfully", "success")
+      return redirect(url_for("settings.integrations_automation"))
+
+  # Get webhook providers for action options
+  webhook_providers = WebhookProvider.query.filter_by(account_id=account_id).all()
+
+  return render_template(
+    "settings/automation_rule_edit.html",
+    rule=rule,
+    webhook_providers=webhook_providers,
+    account_id=account_id,
   )
 
 

@@ -89,6 +89,12 @@ spec:
             - name: PHOENIX_LOG_LEVEL
               value: info
 
+            # Data retention (prevent storage bloat)
+            - name: PHOENIX_TRACE_DATASET_TTL_HOURS
+              value: "168"  # Keep traces for 7 days (168 hours)
+            - name: PHOENIX_CLEANUP_INTERVAL_HOURS
+              value: "24"   # Run cleanup daily
+
             # CORS (if accessing Phoenix from different domain)
             # - name: PHOENIX_ENABLE_CORS
             #   value: "true"
@@ -127,9 +133,7 @@ spec:
 
       volumes:
         - name: phoenix-data
-          emptyDir: {}  # Temporary storage (data lost on pod restart)
-          # persistentVolumeClaim:
-          #   claimName: phoenix-pvc  # Uncomment for production
+          emptyDir: {}  # Temporary storage - traces reset on pod restart (no cost)
 
 ---
 # PersistentVolumeClaim - Storage for Phoenix data (SQLite DB, logs)
@@ -146,7 +150,7 @@ spec:
     - ReadWriteOnce  # Single pod, single node
   resources:
     requests:
-      storage: 10Gi  # Adjust based on expected trace volume
+      storage: 10Gi  # 10GB (can't shrink existing PVC, but 7-day retention keeps it small)
   # storageClassName: standard  # Uncomment and set your storage class
 
 ---
