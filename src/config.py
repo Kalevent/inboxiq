@@ -51,6 +51,7 @@ class Config:
     JWT_COOKIE_SECURE = _env_bool("JWT_COOKIE_SECURE", True)
     JWT_COOKIE_SAMESITE = os.getenv("JWT_COOKIE_SAMESITE", "Lax")
     JWT_COOKIE_CSRF_PROTECT = _env_bool("JWT_COOKIE_CSRF_PROTECT", True)
+    JWT_CSRF_CHECK_FORM = True  # Allow CSRF tokens from form data, not just headers
     # Caching (Redis)
     # Caching (default to SimpleCache to avoid redis dependency in dev)
     CACHE_TYPE = os.getenv("CACHE_TYPE", "SimpleCache")
@@ -146,6 +147,7 @@ class ProductionConfig(Config):
 
     # Allow disabling CSRF on JWT cookies via env if HTML forms fail CSRF checks.
     JWT_COOKIE_CSRF_PROTECT = _env_bool("JWT_COOKIE_CSRF_PROTECT", True)
+    JWT_CSRF_CHECK_FORM = True  # Allow CSRF tokens from form data, not just headers
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     CACHE_REDIS_URL = os.getenv("REDIS_URL")
     CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
