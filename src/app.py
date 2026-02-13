@@ -152,11 +152,13 @@ def create_app() -> Flask:
       import hashlib
       digest = hashlib.md5(email.lower().encode("utf-8")).hexdigest()
       avatar_url = f"https://www.gravatar.com/avatar/{digest}?s=96&d=identicon&f=y"
+    csrf_token_val = request.cookies.get("csrf_access_token") or request.cookies.get("csrf_refresh_token") or ""
     return {
         "current_user": user,
         "avatar_url": avatar_url or url_for("static", filename="svgs/card.svg"),
         "has_admin_access": has_admin_access,
-        "csrf_token_value": request.cookies.get("csrf_access_token") or request.cookies.get("csrf_refresh_token") or "",
+        "csrf_token_value": csrf_token_val,
+        "csrf_token": lambda: csrf_token_val,  # Function for templates to call csrf_token()
     }
 
   def _redirect_to_login():
