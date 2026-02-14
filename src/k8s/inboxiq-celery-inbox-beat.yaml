@@ -8,8 +8,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 0  # Don't create extra pods during rollout (resource constrained)
-      maxUnavailable: 1  # Allow old pod to terminate before new one starts
+      maxSurge: 1  # Create new pod first for zero-downtime
+      maxUnavailable: 0  # Never allow zero pods running
   selector:
     matchLabels:
       app: inboxiq-celery-inbox-beat

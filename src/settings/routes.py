@@ -1273,7 +1273,11 @@ def edit_automation_rule(rule_id):
   webhook_providers = WebhookProvider.query.filter_by(account_id=account_id, enabled=True).all()
 
   # Check what integrations are available
-  has_slack = any(p.provider_type == 'slack' for p in webhook_providers)
+  # Check both WebhookProvider and InboxConnection for Slack
+  from src.models import InboxConnection
+  slack_webhooks = any(p.provider_type == 'slack' for p in webhook_providers)
+  slack_inbox = InboxConnection.query.filter_by(account_id=account_id, provider='slack', status='connected').first() is not None
+  has_slack = slack_webhooks or slack_inbox
   has_email = True  # Email is always available via SMTP
 
   # Build available actions list
@@ -1385,6 +1389,52 @@ def automation_analytics():
     roi_data=roi_data,
     rules=rules,
     chart_data=json.dumps(chart_data),
+    time_period=time_period,
+  )
+
+
+@bp.route("/automation/rules/<rule_id>/analytics", methods=["GET"])
+@login_required_settings
+def rule_analytics(rule_id):
+  """Individual automation rule analytics page."""
+  from src.models import AutomationRule
+  from src.automation.roi_calculator import calculate_rule_roi
+  import json
+
+  account_id = getattr(g, "current_account_id", None)
+
+  if not account_id:
+    return redirect(url_for("settings.index"))
+
+  # Get the rule
+  rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
+  if not rule:
+    flash("Rule not found", "error")
+    return redirect(url_for("settings.integrations_automation"))
+
+  # Get time period from query params (default: month)
+  time_period = request.args.get('period', 'month')
+
+  # Calculate rule ROI
+  try:
+    roi_data = calculate_rule_roi(rule_id, time_period)
+  except Exception as e:
+    current_app.logger.error(f"Failed to calculate rule ROI: {e}")
+    roi_data = {
+      "rule_id": rule_id,
+      "rule_name": rule.name,
+      "time_saved": {"hours": 0, "display": "0 hours"},
+      "cost_saved": {"amount": 0, "display": "$0"},
+      "accuracy": {"rate": 0, "display": "0%"},
+      "executions": {"total": 0, "successful": 0, "failed": 0}
+    }
+
+  return render_template(
+    "settings/rule_analytics.html",
+    active_tab="integrations",
+    account_id=account_id,
+    rule=rule,
+    roi_data=roi_data,
     time_period=time_period,
   )
 

@@ -8,8 +8,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1  # Allow old pod to terminate (brief downtime acceptable)
-      maxSurge: 0  # Don't create extra pods during rollout
+      maxUnavailable: 0  # Never allow zero pods (zero-downtime)
+      maxSurge: 1  # Create new pod first, then terminate old one
   selector:
     matchLabels:
       app: inboxiq

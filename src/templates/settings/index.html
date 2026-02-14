@@ -1124,7 +1124,7 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                                   {% if rule.enabled %}Disable{% else %}Enable{% endif %}
                                 </button>
                               </form>
-                              <a href="/api/v1/automation/rules/{{ rule.id }}/analytics" target="_blank" class="text-xs text-slate-400 hover:text-slate-300 px-3 py-1 rounded border border-slate-700 hover:border-slate-600">
+                              <a href="{{ url_for('settings.rule_analytics', rule_id=rule.id) }}" class="text-xs text-slate-400 hover:text-slate-300 px-3 py-1 rounded border border-slate-700 hover:border-slate-600">
                                 Analytics
                               </a>
                               <form method="post" style="display:inline;">
