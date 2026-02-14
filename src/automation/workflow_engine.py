@@ -71,7 +71,7 @@ def execute_automation_workflow(
 
     with tracer.start_as_current_span("automation.workflow") as workflow_span:
         # Load workflow definition
-        workflow = AutomationRule.query.get(workflow_id)
+        workflow = AutomationRule.query.filter_by(id=workflow_id).first()
 
         if not workflow:
             workflow_span.set_attribute("error", True)
