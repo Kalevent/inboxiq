@@ -420,33 +420,33 @@ def process_incoming_email_task(self, payload: dict) -> dict:
             ticket.id, str(automation_exc)
         )
 
-        # Record final ticket details (sanitized)
-        span.set_attribute("ticket.id", str(ticket.id))
-        span.set_attribute("ticket.status", status)
-        safe_span_attribute(span, "ticket.category", category)
-        safe_span_attribute(span, "ticket.priority", priority)
-        safe_span_attribute(span, "ticket.sentiment", sentiment)
-        safe_span_attribute(span, "ticket.email_type", email_type)
-        span.set_attribute("ticket.is_automated", is_automated)
-        span.set_attribute("ticket.action_required", str(action_required))
+    # Record final ticket details (sanitized)
+    span.set_attribute("ticket.id", str(ticket.id))
+    span.set_attribute("ticket.status", status)
+    safe_span_attribute(span, "ticket.category", category)
+    safe_span_attribute(span, "ticket.priority", priority)
+    safe_span_attribute(span, "ticket.sentiment", sentiment)
+    safe_span_attribute(span, "ticket.email_type", email_type)
+    span.set_attribute("ticket.is_automated", is_automated)
+    span.set_attribute("ticket.action_required", str(action_required))
 
-        # Add completion event for audit trail
-        span.add_event("ticket_created", {
-            "ticket_id": str(ticket.id),
-            "status": status,
-            "category": category,
-            "priority": priority,
-            "action_required": str(action_required),
-        })
+    # Add completion event for audit trail
+    span.add_event("ticket_created", {
+        "ticket_id": str(ticket.id),
+        "status": status,
+        "category": category,
+        "priority": priority,
+        "action_required": str(action_required),
+    })
 
-        return {
-            "status": "created" if status != "auto_handled" else "auto_handled",
-            "ticket_id": ticket.id,
-            "category": category,
-            "priority": priority,
-            "action_required": action_required,
-            "email_type": email_type,
-        }
+    return {
+        "status": "created" if status != "auto_handled" else "auto_handled",
+        "ticket_id": ticket.id,
+        "category": category,
+        "priority": priority,
+        "action_required": action_required,
+        "email_type": email_type,
+    }
 
 
 @celery.task(
