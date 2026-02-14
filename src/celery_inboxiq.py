@@ -371,10 +371,10 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         ticket.id, status, action_required, email_type
     )
 
-    # Trigger automation rules for this ticket
+    # Trigger automation rules for this ticket using intelligent agent executor
     try:
         from src.models import AutomationRule
-        from src.automation.workflow_engine import execute_automation_workflow
+        from src.automation.agent_executor import execute_workflow_with_agent
         from src.automation.template_engine import build_context
 
         # Find all enabled automation rules for this account
@@ -393,39 +393,40 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         )
 
         logging.getLogger(__name__).info(
-            "Built automation trigger context: ticket_id=%s extracted_keys=%s",
+            "🤖 Built automation trigger context: ticket_id=%s extracted_keys=%s",
             ticket.id, list(merged.get("entities", {}).keys())
         )
 
-        # Execute matching rules
+        # Execute matching rules with intelligent agent
         for rule in rules:
             trigger_event = rule.trigger.get("event") if isinstance(rule.trigger, dict) else None
             # Match on ticket.created or email.received
             if trigger_event in ("ticket.created", "email.received"):
                 logging.getLogger(__name__).info(
-                    "Executing automation rule: rule_id=%s rule_name=%s trigger=%s",
+                    "🤖 Executing automation with AI agent: rule_id=%s rule_name=%s trigger=%s",
                     rule.id, rule.name, trigger_event
                 )
                 try:
-                    result = execute_automation_workflow(
+                    # Use intelligent agent executor instead of hardcoded engine
+                    result = execute_workflow_with_agent(
                         workflow_id=str(rule.id),
                         trigger_context=trigger_context,
                         trigger_event=trigger_event
                     )
                     logging.getLogger(__name__).info(
-                        "Automation workflow completed: rule_id=%s result=%s",
-                        rule.id, result
+                        "🤖 Agent execution completed: rule_id=%s success=%s log=%s",
+                        rule.id, result.get("success"), result.get("agent_log", [])
                     )
                 except Exception as rule_exc:
                     logging.getLogger(__name__).exception(
-                        "Automation rule execution failed: rule_id=%s error=%s",
+                        "❌ Agent execution failed: rule_id=%s error=%s",
                         rule.id, str(rule_exc)
                     )
                     # Continue with other rules even if one fails
     except Exception as automation_exc:
         # Don't fail ticket creation if automation fails
         logging.getLogger(__name__).exception(
-            "Automation trigger failed for ticket=%s: %s",
+            "❌ Automation trigger failed for ticket=%s: %s",
             ticket.id, str(automation_exc)
         )
 
