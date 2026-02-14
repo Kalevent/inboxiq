@@ -1321,6 +1321,41 @@ class PitchedBlogTopic(db.Model):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
+
+class CampaignSender(db.Model):
+    """
+    Approved email senders for campaigns (per account).
+    Allows managing multiple campaign senders (e.g., Kofi, growth team members).
+    """
+    __tablename__ = "campaign_senders"
+    __table_args__ = (
+        db.Index("idx_campaign_sender_account", "account_id"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False, comment="Multi-tenancy")
+
+    # Sender details
+    email = db.Column(db.String(255), nullable=False, comment="Sender email (e.g., kofi@kalevent.com)")
+    name = db.Column(db.String(255), nullable=False, comment="Display name (e.g., 'Kofi from Kalevent')")
+    is_default = db.Column(db.Boolean, server_default="false", nullable=False, comment="Default sender for new campaigns")
+    enabled = db.Column(db.Boolean, server_default="true", nullable=False, comment="Active sender")
+
+    # Tracking
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "name": self.name,
+            "is_default": self.is_default,
+            "enabled": self.enabled,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class EmailCampaign(db.Model):
     """
     Email campaign for automated outreach to leads.

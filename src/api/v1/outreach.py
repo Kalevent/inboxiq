@@ -83,13 +83,36 @@ def create_campaign():
 
     data = request.json
 
+    # Get default sender from database or fallback to config
+    from flask import current_app
+    from src.models import CampaignSender
+
+    from_email = data.get("from_email")
+    from_name = data.get("from_name")
+
+    if not from_email or not from_name:
+        # Try to get default sender from database
+        default_sender = CampaignSender.query.filter_by(
+            account_id=2,
+            is_default=True,
+            enabled=True
+        ).first()
+
+        if default_sender:
+            from_email = from_email or default_sender.email
+            from_name = from_name or default_sender.name
+        else:
+            # Fallback to config if no DB senders
+            from_email = from_email or current_app.config.get("CAMPAIGN_DEFAULT_EMAIL", "kofi@kalevent.com")
+            from_name = from_name or current_app.config.get("CAMPAIGN_DEFAULT_NAME", "Kofi from Kalevent")
+
     campaign = EmailCampaign(
         account_id=2,
         name=data.get("name"),
         subject_template=data.get("subject_template"),
         body_template=data.get("body_template"),
-        from_email=data.get("from_email"),
-        from_name=data.get("from_name"),
+        from_email=from_email,
+        from_name=from_name,
         max_recipients=data.get("max_recipients"),
         follow_up_delay_days=data.get("follow_up_delay_days", [3, 7]),
         target_source=data.get("target_source"),
@@ -254,4 +277,135 @@ def campaign_stats(campaign_id):
             "started_at": campaign.started_at.isoformat() if campaign.started_at else None,
         },
         "status_breakdown": dict(status_counts)
+    }), 200
+
+
+# ============================================================================
+# Campaign Senders Management
+# ============================================================================
+
+@v1.route("/outreach/senders", methods=["GET"])
+@jwt_required()
+def get_campaign_senders():
+    """Get all campaign senders for the account."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.models import CampaignSender
+
+    senders = CampaignSender.query.filter_by(account_id=2).order_by(
+        CampaignSender.is_default.desc(),
+        CampaignSender.created_at.desc()
+    ).all()
+
+    return jsonify({
+        "success": True,
+        "senders": [s.to_dict() for s in senders]
+    }), 200
+
+
+@v1.route("/outreach/senders", methods=["POST"])
+@jwt_required()
+def add_campaign_sender():
+    """
+    Add a new campaign sender.
+
+    Body:
+        email: Sender email (e.g., kofi@kalevent.com)
+        name: Display name (e.g., "Kofi from Kalevent")
+        is_default: Set as default sender (optional, default: false)
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.models import CampaignSender
+    from uuid import uuid4
+
+    data = request.json
+
+    # Validate required fields
+    if not data.get("email") or not data.get("name"):
+        return jsonify({"error": "email and name are required"}), 400
+
+    # If setting as default, unset other defaults
+    if data.get("is_default"):
+        CampaignSender.query.filter_by(account_id=2, is_default=True).update({"is_default": False})
+
+    sender = CampaignSender(
+        id=str(uuid4()),
+        account_id=2,
+        email=data.get("email"),
+        name=data.get("name"),
+        is_default=data.get("is_default", False),
+        enabled=True
+    )
+
+    db.session.add(sender)
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "sender": sender.to_dict(),
+        "message": f"Campaign sender '{sender.name}' added successfully"
+    }), 201
+
+
+@v1.route("/outreach/senders/<sender_id>", methods=["PUT"])
+@jwt_required()
+def update_campaign_sender(sender_id):
+    """Update a campaign sender (set as default, enable/disable, etc.)."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.models import CampaignSender
+
+    sender = CampaignSender.query.filter_by(id=sender_id, account_id=2).first()
+    if not sender:
+        return jsonify({"error": "Sender not found"}), 404
+
+    data = request.json
+
+    # If setting as default, unset other defaults
+    if data.get("is_default"):
+        CampaignSender.query.filter_by(account_id=2, is_default=True).update({"is_default": False})
+        sender.is_default = True
+
+    if "enabled" in data:
+        sender.enabled = data["enabled"]
+
+    if data.get("name"):
+        sender.name = data["name"]
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "sender": sender.to_dict()
+    }), 200
+
+
+@v1.route("/outreach/senders/<sender_id>", methods=["DELETE"])
+@jwt_required()
+def delete_campaign_sender(sender_id):
+    """Delete a campaign sender."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.models import CampaignSender
+
+    sender = CampaignSender.query.filter_by(id=sender_id, account_id=2).first()
+    if not sender:
+        return jsonify({"error": "Sender not found"}), 404
+
+    # Don't allow deleting the last sender
+    total_senders = CampaignSender.query.filter_by(account_id=2, enabled=True).count()
+    if total_senders <= 1:
+        return jsonify({"error": "Cannot delete the last campaign sender"}), 400
+
+    db.session.delete(sender)
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": "Campaign sender deleted"
     }), 200

@@ -72,7 +72,13 @@ class Config:
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
     SMTP_USE_TLS = _env_bool("SMTP_USE_TLS", True)
     SMTP_USE_SSL = _env_bool("SMTP_USE_SSL", False)
-    MAIL_FROM = os.getenv("MAIL_FROM", "noreply@kalevent.com")
+    MAIL_FROM = os.getenv("MAIL_FROM", "noreply@kalevent.com")  # System emails (crash reports, etc.)
+
+    # Campaign senders are stored in database (CampaignSender model) for security
+    # Fallback defaults if no senders configured in DB
+    CAMPAIGN_DEFAULT_EMAIL = os.getenv("CAMPAIGN_DEFAULT_EMAIL", "kofi@kalevent.com")
+    CAMPAIGN_DEFAULT_NAME = os.getenv("CAMPAIGN_DEFAULT_NAME", "Kofi from Kalevent")
+
     # Celery
     CELERY_BROKER_URL = os.getenv("CELERY_BROKER_DEV_URL") or os.getenv("CELERY_BROKER_URL") or _redis_dev_url()
     CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_DEV_BACKEND") or os.getenv("CELERY_RESULT_BACKEND") or _redis_dev_url()

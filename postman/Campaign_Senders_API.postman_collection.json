@@ -1,0 +1,269 @@
+{
+  "info": {
+    "name": "InboxIQ - Campaign Senders API",
+    "description": "Manage email campaign senders for InboxIQ",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://kalevent.com",
+      "type": "string"
+    },
+    {
+      "key": "api_prefix",
+      "value": "api",
+      "type": "string"
+    },
+    {
+      "key": "api_version",
+      "value": "v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "List All Campaign Senders",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/{{api_prefix}}/{{api_version}}/outreach/senders",
+          "host": ["{{base_url}}"],
+          "path": ["{{api_prefix}}", "{{api_version}}", "outreach", "senders"]
+        },
+        "description": "Get all campaign senders for the account"
+      },
+      "response": []
+    },
+    {
+      "name": "Add Campaign Sender - Kofi",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"kofi@kalevent.com\",\n  \"name\": \"Kofi from Kalevent\",\n  \"is_default\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/{{api_prefix}}/{{api_version}}/outreach/senders",
+          "host": ["{{base_url}}"],
+          "path": ["{{api_prefix}}", "{{api_version}}", "outreach", "senders"]
+        },
+        "description": "Add Kofi as the default campaign sender"
+      },
+      "response": []
+    },
+    {
+      "name": "Add Campaign Sender - Growth Employee",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"sarah@kalevent.com\",\n  \"name\": \"Sarah from Kalevent\",\n  \"is_default\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/{{api_prefix}}/{{api_version}}/outreach/senders",
+          "host": ["{{base_url}}"],
+          "path": ["{{api_prefix}}", "{{api_version}}", "outreach", "senders"]
+        },
+        "description": "Add a new growth employee as campaign sender (not default)"
+      },
+      "response": []
+    },
+    {
+      "name": "Set Sender as Default",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"is_default\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/{{api_prefix}}/{{api_version}}/outreach/senders/:sender_id",
+          "host": ["{{base_url}}"],
+          "path": ["{{api_prefix}}", "{{api_version}}", "outreach", "senders", ":sender_id"],
+          "variable": [
+            {
+              "key": "sender_id",
+              "value": "SENDER_ID_HERE",
+              "description": "The ID of the sender to update"
+            }
+          ]
+        },
+        "description": "Set a specific sender as the default"
+      },
+      "response": []
+    },
+    {
+      "name": "Enable/Disable Sender",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"enabled\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/{{api_prefix}}/{{api_version}}/outreach/senders/:sender_id",
+          "host": ["{{base_url}}"],
+          "path": ["{{api_prefix}}", "{{api_version}}", "outreach", "senders", ":sender_id"],
+          "variable": [
+            {
+              "key": "sender_id",
+              "value": "SENDER_ID_HERE",
+              "description": "The ID of the sender to enable/disable"
+            }
+          ]
+        },
+        "description": "Enable or disable a campaign sender (set enabled: true or false)"
+      },
+      "response": []
+    },
+    {
+      "name": "Update Sender Name",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Kofi Amponsah from Kalevent\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/{{api_prefix}}/{{api_version}}/outreach/senders/:sender_id",
+          "host": ["{{base_url}}"],
+          "path": ["{{api_prefix}}", "{{api_version}}", "outreach", "senders", ":sender_id"],
+          "variable": [
+            {
+              "key": "sender_id",
+              "value": "SENDER_ID_HERE",
+              "description": "The ID of the sender to update"
+            }
+          ]
+        },
+        "description": "Update the display name of a sender"
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Campaign Sender",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/{{api_prefix}}/{{api_version}}/outreach/senders/:sender_id",
+          "host": ["{{base_url}}"],
+          "path": ["{{api_prefix}}", "{{api_version}}", "outreach", "senders", ":sender_id"],
+          "variable": [
+            {
+              "key": "sender_id",
+              "value": "SENDER_ID_HERE",
+              "description": "The ID of the sender to delete"
+            }
+          ]
+        },
+        "description": "Delete a campaign sender (cannot delete the last sender)"
+      },
+      "response": []
+    }
+  ]
+}
