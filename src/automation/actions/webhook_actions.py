@@ -1,7 +1,7 @@
 """
 Webhook Actions for Automation Studio
 
-Send data to external APIs (Sage, QuickBooks, Slack, custom webhooks).
+Send data to external APIs (Sage, QuickBooks, Slack, Microsoft Teams, custom webhooks).
 Handles authentication, payload rendering, and error handling.
 """
 
@@ -249,6 +249,10 @@ def _get_webhook_url(provider_type: str, credentials: Dict[str, Any]) -> str:
         # Slack incoming webhook URL
         return credentials.get("webhook_url")
 
+    elif provider_type == "teams":
+        # Microsoft Teams incoming webhook URL
+        return credentials.get("webhook_url")
+
     elif provider_type == "custom":
         return credentials.get("webhook_url")
 
@@ -271,6 +275,10 @@ def _build_headers(provider_type: str, credentials: Dict[str, Any], custom_heade
 
     elif provider_type == "slack":
         # Slack webhook uses URL-based auth (no header needed)
+        pass
+
+    elif provider_type == "teams":
+        # Microsoft Teams webhook uses URL-based auth (no header needed)
         pass
 
     elif provider_type == "custom":

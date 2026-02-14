@@ -878,7 +878,7 @@ def integrations_webhooks():
       provider = (request.form.get("provider") or "").strip()
 
       # Validate provider against whitelist (prevent injection)
-      allowed_providers = ['sage', 'quickbooks', 'slack', 'custom', 'stripe', 'square', 'paypal']
+      allowed_providers = ['sage', 'quickbooks', 'slack', 'teams', 'custom', 'stripe', 'square', 'paypal']
       if not provider or provider not in allowed_providers:
         return render_template(
           "settings/index.html",
@@ -1278,6 +1278,11 @@ def edit_automation_rule(rule_id):
   slack_webhooks = any(p.provider_type == 'slack' for p in webhook_providers)
   slack_inbox = InboxConnection.query.filter_by(account_id=account_id, provider='slack', status='connected').first() is not None
   has_slack = slack_webhooks or slack_inbox
+
+  # Check for Microsoft Teams
+  teams_webhooks = any(p.provider_type == 'teams' for p in webhook_providers)
+  has_teams = teams_webhooks
+
   has_email = True  # Email is always available via SMTP
 
   # Build available actions list
@@ -1303,9 +1308,16 @@ def edit_automation_rule(rule_id):
       'description': 'Post a message to Slack'
     })
 
+  if has_teams:
+    available_actions['integrations'].append({
+      'value': 'teams_notify',
+      'label': 'Send to Microsoft Teams',
+      'description': 'Post a message to Teams'
+    })
+
   # Add webhook providers
   for provider in webhook_providers:
-    if provider.provider_type != 'slack':  # Slack handled separately
+    if provider.provider_type not in ['slack', 'teams']:  # Slack and Teams handled separately
       available_actions['integrations'].append({
         'value': f'webhook_{provider.id}',
         'label': f'Webhook: {provider.configuration_name}',

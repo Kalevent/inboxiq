@@ -1800,6 +1800,13 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
             { name: 'channel', label: 'Default Channel', type: 'text', placeholder: '#notifications', required: false }
           ]
         },
+        teams: {
+          fields: [
+            { name: 'label', label: 'Configuration Name', type: 'text', placeholder: 'e.g., Engineering Teams', required: true },
+            { name: 'webhook_url', label: 'Webhook URL', type: 'text', placeholder: 'https://outlook.office.com/webhook/...', required: true },
+            { name: 'channel', label: 'Default Channel', type: 'text', placeholder: 'General', required: false }
+          ]
+        },
         custom: {
           fields: [
             { name: 'label', label: 'Configuration Name', type: 'text', placeholder: 'e.g., Custom API', required: true },
@@ -1908,6 +1915,7 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
               </optgroup>
               <optgroup label="Notifications & Custom">
                 <option value="slack">Slack</option>
+                <option value="teams">Microsoft Teams</option>
                 <option value="custom">Custom Webhook</option>
               </optgroup>
             </select>
