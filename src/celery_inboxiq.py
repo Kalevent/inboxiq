@@ -371,11 +371,21 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         ticket.id, status, action_required, email_type
     )
 
-    # Trigger automation rules using LLM-powered DSPy agent
+    # Trigger automation rules using intelligent agent (tool-calling like Claude Code!)
     try:
+        import os
         from src.models import AutomationRule
-        from src.automation.dspy_agent import execute_workflow_with_dspy_agent
         from src.automation.template_engine import build_context
+
+        # Choose agent type (tool_calling is default - it's more powerful!)
+        agent_type = os.getenv("AUTOMATION_AGENT_TYPE", "tool_calling")
+
+        if agent_type == "tool_calling":
+            from src.automation.tool_calling_agent import execute_workflow_with_tool_calling_agent as execute_workflow
+            agent_name = "🤖 Tool-Calling Agent"
+        else:
+            from src.automation.dspy_agent import execute_workflow_with_dspy_agent as execute_workflow
+            agent_name = "🧠 DSPy Agent"
 
         # Find all enabled automation rules for this account
         rules = AutomationRule.query.filter_by(
@@ -393,31 +403,31 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         )
 
         logging.getLogger(__name__).info(
-            "🧠 Built automation trigger context: ticket_id=%s extracted_keys=%s",
-            ticket.id, list(merged.get("entities", {}).keys())
+            "🤖 Built automation trigger context: ticket_id=%s extracted_keys=%s agent=%s",
+            ticket.id, list(merged.get("entities", {}).keys()), agent_name
         )
 
-        # Execute matching rules with LLM-powered DSPy agent
+        # Execute matching rules with intelligent agent
         for rule in rules:
             trigger_event = rule.trigger.get("event") if isinstance(rule.trigger, dict) else None
             # Match on ticket.created or email.received
             if trigger_event in ("ticket.created", "email.received"):
                 logging.getLogger(__name__).info(
-                    "🧠 Executing automation with LLM-powered DSPy agent: rule_id=%s rule_name=%s trigger=%s",
-                    rule.id, rule.name, trigger_event
+                    "🤖 Executing automation with %s: rule_id=%s rule_name=%s trigger=%s",
+                    agent_name, rule.id, rule.name, trigger_event
                 )
                 try:
-                    # Use LLM-powered DSPy agent - TRUE intelligent automation!
-                    result = execute_workflow_with_dspy_agent(
+                    # Use intelligent agent - autonomous and adaptive!
+                    result = execute_workflow(
                         workflow_id=str(rule.id),
                         trigger_context=trigger_context,
                         trigger_event=trigger_event
                     )
                     logging.getLogger(__name__).info(
-                        "🧠 DSPy agent execution completed: rule_id=%s success=%s understanding=%s log=%s",
+                        "🤖 Agent execution completed: rule_id=%s success=%s tool_calls=%s log=%s",
                         rule.id, result.get("success"),
-                        result.get("understanding", {}).get("intent", "N/A"),
-                        result.get("agent_log", [])
+                        len(result.get("tool_calls", [])),
+                        result.get("agent_log", [])[:3]  # First 3 log entries
                     )
                 except Exception as rule_exc:
                     logging.getLogger(__name__).exception(
