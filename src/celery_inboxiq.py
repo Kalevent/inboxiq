@@ -366,9 +366,58 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         logging.getLogger(__name__).exception("failed to persist inbound email ticket: %s", exc)
         raise self.retry(exc=exc)
 
-        logging.getLogger(__name__).info(
-            "ticket created: id=%s status=%s action_required=%s email_type=%s",
-            ticket.id, status, action_required, email_type
+    logging.getLogger(__name__).info(
+        "ticket created: id=%s status=%s action_required=%s email_type=%s",
+        ticket.id, status, action_required, email_type
+    )
+
+    # Trigger automation rules for this ticket
+    try:
+        from src.models import AutomationRule
+        from src.automation.workflow_engine import execute_automation_workflow
+        from src.automation.template_engine import build_context
+
+        # Find all enabled automation rules for this account
+        rules = AutomationRule.query.filter_by(
+            account_id=account_id,
+            enabled=True
+        ).all()
+
+        # Build trigger context for automation
+        trigger_context = build_context(
+            email=normalized,
+            ticket=ticket,
+            account_id=account_id,
+            extracted=merged.get("entities", {}),
+            rule_name=None  # Will be set per-rule
+        )
+
+        # Execute matching rules
+        for rule in rules:
+            trigger_event = rule.trigger.get("event") if isinstance(rule.trigger, dict) else None
+            # Match on ticket.created or email.received
+            if trigger_event in ("ticket.created", "email.received"):
+                logging.getLogger(__name__).info(
+                    "Executing automation rule: rule_id=%s rule_name=%s trigger=%s",
+                    rule.id, rule.name, trigger_event
+                )
+                try:
+                    execute_automation_workflow(
+                        workflow_id=str(rule.id),
+                        trigger_context=trigger_context,
+                        trigger_event=trigger_event
+                    )
+                except Exception as rule_exc:
+                    logging.getLogger(__name__).exception(
+                        "Automation rule execution failed: rule_id=%s error=%s",
+                        rule.id, str(rule_exc)
+                    )
+                    # Continue with other rules even if one fails
+    except Exception as automation_exc:
+        # Don't fail ticket creation if automation fails
+        logging.getLogger(__name__).exception(
+            "Automation trigger failed for ticket=%s: %s",
+            ticket.id, str(automation_exc)
         )
 
         # Record final ticket details (sanitized)

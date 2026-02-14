@@ -969,8 +969,8 @@
                   </svg>
                   <div class="text-xs text-slate-400">Active Rules</div>
                 </div>
-                <div class="text-2xl font-bold text-slate-100">0</div>
-                <div class="text-xs text-slate-500 mt-1">No rules configured yet</div>
+                <div class="text-2xl font-bold text-slate-100">{{ active_rules_count }}</div>
+                <div class="text-xs text-slate-500 mt-1">{% if active_rules_count == 0 %}No rules configured yet{% else %}Actively running{% endif %}</div>
               </div>
 
               <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
@@ -980,8 +980,8 @@
                   </svg>
                   <div class="text-xs text-slate-400">Executions (30d)</div>
                 </div>
-                <div class="text-2xl font-bold text-slate-100">0</div>
-                <div class="text-xs text-slate-500 mt-1">Waiting for first execution</div>
+                <div class="text-2xl font-bold text-slate-100">{{ automation_executions_30d }}</div>
+                <div class="text-xs text-slate-500 mt-1">{% if automation_executions_30d == 0 %}Waiting for first execution{% else %}Last 30 days{% endif %}</div>
               </div>
 
               <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
@@ -991,8 +991,8 @@
                   </svg>
                   <div class="text-xs text-slate-400">Time Saved (30d)</div>
                 </div>
-                <div class="text-2xl font-bold text-slate-100">0h</div>
-                <div class="text-xs text-slate-500 mt-1">Start automating to track ROI</div>
+                <div class="text-2xl font-bold text-slate-100">{{ automation_time_saved_display }}</div>
+                <div class="text-xs text-slate-500 mt-1">{% if automation_executions_30d == 0 %}Start automating to track ROI{% else %}Estimated savings{% endif %}</div>
               </div>
             </div>
 

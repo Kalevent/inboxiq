@@ -691,6 +691,30 @@ def create_app() -> Flask:
     actionable_today = action_required_count
     auto_handled_today = auto_handled_count
 
+    # Get automation metrics
+    try:
+      from src.models import AutomationRule, AutomationRuleExecution
+      active_rules_count = AutomationRule.query.filter_by(
+        account_id=account_id,
+        enabled=True
+      ).count()
+
+      thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+      automation_executions_30d = AutomationRuleExecution.query.filter(
+        AutomationRuleExecution.account_id == account_id,
+        AutomationRuleExecution.created_at >= thirty_days_ago
+      ).count()
+
+      # Calculate time saved (rough estimate: 2 minutes per execution)
+      automation_time_saved_minutes = automation_executions_30d * 2
+      automation_time_saved_hours = automation_time_saved_minutes // 60
+      automation_time_saved_display = f"{automation_time_saved_hours}h" if automation_time_saved_hours > 0 else "0h"
+    except Exception as e:
+      current_app.logger.error(f"Failed to fetch automation metrics: {e}")
+      active_rules_count = 0
+      automation_executions_30d = 0
+      automation_time_saved_display = "0h"
+
     return render_template(
       "dashboard_welcome.html",
       recent_tickets=recent,
@@ -721,6 +745,9 @@ def create_app() -> Flask:
       scope=scope,
       integration_status=integration_status,
       account_id=account_id,
+      active_rules_count=active_rules_count,
+      automation_executions_30d=automation_executions_30d,
+      automation_time_saved_display=automation_time_saved_display,
     )
 
   @app.route("/home", methods=["GET"])
