@@ -56,7 +56,7 @@
 
     <!-- Basic Info -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <h2 class="text-xl font-semibold mb-4 text-gray-900">Basic Information</h2>
+      <h2 class="text-xl font-semibold mb-4 text-gray-900" style="color: #000000 !important; font-weight: bold !important; background-color: yellow !important; padding: 10px !important;">Basic Information</h2>
 
       <div class="mb-4">
         <label class="block text-sm font-medium text-gray-700 mb-2">Rule Name</label>
@@ -88,11 +88,12 @@
       <div class="mb-6">
         <div class="flex justify-between items-start mb-4">
           <div>
-            <h2 class="text-xl font-bold text-gray-900 mb-1">Conditions (Optional)</h2>
+            <h2 class="text-xl font-bold text-gray-900 mb-1" style="color: #000000 !important; font-weight: bold !important; background-color: yellow !important; padding: 10px !important;">Conditions (Optional)</h2>
             <p class="text-sm text-gray-600">Conditions determine when the rule triggers</p>
           </div>
           <button type="button" onclick="addCondition()"
-                  class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-sm">
+                  class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-sm"
+                  style="background-color: #0000FF !important; color: white !important; font-size: 16px !important; padding: 15px !important;">
             + Add Condition
           </button>
         </div>
@@ -119,11 +120,12 @@
       <div class="mb-6">
         <div class="flex justify-between items-start mb-4">
           <div>
-            <h2 class="text-xl font-bold text-gray-900 mb-1">Actions (Required)</h2>
+            <h2 class="text-xl font-bold text-gray-900 mb-1" style="color: #000000 !important; font-weight: bold !important; background-color: yellow !important; padding: 10px !important;">Actions (Required)</h2>
             <p class="text-sm text-gray-600">Actions define what happens when the rule triggers</p>
           </div>
           <button type="button" onclick="addAction()"
-                  class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold shadow-sm">
+                  class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold shadow-sm"
+                  style="background-color: #00FF00 !important; color: black !important; font-size: 16px !important; padding: 15px !important;">
             + Add Action
           </button>
         </div>
@@ -234,11 +236,11 @@ function renderActions() {
   actions.forEach((action, index) => {
     // Get action-specific config example
     const configExamples = {
-      'send_email': '{\n  "to": "user@example.com",\n  "subject": "Alert"\n}',
-      'webhook': '{\n  "url": "https://api.example.com/webhook"\n}',
-      'tag': '{\n  "tag": "urgent"\n}',
-      'assign': '{\n  "team": "support"\n}',
-      'slack_notify': '{\n  "channel": "#general",\n  "message": "New ticket"\n}'
+      'send_email': '{"to": "user@example.com", "subject": "Alert"}',
+      'webhook': '{"url": "https://api.example.com/webhook"}',
+      'tag': '{"tag": "urgent"}',
+      'assign': '{"team": "support"}',
+      'slack_notify': '{"channel": "#general", "message": "New ticket"}'
     };
 
     container.innerHTML += `
@@ -324,8 +326,12 @@ function syncHiddenFields() {
 }
 
 // Initial render
+console.log('InboxIQ Automation Rule Editor - Initializing...');
+console.log('Conditions:', conditions);
+console.log('Actions:', actions);
 renderConditions();
 renderActions();
+console.log('Render complete');
 </script>
 
       </div>
