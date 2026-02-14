@@ -33,10 +33,7 @@ def build_triage_module(dspy: Any, label_config: Dict[str, Any]) -> Any:
 
         # NEW: Email type classification for auto-handling
         email_type = dspy.OutputField(
-            desc=label_desc(label_config, "email_types", "Type of email based on PRIMARY topic. "
-                           "Prioritize explicit keywords: 'billing'/'invoice'/'payment' → billing, "
-                           "'sales'/'demo'/'pricing' → sales_inquiry, 'bug'/'error'/'broken' → bug_report. "
-                           "Default to support_request only if no specific type matches.")
+            desc=label_desc(label_config, "email_types", "Email type for routing and handling")
         )
         is_automated = dspy.OutputField(
             desc="true if this is an automated email (auto-reply, system notification, no-reply sender, newsletter), false if from a human requiring response"
@@ -83,9 +80,8 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
         case_json = dspy.InputField(desc="JSON of normalized case payload.")
         entities_json = dspy.OutputField(
             desc=f"JSON with: intent, sentiment, urgency, identifiers, missing_info, "
-                 f"email_type ({label_desc(label_config, 'email_types', 'type of email')} - prioritize explicit keywords like billing/invoice/payment → billing, sales/demo/pricing → sales_inquiry, bug/error → bug_report), "
-                 f"is_automated (true/false), requires_human_response (true/false). "
-                 f"Set email_type based on PRIMARY topic. Default to support_request only if no specific type matches."
+                 f"email_type ({label_desc(label_config, 'email_types', 'type of email')}), "
+                 f"is_automated (true/false), requires_human_response (true/false)."
         )
 
     class RouteCaseSig(dspy.Signature):
