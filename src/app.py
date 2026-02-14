@@ -444,7 +444,7 @@ def create_app() -> Flask:
     ]
 
     # Get all published blog posts
-    blog_posts = BlogPost.query.filter_by(published=True).order_by(BlogPost.created_at.desc()).all()
+    blog_posts = BlogPost.query.filter_by(status='published').order_by(BlogPost.created_at.desc()).all()
 
     # Build XML
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
