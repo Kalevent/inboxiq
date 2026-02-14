@@ -371,10 +371,10 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         ticket.id, status, action_required, email_type
     )
 
-    # Trigger automation rules for this ticket using intelligent agent executor
+    # Trigger automation rules using LLM-powered DSPy agent
     try:
         from src.models import AutomationRule
-        from src.automation.agent_executor import execute_workflow_with_agent
+        from src.automation.dspy_agent import execute_workflow_with_dspy_agent
         from src.automation.template_engine import build_context
 
         # Find all enabled automation rules for this account
@@ -393,29 +393,31 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         )
 
         logging.getLogger(__name__).info(
-            "🤖 Built automation trigger context: ticket_id=%s extracted_keys=%s",
+            "🧠 Built automation trigger context: ticket_id=%s extracted_keys=%s",
             ticket.id, list(merged.get("entities", {}).keys())
         )
 
-        # Execute matching rules with intelligent agent
+        # Execute matching rules with LLM-powered DSPy agent
         for rule in rules:
             trigger_event = rule.trigger.get("event") if isinstance(rule.trigger, dict) else None
             # Match on ticket.created or email.received
             if trigger_event in ("ticket.created", "email.received"):
                 logging.getLogger(__name__).info(
-                    "🤖 Executing automation with AI agent: rule_id=%s rule_name=%s trigger=%s",
+                    "🧠 Executing automation with LLM-powered DSPy agent: rule_id=%s rule_name=%s trigger=%s",
                     rule.id, rule.name, trigger_event
                 )
                 try:
-                    # Use intelligent agent executor instead of hardcoded engine
-                    result = execute_workflow_with_agent(
+                    # Use LLM-powered DSPy agent - TRUE intelligent automation!
+                    result = execute_workflow_with_dspy_agent(
                         workflow_id=str(rule.id),
                         trigger_context=trigger_context,
                         trigger_event=trigger_event
                     )
                     logging.getLogger(__name__).info(
-                        "🤖 Agent execution completed: rule_id=%s success=%s log=%s",
-                        rule.id, result.get("success"), result.get("agent_log", [])
+                        "🧠 DSPy agent execution completed: rule_id=%s success=%s understanding=%s log=%s",
+                        rule.id, result.get("success"),
+                        result.get("understanding", {}).get("intent", "N/A"),
+                        result.get("agent_log", [])
                     )
                 except Exception as rule_exc:
                     logging.getLogger(__name__).exception(
