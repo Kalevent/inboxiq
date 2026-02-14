@@ -401,8 +401,74 @@ def create_app() -> Flask:
 
   @app.route("/sitemap.xml")
   def sitemap():
-    # Serve sitemap at the canonical root URL for search engines.
-    return current_app.send_static_file("sitemap.xml")
+    """
+    Dynamic sitemap that includes all published blog posts.
+    Auto-updates when new content is generated.
+    """
+    from src.models import BlogPost
+    from flask import Response
+
+    # Static pages (from sitemap.xml)
+    static_pages = [
+      {"loc": "https://kalevent.com/", "priority": "1.0"},
+      {"loc": "https://kalevent.com/login", "priority": "0.7"},
+      {"loc": "https://kalevent.com/contact", "priority": "0.7"},
+      {"loc": "https://kalevent.com/email-triage", "priority": "0.6"},
+      {"loc": "https://kalevent.com/ai-email-triage", "priority": "0.6"},
+      {"loc": "https://kalevent.com/shared-inbox", "priority": "0.6"},
+      {"loc": "https://kalevent.com/support-automation", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/unified-intake", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/decisions", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/voice", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/social", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/forms", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/chat", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/crm", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/api", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/email/ai-triage", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/email/triage-automation", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/email/shared-inbox", "priority": "0.6"},
+      {"loc": "https://kalevent.com/solutions/email/support-automation", "priority": "0.6"},
+      {"loc": "https://kalevent.com/use-cases/support", "priority": "0.6"},
+      {"loc": "https://kalevent.com/use-cases/healthcare-triage", "priority": "0.6"},
+      {"loc": "https://kalevent.com/use-cases/claims", "priority": "0.6"},
+      {"loc": "https://kalevent.com/use-cases/hr", "priority": "0.6"},
+      {"loc": "https://kalevent.com/use-cases/finance", "priority": "0.6"},
+      {"loc": "https://kalevent.com/playbook/unified-support-triage", "priority": "0.6"},
+      {"loc": "https://kalevent.com/playbook/unified-sales-intake", "priority": "0.6"},
+      {"loc": "https://kalevent.com/playbook/unified-ops-intake", "priority": "0.6"},
+      {"loc": "https://kalevent.com/playbook/unified-intake-system", "priority": "0.6"},
+      {"loc": "https://kalevent.com/docs", "priority": "0.6"},
+      {"loc": "https://kalevent.com/privacy", "priority": "0.5"},
+      {"loc": "https://kalevent.com/terms", "priority": "0.5"},
+    ]
+
+    # Get all published blog posts
+    blog_posts = BlogPost.query.filter_by(published=True).order_by(BlogPost.created_at.desc()).all()
+
+    # Build XML
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+
+    # Add static pages
+    for page in static_pages:
+      xml += '  <url>\n'
+      xml += f'    <loc>{page["loc"]}</loc>\n'
+      xml += f'    <priority>{page["priority"]}</priority>\n'
+      xml += '  </url>\n'
+
+    # Add blog posts (higher priority for fresh content)
+    for post in blog_posts:
+      xml += '  <url>\n'
+      xml += f'    <loc>https://kalevent.com/blog/{post.slug}</loc>\n'
+      xml += f'    <lastmod>{post.created_at.strftime("%Y-%m-%d")}</lastmod>\n'
+      xml += '    <changefreq>monthly</changefreq>\n'
+      xml += '    <priority>0.7</priority>\n'
+      xml += '  </url>\n'
+
+    xml += '</urlset>'
+
+    return Response(xml, mimetype='application/xml')
 
   @app.route("/upgrade")
   @login_required_page
