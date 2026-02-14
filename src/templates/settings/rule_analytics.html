@@ -156,7 +156,7 @@
           </div>
 
           <div class="mt-6 flex gap-3">
-            <a href="{{ url_for('settings.automation_rule_edit', rule_id=rule.id) }}" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg text-sm font-medium">
+            <a href="{{ url_for('settings.edit_automation_rule', rule_id=rule.id) }}" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg text-sm font-medium">
               Edit Rule
             </a>
             <a href="{{ url_for('settings.integrations_automation') }}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium">
