@@ -56,7 +56,7 @@
 
     <!-- Basic Info -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-      <h2 class="text-xl font-semibold mb-4 text-gray-900" style="display: block !important; visibility: visible !important;">Basic Information</h2>
+      <h2 class="text-xl font-semibold mb-4 text-gray-900" style="color: #000000 !important; font-weight: bold !important; display: block !important;">Basic Information</h2>
 
       <div class="mb-4">
         <label class="block text-sm font-medium text-gray-700 mb-2">Rule Name</label>
@@ -75,8 +75,8 @@
       </div>
 
       <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2" style="display: block !important; visibility: visible !important;">Trigger</label>
-        <div class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-700" style="display: block !important; visibility: visible !important;">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Trigger</label>
+        <div class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-gray-700">
           <strong>When:</strong> {{ rule.trigger.event }} on {{ rule.trigger.object }}
         </div>
         <p class="text-xs text-gray-500 mt-1">Trigger cannot be changed after creation</p>
@@ -88,12 +88,12 @@
       <div class="mb-6">
         <div class="flex justify-between items-start mb-4">
           <div>
-            <h2 class="text-xl font-bold text-gray-900 mb-1" style="display: block !important; visibility: visible !important;">Conditions (Optional)</h2>
+            <h2 class="text-xl font-bold text-gray-900 mb-1" style="color: #000000 !important; font-weight: bold !important; background-color: yellow !important; padding: 10px !important;">Conditions (Optional)</h2>
             <p class="text-sm text-gray-600">Conditions determine when the rule triggers</p>
           </div>
           <button type="button" onclick="addCondition()"
                   class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-semibold shadow-sm"
-                  style="display: inline-block !important; visibility: visible !important;">
+                  style="background-color: #0000FF !important; color: white !important; font-size: 16px !important; padding: 15px !important;">
             + Add Condition
           </button>
         </div>
@@ -120,12 +120,12 @@
       <div class="mb-6">
         <div class="flex justify-between items-start mb-4">
           <div>
-            <h2 class="text-xl font-bold text-gray-900 mb-1" style="display: block !important; visibility: visible !important;">Actions (Required)</h2>
+            <h2 class="text-xl font-bold text-gray-900 mb-1" style="color: #000000 !important; font-weight: bold !important; background-color: yellow !important; padding: 10px !important;">Actions (Required)</h2>
             <p class="text-sm text-gray-600">Actions define what happens when the rule triggers</p>
           </div>
           <button type="button" onclick="addAction()"
                   class="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold shadow-sm"
-                  style="display: inline-block !important; visibility: visible !important;">
+                  style="background-color: #00FF00 !important; color: black !important; font-size: 16px !important; padding: 15px !important;">
             + Add Action
           </button>
         </div>
