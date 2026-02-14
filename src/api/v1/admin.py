@@ -523,6 +523,11 @@ def admin_triage_labels():
         from src.triage_labels import save_triage_labels
 
         return jsonify({"config": save_triage_labels(account_val, labels, name=name)})
+    except ValueError as exc:
+        # Validation error (e.g., labels with spaces)
+        db.session.rollback()
+        current_app.logger.warning("triage labels validation failed: %s", exc)
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         db.session.rollback()
         current_app.logger.warning("triage labels save failed: %s", exc)

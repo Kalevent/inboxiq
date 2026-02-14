@@ -38,6 +38,21 @@ DEFAULT_TRIAGE_LABELS: Dict[str, Any] = {
         "spam",
         "informational",
     ],
+    "email_types": [
+        "support_request",
+        "sales_inquiry",
+        "billing",
+        "bug_report",
+        "feature_request",
+        "marketing",
+        "newsletter",
+        "spam",
+        "transactional",
+        "auto_reply",
+        "notification",
+        "internal",
+        "other",
+    ],
     "teams": ["support", "engineering", "sales", "billing", "management"],
     "action_required_options": ["true", "false", "optional"],
 }
@@ -82,6 +97,17 @@ def get_triage_labels(account_id: int | None) -> Dict[str, Any]:
 
 
 def save_triage_labels(account_id: int | None, labels: Dict[str, Any], name: str = "default") -> Dict[str, Any]:
+    # Validate that all labels are single words (no spaces) to avoid confusion
+    for key, values in labels.items():
+        if isinstance(values, list):
+            for value in values:
+                if isinstance(value, str) and " " in value.strip():
+                    raise ValueError(
+                        f"Label '{value}' in '{key}' contains spaces. "
+                        f"Labels must be single words (e.g., 'billing' not 'billing issue'). "
+                        f"Use underscores for multi-word labels (e.g., 'bug_report')."
+                    )
+
     cfg = (
         TriageLabelConfig.query.filter(
             TriageLabelConfig.account_id == account_id,

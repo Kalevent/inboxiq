@@ -392,6 +392,11 @@ def process_incoming_email_task(self, payload: dict) -> dict:
             rule_name=None  # Will be set per-rule
         )
 
+        logging.getLogger(__name__).info(
+            "Built automation trigger context: ticket_id=%s extracted_keys=%s",
+            ticket.id, list(merged.get("entities", {}).keys())
+        )
+
         # Execute matching rules
         for rule in rules:
             trigger_event = rule.trigger.get("event") if isinstance(rule.trigger, dict) else None
@@ -402,10 +407,14 @@ def process_incoming_email_task(self, payload: dict) -> dict:
                     rule.id, rule.name, trigger_event
                 )
                 try:
-                    execute_automation_workflow(
+                    result = execute_automation_workflow(
                         workflow_id=str(rule.id),
                         trigger_context=trigger_context,
                         trigger_event=trigger_event
+                    )
+                    logging.getLogger(__name__).info(
+                        "Automation workflow completed: rule_id=%s result=%s",
+                        rule.id, result
                     )
                 except Exception as rule_exc:
                     logging.getLogger(__name__).exception(
