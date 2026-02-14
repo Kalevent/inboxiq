@@ -1356,6 +1356,46 @@ class CampaignSender(db.Model):
         }
 
 
+class HunterDomainCache(db.Model):
+    """
+    Cache for Hunter.io domain email lookups to avoid duplicate API calls.
+    Stores email patterns found for each domain.
+    """
+    __tablename__ = "hunter_domain_cache"
+    __table_args__ = (
+        db.UniqueConstraint("domain", name="uq_hunter_domain"),
+        db.Index("idx_hunter_domain_created", "created_at"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    domain = db.Column(db.String(255), nullable=False, comment="Company domain (e.g., google.com)")
+
+    # Cached data from Hunter.io
+    emails = db.Column(db.JSON, nullable=True, comment="List of emails found for this domain")
+    email_count = db.Column(db.Integer, default=0, comment="Number of emails found")
+
+    # Metadata
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=True, comment="Cache expiration (30 days)")
+
+    def is_expired(self) -> bool:
+        """Check if cache entry has expired."""
+        if not self.expires_at:
+            return True
+        from datetime import datetime, timezone
+        return datetime.now(timezone.utc) > self.expires_at
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "domain": self.domain,
+            "emails": self.emails,
+            "email_count": self.email_count,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+        }
+
+
 class EmailCampaign(db.Model):
     """
     Email campaign for automated outreach to leads.
