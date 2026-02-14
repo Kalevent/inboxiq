@@ -1065,11 +1065,11 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                         <div class="text-xs text-slate-400 mt-1">Active Rules</div>
                       </div>
                       <div class="text-center p-4 rounded-xl bg-slate-950/40 border border-slate-800">
-                        <div class="text-2xl font-bold text-emerald-300">0</div>
+                        <div class="text-2xl font-bold text-emerald-300">{{ automation_executions_30d }}</div>
                         <div class="text-xs text-slate-400 mt-1">Executions (30d)</div>
                       </div>
                       <div class="text-center p-4 rounded-xl bg-slate-950/40 border border-slate-800">
-                        <div class="text-2xl font-bold text-amber-300">0h</div>
+                        <div class="text-2xl font-bold text-amber-300">{{ automation_time_saved_display }}</div>
                         <div class="text-xs text-slate-400 mt-1">Time Saved (30d)</div>
                       </div>
                     </div>

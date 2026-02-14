@@ -1209,6 +1209,24 @@ def integrations_automation():
     WebhookProvider.created_at.desc()
   ).all()
 
+  # Calculate automation metrics
+  from src.models import AutomationRuleExecution
+  from datetime import datetime, timedelta, timezone
+
+  try:
+    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    automation_executions_30d = AutomationRuleExecution.query.filter(
+      AutomationRuleExecution.account_id == account_id,
+      AutomationRuleExecution.created_at >= thirty_days_ago
+    ).count()
+
+    automation_time_saved_minutes = automation_executions_30d * 2
+    automation_time_saved_hours = automation_time_saved_minutes // 60
+    automation_time_saved_display = f"{automation_time_saved_hours}h" if automation_time_saved_hours > 0 else "0h"
+  except Exception:
+    automation_executions_30d = 0
+    automation_time_saved_display = "0h"
+
   return render_template(
     "settings/index.html",
     active_tab="integrations",
@@ -1217,6 +1235,8 @@ def integrations_automation():
     account_id=account_id,
     rules=rules,
     webhook_providers=webhook_providers,
+    automation_executions_30d=automation_executions_30d,
+    automation_time_saved_display=automation_time_saved_display,
     phoenix_url=os.environ.get('PHOENIX_URL'),
     flask_env=os.environ.get('FLASK_ENV', 'production'),
   )
