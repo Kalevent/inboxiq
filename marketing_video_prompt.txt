@@ -1,0 +1,47 @@
+CONTENT GENERATION AGENT PROMPT
+================================
+
+Generate a 60-second demo video script for InboxIQ - an AI-powered unified intake and triage platform.
+
+TARGET AUDIENCE: VP Revenue Operations, Director of Support, Sales Ops Leaders at B2B SaaS companies (100-500 employees)
+
+KEY FEATURES TO HIGHLIGHT:
+- Unified intake across email, forms, chat, voice, social media
+- AI-powered auto-triage and categorization
+- Smart routing to the right team
+- No-code automation rules engine (if/then workflows)
+- Custom automation triggers (keywords, sentiment, urgency, contact info)
+- Automated actions (route, tag, notify, create tickets, update CRM)
+- Reduces triage time by 80%
+- 99% triage accuracy
+- Integrates with Slack, HubSpot, Salesforce
+
+PROBLEM WE SOLVE:
+- Manual ticket triage is slow and expensive
+- Tickets go to wrong teams 40% of the time
+- Support/sales teams waste hours sorting instead of solving
+- Inconsistent prioritization leads to missed SLAs
+
+UNIQUE VALUE PROPS:
+- AI that learns your organization's routing rules
+- Works across ALL channels (not just email)
+- No-code automation builder with visual workflow editor
+- Flexible automation triggers (keywords, sentiment, contact fields, custom conditions)
+- Automated workflows eliminate manual sorting and routing
+- Set up in minutes, not weeks
+
+TONE: Professional but approachable, data-driven, helpful not salesy
+
+OUTPUT FORMAT:
+- Scene-by-scene breakdown
+- Voiceover script
+- On-screen text callouts
+- Visual suggestions
+- Timing for each section
+
+CONSTRAINTS:
+- Total runtime: 60 seconds max
+- Hook in first 5 seconds
+- Show actual product (not just talking heads)
+- Include clear CTA at end
+- Focus on benefits, not just features

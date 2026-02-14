@@ -398,6 +398,7 @@
 
               <!-- Waitlist form -->
               <form action="/automation-studio/waitlist" method="POST" class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input
                   type="email"
                   name="email"

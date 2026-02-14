@@ -83,6 +83,7 @@
           <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 mb-6">
             <h2 class="text-lg font-semibold mb-4">Upload Articles</h2>
             <form method="POST" enctype="multipart/form-data" id="kb-upload-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" name="action" value="upload_files">
 
               <div class="space-y-4">
@@ -180,6 +181,7 @@
                         </a>
                         {% endif %}
                         <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this article?');">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                           <input type="hidden" name="action" value="delete_article">
                           <input type="hidden" name="article_id" value="{{ article.id }}">
                           <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-200 px-2 py-1 text-xs font-medium transition">

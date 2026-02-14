@@ -48,6 +48,7 @@
     <section class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/20 to-slate-900/70 shadow-lg shadow-slate-900/30 p-6">
       <h2 class="text-lg font-semibold text-indigo-100 mb-4">Pitch a New Topic</h2>
       <form method="post" action="/admin/pitched-topics/submit" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs text-slate-300 mb-1">Title / Topic Idea *</label>
@@ -263,6 +264,7 @@
                 <!-- Approve (for pending) -->
                 {% if topic.status == 'pending' %}
                   <form method="post" action="/admin/pitched-topics/{{ topic.id }}/approve" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit"
                             class="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 shadow">
                       Approve
@@ -270,6 +272,7 @@
                   </form>
 
                   <form method="post" action="/admin/pitched-topics/{{ topic.id }}/reject" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit"
                             class="rounded-xl bg-rose-600/80 hover:bg-rose-500 text-white text-xs px-3 py-2 border border-rose-400/40">
                       Reject
@@ -280,6 +283,7 @@
                 <!-- Generate (for approved) -->
                 {% if topic.status == 'approved' %}
                   <form method="post" action="/admin/pitched-topics/{{ topic.id }}/generate" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit"
                             class="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-2 shadow">
                       Generate
@@ -298,6 +302,7 @@
 
                 <!-- Delete -->
                 <form method="post" action="/admin/pitched-topics/{{ topic.id }}/delete" class="inline" onsubmit="return confirm('Delete this pitched topic?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                   <button type="submit"
                           class="text-slate-400 hover:text-rose-300 text-xs">
                     Delete

@@ -50,6 +50,7 @@
   {% endwith %}
 
   <form method="POST" id="ruleForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" name="action" value="update_rule">
     <input type="hidden" name="conditions_json" id="conditions_json" value="{{ (rule.conditions or []) | tojson }}">
     <input type="hidden" name="actions_json" id="actions_json" value="{{ (rule.actions or []) | tojson }}">
