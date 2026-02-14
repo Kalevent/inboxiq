@@ -1270,12 +1270,50 @@ def edit_automation_rule(rule_id):
       return redirect(url_for("settings.integrations_automation"))
 
   # Get webhook providers for action options
-  webhook_providers = WebhookProvider.query.filter_by(account_id=account_id).all()
+  webhook_providers = WebhookProvider.query.filter_by(account_id=account_id, enabled=True).all()
+
+  # Check what integrations are available
+  has_slack = any(p.provider_type == 'slack' for p in webhook_providers)
+  has_email = True  # Email is always available via SMTP
+
+  # Build available actions list
+  available_actions = {
+    'always': [
+      {'value': 'tag', 'label': 'Add Tag', 'description': 'Add a tag to the ticket/lead'},
+      {'value': 'assign', 'label': 'Assign To', 'description': 'Assign to a team or user'},
+    ],
+    'integrations': []
+  }
+
+  if has_email:
+    available_actions['integrations'].append({
+      'value': 'send_email',
+      'label': 'Send Email',
+      'description': 'Send an email notification'
+    })
+
+  if has_slack:
+    available_actions['integrations'].append({
+      'value': 'slack_notify',
+      'label': 'Send to Slack',
+      'description': 'Post a message to Slack'
+    })
+
+  # Add webhook providers
+  for provider in webhook_providers:
+    if provider.provider_type != 'slack':  # Slack handled separately
+      available_actions['integrations'].append({
+        'value': f'webhook_{provider.id}',
+        'label': f'Webhook: {provider.configuration_name}',
+        'description': f'Call webhook ({provider.provider_type})',
+        'provider_id': provider.id
+      })
 
   return render_template(
     "settings/automation_rule_edit.html",
     rule=rule,
     webhook_providers=webhook_providers,
+    available_actions=available_actions,
     account_id=account_id,
   )
 

@@ -155,6 +155,9 @@
 let conditions = {{ (rule.conditions or []) | tojson }};
 let actions = {{ (rule.actions or []) | tojson }};
 
+// Load available action types from backend
+const availableActions = {{ available_actions | tojson }};
+
 // Render existing conditions
 function renderConditions() {
   const container = document.getElementById('conditionsList');
@@ -243,6 +246,29 @@ function renderActions() {
       'slack_notify': '{"channel": "#general", "message": "New ticket"}'
     };
 
+    // Build action type options dynamically
+    let actionOptions = '';
+
+    // Add "Always Available" section
+    if (availableActions.always && availableActions.always.length > 0) {
+      actionOptions += '<optgroup label="Always Available">';
+      availableActions.always.forEach(opt => {
+        const selected = action.type === opt.value ? 'selected' : '';
+        actionOptions += `<option value="${opt.value}" ${selected}>${opt.label}</option>`;
+      });
+      actionOptions += '</optgroup>';
+    }
+
+    // Add "Integrations" section
+    if (availableActions.integrations && availableActions.integrations.length > 0) {
+      actionOptions += '<optgroup label="Integrations">';
+      availableActions.integrations.forEach(opt => {
+        const selected = action.type === opt.value ? 'selected' : '';
+        actionOptions += `<option value="${opt.value}" ${selected}>${opt.label}</option>`;
+      });
+      actionOptions += '</optgroup>';
+    }
+
     container.innerHTML += `
       <div class="border-2 border-green-200 rounded-lg p-4 bg-green-50">
         <div class="flex justify-between items-start mb-3">
@@ -256,11 +282,7 @@ function renderActions() {
             <select onchange="updateAction(${index}, 'type', this.value)"
                     class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
                     style="color: #111827 !important; background-color: #ffffff !important;">
-              <option value="send_email" ${action.type === 'send_email' ? 'selected' : ''}>Send Email</option>
-              <option value="webhook" ${action.type === 'webhook' ? 'selected' : ''}>Call Webhook</option>
-              <option value="tag" ${action.type === 'tag' ? 'selected' : ''}>Add Tag</option>
-              <option value="assign" ${action.type === 'assign' ? 'selected' : ''}>Assign To</option>
-              <option value="slack_notify" ${action.type === 'slack_notify' ? 'selected' : ''}>Send to Slack</option>
+              ${actionOptions}
             </select>
             <p class="text-xs text-gray-500 mt-1">What to do when rule triggers</p>
           </div>
