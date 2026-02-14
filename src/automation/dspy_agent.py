@@ -20,8 +20,9 @@ from datetime import datetime
 import dspy
 from dspy import Signature, OutputField, InputField
 
-from src.models import AutomationRule, WebhookProvider
+from src.models import AutomationRule, WebhookProvider, AutomationRuleExecution
 from src.extensions import db
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -222,6 +223,14 @@ class DSPyAutomationAgent:
 
             if not conditions_met:
                 self.log("⏭️  Conditions not met, skipping workflow")
+                self._store_execution(
+                    trigger_event=trigger_event,
+                    matched=False,
+                    executed=False,
+                    success=False,
+                    condition_details=condition_details,
+                    action_results=None
+                )
                 return {
                     "executed": False,
                     "matched": False,
@@ -238,6 +247,15 @@ class DSPyAutomationAgent:
             all_successful = all(r.get("success", False) for r in action_results)
 
             self.log(f"🎯 Execution complete: {len(action_results)} actions, success={all_successful}")
+
+            self._store_execution(
+                trigger_event=trigger_event,
+                matched=True,
+                executed=True,
+                success=all_successful,
+                condition_details=condition_details,
+                action_results=action_results
+            )
 
             return {
                 "executed": True,
@@ -256,6 +274,15 @@ class DSPyAutomationAgent:
         except Exception as e:
             logger.exception(f"DSPy agent execution failed: {e}")
             self.log(f"❌ Error: {str(e)}")
+            self._store_execution(
+                trigger_event=trigger_event,
+                matched=True,
+                executed=False,
+                success=False,
+                condition_details=None,
+                action_results=None,
+                error_message=str(e)
+            )
             return {
                 "executed": False,
                 "matched": True,
@@ -501,6 +528,68 @@ class DSPyAutomationAgent:
                     break
 
         return results
+
+    def _store_execution(
+        self,
+        trigger_event: str,
+        matched: bool,
+        executed: bool,
+        success: bool,
+        condition_details: Optional[List[Dict[str, Any]]],
+        action_results: Optional[List[Dict[str, Any]]],
+        error_message: Optional[str] = None
+    ):
+        """Store execution record in database for analytics."""
+        from src.observability_sanitizer import sanitize_trigger_context
+
+        # Extract ticket/lead IDs if present
+        ticket_id = None
+        lead_id = None
+        if "ticket" in self.trigger_context:
+            ticket = self.trigger_context["ticket"]
+            if isinstance(ticket, dict):
+                ticket_id = ticket.get("id")
+            elif hasattr(ticket, "id"):
+                ticket_id = ticket.id
+
+        if "lead" in self.trigger_context:
+            lead = self.trigger_context["lead"]
+            if isinstance(lead, dict):
+                lead_id = lead.get("id")
+            elif hasattr(lead, "id"):
+                lead_id = lead.id
+
+        # Create execution record
+        execution = AutomationRuleExecution(
+            id=str(uuid4()),
+            rule_id=self.workflow.id,
+            account_id=self.account_id,
+            trace_id="dspy-" + str(uuid4())[:8],  # Placeholder trace ID
+            ticket_id=ticket_id,
+            lead_id=lead_id,
+            trigger_event=trigger_event,
+            trigger_type=self.trigger_context.get("type", "email"),
+            trigger_context=sanitize_trigger_context(self.trigger_context),
+            matched=matched,
+            executed=executed,
+            success=success,
+            error_message=error_message,
+            execution_time_ms=0,  # DSPy execution time not currently tracked
+            conditions_evaluated=condition_details,
+            actions_executed=action_results
+        )
+
+        db.session.add(execution)
+
+        # Update workflow stats
+        self.workflow.execution_count = (self.workflow.execution_count or 0) + 1
+        if success:
+            self.workflow.success_count = (self.workflow.success_count or 0) + 1
+        if error_message:
+            self.workflow.error_count = (self.workflow.error_count or 0) + 1
+        self.workflow.last_executed_at = datetime.utcnow()
+
+        db.session.commit()
 
     def log(self, message: str):
         """Add message to execution log."""
