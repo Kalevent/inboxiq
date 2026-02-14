@@ -53,7 +53,7 @@ def calculate_rule_roi(
             }
         }
     """
-    rule = AutomationRule.query.get(rule_id)
+    rule = AutomationRule.query.filter_by(id=rule_id).first()
     if not rule:
         raise ValueError(f"Rule not found: {rule_id}")
 
@@ -215,7 +215,7 @@ def track_ticket_reassignment(
     Returns:
         None
     """
-    execution = AutomationRuleExecution.query.get(automation_execution_id)
+    execution = AutomationRuleExecution.query.filter_by(id=automation_execution_id).first()
     if execution and execution.ticket_id == ticket_id:
         execution.ticket_reassigned = True
         execution.reassignment_timestamp = datetime.utcnow()
@@ -242,7 +242,7 @@ def update_rule_aggregate_metrics(rule_id: str) -> None:
     Returns:
         None
     """
-    rule = AutomationRule.query.get(rule_id)
+    rule = AutomationRule.query.filter_by(id=rule_id).first()
     if not rule:
         return
 
