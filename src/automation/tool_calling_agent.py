@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Callable
 from datetime import datetime
 from uuid import uuid4
 
-from anthropic import Anthropic
+from openai import OpenAI
 
 from src.models import AutomationRule, WebhookProvider, AutomationRuleExecution
 from src.extensions import db
@@ -42,12 +42,12 @@ class ToolCallingAutomationAgent:
         self.execution_log: List[str] = []
         self.tool_calls: List[Dict[str, Any]] = []
 
-        # Initialize Anthropic client
-        api_key = os.getenv("ANTHROPIC_API_KEY")
+        # Initialize OpenAI client
+        api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise RuntimeError("ANTHROPIC_API_KEY required for tool-calling agent")
+            raise RuntimeError("OPENAI_API_KEY required for tool-calling agent")
 
-        self.anthropic = Anthropic(api_key=api_key)
+        self.openai = OpenAI(api_key=api_key)
 
         # Register available tools
         self.tools = self._register_tools()
@@ -57,78 +57,96 @@ class ToolCallingAutomationAgent:
         """Register tools the agent can call dynamically."""
         return [
             {
-                "name": "search_webhook_providers",
-                "description": "Search for webhook providers by name or type (slack, teams, sage, quickbooks, custom). Returns list of available providers with IDs.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "Search query (provider name or type like 'slack', 'teams')"
-                        }
-                    },
-                    "required": ["query"]
-                }
-            },
-            {
-                "name": "send_webhook",
-                "description": "Send a webhook request to a provider. Use this to send notifications to Slack, Teams, or custom webhooks.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "provider_id": {
-                            "type": "string",
-                            "description": "UUID of the webhook provider (get from search_webhook_providers)"
-                        },
-                        "payload": {
+                "type": "function",
+                "function": {
+                    "type": "function",
+                    "function": {
+                        "name": "search_webhook_providers",
+                        "description": "Search for webhook providers by name or type (slack, teams, sage, quickbooks, custom). Returns list of available providers with IDs.",
+                        "parameters": {
                             "type": "object",
-                            "description": "Payload to send (for Slack: {text, channel, username, icon_emoji})"
+                            "properties": {
+                                "query": {
+                                    "type": "string",
+                                    "description": "Search query (provider name or type like 'slack', 'teams')"
+                                }
+                            },
+                            "required": ["query"]
                         }
-                    },
-                    "required": ["provider_id", "payload"]
+                    }
                 }
             },
             {
-                "name": "search_context_field",
-                "description": "Search for a field in the trigger context. Use this to find email subject, body, ticket data, etc.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "field_path": {
-                            "type": "string",
-                            "description": "Dot-notation path to field (e.g., 'email.subject', 'ticket.priority')"
-                        }
-                    },
-                    "required": ["field_path"]
-                }
-            },
-            {
-                "name": "evaluate_condition",
-                "description": "Evaluate a condition against context data. Returns true/false.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "field_path": {
-                            "type": "string",
-                            "description": "Path to field in context"
+                "type": "function",
+                "function": {
+                    "name": "send_webhook",
+                    "description": "Send a webhook request to a provider. Use this to send notifications to Slack, Teams, or custom webhooks.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "provider_id": {
+                                "type": "string",
+                                "description": "UUID of the webhook provider (get from search_webhook_providers)"
+                            },
+                            "payload": {
+                                "type": "object",
+                                "description": "Payload to send (for Slack: {text, channel, username, icon_emoji})"
+                            }
                         },
-                        "operator": {
-                            "type": "string",
-                            "enum": ["equals", "contains", "not_contains", "greater_than", "less_than", "is_empty", "is_not_empty"],
-                            "description": "Comparison operator"
-                        },
-                        "value": {
-                            "type": "string",
-                            "description": "Value to compare against"
-                        }
-                    },
-                    "required": ["field_path", "operator", "value"]
+                        "required": ["provider_id", "payload"]
+                    }
                 }
             },
             {
-                "name": "render_template",
-                "description": "Render a template string with context variables. Use {{variable}} syntax.",
-                "input_schema": {
+                "type": "function",
+                "function": {
+                    "name": "search_context_field",
+                    "description": "Search for a field in the trigger context. Use this to find email subject, body, ticket data, etc.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "field_path": {
+                                "type": "string",
+                                "description": "Dot-notation path to field (e.g., 'email.subject', 'ticket.priority')"
+                            }
+                        },
+                        "required": ["field_path"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "evaluate_condition",
+                    "description": "Evaluate a condition against context data. Returns true/false.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "field_path": {
+                                "type": "string",
+                                "description": "Path to field in context"
+                            },
+                            "operator": {
+                                "type": "string",
+                                "enum": ["equals", "contains", "not_contains", "greater_than", "less_than", "is_empty", "is_not_empty"],
+                                "description": "Comparison operator"
+                            },
+                            "value": {
+                                "type": "string",
+                                "description": "Value to compare against"
+                            }
+                        },
+                        "required": ["field_path", "operator", "value"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "render_template",
+                    "description": "Render a template string with context variables. Use {{variable}} syntax.",
+                }
+                "parameters": {
                     "type": "object",
                     "properties": {
                         "template": {
@@ -140,11 +158,14 @@ class ToolCallingAutomationAgent:
                 }
             },
             {
-                "name": "get_context_summary",
-                "description": "Get a summary of all available context data (email, ticket, extracted fields).",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {}
+                "type": "function",
+                "function": {
+                    "name": "get_context_summary",
+                    "description": "Get a summary of all available context data (email, ticket, extracted fields).",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {}
+                    }
                 }
             }
         ]
@@ -194,67 +215,64 @@ class ToolCallingAutomationAgent:
                 iteration += 1
                 self.log(f"🔄 Agent iteration {iteration}")
 
-                # Call Claude with tools
-                response = self.anthropic.messages.create(
-                    model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5-20250929"),
+                # Call OpenAI with tools
+                response = self.openai.chat.completions.create(
+                    model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
                     max_tokens=4096,
                     tools=self.tools,
                     messages=messages
                 )
 
+                message = response.choices[0].message
+
                 # Log agent's thinking
-                for block in response.content:
-                    if block.type == "text":
-                        self.log(f"💭 Agent: {block.text[:200]}...")
+                if message.content:
+                    self.log(f"💭 Agent: {message.content[:200]}...")
 
                 # Check if agent wants to use tools
-                if response.stop_reason == "tool_use":
+                if message.tool_calls:
                     # Agent called tools - execute them
                     tool_results = []
 
-                    for block in response.content:
-                        if block.type == "tool_use":
-                            self.log(f"🔧 Agent calling tool: {block.name}")
+                    for tool_call in message.tool_calls:
+                        self.log(f"🔧 Agent calling tool: {tool_call.function.name}")
 
-                            # Execute the tool
-                            result = self._execute_tool(block.name, block.input)
+                        # Parse tool arguments
+                        tool_args = json.loads(tool_call.function.arguments)
 
-                            self.tool_calls.append({
-                                "tool": block.name,
-                                "input": block.input,
-                                "result": result
-                            })
+                        # Execute the tool
+                        result = self._execute_tool(tool_call.function.name, tool_args)
 
-                            tool_results.append({
-                                "type": "tool_result",
-                                "tool_use_id": block.id,
-                                "content": json.dumps(result)
-                            })
+                        self.tool_calls.append({
+                            "tool": tool_call.function.name,
+                            "input": tool_args,
+                            "result": result
+                        })
 
-                    # Add assistant's message with tool use
+                        tool_results.append({
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": json.dumps(result)
+                        })
+
+                    # Add assistant's message with tool calls
                     messages.append({
                         "role": "assistant",
-                        "content": response.content
+                        "content": message.content,
+                        "tool_calls": message.tool_calls
                     })
 
                     # Add tool results
-                    messages.append({
-                        "role": "user",
-                        "content": tool_results
-                    })
+                    messages.extend(tool_results)
 
                     # Continue loop - agent will process results and decide next steps
                     continue
 
-                elif response.stop_reason == "end_turn":
-                    # Agent is done!
+                else:
+                    # Agent is done (no tool calls)
                     self.log("✅ Agent completed workflow")
 
-                    # Extract final result from agent's last message
-                    final_text = ""
-                    for block in response.content:
-                        if block.type == "text":
-                            final_text = block.text
+                    final_text = message.content or ""
 
                     # Parse success from agent's response
                     success = "success" in final_text.lower() and "fail" not in final_text.lower()
@@ -380,9 +398,12 @@ Start by using get_context_summary to see what data is available."""
                 query_lower in p.provider_type.lower()):
                 results.append({
                     "id": str(p.id),
-                    "name": p.configuration_name,
-                    "type": p.provider_type
-                })
+                    "type": "function",
+                    "function": {
+                        "name": p.configuration_name,
+                        "type": p.provider_type
+                    })
+                    }
 
         return results
 

@@ -186,11 +186,11 @@ def execute_conditional_webhook(context: Dict[str, Any], config: Dict[str, Any],
         conditions = config.get("conditions", [])
 
         # Evaluate conditions to find match
-        from src.automation.workflow_engine import _evaluate_single_condition
+        from src.automation.utils import evaluate_condition
 
         for condition_block in conditions:
             condition = condition_block.get("condition")
-            if _evaluate_single_condition(condition, context):
+            if evaluate_condition(condition, context):
                 # Condition matched - execute this webhook
                 webhook_config = {
                     "provider": condition_block.get("provider"),

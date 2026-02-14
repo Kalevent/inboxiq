@@ -1,21 +1,21 @@
 """
-Automation Studio - Dynamic workflow engine with OpenTelemetry instrumentation.
+Automation Studio - Intelligent agents with tool calling.
 
 This package provides:
-- Dynamic workflow execution with full tracing
-- Condition evaluation with per-condition spans
-- Action execution with per-action spans
-- User-facing execution history with trace IDs
+- Tool-calling agent (autonomous, like Claude Code)
+- DSPy agent (structured LLM reasoning)
+- Shared utilities for condition evaluation
+- Action handlers for webhooks, email, storage
 """
 
-from src.automation.workflow_engine import (
-    execute_automation_workflow,
-    evaluate_workflow_conditions,
-    execute_workflow_actions,
-)
+# Main entry points for automation
+from src.automation.tool_calling_agent import execute_workflow_with_tool_calling_agent
+from src.automation.dspy_agent import execute_workflow_with_dspy_agent
+from src.automation.utils import evaluate_condition, extract_field_value
 
 __all__ = [
-    "execute_automation_workflow",
-    "evaluate_workflow_conditions",
-    "execute_workflow_actions",
+    "execute_workflow_with_tool_calling_agent",
+    "execute_workflow_with_dspy_agent",
+    "evaluate_condition",
+    "extract_field_value",
 ]
