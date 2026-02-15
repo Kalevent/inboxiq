@@ -54,25 +54,22 @@ class ToolCallingAutomationAgent:
         self.tool_handlers = self._register_tool_handlers()
 
     def _register_tools(self) -> List[Dict[str, Any]]:
-        """Register tools the agent can call dynamically."""
+        """Register tools the agent can call dynamically (OpenAI format)."""
         return [
             {
                 "type": "function",
                 "function": {
-                    "type": "function",
-                    "function": {
-                        "name": "search_webhook_providers",
-                        "description": "Search for webhook providers by name or type (slack, teams, sage, quickbooks, custom). Returns list of available providers with IDs.",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "query": {
-                                    "type": "string",
-                                    "description": "Search query (provider name or type like 'slack', 'teams')"
-                                }
-                            },
-                            "required": ["query"]
-                        }
+                    "name": "search_webhook_providers",
+                    "description": "Search for webhook providers by name or type (slack, teams, sage, quickbooks, custom). Returns list of available providers with IDs.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "Search query (provider name or type like 'slack', 'teams')"
+                            }
+                        },
+                        "required": ["query"]
                     }
                 }
             },
@@ -145,16 +142,16 @@ class ToolCallingAutomationAgent:
                 "function": {
                     "name": "render_template",
                     "description": "Render a template string with context variables. Use {{variable}} syntax.",
-                }
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "template": {
-                            "type": "string",
-                            "description": "Template string with {{variables}}"
-                        }
-                    },
-                    "required": ["template"]
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "template": {
+                                "type": "string",
+                                "description": "Template string with {{variables}}"
+                            }
+                        },
+                        "required": ["template"]
+                    }
                 }
             },
             {
@@ -398,12 +395,9 @@ Start by using get_context_summary to see what data is available."""
                 query_lower in p.provider_type.lower()):
                 results.append({
                     "id": str(p.id),
-                    "type": "function",
-                    "function": {
-                        "name": p.configuration_name,
-                        "type": p.provider_type
-                    })
-                    }
+                    "name": p.configuration_name,
+                    "type": p.provider_type
+                })
 
         return results
 
