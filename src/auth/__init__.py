@@ -493,6 +493,15 @@ def activate():
     db.session.add(account)
     db.session.commit()
 
+    # Enroll user in trial onboarding sequence (send Day 1 email)
+    try:
+        from src.trial.tasks import enroll_user_in_trial_task
+        enroll_user_in_trial_task.apply_async(args=[user_id_int], queue='leads')
+    except Exception as e:
+        # Don't fail activation if trial email fails
+        import logging
+        logging.getLogger(__name__).warning(f"Failed to enroll user {user_id_int} in trial onboarding: {e}")
+
     additional_claims = {"account_id": str(user.account_id)}
     access_token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
     refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)

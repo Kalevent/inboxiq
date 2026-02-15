@@ -51,6 +51,11 @@ def make_celery(app) -> Celery:
     lead_discovery_max_leads = int(os.getenv("LEAD_DISCOVERY_MAX_LEADS", "50"))
     lead_discovery_hour = int(os.getenv("LEAD_DISCOVERY_HOUR", "2"))  # 2am daily
 
+    # Trial onboarding configuration
+    trial_onboarding_enabled = _parse_bool(os.getenv("TRIAL_ONBOARDING_ENABLED"), True)
+    trial_onboarding_hour = int(os.getenv("TRIAL_ONBOARDING_HOUR", "8"))  # 8am daily
+    trial_onboarding_max_emails = int(os.getenv("TRIAL_ONBOARDING_MAX_EMAILS", "100"))
+
     celery_app.conf.update(
         task_serializer="json",
         accept_content=["json"],
@@ -161,6 +166,18 @@ def make_celery(app) -> Celery:
                 if lead_discovery_enabled
                 else {}
             ),
+            **(
+                {
+                    "process_trial_onboarding_daily": {
+                        "task": "trial.process_onboarding_emails",
+                        "schedule": crontab(hour=trial_onboarding_hour, minute=0),  # 8am daily
+                        "args": [trial_onboarding_max_emails],
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if trial_onboarding_enabled
+                else {}
+            ),
         },
     )
 
@@ -178,7 +195,7 @@ def make_celery(app) -> Celery:
 
 app = create_app()
 celery = make_celery(app)
-celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content"])
+celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial"])
 
 # Initialize OpenTelemetry for Celery workers
 from src.observability import init_otel, get_tracer
