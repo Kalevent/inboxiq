@@ -132,6 +132,12 @@
             <span>Content</span>
           </button>
 
+          <button class="sidebar-nav-item w-full text-left" data-section="trial">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            <span>Trial Onboarding</span>
+            <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded font-medium">NEW</span>
+          </button>
+
           <button class="sidebar-nav-item w-full text-left" data-section="ai">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
             <span>AI & Training</span>
@@ -426,6 +432,110 @@
           </div>
         </section>
 
+        <!-- Trial Onboarding Section -->
+        <section id="section-trial" class="admin-section">
+          <div class="content-container space-y-6">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">Trial Onboarding Metrics</h1>
+              <p class="text-sm text-slate-300 mt-1">Monitor trial users and email delivery (Days 1, 3, 5, 7)</p>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="grid md:grid-cols-4 gap-4">
+              <div class="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-blue-300 mb-1">Active Trials</div>
+                <p id="totalActiveTrials" class="text-3xl font-semibold text-slate-50 mb-1">--</p>
+                <div class="text-xs text-slate-400">Trial users</div>
+              </div>
+
+              <div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-emerald-300 mb-1">Converted</div>
+                <p id="convertedUsers" class="text-3xl font-semibold text-slate-50 mb-1">--</p>
+                <div class="text-xs text-slate-400"><span id="conversionRate">--%</span> conversion rate</div>
+              </div>
+
+              <div class="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-amber-300 mb-1">Ending Soon</div>
+                <p id="endingSoon" class="text-3xl font-semibold text-slate-50 mb-1">--</p>
+                <div class="text-xs text-slate-400">&lt;3 days remaining</div>
+              </div>
+
+              <div class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-indigo-300 mb-1">Day 7 Eligible</div>
+                <p id="day7Eligible" class="text-3xl font-semibold text-slate-50 mb-1">--</p>
+                <div class="text-xs text-slate-400">Received all 4 emails</div>
+              </div>
+            </div>
+
+            <!-- Email Delivery Stats -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <h2 class="text-lg font-semibold text-slate-100 mb-4">Email Delivery Status</h2>
+              <div class="grid md:grid-cols-4 gap-4">
+                <div class="text-center">
+                  <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Day 1 Welcome</div>
+                  <div id="day1Count" class="text-2xl font-semibold text-emerald-400">--</div>
+                  <div class="text-xs text-slate-500 mt-1">eligible users</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Day 3 Use Cases</div>
+                  <div id="day3Count" class="text-2xl font-semibold text-emerald-400">--</div>
+                  <div class="text-xs text-slate-500 mt-1">eligible users</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Day 5 Demo</div>
+                  <div id="day5Count" class="text-2xl font-semibold text-emerald-400">--</div>
+                  <div class="text-xs text-slate-500 mt-1">eligible users</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Day 7 Upgrade</div>
+                  <div id="day7Count" class="text-2xl font-semibold text-emerald-400">--</div>
+                  <div class="text-xs text-slate-500 mt-1">eligible users</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Distribution by Days Since Signup -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <h2 class="text-lg font-semibold text-slate-100 mb-4">Distribution by Days Since Signup</h2>
+              <div id="trialDistribution" class="grid md:grid-cols-4 gap-4">
+                <div class="text-center">
+                  <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Loading...</div>
+                  <div class="text-xl font-semibold text-indigo-400">--</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trial Users Table -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-100">Active Trial Users</h2>
+                <button id="refreshTrialBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">
+                  ↻ Refresh
+                </button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="border-b border-slate-800">
+                    <tr>
+                      <th class="text-left p-2 text-slate-400 font-medium">Email</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Account</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Days Since Signup</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Days Remaining</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Emails Sent</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="trialUsersTable" class="divide-y divide-slate-800">
+                    <tr>
+                      <td colspan="6" class="text-center py-8 text-slate-400">Loading trial users...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- AI & Training Section -->
         <section id="section-ai" class="admin-section">
           <div class="content-container space-y-6">
@@ -537,6 +647,13 @@
         item.classList.add('active');
         const section = item.getAttribute('data-section');
         document.getElementById(`section-${section}`).classList.add('active');
+
+        // Load section-specific data
+        if (section === 'trial') {
+          loadTrialMetrics();
+        } else if (section === 'funnel') {
+          loadFunnelMetrics();
+        }
       });
     });
 
@@ -888,9 +1005,109 @@
       }
     }
 
+    // Load trial onboarding metrics
+    async function loadTrialMetrics() {
+      try {
+        const response = await fetch('/api/v1/admin/trial/metrics', {
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Update summary stats
+        document.getElementById('totalActiveTrials').textContent = data.summary.total_active_trials || 0;
+        document.getElementById('convertedUsers').textContent = data.summary.converted || 0;
+        document.getElementById('conversionRate').textContent = data.summary.conversion_rate.toFixed(1) + '%';
+        document.getElementById('endingSoon').textContent = data.summary.ending_soon || 0;
+        document.getElementById('day7Eligible').textContent = data.summary.day_7_eligible || 0;
+
+        // Update email delivery counts
+        document.getElementById('day1Count').textContent = data.summary.day_1_eligible || 0;
+        document.getElementById('day3Count').textContent = data.summary.day_3_eligible || 0;
+        document.getElementById('day5Count').textContent = data.summary.day_5_eligible || 0;
+        document.getElementById('day7Count').textContent = data.summary.day_7_eligible || 0;
+
+        // Update distribution
+        const distributionContainer = document.getElementById('trialDistribution');
+        const order = ['0-2 days', '3-4 days', '5-7 days', '8+ days'];
+        distributionContainer.innerHTML = order.map(key => {
+          const count = data.distribution[key] || 0;
+          return `
+            <div class="text-center">
+              <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">${key}</div>
+              <div class="text-xl font-semibold text-indigo-400">${count} users</div>
+            </div>
+          `;
+        }).join('');
+
+        // Update users table
+        const tableBody = document.getElementById('trialUsersTable');
+        if (data.users.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400">No active trial users</td></tr>';
+        } else {
+          tableBody.innerHTML = data.users.map(user => {
+            const statusColor = user.trial_status === 'converted' ? 'text-emerald-400' :
+                               user.trial_status === 'ending_soon' ? 'text-amber-400' : 'text-indigo-400';
+            const statusText = user.trial_status === 'converted' ? 'Converted' :
+                              user.trial_status === 'ending_soon' ? 'Ending Soon' : 'Active';
+
+            return `
+              <tr class="hover:bg-slate-800/50 transition-colors">
+                <td class="p-2">
+                  <div class="text-slate-100">${user.email}</div>
+                  <div class="text-xs text-slate-500">${user.name}</div>
+                </td>
+                <td class="p-2 text-slate-300">${user.account_name}</td>
+                <td class="p-2">
+                  <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-indigo-500/20 text-indigo-300">
+                    ${user.days_since_signup} days
+                  </span>
+                </td>
+                <td class="p-2 text-slate-300">${user.trial_days_remaining} days</td>
+                <td class="p-2">
+                  <div class="flex gap-1">
+                    ${user.expected_emails.map(day => {
+                      const dayNum = day.replace('Day ', '');
+                      const colors = {
+                        '1': 'bg-blue-500/20 text-blue-300',
+                        '3': 'bg-cyan-500/20 text-cyan-300',
+                        '5': 'bg-indigo-500/20 text-indigo-300',
+                        '7': 'bg-purple-500/20 text-purple-300'
+                      };
+                      return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${colors[dayNum] || 'bg-slate-500/20 text-slate-300'}">D${dayNum}</span>`;
+                    }).join('')}
+                  </div>
+                </td>
+                <td class="p-2">
+                  <span class="${statusColor} font-medium text-sm">${statusText}</span>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+      } catch (error) {
+        console.error('Error loading trial metrics:', error);
+        document.getElementById('trialUsersTable').innerHTML =
+          `<tr><td colspan="6" class="text-center py-8 text-red-400">Error: ${error.message}</td></tr>`;
+      }
+    }
+
+    // Add event listeners
+    document.getElementById('refreshTrialBtn')?.addEventListener('click', loadTrialMetrics);
+
     // Load funnel metrics on page load if on funnel section
     if (document.getElementById('section-funnel').classList.contains('active')) {
       loadFunnelMetrics();
+    }
+
+    // Load trial metrics on page load if on trial section
+    if (document.getElementById('section-trial')?.classList.contains('active')) {
+      loadTrialMetrics();
     }
   </script>
 </body>

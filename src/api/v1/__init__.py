@@ -15,6 +15,7 @@ from src.api.v1 import (  # noqa: F401
     admin,
     admin_funnel,
     admin_content,
+    admin_trial,
     blog,
     feedback_export,
     uploads,

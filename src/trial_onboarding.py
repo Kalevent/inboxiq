@@ -53,9 +53,14 @@ def extract_personalization_variables(user: User, account: Account) -> Dict[str,
     Returns:
         Dict of variables for template rendering
     """
-    # Extract first name from email
+    # Extract first name - prefer user.name, fallback to email parsing
     first_name = ""
-    if user.email:
+    if user.name:
+        # If user has a name field, use the first word as first name
+        name_parts = user.name.split()
+        first_name = name_parts[0].capitalize() if name_parts else user.name.capitalize()
+    elif user.email:
+        # Fallback: extract from email (e.g., jane.doe@company.com -> Jane)
         email_username = user.email.split('@')[0]
         name_parts = email_username.split('.')
         first_name = name_parts[0].capitalize() if name_parts else email_username.capitalize()

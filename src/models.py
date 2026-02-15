@@ -27,6 +27,7 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(255), nullable=True)
     password_hash = db.Column(db.String(255), nullable=True)
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
