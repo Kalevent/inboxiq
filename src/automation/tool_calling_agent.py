@@ -291,11 +291,6 @@ class ToolCallingAutomationAgent:
                         "agent_response": final_text
                     }
 
-                else:
-                    # Unexpected stop reason
-                    self.log(f"⚠️  Unexpected stop reason: {response.stop_reason}")
-                    break
-
             # Max iterations reached
             self.log("⚠️  Max iterations reached")
             return {
