@@ -4,7 +4,7 @@ metadata:
   name: inboxiq
   namespace: kaley
 spec:
-  replicas: 1  # Reduced to 1 due to memory constraints
+  replicas: 1  # Can increase after memory optimization is confirmed stable
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: inboxiq
-          image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
+          image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:20260215-144250-otel-fix
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -63,26 +63,26 @@ spec:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 5
-            timeoutSeconds: 3
+            timeoutSeconds: 10
             successThreshold: 1
             failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 30
+            initialDelaySeconds: 45
             periodSeconds: 10
-            timeoutSeconds: 3
+            timeoutSeconds: 10
             failureThreshold: 3
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 200m
+              memory: 1Gi
             limits:
-              cpu: 500m
-              memory: 512Mi
+              cpu: 1000m
+              memory: 2Gi
 
         # OTel Collector sidecar - aggregates and forwards traces to Phoenix
         - name: otel-collector

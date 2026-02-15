@@ -49,7 +49,21 @@ RUN chown -R appuser:appgroup /usr/src
 USER appuser
 
 # Default command: gunicorn serving the app factory
-CMD [ "gunicorn", "-b", "0.0.0.0:8000", "src.app:create_app()" ]
+# --workers: 2x CPU cores + 1 (optimal for I/O bound apps)
+# --worker-class: sync (default, works well for Flask)
+# --timeout: 60s (default is 30s, give more time for slow endpoints)
+# --graceful-timeout: 30s (allow time for requests to finish on shutdown)
+# --keep-alive: 5s (keep connections alive for better performance)
+CMD [ "gunicorn", \
+      "-b", "0.0.0.0:8000", \
+      "--workers", "3", \
+      "--timeout", "60", \
+      "--graceful-timeout", "30", \
+      "--keep-alive", "5", \
+      "--access-logfile", "-", \
+      "--error-logfile", "-", \
+      "--log-level", "info", \
+      "src.app:create_app()" ]
 
 
 #  aws eks update-kubeconfig --name inboxiq-eks --region us-west-2

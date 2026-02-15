@@ -12,6 +12,16 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Track initialization state to prevent double instrumentation
+_otel_initialized = False
+_instrumentors_initialized = {
+    'flask': False,
+    'sqlalchemy': False,
+    'celery': False,
+    'redis': False,
+    'requests': False
+}
+
 # Conditional imports - only load OTel libraries if enabled
 try:
     from opentelemetry import trace
@@ -56,7 +66,7 @@ def init_otel(app=None, service_name="inboxiq"):
     3. Enables auto-instrumentation for Flask, SQLAlchemy, Celery, Redis, Requests
     4. Returns a Tracer instance for custom spans
 
-    Safe to call multiple times - will only initialize once.
+    Safe to call multiple times - will only initialize once per process.
 
     Args:
         app: Flask application instance (optional, for Flask instrumentation)
@@ -95,6 +105,11 @@ def init_otel(app=None, service_name="inboxiq"):
         logger.info("OpenTelemetry is disabled (OTEL_ENABLED=false)")
         return trace.get_tracer(__name__)  # Return no-op tracer
 
+    global _otel_initialized
+    if _otel_initialized:
+        logger.debug("OpenTelemetry already initialized, skipping")
+        return trace.get_tracer(__name__)
+
     # Override service name from env if provided
     service_name = os.getenv("OTEL_SERVICE_NAME", service_name)
 
@@ -127,36 +142,51 @@ def init_otel(app=None, service_name="inboxiq"):
         logger.error(f"Failed to configure OTLP exporter: {e}")
         # Continue without exporter - spans will still be created but not exported
 
-    # Set as global tracer provider
-    trace.set_tracer_provider(provider)
+    # Set as global tracer provider (only once)
+    try:
+        trace.set_tracer_provider(provider)
+    except Exception as e:
+        logger.warning(f"TracerProvider already set: {e}")
 
-    # Auto-instrument libraries
+    # Auto-instrument libraries (only if not already done)
+    global _instrumentors_initialized
+
     try:
         # Flask instrumentation (HTTP requests, routes)
-        if app:
+        if app and not _instrumentors_initialized['flask']:
             FlaskInstrumentor().instrument_app(app)
+            _instrumentors_initialized['flask'] = True
             logger.info("Flask auto-instrumentation enabled")
 
         # SQLAlchemy instrumentation (database queries)
-        SQLAlchemyInstrumentor().instrument()
-        logger.info("SQLAlchemy auto-instrumentation enabled")
+        if not _instrumentors_initialized['sqlalchemy']:
+            SQLAlchemyInstrumentor().instrument()
+            _instrumentors_initialized['sqlalchemy'] = True
+            logger.info("SQLAlchemy auto-instrumentation enabled")
 
         # Celery instrumentation (background tasks)
-        CeleryInstrumentor().instrument()
-        logger.info("Celery auto-instrumentation enabled")
+        if not _instrumentors_initialized['celery']:
+            CeleryInstrumentor().instrument()
+            _instrumentors_initialized['celery'] = True
+            logger.info("Celery auto-instrumentation enabled")
 
         # Redis instrumentation (cache operations)
-        RedisInstrumentor().instrument()
-        logger.info("Redis auto-instrumentation enabled")
+        if not _instrumentors_initialized['redis']:
+            RedisInstrumentor().instrument()
+            _instrumentors_initialized['redis'] = True
+            logger.info("Redis auto-instrumentation enabled")
 
         # Requests instrumentation (HTTP client calls)
-        RequestsInstrumentor().instrument()
-        logger.info("Requests auto-instrumentation enabled")
+        if not _instrumentors_initialized['requests']:
+            RequestsInstrumentor().instrument()
+            _instrumentors_initialized['requests'] = True
+            logger.info("Requests auto-instrumentation enabled")
 
     except Exception as e:
         logger.warning(f"Failed to enable some auto-instrumentation: {e}")
         # Continue - partial instrumentation is better than none
 
+    _otel_initialized = True
     logger.info(f"OpenTelemetry initialized: {service_name} → {otlp_endpoint}")
 
     return trace.get_tracer(__name__)
