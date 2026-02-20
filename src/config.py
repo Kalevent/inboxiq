@@ -160,6 +160,10 @@ class ProductionConfig(Config):
     CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
     PUBLISHING_API_BASE = os.getenv("PUBLISHING_API_BASE")
     PUBLISHING_API_TOKEN = os.getenv("PUBLISHING_API_TOKEN")
+    # Lax allows the session cookie to be sent on OAuth cross-site redirects
+    # (e.g. LinkedIn/Twitter → kalevent.com callback).
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = True
 
 
 class TestConfig(Config):
