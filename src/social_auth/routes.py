@@ -32,7 +32,7 @@ from src.social_auth import bp
 
 _AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization"
 _TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
-_SCOPE = "w_member_social"
+_SCOPE = "openid profile email w_member_social"
 _PROVIDER = "linkedin_social"
 
 
