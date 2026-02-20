@@ -32,8 +32,7 @@ from src.social_auth import bp
 
 _AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization"
 _TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
-_USERINFO_URL = "https://api.linkedin.com/v2/userinfo"
-_SCOPE = "openid profile email w_member_social"
+_SCOPE = "w_member_social"
 _PROVIDER = "linkedin_social"
 
 
@@ -115,19 +114,9 @@ def linkedin_callback():
     if not access_token:
         return _page(False, f"No access_token in LinkedIn response: {token_data}")
 
-    # Fetch display name
+    # w_member_social scope does not include profile info; display name is generic
     linkedin_name = "LinkedIn user"
     linkedin_sub = None
-    try:
-        profile = requests.get(
-            _USERINFO_URL,
-            headers={"Authorization": f"Bearer {access_token}"},
-            timeout=10,
-        ).json()
-        linkedin_name = profile.get("name") or profile.get("email") or linkedin_name
-        linkedin_sub = profile.get("sub")
-    except Exception:
-        pass
 
     # Persist encrypted token
     account_id = current_app.config.get("DEFAULT_ACCOUNT_ID", 2)
