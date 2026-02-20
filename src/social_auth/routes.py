@@ -37,6 +37,9 @@ _PROVIDER = "linkedin_social"
 
 
 def _callback_uri():
+    override = os.getenv("LINKEDIN_REDIRECT_URI")
+    if override:
+        return override
     return url_for("social_auth.linkedin_callback", _external=True)
 
 
@@ -173,6 +176,9 @@ _TW_PROVIDER = "twitter_social"
 
 
 def _tw_callback_uri():
+    override = os.getenv("TWITTER_REDIRECT_URI")
+    if override:
+        return override
     return url_for("social_auth.twitter_callback", _external=True)
 
 
