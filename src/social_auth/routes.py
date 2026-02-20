@@ -9,8 +9,13 @@ Twitter (X) OAuth 2.0 + PKCE flow:
   GET /social_auth/twitter            → redirect to Twitter for authorisation
   GET /social_auth/twitter/callback   → exchange code for token, save encrypted
 
-State tokens are HMAC-signed and self-contained — no Flask session required.
-This avoids cross-site redirect cookie issues behind ALB without ProxyFix.
+Multi-tenant: each account connects its own token. The logged-in user's
+account_id is embedded in the HMAC-signed state token at OAuth start and
+extracted at callback — no session or DEFAULT_ACCOUNT_ID needed.
+
+State token format (pipe-separated, base64url-encoded):
+  nonce | unix_timestamp | account_id | pkce_verifier
+  (pkce_verifier is empty for LinkedIn)
 
 Required env vars:
   LINKEDIN_CLIENT_ID
@@ -19,7 +24,6 @@ Required env vars:
   TWITTER_CLIENT_ID       (OAuth 2.0 client ID from Developer Portal)
   TWITTER_CLIENT_SECRET   (OAuth 2.0 client secret)
   TWITTER_REDIRECT_URI    (e.g. https://kalevent.com/social_auth/twitter/callback)
-  DEFAULT_ACCOUNT_ID      (required)
 """
 import base64
 import hashlib
@@ -28,13 +32,15 @@ import os
 import secrets
 import time
 import urllib.parse
+from uuid import uuid4
 
 import requests
-from flask import current_app, redirect, render_template_string, request, url_for
+from flask import current_app, g, redirect, render_template_string, request, url_for
 
 from src.crypto import encrypt_value
 from src.extensions import db
-from src.models import InboxConnection
+from src.models import InboxConnection, User
+from src.settings import login_required_settings
 from src.social_auth import bp
 
 _AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization"
@@ -59,23 +65,24 @@ def _signing_key() -> bytes:
     return key.encode()
 
 
-def _make_state(extra: str = "") -> str:
+def _make_state(account_id: int, pkce_verifier: str = "") -> str:
     """Return a self-verifying, time-limited state token.
 
     Payload format (pipe-separated, base64url-encoded):
-      nonce | unix_timestamp | extra
-    extra carries the PKCE verifier for Twitter (empty for LinkedIn).
+      nonce | unix_timestamp | account_id | pkce_verifier
+    account_id is the logged-in user's account — extracted at callback.
+    pkce_verifier is only populated for Twitter PKCE flows.
     """
     nonce = secrets.token_urlsafe(16)
     ts = str(int(time.time()))
-    payload = f"{nonce}|{ts}|{extra}"
+    payload = f"{nonce}|{ts}|{account_id}|{pkce_verifier}"
     sig = hmac.new(_signing_key(), payload.encode(), hashlib.sha256).hexdigest()[:24]
     encoded = base64.urlsafe_b64encode(payload.encode()).rstrip(b"=").decode()
     return f"{encoded}.{sig}"
 
 
 def _verify_state(state: str):
-    """Verify a state token. Returns (valid: bool, extra: str).
+    """Verify a state token. Returns (valid: bool, account_id: int | None, pkce_verifier: str).
 
     Rejects tokens older than _STATE_TTL seconds or with invalid signatures.
     """
@@ -85,19 +92,22 @@ def _verify_state(state: str):
         payload = base64.urlsafe_b64decode(encoded + padding).decode()
         expected = hmac.new(_signing_key(), payload.encode(), hashlib.sha256).hexdigest()[:24]
         if not hmac.compare_digest(sig, expected):
-            return False, ""
-        parts = payload.split("|", 2)
-        if len(parts) < 3:
-            return False, ""
-        _, ts_str, extra = parts
+            return False, None, ""
+        parts = payload.split("|", 3)
+        if len(parts) < 4:
+            return False, None, ""
+        _, ts_str, account_id_str, pkce_verifier = parts
         if time.time() - int(ts_str) > _STATE_TTL:
-            return False, ""
-        return True, extra
+            return False, None, ""
+        account_id = int(account_id_str) if account_id_str else None
+        if not account_id:
+            return False, None, ""
+        return True, account_id, pkce_verifier
     except Exception:
-        return False, ""
+        return False, None, ""
 
 
-# ── LinkedIn helpers ──────────────────────────────────────────────────────────
+# ── Redirect URI helpers ──────────────────────────────────────────────────────
 
 def _callback_uri():
     override = os.getenv("LINKEDIN_REDIRECT_URI")
@@ -121,17 +131,49 @@ def _pkce_pair():
     return verifier, challenge
 
 
+# ── Token save helper ─────────────────────────────────────────────────────────
+
+def _save_connection(account_id: int, provider: str, metadata: dict):
+    """Upsert an InboxConnection for the given account and provider."""
+    user = User.query.filter_by(account_id=account_id).first()
+    if not user:
+        raise RuntimeError(f"No user found for account_id={account_id}")
+
+    existing = InboxConnection.query.filter_by(
+        account_id=account_id, provider=provider
+    ).first()
+
+    if existing:
+        existing.metadata_json = metadata
+        existing.status = "connected"
+    else:
+        db.session.add(InboxConnection(
+            id=str(uuid4()),
+            account_id=account_id,
+            user_id=user.id,
+            provider=provider,
+            status="connected",
+            metadata_json=metadata,
+        ))
+    db.session.commit()
+
+
 # ── LinkedIn start ────────────────────────────────────────────────────────────
 
 @bp.route("/linkedin")
+@login_required_settings
 def linkedin_start():
-    """Visit /social_auth/linkedin (as admin) to kick off LinkedIn OAuth."""
+    """Kick off LinkedIn OAuth for the logged-in account."""
     client_id = current_app.config.get("LINKEDIN_CLIENT_ID") or os.getenv("LINKEDIN_CLIENT_ID")
     if not client_id:
         current_app.logger.error("LinkedIn OAuth: LINKEDIN_CLIENT_ID not configured")
         return "Configuration error.", 500
 
-    state = _make_state()
+    account_id = g.current_account_id
+    if not account_id:
+        return _page(False, "Could not determine your account. Please log in again.")
+
+    state = _make_state(account_id)
     params = {
         "response_type": "code",
         "client_id": client_id,
@@ -158,8 +200,8 @@ def linkedin_callback():
     if not state:
         return _page(False, "Missing state parameter.")
 
-    valid, _ = _verify_state(state)
-    if not valid:
+    valid, account_id, _ = _verify_state(state)
+    if not valid or not account_id:
         return _page(False, "Invalid state — possible CSRF. Please try again.")
 
     if not code:
@@ -197,83 +239,42 @@ def linkedin_callback():
 
     access_token = token_data.get("access_token")
     if not access_token:
-        current_app.logger.error(f"LinkedIn: no access_token in response: {token_data}")
+        current_app.logger.error("LinkedIn: no access_token in response")
         return _page(False, "Connection failed. Please try again.")
-
-    linkedin_name = "LinkedIn user"
-    linkedin_sub = None
 
     # Persist encrypted token
     try:
-        from src.models import User
-        from uuid import uuid4
-        account_id_raw = current_app.config.get("DEFAULT_ACCOUNT_ID") or os.getenv("DEFAULT_ACCOUNT_ID")
-        if not account_id_raw:
-            current_app.logger.error("DEFAULT_ACCOUNT_ID is not configured")
-            raise RuntimeError("DEFAULT_ACCOUNT_ID not set")
-        account_id = int(account_id_raw)
-        admin_user = User.query.filter_by(account_id=account_id).first()
-        if not admin_user:
-            current_app.logger.error("LinkedIn OAuth: no admin user found for configured account")
-            return _page(False, "Server configuration error. Contact the administrator.")
-        user_id = admin_user.id
-
-        existing = InboxConnection.query.filter_by(
-            user_id=user_id, provider=_PROVIDER
-        ).first()
-
-        metadata = {
+        _save_connection(account_id, _PROVIDER, {
             "access_token_enc": encrypt_value(access_token),
-            "linkedin_name": linkedin_name,
-            "linkedin_sub": linkedin_sub,
             "expires_in": token_data.get("expires_in"),
             "scope": _SCOPE,
-        }
-
-        if existing:
-            existing.metadata_json = metadata
-            existing.status = "connected"
-        else:
-            conn = InboxConnection(
-                id=str(uuid4()),
-                account_id=account_id,
-                user_id=user_id,
-                provider=_PROVIDER,
-                status="connected",
-                metadata_json=metadata,
-            )
-            db.session.add(conn)
-
-        db.session.commit()
+        })
     except Exception as exc:
         db.session.rollback()
-        current_app.logger.exception(f"LinkedIn save failed: {exc}")
+        current_app.logger.exception(f"LinkedIn save failed for account={account_id}: {exc}")
         return _page(False, "Connection failed. Please try again.")
 
-    current_app.logger.info(f"LinkedIn connected: account={account_id} name={linkedin_name}")
-    current_app.logger.info(f"LINKEDIN_ACCESS_TOKEN={access_token}")
-
-    return _page(
-        True,
-        f"Connected as <strong>{linkedin_name}</strong>.<br><br>"
-        "Token saved to the database and printed to server logs.<br><br>"
-        "Copy <code>LINKEDIN_ACCESS_TOKEN</code> from logs into <code>prod.env</code>."
-    )
+    current_app.logger.info(f"LinkedIn connected: account={account_id}")
+    return _page(True, "LinkedIn connected successfully.", "LinkedIn")
 
 
 # ── Twitter start ─────────────────────────────────────────────────────────────
 
 @bp.route("/twitter")
+@login_required_settings
 def twitter_start():
-    """Visit /social_auth/twitter (as admin) to kick off Twitter OAuth."""
+    """Kick off Twitter OAuth 2.0 + PKCE for the logged-in account."""
     client_id = current_app.config.get("TWITTER_CLIENT_ID") or os.getenv("TWITTER_CLIENT_ID")
     if not client_id:
         current_app.logger.error("Twitter OAuth: TWITTER_CLIENT_ID not configured")
         return "Configuration error.", 500
 
+    account_id = g.current_account_id
+    if not account_id:
+        return _page(False, "Could not determine your account. Please log in again.", "Twitter")
+
     verifier, challenge = _pkce_pair()
-    # Embed the PKCE verifier in the signed state — no session needed
-    state = _make_state(extra=verifier)
+    state = _make_state(account_id, pkce_verifier=verifier)
 
     params = {
         "response_type": "code",
@@ -303,8 +304,8 @@ def twitter_callback():
     if not state:
         return _page(False, "Missing state parameter.", "Twitter")
 
-    valid, verifier = _verify_state(state)
-    if not valid:
+    valid, account_id, verifier = _verify_state(state)
+    if not valid or not account_id:
         return _page(False, "Invalid state — possible CSRF. Please try again.", "Twitter")
 
     if not code or not verifier:
@@ -331,6 +332,10 @@ def twitter_callback():
             },
             timeout=10,
         )
+        if not token_resp.ok:
+            current_app.logger.error(
+                f"Twitter token exchange HTTP {token_resp.status_code}: {token_resp.text}"
+            )
         token_resp.raise_for_status()
         token_data = token_resp.json()
     except Exception as exc:
@@ -339,13 +344,13 @@ def twitter_callback():
 
     access_token = token_data.get("access_token")
     if not access_token:
-        current_app.logger.error(f"Twitter: no access_token in response: {token_data}")
+        current_app.logger.error("Twitter: no access_token in response")
         return _page(False, "Connection failed. Please try again.", "Twitter")
 
     refresh_token = token_data.get("refresh_token")
 
     # Fetch Twitter username
-    twitter_username = "twitter_user"
+    twitter_username = None
     twitter_id = None
     try:
         me = requests.get(
@@ -354,69 +359,29 @@ def twitter_callback():
             timeout=10,
         ).json()
         data = me.get("data", {})
-        twitter_username = data.get("username") or data.get("name") or twitter_username
+        twitter_username = data.get("username") or data.get("name")
         twitter_id = data.get("id")
     except Exception:
         pass
 
     # Persist encrypted token
     try:
-        from src.models import User
-        from uuid import uuid4
-        account_id_raw = current_app.config.get("DEFAULT_ACCOUNT_ID") or os.getenv("DEFAULT_ACCOUNT_ID")
-        if not account_id_raw:
-            current_app.logger.error("DEFAULT_ACCOUNT_ID is not configured")
-            raise RuntimeError("DEFAULT_ACCOUNT_ID not set")
-        account_id = int(account_id_raw)
-        admin_user = User.query.filter_by(account_id=account_id).first()
-        if not admin_user:
-            current_app.logger.error("Twitter OAuth: no admin user found for configured account")
-            return _page(False, "Server configuration error. Contact the administrator.", "Twitter")
-        user_id = admin_user.id
-
-        existing = InboxConnection.query.filter_by(
-            user_id=user_id, provider=_TW_PROVIDER
-        ).first()
-
-        metadata = {
+        _save_connection(account_id, _TW_PROVIDER, {
             "access_token_enc": encrypt_value(access_token),
             "refresh_token_enc": encrypt_value(refresh_token) if refresh_token else None,
             "twitter_username": twitter_username,
             "twitter_id": twitter_id,
             "expires_in": token_data.get("expires_in"),
             "scope": _TW_SCOPE,
-        }
-
-        if existing:
-            existing.metadata_json = metadata
-            existing.status = "connected"
-        else:
-            conn = InboxConnection(
-                id=str(uuid4()),
-                account_id=account_id,
-                user_id=user_id,
-                provider=_TW_PROVIDER,
-                status="connected",
-                metadata_json=metadata,
-            )
-            db.session.add(conn)
-
-        db.session.commit()
+        })
     except Exception as exc:
         db.session.rollback()
-        current_app.logger.exception(f"Twitter save failed: {exc}")
+        current_app.logger.exception(f"Twitter save failed for account={account_id}: {exc}")
         return _page(False, "Connection failed. Please try again.", "Twitter")
 
     current_app.logger.info(f"Twitter connected: account={account_id} username=@{twitter_username}")
-    current_app.logger.info(f"TWITTER_ACCESS_TOKEN={access_token}")
-
-    return _page(
-        True,
-        f"Connected as <strong>@{twitter_username}</strong>.<br><br>"
-        "Token saved to the database and printed to server logs.<br><br>"
-        "Copy <code>TWITTER_ACCESS_TOKEN</code> from logs into <code>prod.env</code>.",
-        "Twitter"
-    )
+    display = f"@{twitter_username}" if twitter_username else "your account"
+    return _page(True, f"X (Twitter) connected as <strong>{display}</strong>.", "Twitter")
 
 
 # ── Minimal result page ───────────────────────────────────────────────────────
@@ -433,11 +398,10 @@ def _page(success: bool, message: str, platform: str = "LinkedIn") -> str:
          box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}}
   h2{{color:{color};font-size:22px;margin-bottom:16px}}
   p{{color:#374151;line-height:1.6}}
-  code{{background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:13px}}
   a.back{{display:inline-block;margin-top:24px;padding:10px 20px;background:#2563eb;
           color:#fff;border-radius:6px;text-decoration:none;font-weight:600}}
 </style></head>
 <body><div class="card">
   <h2>{icon} {platform} OAuth</h2><p>{message}</p>
-  <a class="back" href="/settings">Back to Settings</a>
+  <a class="back" href="/settings?tab=integrations">Back to Integrations</a>
 </div></body></html>""")

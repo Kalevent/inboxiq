@@ -107,8 +107,12 @@ def settings_page(tab):
   # Get CRM connection for integrations tab
   crm_connection = None
   crm_prefill = {}
+  linkedin_connection = None
+  twitter_connection = None
   if tab == "integrations" and account_id:
     crm_connection = InboxConnection.query.filter_by(account_id=account_id, provider="crm").first()
+    linkedin_connection = InboxConnection.query.filter_by(account_id=account_id, provider="linkedin_social").first()
+    twitter_connection = InboxConnection.query.filter_by(account_id=account_id, provider="twitter_social").first()
     if crm_connection and crm_connection.metadata_json:
       meta = crm_connection.metadata_json
       crm_prefill = {
@@ -144,6 +148,8 @@ def settings_page(tab):
     draft_reply_has_access=draft_reply_has_access,
     crm_connection=crm_connection,
     crm_prefill=crm_prefill,
+    linkedin_connection=linkedin_connection,
+    twitter_connection=twitter_connection,
   )
 
 
@@ -509,6 +515,8 @@ def integrations_webhooks():
   voice_prefill = {"account_sid": "", "webhook_url": ""}
   crm_connection = None
   crm_prefill = {}
+  linkedin_connection = None
+  twitter_connection = None
   if account_id:
     voice_connection = InboxConnection.query.filter_by(account_id=account_id, provider="voice").first()
     if voice_connection and voice_connection.metadata_json:
@@ -536,6 +544,8 @@ def integrations_webhooks():
         "sync_accounts": meta.get("sync_accounts", False),
         "sync_deals": meta.get("sync_deals", False),
       }
+    linkedin_connection = InboxConnection.query.filter_by(account_id=account_id, provider="linkedin_social").first()
+    twitter_connection = InboxConnection.query.filter_by(account_id=account_id, provider="twitter_social").first()
   if request.method == "POST":
     action = (request.form.get("action") or "").strip()
     label = (request.form.get("label") or "").strip() or None
@@ -868,6 +878,8 @@ def integrations_webhooks():
         voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_saved=True,
+        linkedin_connection=linkedin_connection,
+        twitter_connection=twitter_connection,
       )
     if action == "add_provider" and account_id:
       import re
