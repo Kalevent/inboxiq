@@ -1563,6 +1563,7 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                     Tell us what you are building. Access is auto-approved for low-risk scopes and reviewed for higher-risk ones.
                   </p>
                   <form method="POST" action="{{ url_for('settings.developer_post') }}" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <input type="hidden" name="action" value="request_access" />
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
@@ -1688,6 +1689,7 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                         {% if app.status == 'active' %}
                           <form method="POST" action="{{ url_for('settings.developer_post') }}"
                                 onsubmit="return confirm('Revoke {{ app.name }}? Any system using these credentials will stop working immediately.')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <input type="hidden" name="action" value="revoke_app" />
                             <input type="hidden" name="app_id" value="{{ app.id }}" />
                             <button type="submit"
@@ -1709,6 +1711,7 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                 <div class="mt-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                   <div class="text-sm font-semibold text-slate-100 mb-3">Register New App</div>
                   <form method="POST" action="{{ url_for('settings.developer_post') }}" class="flex items-end gap-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <input type="hidden" name="action" value="register_app" />
                     <div class="flex-1">
                       <label class="block text-xs text-slate-400 mb-1">App name</label>
