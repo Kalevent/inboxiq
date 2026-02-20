@@ -185,6 +185,10 @@ def linkedin_callback():
             },
             timeout=10,
         )
+        if not token_resp.ok:
+            current_app.logger.error(
+                f"LinkedIn token exchange HTTP {token_resp.status_code}: {token_resp.text}"
+            )
         token_resp.raise_for_status()
         token_data = token_resp.json()
     except Exception as exc:
