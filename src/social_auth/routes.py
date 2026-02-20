@@ -19,7 +19,7 @@ Required env vars:
   TWITTER_CLIENT_ID       (OAuth 2.0 client ID from Developer Portal)
   TWITTER_CLIENT_SECRET   (OAuth 2.0 client secret)
   TWITTER_REDIRECT_URI    (e.g. https://kalevent.com/social_auth/twitter/callback)
-  DEFAULT_ACCOUNT_ID      (optional, defaults to 2)
+  DEFAULT_ACCOUNT_ID      (required)
 """
 import base64
 import hashlib
@@ -207,14 +207,14 @@ def linkedin_callback():
     try:
         from src.models import User
         from uuid import uuid4
-        account_id_raw = current_app.config.get("DEFAULT_ACCOUNT_ID")
+        account_id_raw = current_app.config.get("DEFAULT_ACCOUNT_ID") or os.getenv("DEFAULT_ACCOUNT_ID")
         if not account_id_raw:
             current_app.logger.error("DEFAULT_ACCOUNT_ID is not configured")
             raise RuntimeError("DEFAULT_ACCOUNT_ID not set")
         account_id = int(account_id_raw)
         admin_user = User.query.filter_by(account_id=account_id).first()
         if not admin_user:
-            current_app.logger.error(f"LinkedIn OAuth: no admin user for account_id={account_id}")
+            current_app.logger.error("LinkedIn OAuth: no admin user found for configured account")
             return _page(False, "Server configuration error. Contact the administrator.")
         user_id = admin_user.id
 
@@ -363,14 +363,14 @@ def twitter_callback():
     try:
         from src.models import User
         from uuid import uuid4
-        account_id_raw = current_app.config.get("DEFAULT_ACCOUNT_ID")
+        account_id_raw = current_app.config.get("DEFAULT_ACCOUNT_ID") or os.getenv("DEFAULT_ACCOUNT_ID")
         if not account_id_raw:
             current_app.logger.error("DEFAULT_ACCOUNT_ID is not configured")
             raise RuntimeError("DEFAULT_ACCOUNT_ID not set")
         account_id = int(account_id_raw)
         admin_user = User.query.filter_by(account_id=account_id).first()
         if not admin_user:
-            current_app.logger.error(f"Twitter OAuth: no admin user for account_id={account_id}")
+            current_app.logger.error("Twitter OAuth: no admin user found for configured account")
             return _page(False, "Server configuration error. Contact the administrator.", "Twitter")
         user_id = admin_user.id
 
