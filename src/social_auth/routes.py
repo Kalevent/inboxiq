@@ -26,6 +26,7 @@ import hashlib
 import hmac
 import os
 import secrets
+import time
 import urllib.parse
 
 import requests
@@ -50,32 +51,47 @@ _TW_PROVIDER = "twitter_social"
 
 # ── HMAC state helpers (no session needed) ───────────────────────────────────
 
-def _make_state(extra: str = "") -> str:
-    """Return a self-verifying state token.
+_STATE_TTL = 600  # 10 minutes
 
-    Format: base64url(nonce:extra) + "." + hmac[:16]
-    The extra field carries the PKCE verifier for Twitter.
+
+def _signing_key() -> bytes:
+    key = current_app.config.get("SECRET_KEY") or os.getenv("SECRET_KEY") or "dev-secret"
+    return key.encode()
+
+
+def _make_state(extra: str = "") -> str:
+    """Return a self-verifying, time-limited state token.
+
+    Payload format (pipe-separated, base64url-encoded):
+      nonce | unix_timestamp | extra
+    extra carries the PKCE verifier for Twitter (empty for LinkedIn).
     """
     nonce = secrets.token_urlsafe(16)
-    payload = f"{nonce}:{extra}" if extra else nonce
-    key = (os.getenv("SECRET_KEY") or current_app.config.get("SECRET_KEY") or "dev-secret").encode()
-    sig = hmac.new(key, payload.encode(), hashlib.sha256).hexdigest()[:24]
+    ts = str(int(time.time()))
+    payload = f"{nonce}|{ts}|{extra}"
+    sig = hmac.new(_signing_key(), payload.encode(), hashlib.sha256).hexdigest()[:24]
     encoded = base64.urlsafe_b64encode(payload.encode()).rstrip(b"=").decode()
     return f"{encoded}.{sig}"
 
 
 def _verify_state(state: str):
-    """Verify a state token. Returns (valid: bool, extra: str)."""
+    """Verify a state token. Returns (valid: bool, extra: str).
+
+    Rejects tokens older than _STATE_TTL seconds or with invalid signatures.
+    """
     try:
         encoded, sig = state.rsplit(".", 1)
         padding = "=" * (4 - len(encoded) % 4)
         payload = base64.urlsafe_b64decode(encoded + padding).decode()
-        key = (os.getenv("SECRET_KEY") or current_app.config.get("SECRET_KEY") or "dev-secret").encode()
-        expected = hmac.new(key, payload.encode(), hashlib.sha256).hexdigest()[:24]
+        expected = hmac.new(_signing_key(), payload.encode(), hashlib.sha256).hexdigest()[:24]
         if not hmac.compare_digest(sig, expected):
             return False, ""
-        parts = payload.split(":", 1)
-        extra = parts[1] if len(parts) > 1 else ""
+        parts = payload.split("|", 2)
+        if len(parts) < 3:
+            return False, ""
+        _, ts_str, extra = parts
+        if time.time() - int(ts_str) > _STATE_TTL:
+            return False, ""
         return True, extra
     except Exception:
         return False, ""
@@ -112,7 +128,8 @@ def linkedin_start():
     """Visit /social_auth/linkedin (as admin) to kick off LinkedIn OAuth."""
     client_id = current_app.config.get("LINKEDIN_CLIENT_ID") or os.getenv("LINKEDIN_CLIENT_ID")
     if not client_id:
-        return "LINKEDIN_CLIENT_ID is not configured.", 400
+        current_app.logger.error("LinkedIn OAuth: LINKEDIN_CLIENT_ID not configured")
+        return "Configuration error.", 500
 
     state = _make_state()
     params = {
@@ -151,7 +168,8 @@ def linkedin_callback():
     client_id = current_app.config.get("LINKEDIN_CLIENT_ID") or os.getenv("LINKEDIN_CLIENT_ID")
     client_secret = current_app.config.get("LINKEDIN_CLIENT_SECRET") or os.getenv("LINKEDIN_CLIENT_SECRET")
     if not client_id or not client_secret:
-        return _page(False, "LINKEDIN_CLIENT_ID / LINKEDIN_CLIENT_SECRET not configured.")
+        current_app.logger.error("LinkedIn OAuth: credentials not configured")
+        return _page(False, "Server configuration error. Contact the administrator.")
 
     # Exchange code → access_token
     try:
@@ -171,11 +189,12 @@ def linkedin_callback():
         token_data = token_resp.json()
     except Exception as exc:
         current_app.logger.exception(f"LinkedIn token exchange failed: {exc}")
-        return _page(False, f"Token exchange failed: {exc}")
+        return _page(False, "Connection failed. Please try again.")
 
     access_token = token_data.get("access_token")
     if not access_token:
-        return _page(False, f"No access_token in LinkedIn response: {token_data}")
+        current_app.logger.error(f"LinkedIn: no access_token in response: {token_data}")
+        return _page(False, "Connection failed. Please try again.")
 
     linkedin_name = "LinkedIn user"
     linkedin_sub = None
@@ -184,10 +203,15 @@ def linkedin_callback():
     try:
         from src.models import User
         from uuid import uuid4
-        account_id = int(current_app.config.get("DEFAULT_ACCOUNT_ID", 2))
+        account_id_raw = current_app.config.get("DEFAULT_ACCOUNT_ID")
+        if not account_id_raw:
+            current_app.logger.error("DEFAULT_ACCOUNT_ID is not configured")
+            raise RuntimeError("DEFAULT_ACCOUNT_ID not set")
+        account_id = int(account_id_raw)
         admin_user = User.query.filter_by(account_id=account_id).first()
         if not admin_user:
-            return _page(False, f"No user found for account_id={account_id}.")
+            current_app.logger.error(f"LinkedIn OAuth: no admin user for account_id={account_id}")
+            return _page(False, "Server configuration error. Contact the administrator.")
         user_id = admin_user.id
 
         existing = InboxConnection.query.filter_by(
@@ -220,7 +244,7 @@ def linkedin_callback():
     except Exception as exc:
         db.session.rollback()
         current_app.logger.exception(f"LinkedIn save failed: {exc}")
-        return _page(False, f"Token received but failed to save: {exc}")
+        return _page(False, "Connection failed. Please try again.")
 
     current_app.logger.info(f"LinkedIn connected: account={account_id} name={linkedin_name}")
     current_app.logger.info(f"LINKEDIN_ACCESS_TOKEN={access_token}")
@@ -240,7 +264,8 @@ def twitter_start():
     """Visit /social_auth/twitter (as admin) to kick off Twitter OAuth."""
     client_id = current_app.config.get("TWITTER_CLIENT_ID") or os.getenv("TWITTER_CLIENT_ID")
     if not client_id:
-        return "TWITTER_CLIENT_ID is not configured.", 400
+        current_app.logger.error("Twitter OAuth: TWITTER_CLIENT_ID not configured")
+        return "Configuration error.", 500
 
     verifier, challenge = _pkce_pair()
     # Embed the PKCE verifier in the signed state — no session needed
@@ -284,7 +309,8 @@ def twitter_callback():
     client_id = current_app.config.get("TWITTER_CLIENT_ID") or os.getenv("TWITTER_CLIENT_ID")
     client_secret = current_app.config.get("TWITTER_CLIENT_SECRET") or os.getenv("TWITTER_CLIENT_SECRET")
     if not client_id:
-        return _page(False, "TWITTER_CLIENT_ID not configured.", "Twitter")
+        current_app.logger.error("Twitter OAuth: TWITTER_CLIENT_ID not configured")
+        return _page(False, "Server configuration error. Contact the administrator.", "Twitter")
 
     # Exchange code → access_token
     try:
@@ -305,11 +331,12 @@ def twitter_callback():
         token_data = token_resp.json()
     except Exception as exc:
         current_app.logger.exception(f"Twitter token exchange failed: {exc}")
-        return _page(False, f"Token exchange failed: {exc}", "Twitter")
+        return _page(False, "Connection failed. Please try again.", "Twitter")
 
     access_token = token_data.get("access_token")
     if not access_token:
-        return _page(False, f"No access_token in Twitter response: {token_data}", "Twitter")
+        current_app.logger.error(f"Twitter: no access_token in response: {token_data}")
+        return _page(False, "Connection failed. Please try again.", "Twitter")
 
     refresh_token = token_data.get("refresh_token")
 
@@ -332,10 +359,15 @@ def twitter_callback():
     try:
         from src.models import User
         from uuid import uuid4
-        account_id = int(current_app.config.get("DEFAULT_ACCOUNT_ID", 2))
+        account_id_raw = current_app.config.get("DEFAULT_ACCOUNT_ID")
+        if not account_id_raw:
+            current_app.logger.error("DEFAULT_ACCOUNT_ID is not configured")
+            raise RuntimeError("DEFAULT_ACCOUNT_ID not set")
+        account_id = int(account_id_raw)
         admin_user = User.query.filter_by(account_id=account_id).first()
         if not admin_user:
-            return _page(False, f"No user found for account_id={account_id}.", "Twitter")
+            current_app.logger.error(f"Twitter OAuth: no admin user for account_id={account_id}")
+            return _page(False, "Server configuration error. Contact the administrator.", "Twitter")
         user_id = admin_user.id
 
         existing = InboxConnection.query.filter_by(
@@ -369,7 +401,7 @@ def twitter_callback():
     except Exception as exc:
         db.session.rollback()
         current_app.logger.exception(f"Twitter save failed: {exc}")
-        return _page(False, f"Token received but failed to save: {exc}", "Twitter")
+        return _page(False, "Connection failed. Please try again.", "Twitter")
 
     current_app.logger.info(f"Twitter connected: account={account_id} username=@{twitter_username}")
     current_app.logger.info(f"TWITTER_ACCESS_TOKEN={access_token}")
