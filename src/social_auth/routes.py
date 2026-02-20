@@ -1,29 +1,35 @@
 """
-Social OAuth callback routes  (blueprint: social_auth, prefix: /auth)
+Social OAuth callback routes  (blueprint: social_auth, prefix: /social_auth)
 
 LinkedIn flow:
-  GET /auth/linkedin           → redirect to LinkedIn for authorisation
-  GET /auth/linkedin/callback  → exchange code for token, save encrypted
+  GET /social_auth/linkedin           → redirect to LinkedIn for authorisation
+  GET /social_auth/linkedin/callback  → exchange code for token, save encrypted
 
 Twitter (X) OAuth 2.0 + PKCE flow:
-  GET /auth/twitter            → redirect to Twitter for authorisation
-  GET /auth/twitter/callback   → exchange code for token, save encrypted
+  GET /social_auth/twitter            → redirect to Twitter for authorisation
+  GET /social_auth/twitter/callback   → exchange code for token, save encrypted
+
+State tokens are HMAC-signed and self-contained — no Flask session required.
+This avoids cross-site redirect cookie issues behind ALB without ProxyFix.
 
 Required env vars:
   LINKEDIN_CLIENT_ID
   LINKEDIN_CLIENT_SECRET
+  LINKEDIN_REDIRECT_URI   (e.g. https://kalevent.com/social_auth/linkedin/callback)
   TWITTER_CLIENT_ID       (OAuth 2.0 client ID from Developer Portal)
   TWITTER_CLIENT_SECRET   (OAuth 2.0 client secret)
+  TWITTER_REDIRECT_URI    (e.g. https://kalevent.com/social_auth/twitter/callback)
   DEFAULT_ACCOUNT_ID      (optional, defaults to 2)
 """
 import base64
 import hashlib
+import hmac
 import os
 import secrets
 import urllib.parse
 
 import requests
-from flask import current_app, redirect, render_template_string, request, session, url_for
+from flask import current_app, redirect, render_template_string, request, url_for
 
 from src.crypto import encrypt_value
 from src.extensions import db
@@ -35,6 +41,47 @@ _TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
 _SCOPE = "openid profile email w_member_social"
 _PROVIDER = "linkedin_social"
 
+_TW_AUTH_URL = "https://twitter.com/i/oauth2/authorize"
+_TW_TOKEN_URL = "https://api.twitter.com/2/oauth2/token"
+_TW_USERINFO_URL = "https://api.twitter.com/2/users/me"
+_TW_SCOPE = "tweet.read tweet.write users.read offline.access"
+_TW_PROVIDER = "twitter_social"
+
+
+# ── HMAC state helpers (no session needed) ───────────────────────────────────
+
+def _make_state(extra: str = "") -> str:
+    """Return a self-verifying state token.
+
+    Format: base64url(nonce:extra) + "." + hmac[:16]
+    The extra field carries the PKCE verifier for Twitter.
+    """
+    nonce = secrets.token_urlsafe(16)
+    payload = f"{nonce}:{extra}" if extra else nonce
+    key = (os.getenv("SECRET_KEY") or current_app.config.get("SECRET_KEY") or "dev-secret").encode()
+    sig = hmac.new(key, payload.encode(), hashlib.sha256).hexdigest()[:24]
+    encoded = base64.urlsafe_b64encode(payload.encode()).rstrip(b"=").decode()
+    return f"{encoded}.{sig}"
+
+
+def _verify_state(state: str):
+    """Verify a state token. Returns (valid: bool, extra: str)."""
+    try:
+        encoded, sig = state.rsplit(".", 1)
+        padding = "=" * (4 - len(encoded) % 4)
+        payload = base64.urlsafe_b64decode(encoded + padding).decode()
+        key = (os.getenv("SECRET_KEY") or current_app.config.get("SECRET_KEY") or "dev-secret").encode()
+        expected = hmac.new(key, payload.encode(), hashlib.sha256).hexdigest()[:24]
+        if not hmac.compare_digest(sig, expected):
+            return False, ""
+        parts = payload.split(":", 1)
+        extra = parts[1] if len(parts) > 1 else ""
+        return True, extra
+    except Exception:
+        return False, ""
+
+
+# ── LinkedIn helpers ──────────────────────────────────────────────────────────
 
 def _callback_uri():
     override = os.getenv("LINKEDIN_REDIRECT_URI")
@@ -43,18 +90,31 @@ def _callback_uri():
     return url_for("social_auth.linkedin_callback", _external=True)
 
 
-# ── Start flow ──────────────────────────────────────────────────────────────
+def _tw_callback_uri():
+    override = os.getenv("TWITTER_REDIRECT_URI")
+    if override:
+        return override
+    return url_for("social_auth.twitter_callback", _external=True)
+
+
+def _pkce_pair():
+    """Return (code_verifier, code_challenge) for PKCE."""
+    verifier = base64.urlsafe_b64encode(os.urandom(40)).rstrip(b"=").decode()
+    digest = hashlib.sha256(verifier.encode()).digest()
+    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
+    return verifier, challenge
+
+
+# ── LinkedIn start ────────────────────────────────────────────────────────────
 
 @bp.route("/linkedin")
 def linkedin_start():
-    """Visit /auth/linkedin (logged-in as admin) to kick off LinkedIn OAuth."""
+    """Visit /social_auth/linkedin (as admin) to kick off LinkedIn OAuth."""
     client_id = current_app.config.get("LINKEDIN_CLIENT_ID") or os.getenv("LINKEDIN_CLIENT_ID")
     if not client_id:
         return "LINKEDIN_CLIENT_ID is not configured.", 400
 
-    state = secrets.token_urlsafe(24)
-    session["linkedin_oauth_state"] = state
-
+    state = _make_state()
     params = {
         "response_type": "code",
         "client_id": client_id,
@@ -65,13 +125,12 @@ def linkedin_start():
     return redirect(_AUTH_URL + "?" + urllib.parse.urlencode(params))
 
 
-# ── Callback ─────────────────────────────────────────────────────────────────
+# ── LinkedIn callback ─────────────────────────────────────────────────────────
 
 @bp.route("/linkedin/callback")
 def linkedin_callback():
     """LinkedIn sends the browser here with ?code=... after the user approves."""
 
-    # User denied or error from LinkedIn
     error = request.args.get("error")
     if error:
         return _page(False, f"LinkedIn denied: {request.args.get('error_description', error)}")
@@ -79,15 +138,16 @@ def linkedin_callback():
     code = request.args.get("code")
     state = request.args.get("state")
 
-    # CSRF check
-    expected = session.pop("linkedin_oauth_state", None)
-    if not expected or state != expected:
-        return _page(False, "State mismatch — possible CSRF. Please try again.")
+    if not state:
+        return _page(False, "Missing state parameter.")
+
+    valid, _ = _verify_state(state)
+    if not valid:
+        return _page(False, "Invalid state — possible CSRF. Please try again.")
 
     if not code:
         return _page(False, "No authorization code returned by LinkedIn.")
 
-    # Read credentials
     client_id = current_app.config.get("LINKEDIN_CLIENT_ID") or os.getenv("LINKEDIN_CLIENT_ID")
     client_secret = current_app.config.get("LINKEDIN_CLIENT_SECRET") or os.getenv("LINKEDIN_CLIENT_SECRET")
     if not client_id or not client_secret:
@@ -117,7 +177,6 @@ def linkedin_callback():
     if not access_token:
         return _page(False, f"No access_token in LinkedIn response: {token_data}")
 
-    # w_member_social scope does not include profile info; display name is generic
     linkedin_name = "LinkedIn user"
     linkedin_sub = None
 
@@ -163,7 +222,6 @@ def linkedin_callback():
         current_app.logger.exception(f"LinkedIn save failed: {exc}")
         return _page(False, f"Token received but failed to save: {exc}")
 
-    # Log token so admin can copy it to prod.env
     current_app.logger.info(f"LinkedIn connected: account={account_id} name={linkedin_name}")
     current_app.logger.info(f"LINKEDIN_ACCESS_TOKEN={access_token}")
 
@@ -175,44 +233,18 @@ def linkedin_callback():
     )
 
 
-# ── Twitter OAuth 2.0 + PKCE ─────────────────────────────────────────────────
-# Twitter API v2 uses OAuth 2.0 with PKCE (no client secret needed in the
-# browser redirect, but needed at token exchange for confidential clients).
-
-_TW_AUTH_URL = "https://twitter.com/i/oauth2/authorize"
-_TW_TOKEN_URL = "https://api.twitter.com/2/oauth2/token"
-_TW_USERINFO_URL = "https://api.twitter.com/2/users/me"
-_TW_SCOPE = "tweet.read tweet.write users.read offline.access"
-_TW_PROVIDER = "twitter_social"
-
-
-def _tw_callback_uri():
-    override = os.getenv("TWITTER_REDIRECT_URI")
-    if override:
-        return override
-    return url_for("social_auth.twitter_callback", _external=True)
-
-
-def _pkce_pair():
-    """Return (code_verifier, code_challenge) for PKCE."""
-    verifier = base64.urlsafe_b64encode(os.urandom(40)).rstrip(b"=").decode()
-    digest = hashlib.sha256(verifier.encode()).digest()
-    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
-    return verifier, challenge
-
+# ── Twitter start ─────────────────────────────────────────────────────────────
 
 @bp.route("/twitter")
 def twitter_start():
-    """Visit /auth/twitter (logged-in as admin) to kick off Twitter OAuth."""
+    """Visit /social_auth/twitter (as admin) to kick off Twitter OAuth."""
     client_id = current_app.config.get("TWITTER_CLIENT_ID") or os.getenv("TWITTER_CLIENT_ID")
     if not client_id:
         return "TWITTER_CLIENT_ID is not configured.", 400
 
-    state = secrets.token_urlsafe(24)
     verifier, challenge = _pkce_pair()
-
-    session["twitter_oauth_state"] = state
-    session["twitter_code_verifier"] = verifier
+    # Embed the PKCE verifier in the signed state — no session needed
+    state = _make_state(extra=verifier)
 
     params = {
         "response_type": "code",
@@ -226,6 +258,8 @@ def twitter_start():
     return redirect(_TW_AUTH_URL + "?" + urllib.parse.urlencode(params))
 
 
+# ── Twitter callback ──────────────────────────────────────────────────────────
+
 @bp.route("/twitter/callback")
 def twitter_callback():
     """Twitter sends the browser here with ?code=... after the user approves."""
@@ -237,11 +271,12 @@ def twitter_callback():
     code = request.args.get("code")
     state = request.args.get("state")
 
-    expected_state = session.pop("twitter_oauth_state", None)
-    verifier = session.pop("twitter_code_verifier", None)
+    if not state:
+        return _page(False, "Missing state parameter.", "Twitter")
 
-    if not expected_state or state != expected_state:
-        return _page(False, "State mismatch — possible CSRF. Please try again.", "Twitter")
+    valid, verifier = _verify_state(state)
+    if not valid:
+        return _page(False, "Invalid state — possible CSRF. Please try again.", "Twitter")
 
     if not code or not verifier:
         return _page(False, "Missing authorization code or PKCE verifier.", "Twitter")
