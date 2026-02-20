@@ -98,6 +98,15 @@
                 <span class="text-xs text-slate-400">{% if active_tab == 'features' %}Active{% endif %}</span>
               </a>
 
+              {% if account and account.developer_access %}
+              <a href="{{ url_for('settings.settings_page', tab='developer') }}"
+                 class="flex items-center justify-between px-3 py-2 rounded-xl border
+                 {% if active_tab == 'developer' %}border-indigo-400/40 bg-indigo-500/10 text-indigo-100{% else %}border-transparent hover:border-slate-700 hover:bg-slate-900/60 text-slate-200{% endif %}">
+                <span>Developer</span>
+                <span class="text-xs text-slate-400">{% if active_tab == 'developer' %}Active{% endif %}</span>
+              </a>
+              {% endif %}
+
           </nav>
 
           <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-400">
@@ -1509,6 +1518,251 @@ curl -X POST "{{ request.url_root.rstrip('/') }}/api/v1/intake" \
                   </div>
                 </div>
               </div>
+
+            {% elif active_tab == 'developer' %}
+              <div class="space-y-3">
+                <h2 class="text-xl font-semibold">Developer</h2>
+                <p class="text-sm text-slate-300">
+                  Register apps and get API credentials to integrate your systems with InboxIQ.
+                </p>
+              </div>
+
+              {% if developer_error %}
+                <div class="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                  {{ developer_error }}
+                </div>
+              {% endif %}
+
+              {# ── New app credentials shown once ─────────────────────────── #}
+              {% if new_app %}
+                <div class="mt-6 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-5">
+                  <div class="text-sm font-semibold text-emerald-200 mb-1">App registered — copy your credentials now</div>
+                  <p class="text-xs text-slate-400 mb-4">The client secret is shown only once. Store it securely — it cannot be retrieved again.</p>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-xs text-slate-400 mb-1">App name</label>
+                      <code class="block w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 font-mono select-all">{{ new_app.name }}</code>
+                    </div>
+                    <div>
+                      <label class="block text-xs text-slate-400 mb-1">Client ID</label>
+                      <code class="block w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 font-mono select-all">{{ new_app.client_id }}</code>
+                    </div>
+                    <div>
+                      <label class="block text-xs text-slate-400 mb-1">Client Secret</label>
+                      <code class="block w-full rounded-lg bg-slate-950 border border-amber-500/40 px-3 py-2 text-sm text-amber-100 font-mono select-all">{{ new_app.client_secret }}</code>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+
+              {# ── State: no access request yet ────────────────────────────── #}
+              {% if not developer_access_request %}
+                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30">
+                  <div class="text-sm font-semibold text-slate-100 mb-1">Request API Access</div>
+                  <p class="text-sm text-slate-300 mb-5">
+                    Tell us what you are building. Access is auto-approved for low-risk scopes and reviewed for higher-risk ones.
+                  </p>
+                  <form method="POST" action="{{ url_for('settings.developer_post') }}" class="space-y-4">
+                    <input type="hidden" name="action" value="request_access" />
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-xs text-slate-400 mb-1">Full name <span class="text-red-400">*</span></label>
+                        <input type="text" name="full_name" required
+                               class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                               placeholder="Jane Smith" />
+                      </div>
+                      <div>
+                        <label class="block text-xs text-slate-400 mb-1">Company <span class="text-red-400">*</span></label>
+                        <input type="text" name="company" required
+                               class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                               placeholder="Acme Corp" />
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-xs text-slate-400 mb-1">What are you building? <span class="text-red-400">*</span></label>
+                      <textarea name="use_case" required rows="3"
+                                class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
+                                placeholder="Describe the integration or product you are building and how it will use the InboxIQ API."></textarea>
+                    </div>
+                    <div>
+                      <label class="block text-xs text-slate-400 mb-2">Data access needed <span class="text-red-400">*</span></label>
+                      <div class="space-y-2">
+                        <label class="flex items-start gap-2 cursor-pointer">
+                          <input type="checkbox" name="scopes" value="intake:write" class="mt-0.5 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
+                          <div>
+                            <span class="text-sm text-slate-100">intake:write</span>
+                            <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">auto-approved</span>
+                            <p class="text-xs text-slate-400 mt-0.5">Submit tickets and messages into InboxIQ via the intake API.</p>
+                          </div>
+                        </label>
+                        <label class="flex items-start gap-2 cursor-pointer">
+                          <input type="checkbox" name="scopes" value="tickets:read" class="mt-0.5 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
+                          <div>
+                            <span class="text-sm text-slate-100">tickets:read</span>
+                            <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300">reviewed</span>
+                            <p class="text-xs text-slate-400 mt-0.5">Read ticket data, status, and conversation history.</p>
+                          </div>
+                        </label>
+                        <label class="flex items-start gap-2 cursor-pointer">
+                          <input type="checkbox" name="scopes" value="decisions:read" class="mt-0.5 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
+                          <div>
+                            <span class="text-sm text-slate-100">decisions:read</span>
+                            <span class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300">reviewed</span>
+                            <p class="text-xs text-slate-400 mt-0.5">Read AI triage decisions and confidence scores.</p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-xs text-slate-400 mb-1">Webhook / callback URL <span class="text-slate-500">(optional)</span></label>
+                      <input type="url" name="callback_url"
+                             class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                             placeholder="https://yourapp.com/webhooks/inboxiq" />
+                      <p class="text-xs text-slate-500 mt-1">InboxIQ will POST events to this URL if provided.</p>
+                    </div>
+                    <label class="flex items-start gap-2 cursor-pointer">
+                      <input type="checkbox" name="agreed_tos" value="1" required class="mt-0.5 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" />
+                      <span class="text-sm text-slate-300">I agree to the InboxIQ API Terms of Service and will not use the API for spam or unauthorised access.</span>
+                    </label>
+                    <div class="pt-2">
+                      <button type="submit"
+                              class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors">
+                        Submit Request
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+              {# ── State: request pending / rejected ───────────────────────── #}
+              {% elif developer_access_request.status in ('pending', 'rejected') %}
+                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6">
+                  {% if developer_access_request.status == 'pending' %}
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">Under review</span>
+                      <span class="text-sm text-slate-300">Your access request has been submitted and is pending review.</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3">
+                      You requested: {{ developer_access_request.scopes | join(', ') }}.
+                      Higher-risk scopes require manual review by the account owner.
+                      You will be notified once a decision is made.
+                    </p>
+                  {% else %}
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 font-medium">Not approved</span>
+                      <span class="text-sm text-slate-300">Your access request was not approved.</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3">Contact support if you believe this is a mistake.</p>
+                  {% endif %}
+                </div>
+
+              {# ── State: approved — show apps + register form ─────────────── #}
+              {% elif developer_access_request.status == 'approved' %}
+
+                {# Registered apps list #}
+                <div class="mt-6 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-slate-100">Your Apps</h3>
+                    <span class="text-xs text-slate-400">Approved scopes: {{ developer_access_request.scopes | join(', ') }}</span>
+                  </div>
+
+                  {% if registered_apps %}
+                    {% for app in registered_apps %}
+                      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center justify-between gap-4">
+                        <div class="min-w-0">
+                          <div class="text-sm font-medium text-slate-100 truncate">{{ app.name }}</div>
+                          <div class="text-xs text-slate-400 mt-0.5 font-mono">{{ app.client_id }}</div>
+                          <div class="flex items-center gap-2 mt-1">
+                            {% if app.status == 'active' %}
+                              <span class="text-xs px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Active</span>
+                            {% else %}
+                              <span class="text-xs px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-400">Suspended</span>
+                            {% endif %}
+                            <span class="text-xs text-slate-500">
+                              Created {{ app.created_at.strftime('%b %d, %Y') if app.created_at else '—' }}
+                            </span>
+                            {% if app.last_used_at %}
+                              <span class="text-xs text-slate-500">· Last used {{ app.last_used_at.strftime('%b %d, %Y') }}</span>
+                            {% endif %}
+                          </div>
+                        </div>
+                        {% if app.status == 'active' %}
+                          <form method="POST" action="{{ url_for('settings.developer_post') }}"
+                                onsubmit="return confirm('Revoke {{ app.name }}? Any system using these credentials will stop working immediately.')">
+                            <input type="hidden" name="action" value="revoke_app" />
+                            <input type="hidden" name="app_id" value="{{ app.id }}" />
+                            <button type="submit"
+                                    class="flex-shrink-0 rounded-lg border border-red-500/40 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/10 transition-colors">
+                              Revoke
+                            </button>
+                          </form>
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  {% else %}
+                    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 text-center">
+                      <p class="text-sm text-slate-400">No apps registered yet. Register your first app below.</p>
+                    </div>
+                  {% endif %}
+                </div>
+
+                {# Register new app form #}
+                <div class="mt-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                  <div class="text-sm font-semibold text-slate-100 mb-3">Register New App</div>
+                  <form method="POST" action="{{ url_for('settings.developer_post') }}" class="flex items-end gap-3">
+                    <input type="hidden" name="action" value="register_app" />
+                    <div class="flex-1">
+                      <label class="block text-xs text-slate-400 mb-1">App name</label>
+                      <input type="text" name="app_name" required
+                             class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                             placeholder="My Integration" />
+                    </div>
+                    <button type="submit"
+                            class="flex-shrink-0 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors">
+                      Register
+                    </button>
+                  </form>
+                  <p class="text-xs text-slate-500 mt-2">A <code>client_id</code> and <code>client_secret</code> will be issued. The secret is shown once — copy it immediately.</p>
+                </div>
+
+                {# API reference #}
+                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                  <div class="text-sm font-semibold text-slate-100 mb-3">API Reference</div>
+                  <div class="space-y-4 text-sm text-slate-300">
+
+                    <div>
+                      <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Authentication</div>
+                      <p class="text-xs text-slate-400 mb-2">Pass your credentials via HTTP Basic Auth on every request: <code class="text-indigo-300">client_id</code> as the username, <code class="text-indigo-300">client_secret</code> as the password.</p>
+                      <pre class="rounded-lg bg-slate-950 border border-slate-800 p-3 text-xs text-slate-300 overflow-x-auto font-mono">Authorization: Basic base64(client_id:client_secret)</pre>
+                    </div>
+
+                    {% if 'intake:write' in developer_access_request.scopes %}
+                    <div>
+                      <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Submit a ticket — <code class="text-indigo-300">intake:write</code></div>
+                      <pre class="rounded-lg bg-slate-950 border border-slate-800 p-3 text-xs text-slate-300 overflow-x-auto font-mono">POST /api/v1/intake
+Content-Type: application/json
+
+{
+  "from_email": "customer@example.com",
+  "from_name": "Customer Name",
+  "subject": "Issue title",
+  "body": "Message content",
+  "channel": "api"
+}</pre>
+                      <p class="text-xs text-slate-500 mt-1">Returns <code>201</code> with <code>{"ticket_id": "..."}</code> on success.</p>
+                    </div>
+                    {% endif %}
+
+                    {% if 'tickets:read' in developer_access_request.scopes %}
+                    <div>
+                      <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Read a ticket — <code class="text-indigo-300">tickets:read</code></div>
+                      <pre class="rounded-lg bg-slate-950 border border-slate-800 p-3 text-xs text-slate-300 overflow-x-auto font-mono">GET /api/v1/tickets/{ticket_id}</pre>
+                    </div>
+                    {% endif %}
+
+                  </div>
+                </div>
+
+              {% endif %}
 
             {% else %}
               <div class="space-y-2">

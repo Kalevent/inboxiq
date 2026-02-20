@@ -1,11 +1,12 @@
 import os
+import secrets
 from datetime import datetime
 from uuid import uuid4
 
 from flask import current_app, flash, g, jsonify, redirect, render_template, request, url_for
 
 from src.extensions import db, limiter
-from src.models import IntakeToken, User, Passkey, TOTPDevice, Account, InboxConnection, WebhookProvider
+from src.models import IntakeToken, User, Passkey, TOTPDevice, Account, InboxConnection, WebhookProvider, RegisteredApp, DeveloperAccessRequest
 from src.crypto import encrypt_value, decrypt_value
 from src.api.v1.access_control import account_allows_api
 from src.settings import bp, login_required_settings
@@ -76,7 +77,7 @@ def settings_root():
 @bp.get("/settings/<tab>")
 @login_required_settings
 def settings_page(tab):
-  allowed = {"team", "profile", "billing", "security", "integrations", "features"}
+  allowed = {"team", "profile", "billing", "security", "integrations", "features", "developer"}
   if tab not in allowed:
     tab = "team"
   passkeys = []
@@ -131,6 +132,22 @@ def settings_page(tab):
     if user:
       passkeys = Passkey.query.filter_by(user_id=user.id).all()
       totp_devices = TOTPDevice.query.filter_by(user_id=user.id).all()
+
+  # Developer tab — only accessible if account has developer_access
+  developer_access_request = None
+  registered_apps = []
+  if tab == "developer" and account_id:
+    if not (account and account.developer_access):
+      tab = "team"  # silently redirect if not enabled
+    else:
+      developer_access_request = DeveloperAccessRequest.query.filter_by(
+        account_id=account_id
+      ).order_by(DeveloperAccessRequest.created_at.desc()).first()
+      if developer_access_request and developer_access_request.status == "approved":
+        registered_apps = RegisteredApp.query.filter_by(
+          account_id=account_id
+        ).order_by(RegisteredApp.created_at.desc()).all()
+
   return render_template(
     "settings/index.html",
     active_tab=tab,
@@ -143,6 +160,7 @@ def settings_page(tab):
     seats_used=seats_used,
     seats_limit=seats_limit,
     account_id=account_id,
+    account=account,
     plan_name=plan_name,
     draft_reply_enabled=draft_reply_enabled,
     draft_reply_has_access=draft_reply_has_access,
@@ -150,6 +168,10 @@ def settings_page(tab):
     crm_prefill=crm_prefill,
     linkedin_connection=linkedin_connection,
     twitter_connection=twitter_connection,
+    developer_access_request=developer_access_request,
+    registered_apps=registered_apps,
+    developer_error=None,
+    new_app=None,
   )
 
 
@@ -1670,3 +1692,160 @@ def triage_config_settings():
         },
         account_id=account_id,
     )
+
+
+# ── Developer tab POST handlers ───────────────────────────────────────────────
+
+ALLOWED_SCOPES = {"intake:write", "tickets:read", "decisions:read"}
+
+
+@bp.route("/settings/developer", methods=["POST"])
+@login_required_settings
+def developer_post():
+  """Handle Developer tab form submissions: access request, app registration, revoke."""
+  import hashlib
+
+  account_id = getattr(g, "current_account_id", None)
+  account = Account.query.get(account_id) if account_id else None
+
+  if not account_id or not account:
+    return redirect(url_for("settings.settings_page", tab="team"))
+
+  if not account.developer_access:
+    return redirect(url_for("settings.settings_page", tab="team"))
+
+  action = (request.form.get("action") or "").strip()
+
+  # ── Submit access request ──────────────────────────────────────────────────
+  if action == "request_access":
+    full_name = (request.form.get("full_name") or "").strip()
+    company = (request.form.get("company") or "").strip()
+    use_case = (request.form.get("use_case") or "").strip()
+    callback_url = (request.form.get("callback_url") or "").strip()
+    agreed_tos = request.form.get("agreed_tos") == "1"
+    raw_scopes = request.form.getlist("scopes")
+    scopes = [s for s in raw_scopes if s in ALLOWED_SCOPES]
+
+    if not full_name or not company or not use_case or not scopes or not agreed_tos:
+      return _developer_page(
+        account_id=account_id,
+        account=account,
+        developer_access_request=None,
+        registered_apps=[],
+        error="Please fill in all required fields and agree to the API Terms of Service.",
+        new_app=None,
+      )
+
+    existing = DeveloperAccessRequest.query.filter_by(account_id=account_id).first()
+    if existing:
+      return redirect(url_for("settings.settings_page", tab="developer"))
+
+    # Auto-approve when only low-risk scopes are requested
+    low_risk = {"intake:write"}
+    status = "approved" if set(scopes).issubset(low_risk) else "pending"
+
+    req = DeveloperAccessRequest(
+      account_id=account_id,
+      full_name=full_name,
+      company=company,
+      use_case=use_case,
+      scopes=scopes,
+      callback_url=callback_url or None,
+      agreed_tos=True,
+      status=status,
+    )
+    db.session.add(req)
+    db.session.commit()
+    current_app.logger.info(
+      f"DeveloperAccessRequest created account={account_id} status={status}"
+    )
+    return redirect(url_for("settings.settings_page", tab="developer"))
+
+  # ── Register new app ───────────────────────────────────────────────────────
+  if action == "register_app":
+    access_req = DeveloperAccessRequest.query.filter_by(
+      account_id=account_id, status="approved"
+    ).first()
+    if not access_req:
+      return redirect(url_for("settings.settings_page", tab="developer"))
+
+    app_name = (request.form.get("app_name") or "").strip()
+    if not app_name:
+      return _developer_page(
+        account_id=account_id,
+        account=account,
+        developer_access_request=access_req,
+        registered_apps=RegisteredApp.query.filter_by(account_id=account_id).order_by(RegisteredApp.created_at.desc()).all(),
+        error="App name is required.",
+        new_app=None,
+      )
+
+    client_id = "iq_" + secrets.token_hex(16)
+    client_secret_plain = secrets.token_hex(32)
+
+    app = RegisteredApp(
+      account_id=account_id,
+      name=app_name,
+      client_id=client_id,
+      client_secret_enc=encrypt_value(client_secret_plain),
+      scopes=access_req.scopes,
+    )
+    db.session.add(app)
+    db.session.commit()
+    current_app.logger.info(
+      f"RegisteredApp created account={account_id} client_id={client_id}"
+    )
+
+    registered_apps = RegisteredApp.query.filter_by(account_id=account_id).order_by(RegisteredApp.created_at.desc()).all()
+    return _developer_page(
+      account_id=account_id,
+      account=account,
+      developer_access_request=access_req,
+      registered_apps=registered_apps,
+      error=None,
+      new_app={"name": app_name, "client_id": client_id, "client_secret": client_secret_plain},
+    )
+
+  # ── Revoke app ─────────────────────────────────────────────────────────────
+  if action == "revoke_app":
+    app_id = (request.form.get("app_id") or "").strip()
+    if app_id:
+      app = RegisteredApp.query.filter_by(id=app_id, account_id=account_id).first()
+      if app:
+        app.status = "suspended"
+        db.session.commit()
+        current_app.logger.info(
+          f"RegisteredApp revoked account={account_id} client_id={app.client_id}"
+        )
+
+  return redirect(url_for("settings.settings_page", tab="developer"))
+
+
+def _developer_page(*, account_id, account, developer_access_request, registered_apps, error, new_app):
+  """Render the developer settings tab directly (used after form submission)."""
+  return render_template(
+    "settings/index.html",
+    active_tab="developer",
+    account_id=account_id,
+    account=account,
+    developer_access_request=developer_access_request,
+    registered_apps=registered_apps,
+    developer_error=error,
+    new_app=new_app,
+    # required by base template
+    security_view=None,
+    team_view=None,
+    billing_view=None,
+    integrations_view=None,
+    passkeys=[],
+    totp_devices=[],
+    seats_used=0,
+    seats_limit=account.seats_limit if account else None,
+    plan_name=None,
+    draft_reply_enabled=False,
+    draft_reply_has_access=False,
+    crm_connection=None,
+    crm_prefill={},
+    linkedin_connection=None,
+    twitter_connection=None,
+  )
