@@ -122,35 +122,40 @@ def linkedin_callback():
     linkedin_sub = None
 
     # Persist encrypted token
-    account_id = current_app.config.get("DEFAULT_ACCOUNT_ID", 2)
-    existing = InboxConnection.query.filter_by(
-        account_id=account_id, provider=_PROVIDER
-    ).first()
+    try:
+        account_id = current_app.config.get("DEFAULT_ACCOUNT_ID", 2)
+        existing = InboxConnection.query.filter_by(
+            account_id=account_id, provider=_PROVIDER
+        ).first()
 
-    metadata = {
-        "access_token_enc": encrypt_value(access_token),
-        "linkedin_name": linkedin_name,
-        "linkedin_sub": linkedin_sub,
-        "expires_in": token_data.get("expires_in"),
-        "scope": _SCOPE,
-    }
+        metadata = {
+            "access_token_enc": encrypt_value(access_token),
+            "linkedin_name": linkedin_name,
+            "linkedin_sub": linkedin_sub,
+            "expires_in": token_data.get("expires_in"),
+            "scope": _SCOPE,
+        }
 
-    if existing:
-        existing.metadata_json = metadata
-        existing.status = "connected"
-    else:
-        from uuid import uuid4
-        conn = InboxConnection(
-            id=str(uuid4()),
-            account_id=account_id,
-            provider=_PROVIDER,
-            display_name=linkedin_name,
-            status="connected",
-            metadata_json=metadata,
-        )
-        db.session.add(conn)
+        if existing:
+            existing.metadata_json = metadata
+            existing.status = "connected"
+        else:
+            from uuid import uuid4
+            conn = InboxConnection(
+                id=str(uuid4()),
+                account_id=account_id,
+                provider=_PROVIDER,
+                display_name=linkedin_name,
+                status="connected",
+                metadata_json=metadata,
+            )
+            db.session.add(conn)
 
-    db.session.commit()
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception(f"LinkedIn save failed: {exc}")
+        return _page(False, f"Token received but failed to save: {exc}")
 
     # Log token so admin can copy it to prod.env
     current_app.logger.info(f"LinkedIn connected: account={account_id} name={linkedin_name}")
