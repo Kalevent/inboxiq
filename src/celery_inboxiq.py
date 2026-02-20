@@ -56,6 +56,17 @@ def make_celery(app) -> Celery:
     trial_onboarding_hour = int(os.getenv("TRIAL_ONBOARDING_HOUR", "8"))  # 8am daily
     trial_onboarding_max_emails = int(os.getenv("TRIAL_ONBOARDING_MAX_EMAILS", "100"))
 
+    # Content distribution configuration
+    content_distribution_enabled = _parse_bool(os.getenv("CONTENT_DISTRIBUTION_ENABLED"), True)
+    content_distribution_hour = int(os.getenv("CONTENT_DISTRIBUTION_HOUR", "10"))  # 10am daily
+    content_distribution_max_posts = int(os.getenv("CONTENT_DISTRIBUTION_MAX_POSTS", "5"))
+
+    # Nurture campaigns configuration
+    nurture_campaigns_enabled = _parse_bool(os.getenv("NURTURE_CAMPAIGNS_ENABLED"), True)
+    nurture_discovery_hour = int(os.getenv("NURTURE_DISCOVERY_HOUR", "9"))  # 9am daily
+    nurture_consideration_hour = int(os.getenv("NURTURE_CONSIDERATION_HOUR", "11"))  # 11am daily
+    nurture_max_sends = int(os.getenv("NURTURE_MAX_SENDS", "50"))
+
     celery_app.conf.update(
         task_serializer="json",
         accept_content=["json"],
@@ -178,6 +189,42 @@ def make_celery(app) -> Celery:
                 if trial_onboarding_enabled
                 else {}
             ),
+            **(
+                {
+                    "auto_publish_blog_posts_daily": {
+                        "task": "marketing.auto_publish_ready_posts",
+                        "schedule": crontab(hour=content_distribution_hour, minute=0),  # 10am daily
+                        "args": [content_distribution_max_posts],
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if content_distribution_enabled
+                else {}
+            ),
+            **(
+                {
+                    "send_discovery_nurture_daily": {
+                        "task": "marketing.send_discovery_nurture",
+                        "schedule": crontab(hour=nurture_discovery_hour, minute=0),  # 9am daily
+                        "args": [nurture_max_sends],
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if nurture_campaigns_enabled
+                else {}
+            ),
+            **(
+                {
+                    "send_consideration_nurture_daily": {
+                        "task": "marketing.send_consideration_nurture",
+                        "schedule": crontab(hour=nurture_consideration_hour, minute=0),  # 11am daily
+                        "args": [nurture_max_sends],
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if nurture_campaigns_enabled
+                else {}
+            ),
         },
     )
 
@@ -195,7 +242,7 @@ def make_celery(app) -> Celery:
 
 app = create_app()
 celery = make_celery(app)
-celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial"])
+celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing"])
 
 # Initialize OpenTelemetry for Celery workers
 from src.observability import init_otel, get_tracer

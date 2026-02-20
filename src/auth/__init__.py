@@ -842,4 +842,4 @@ def _derive_account_name(email: str) -> str:
     if len(parts) == 2:
         domain = parts[1].split(".")[0]
         return f"{domain.title()} Support"
-    return "InboxIQ Workspace"
+

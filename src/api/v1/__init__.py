@@ -28,4 +28,6 @@ from src.api.v1 import (  # noqa: F401
     outreach,
     automation_rules,
     webhook_providers,
+    attribution,
+    admin_insights,
 )

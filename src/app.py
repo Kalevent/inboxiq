@@ -20,6 +20,7 @@ from src.settings import bp as settings_bp
 from src.publishing import bp as publishing_bp
 from src.funnel.routes import funnel_bp
 from src.automation_studio import bp as automation_studio_bp
+from src.social_auth import bp as social_auth_bp
 from src.api.v1.access_control import account_allows_api
 
 from src.email_utils import send_test_email as send_test_email_util, send_onboarding_reminder
@@ -261,6 +262,7 @@ def create_app() -> Flask:
   app.register_blueprint(publishing_bp)
   app.register_blueprint(funnel_bp)
   app.register_blueprint(automation_studio_bp)
+  app.register_blueprint(social_auth_bp)
 
   # Register SEO cleanup handlers for old URLs
   from src.seo_cleanup import register_seo_cleanup
