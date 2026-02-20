@@ -123,9 +123,16 @@ def linkedin_callback():
 
     # Persist encrypted token
     try:
-        account_id = current_app.config.get("DEFAULT_ACCOUNT_ID", 2)
+        from src.models import User
+        from uuid import uuid4
+        account_id = int(current_app.config.get("DEFAULT_ACCOUNT_ID", 2))
+        admin_user = User.query.filter_by(account_id=account_id).first()
+        if not admin_user:
+            return _page(False, f"No user found for account_id={account_id}.")
+        user_id = admin_user.id
+
         existing = InboxConnection.query.filter_by(
-            account_id=account_id, provider=_PROVIDER
+            user_id=user_id, provider=_PROVIDER
         ).first()
 
         metadata = {
@@ -140,12 +147,11 @@ def linkedin_callback():
             existing.metadata_json = metadata
             existing.status = "connected"
         else:
-            from uuid import uuid4
             conn = InboxConnection(
                 id=str(uuid4()),
                 account_id=account_id,
+                user_id=user_id,
                 provider=_PROVIDER,
-                display_name=linkedin_name,
                 status="connected",
                 metadata_json=metadata,
             )
@@ -288,36 +294,47 @@ def twitter_callback():
         pass
 
     # Persist encrypted token
-    account_id = current_app.config.get("DEFAULT_ACCOUNT_ID", 2)
-    existing = InboxConnection.query.filter_by(
-        account_id=account_id, provider=_TW_PROVIDER
-    ).first()
-
-    metadata = {
-        "access_token_enc": encrypt_value(access_token),
-        "refresh_token_enc": encrypt_value(refresh_token) if refresh_token else None,
-        "twitter_username": twitter_username,
-        "twitter_id": twitter_id,
-        "expires_in": token_data.get("expires_in"),
-        "scope": _TW_SCOPE,
-    }
-
-    if existing:
-        existing.metadata_json = metadata
-        existing.status = "connected"
-    else:
+    try:
+        from src.models import User
         from uuid import uuid4
-        conn = InboxConnection(
-            id=str(uuid4()),
-            account_id=account_id,
-            provider=_TW_PROVIDER,
-            display_name=f"@{twitter_username}",
-            status="connected",
-            metadata_json=metadata,
-        )
-        db.session.add(conn)
+        account_id = int(current_app.config.get("DEFAULT_ACCOUNT_ID", 2))
+        admin_user = User.query.filter_by(account_id=account_id).first()
+        if not admin_user:
+            return _page(False, f"No user found for account_id={account_id}.", "Twitter")
+        user_id = admin_user.id
 
-    db.session.commit()
+        existing = InboxConnection.query.filter_by(
+            user_id=user_id, provider=_TW_PROVIDER
+        ).first()
+
+        metadata = {
+            "access_token_enc": encrypt_value(access_token),
+            "refresh_token_enc": encrypt_value(refresh_token) if refresh_token else None,
+            "twitter_username": twitter_username,
+            "twitter_id": twitter_id,
+            "expires_in": token_data.get("expires_in"),
+            "scope": _TW_SCOPE,
+        }
+
+        if existing:
+            existing.metadata_json = metadata
+            existing.status = "connected"
+        else:
+            conn = InboxConnection(
+                id=str(uuid4()),
+                account_id=account_id,
+                user_id=user_id,
+                provider=_TW_PROVIDER,
+                status="connected",
+                metadata_json=metadata,
+            )
+            db.session.add(conn)
+
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception(f"Twitter save failed: {exc}")
+        return _page(False, f"Token received but failed to save: {exc}", "Twitter")
 
     current_app.logger.info(f"Twitter connected: account={account_id} username=@{twitter_username}")
     current_app.logger.info(f"TWITTER_ACCESS_TOKEN={access_token}")
