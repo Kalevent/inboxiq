@@ -7,6 +7,8 @@ Welcome to the InboxIQ docs. Useful guides:
 - [Security (Passkeys & 2FA)](/docs/security_auth)
 - [Publishing brief templates](/docs/publishing_brief_templates)
 - [Channel intake guide](/docs/channel_intake_guide)
+- [Developer guide](/docs/developer_guide)
+- [Intake API reference](/docs/intake_api)
 
 # InboxIQ User Guide
 

@@ -1,90 +1,91 @@
-# InboxIQ Intake API (Webhook / API)
+# InboxIQ Intake API
 
-Send any structured/semi-structured message into InboxIQ (forms, chat widgets, CRMs, internal tools). The same AI agent triages, creates tickets only when needed, and auto-handles the rest.
+Push any structured message into InboxIQ from forms, chat widgets, CRMs, billing platforms, or internal tools. The AI triage agent evaluates each payload and creates a ticket when action is required.
+
+For full setup instructions, credential management, and security guidance, see the [Developer Guide](/docs/developer_guide).
 
 For channel-specific examples (hotline, Facebook, Outlook), see the [Channel Intake Guide](/docs/channel_intake_guide).
 
 ## Endpoint
-- `POST /api/v1/intake`
-- Auth: `X-Intake-Token` (from env `INBOXIQ_INTAKE_TOKEN`) **or** logged-in JWT. If the token env var is set, the header is required.
 
-## Request body (examples)
-
-- Website form:
-```json
-{
-  "subject": "Contact us: integration question",
-  "body": "How do we connect our internal CRM to InboxIQ?",
-  "source": "form"
-}
+```http
+POST /api/v1/intake
 ```
 
-- Chat handoff:
-```json
-{
-  "subject": "Chat handoff: billing issue",
-  "body": "User: I was double-charged this month.\nBot: Let me check...\nUser: please escalate.",
-  "source": "chat"
-}
-```
+**Authentication:** HTTP Basic Auth with your `client_id` and `client_secret` (scope: `intake:write`).
+Register your app at **Settings → Developer** to obtain credentials.
 
-- CRM event:
-```json
-{
-  "subject": "CRM: escalated lead responded angrily",
-  "body": "Lead ABC replied: \"Why was I charged again?\"",
-  "source": "crm",
-  "provider_thread_url": "https://crm.example.com/leads/abc"
-}
-```
+## Request body
 
-- Compliance/incident:
-```json
-{
-  "subject": "Security incident report",
-  "body": "Whistleblower report about access policy violation.",
-  "source": "compliance"
-}
-```
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `body` | string | yes | Main content. Aliases: `message`. |
+| `subject` | string | recommended | Title for triage. Aliases: `title`. |
+| `source` | string | no | Channel hint: `form`, `chat`, `crm`, `webhook`, `compliance`. |
+| `from_email` | string | no | Sender address. Aliases: `sender`. |
+| `provider_thread_url` | string | no | Link back to the originating thread. Aliases: `thread_url`. |
+| `message_id` | string | no | External message ID (deduplication, threading). |
+| `received_at` | string | no | ISO 8601 timestamp of the original event. |
+| `context` | object | no | Arbitrary metadata (invoice IDs, customer tier, etc.). |
 
-Common fields:
-- `subject` (required-ish): title/subject for triage.
-- `body` or `message` (required): main content.
-- `source` (optional): e.g., webhook, crm, chat, form, compliance.
-- `from_email` (optional): used for VIP/routing signals.
-- `message_id`, `provider_thread_url`, `received_at` (optional): preserved for threading/audit.
-- `account_id` (optional): specify which account; otherwise falls back to the caller’s account (JWT).
+## Response
 
-## Behavior
-1) Runs InboxIQ triage on the payload.
-2) If `action_required == true`, creates a ticket and returns it.
-3) Otherwise, stores as feedback-like record (auto-handled/optional) with decision + entities.
+`202 Accepted` — payload queued for async processing:
 
-## Response (example)
 ```json
 {
   "success": true,
-  "decision": { "...": "triage payload" },
-  "ticket": {
-    "id": "t_123",
-    "status": "new",
-    "priority": "P2",
-    "action_required": true
-  },
-  "feedback": null
+  "status": "queued",
+  "task_id": "4f9c2b3a-1e8d-4a6f-b0c2-d3e5f6a7b8c9"
 }
 ```
 
-## Sample curl
+## Examples
+
+**Contact form:**
+
 ```bash
-curl -X POST https://api.kalevent.com/api/v1/intake \
-  -H "X-Intake-Token: $INBOXIQ_INTAKE_TOKEN" \
+curl -u "$CLIENT_ID:$CLIENT_SECRET" \
+  -X POST https://kalevent.com/api/v1/intake \
   -H "Content-Type: application/json" \
   -d '{
-    "subject": "Customer asked about enterprise pricing",
-    "body": "Hi, can you share enterprise pricing and SSO options?",
-    "source": "webhook",
-    "from_email": "form@yourdomain.com",
-    "account_id": 42
+    "subject": "Pricing question",
+    "body": "Can you share enterprise pricing for a team of 50?",
+    "source": "form",
+    "from_email": "buyer@acme.com"
   }'
 ```
+
+**CRM webhook:**
+
+```bash
+curl -u "$CLIENT_ID:$CLIENT_SECRET" \
+  -X POST https://kalevent.com/api/v1/intake \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": "CRM: escalated lead responded",
+    "body": "Lead ABC replied: Why was I charged again?",
+    "source": "crm",
+    "provider_thread_url": "https://crm.example.com/leads/abc",
+    "context": { "deal_id": "abc", "account": "Acme Corp" }
+  }'
+```
+
+**Accounting event (Sage / QuickBooks):**
+
+```bash
+curl -u "$CLIENT_ID:$CLIENT_SECRET" \
+  -X POST https://kalevent.com/api/v1/intake \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": "Invoice INV-2047 overdue",
+    "body": "Invoice INV-2047 for £4,200 is 30 days overdue.",
+    "source": "webhook",
+    "context": { "invoice_id": "INV-2047", "amount": "4200", "currency": "GBP" }
+  }'
+```
+
+## Related
+
+- [Developer Guide](/docs/developer_guide) — app registration, scopes, error reference
+- [Channel Intake Guide](/docs/channel_intake_guide) — email, chat, social channel examples
