@@ -26,11 +26,17 @@
             <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='inboxiq_dashboard_user_guide' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='inboxiq_dashboard_user_guide') }}">Dashboard Guide</a></li>
             <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='invite_teammates' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='invite_teammates') }}">Invite teammates</a></li>
             <li class="docs-nav-item"><a class="docs-nav-link" href="{{ url_for('docs.docs_page', doc_name='service_integrations') }}">Integrations</a></li>
-            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='intake_api' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='intake_api') }}">Intake API</a></li>
             <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='channel_intake_guide' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='channel_intake_guide') }}">Channel intake guide</a></li>
             <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='feedback_api' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='feedback_api') }}">Feedback API</a></li>
             <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='security_auth' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='security_auth') }}">Security (Passkeys & 2FA)</a></li>
             <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='publishing_brief_templates' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='publishing_brief_templates') }}">Publishing brief templates</a></li>
+          </ul>
+        </div>
+        <div class="docs-nav-section">
+          <div class="docs-nav-section-title">Developer</div>
+          <ul class="docs-nav-list">
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='developer_guide' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='developer_guide') }}">Developer Guide</a></li>
+            <li class="docs-nav-item"><a class="docs-nav-link {% if doc_name=='intake_api' %}active{% endif %}" href="{{ url_for('docs.docs_page', doc_name='intake_api') }}">Intake API</a></li>
           </ul>
         </div>
         <div class="docs-nav-section">
