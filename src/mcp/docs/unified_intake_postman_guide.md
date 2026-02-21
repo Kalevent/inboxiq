@@ -557,7 +557,7 @@ async function sendWithRetry(url, data, maxRetries = 3) {
 **HubSpot Setup:**
 1. Go to Workflows → Create workflow
 2. Add action: "Send webhook"
-3. URL: `https://api.kalevent.com/api/v1/intake`
+3. URL: `https://hook.kalevent.com/api/v1/intake`
 4. Method: `POST`
 5. Add headers (use custom code action):
    ```javascript
@@ -590,7 +590,7 @@ async function sendWithRetry(url, data, maxRetries = 3) {
 **Zapier Setup:**
 1. Create Zap: Trigger (any app) → Action (Webhooks by Zapier)
 2. Action: **POST**
-3. URL: `https://api.kalevent.com/api/v1/intake/shim`
+3. URL: `https://hook.kalevent.com/api/v1/intake/shim`
 4. Data:
    ```
    subject: New Contact from [App Name]
@@ -608,7 +608,7 @@ async function sendWithRetry(url, data, maxRetries = 3) {
 **Intercom Setup:**
 1. Settings → Developers → Webhooks
 2. Create webhook for "conversation.user.created"
-3. URL: `https://api.kalevent.com/api/v1/intake`
+3. URL: `https://hook.kalevent.com/api/v1/intake`
 4. Add custom middleware to generate HMAC (or use `/shim`)
 
 **Payload transformation** (use middleware):
@@ -697,7 +697,7 @@ def handle_mention(event, say):
 
     # Send to InboxIQ
     response = requests.post(
-        "https://api.kalevent.com/api/v1/intake",
+        "https://hook.kalevent.com/api/v1/intake",
         json=payload,
         headers={
             "X-Intake-Token": intake_token,

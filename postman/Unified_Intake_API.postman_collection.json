@@ -381,7 +381,7 @@
               "raw": "{\n  \"subject\": \"Contact Form: New inquiry\",\n  \"body\": \"Name: Sarah Johnson\\nEmail: sarah@startup.io\\nCompany: Startup Inc\\nMessage: Interested in your automation platform for our customer support team. We handle ~200 tickets/day and need better triaging.\",\n  \"from_email\": \"sarah@startup.io\",\n  \"source\": \"typeform\",\n  \"provider\": \"typeform\",\n  \"channel\": \"web_form\",\n  \"provider_thread_url\": \"https://admin.typeform.com/form/abc123/results\",\n  \"context\": {\n    \"form_name\": \"Contact Us\",\n    \"form_id\": \"typeform_abc123\",\n    \"submitted_at\": \"2026-02-08T17:05:00Z\",\n    \"utm_source\": \"google\",\n    \"utm_campaign\": \"automation_search\",\n    \"page_url\": \"https://yoursite.com/contact\"\n  }\n}"
             },
             "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/intake",
-            "description": "✅ External forms use /intake endpoint (NOT /forms/submit)\n✅ Works from any domain (no cookies)\n✅ Uses intake token + HMAC auth\n\nConfigure Typeform webhook:\n1. Form Settings → Integrations → Webhooks\n2. URL: https://api.kalevent.com/api/v1/intake\n3. Add custom headers (see Headers tab)\n4. Map form fields to body"
+            "description": "✅ External forms use /intake endpoint (NOT /forms/submit)\n✅ Works from any domain (no cookies)\n✅ Uses intake token + HMAC auth\n\nConfigure Typeform webhook:\n1. Form Settings → Integrations → Webhooks\n2. URL: https://hook.kalevent.com/api/v1/intake\n3. Add custom headers (see Headers tab)\n4. Map form fields to body"
           },
           "response": []
         },

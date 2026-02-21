@@ -8,7 +8,7 @@ This guide shows how to connect those channels using the Intake API or the shim�
 - If your gateway does not emit an ID, generate one yourself (UUID or hash of timestamp + source + sender) and reuse it on retries for the same event; do not increment per retry.
 - Put the contact handle in `from_email` for cross-channel linking: email, `tel:+1...`, or `social:fb:<page-id>/<user-id>`.
 - Prefer `POST /api/v1/intake` with HMAC headers; fall back to `/api/v1/intake/shim` if the source cannot sign requests.
-- Automation: set your provider’s webhook to `https://api.kalevent.com/api/v1/intake/shim` (no headers) or `…/intake` with HMAC headers. Every inbound event will then create/update tickets automatically—no manual posts.
+- Automation: set your provider’s webhook to `https://hook.kalevent.com/api/v1/intake/shim` (no headers) or `…/intake` with HMAC headers. Every inbound event will then create/update tickets automatically—no manual posts.
 
 ## Outlook (email)
 1) In Settings → Integrations, click Outlook/365 and complete OAuth.
@@ -26,7 +26,7 @@ This guide shows how to connect those channels using the Intake API or the shim�
   - `body`: include IVR path + caller input + transcript/notes (this is what InboxIQ reads to classify/reroute)
 - Example via shim (no HMAC on caller side):
 ```bash
-curl -X POST https://api.kalevent.com/api/v1/intake/shim \
+curl -X POST https://hook.kalevent.com/api/v1/intake/shim \
   -H "Content-Type: application/json" \
   -d '{
     "source": "hotline",
@@ -42,9 +42,9 @@ curl -X POST https://api.kalevent.com/api/v1/intake/shim \
 ### Twilio IVR (recording + transcription)
 Use Twilio to record the call, generate a transcript, and forward it into InboxIQ via the Twilio webhooks.
 
-- Voice webhook (TwiML): `https://api.kalevent.com/api/v1/twilio/voice`
-- Recording callback: `https://api.kalevent.com/api/v1/twilio/recording`
-- Transcription callback: `https://api.kalevent.com/api/v1/twilio/transcription`
+- Voice webhook (TwiML): `https://hook.kalevent.com/api/v1/twilio/voice`
+- Recording callback: `https://hook.kalevent.com/api/v1/twilio/recording`
+- Transcription callback: `https://hook.kalevent.com/api/v1/twilio/transcription`
 
 TwiML served by `/api/v1/twilio/voice`:
 ```xml
@@ -53,8 +53,8 @@ TwiML served by `/api/v1/twilio/voice`:
   <Record
     maxLength="120"
     transcribe="true"
-    recordingStatusCallback="https://api.kalevent.com/api/v1/twilio/recording"
-    transcriptionCallback="https://api.kalevent.com/api/v1/twilio/transcription"
+    recordingStatusCallback="https://hook.kalevent.com/api/v1/twilio/recording"
+    transcriptionCallback="https://hook.kalevent.com/api/v1/twilio/transcription"
   />
 </Response>
 ```
@@ -73,7 +73,7 @@ Security (recommended):
   - `body`: message text and optional metadata (post title, thread snippet)
 - Example via shim:
 ```bash
-curl -X POST https://api.kalevent.com/api/v1/intake/shim \
+curl -X POST https://hook.kalevent.com/api/v1/intake/shim \
   -H "Content-Type: application/json" \
   -d '{
     "source": "facebook",
@@ -96,7 +96,7 @@ curl -X POST https://api.kalevent.com/api/v1/intake/shim \
   - `body`: message text (include media captions/URLs if relevant)
 - Example via shim:
 ```bash
-curl -X POST https://api.kalevent.com/api/v1/intake/shim \
+curl -X POST https://hook.kalevent.com/api/v1/intake/shim \
   -H "Content-Type: application/json" \
   -d '{
     "source": "whatsapp",

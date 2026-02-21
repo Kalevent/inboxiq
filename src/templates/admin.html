@@ -2103,12 +2103,12 @@
     // ── Developer access helpers ───────────────────────────────────────────
     async function enableDeveloperAccess() {
       const accountId = document.getElementById('devAccessAccountId').value.trim();
-      const result = document.getElementById('devAccessResult');
       if (!accountId) { showDevResult('Account ID is required.', false); return; }
       try {
         const resp = await fetch(`/api/v1/admin/developer/enable`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
           body: JSON.stringify({ account_id: parseInt(accountId) })
         });
         const data = await resp.json();
@@ -2128,7 +2128,8 @@
       el.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
       try {
         const resp = await fetch('/api/v1/admin/developer/requests', {
-          headers: { 'Authorization': `Bearer ${getToken()}` }
+          credentials: 'same-origin',
+          headers: { 'X-CSRF-TOKEN': getCsrfToken() }
         });
         const data = await resp.json();
         const requests = data.requests || [];
@@ -2163,7 +2164,8 @@
       try {
         const resp = await fetch(`/api/v1/admin/developer/requests/${requestId}/review`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
           body: JSON.stringify({ status })
         });
         if (resp.ok) loadDevRequests();
