@@ -31,4 +31,6 @@ from src.api.v1 import (  # noqa: F401
     attribution,
     admin_insights,
     admin_marketing,
+    referrals,
+    messages,
 )

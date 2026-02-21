@@ -619,6 +619,132 @@
                 <div class="text-center text-slate-400 text-sm">Loading...</div>
               </div>
             </div>
+
+            <!-- Referral Stats -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <h2 class="text-lg font-semibold text-slate-100 mb-4">Referral Programme</h2>
+              <div id="referralStats" class="grid md:grid-cols-3 gap-4 mb-4">
+                <div class="text-center text-slate-400 text-sm">Loading...</div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="border-b border-slate-800">
+                    <tr>
+                      <th class="text-left p-2 text-slate-400 font-medium">Referrer</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Code</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Referred</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Status</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody id="referralTable" class="divide-y divide-slate-800">
+                    <tr><td colspan="5" class="text-center py-6 text-slate-400">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Attribution Report -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Paid Ad Attribution</h2>
+                  <p class="text-xs text-slate-400 mt-0.5">UTM-based source & campaign breakdown (last 30 days).</p>
+                </div>
+                <button id="refreshAttributionBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">↻ Refresh</button>
+              </div>
+              <div id="channelMix" class="grid md:grid-cols-4 gap-3 mb-6">
+                <div class="text-center text-slate-400 text-sm">Loading...</div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="border-b border-slate-800">
+                    <tr>
+                      <th class="text-left p-2 text-slate-400 font-medium">Source</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">Leads</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">Conversions</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">Conv. Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody id="attributionTable" class="divide-y divide-slate-800">
+                    <tr><td colspan="4" class="text-center py-6 text-slate-400">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Broadcast Messages -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-100">Broadcast Messages</h2>
+                <button onclick="document.getElementById('newMessageForm').classList.toggle('hidden')"
+                        class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">+ New Message</button>
+              </div>
+              <div id="newMessageForm" class="hidden mb-6 rounded-xl border border-slate-700 bg-slate-950/40 p-4 space-y-3">
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Title *</label>
+                    <input id="msgTitle" type="text" maxlength="200" placeholder="e.g. New feature: Smart Replies"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="text-xs text-slate-400">Type</label>
+                      <select id="msgType" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                        <option value="info">Info</option>
+                        <option value="success">Success</option>
+                        <option value="warning">Warning</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="text-xs text-slate-400">Target</label>
+                      <select id="msgTarget" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                        <option value="all">All users</option>
+                        <option value="trial">Trial only</option>
+                        <option value="paid">Paid only</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400">Body *</label>
+                  <textarea id="msgBody" rows="2" placeholder="Message body..."
+                            class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"></textarea>
+                </div>
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">CTA Label (optional)</label>
+                    <input id="msgCtaText" type="text" maxlength="100" placeholder="e.g. Learn more"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">CTA URL (optional)</label>
+                    <input id="msgCtaUrl" type="text" maxlength="500" placeholder="https://..."
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Publish at (blank = draft)</label>
+                    <input id="msgPublishedAt" type="datetime-local"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Expires at (optional)</label>
+                    <input id="msgExpiresAt" type="datetime-local"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="createBroadcast()" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">Save</button>
+                  <button onclick="document.getElementById('newMessageForm').classList.add('hidden')" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:text-slate-100">Cancel</button>
+                </div>
+                <div id="msgCreateStatus" class="hidden text-xs mt-1"></div>
+              </div>
+              <div id="broadcastList" class="space-y-2">
+                <div class="text-slate-400 text-sm">Loading...</div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1130,9 +1256,15 @@
       }
     }
 
-    // Marketing: load both nurture stats and A/B results
+    // Marketing: load all marketing sub-sections
     async function loadMarketingData() {
-      await Promise.all([loadNurtureStats(), loadAbResults()]);
+      await Promise.all([
+        loadNurtureStats(),
+        loadAbResults(),
+        loadReferralStats(),
+        loadAttributionReport(),
+        loadBroadcastMessages(),
+      ]);
     }
 
     async function loadNurtureStats() {
@@ -1310,9 +1442,181 @@
       }
     }
 
+    // Marketing helpers
+    async function loadReferralStats() {
+      try {
+        const res = await fetch('/api/v1/admin/marketing/referral-stats', { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        document.getElementById('referralStats').innerHTML = `
+          <div class="bg-slate-800/50 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-indigo-400">${data.total_codes || 0}</div>
+            <div class="text-xs text-slate-400 mt-1 uppercase tracking-wide">Codes generated</div>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-blue-400">${data.clicked || 0}</div>
+            <div class="text-xs text-slate-400 mt-1 uppercase tracking-wide">Clicked</div>
+          </div>
+          <div class="bg-slate-800/50 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-emerald-400">${data.converted || 0}</div>
+            <div class="text-xs text-slate-400 mt-1 uppercase tracking-wide">Converted (${((data.conversion_rate || 0)*100).toFixed(1)}%)</div>
+          </div>
+        `;
+
+        const tbody = document.getElementById('referralTable');
+        const recents = data.recent || [];
+        if (recents.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">No referrals yet.</td></tr>';
+        } else {
+          const statusColors = { pending: 'text-slate-400', clicked: 'text-blue-300', converted: 'text-emerald-300', rewarded: 'text-amber-300' };
+          tbody.innerHTML = recents.map(r => `
+            <tr class="hover:bg-slate-800/50">
+              <td class="p-2 text-slate-300">${r.referrer_email}</td>
+              <td class="p-2 font-mono text-xs text-slate-400">${r.code}</td>
+              <td class="p-2 text-slate-300">${r.referred_email || '--'}</td>
+              <td class="p-2"><span class="${statusColors[r.status] || 'text-slate-400'}">${r.status}</span></td>
+              <td class="p-2 text-slate-500 text-xs">${r.created_at ? new Date(r.created_at).toLocaleDateString() : '--'}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Error loading referral stats:', err);
+      }
+    }
+
+    async function loadAttributionReport() {
+      const channelEl = document.getElementById('channelMix');
+      const tbody = document.getElementById('attributionTable');
+      channelEl.innerHTML = '<div class="text-slate-400 text-sm col-span-4">Loading...</div>';
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-400">Loading...</td></tr>';
+
+      try {
+        const res = await fetch('/api/v1/admin/marketing/attribution?days=30', { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const mix = data.channel_mix || {};
+        const mixColors = { organic: 'text-emerald-400', paid: 'text-indigo-400', referral: 'text-amber-400', direct: 'text-slate-300' };
+        channelEl.innerHTML = Object.entries(mix).map(([ch, pct]) => `
+          <div class="bg-slate-800/50 rounded-xl p-3 text-center">
+            <div class="text-xl font-bold ${mixColors[ch] || 'text-slate-300'}">${pct}%</div>
+            <div class="text-xs text-slate-400 mt-1 capitalize">${ch}</div>
+          </div>
+        `).join('');
+
+        const rows = data.by_source || [];
+        if (rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-400">No UTM data yet.</td></tr>';
+        } else {
+          tbody.innerHTML = rows.map(r => `
+            <tr class="hover:bg-slate-800/50">
+              <td class="p-2 text-slate-300">${r.source || 'direct'}</td>
+              <td class="p-2 text-right text-slate-300">${(r.leads || 0).toLocaleString()}</td>
+              <td class="p-2 text-right text-emerald-300">${(r.conversions || 0).toLocaleString()}</td>
+              <td class="p-2 text-right text-indigo-300">${((r.conv_rate || 0)*100).toFixed(1)}%</td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-red-400">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function loadBroadcastMessages() {
+      const list = document.getElementById('broadcastList');
+      list.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
+      try {
+        const res = await fetch('/api/v1/admin/messages', { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const msgs = data.messages || [];
+        if (msgs.length === 0) {
+          list.innerHTML = '<div class="text-slate-500 text-sm">No broadcast messages.</div>';
+          return;
+        }
+        const typeColors = { info: 'border-blue-700/40 bg-blue-950/20', success: 'border-emerald-700/40 bg-emerald-950/20', warning: 'border-amber-700/40 bg-amber-950/20' };
+        const typeBadge = { info: 'bg-blue-500/20 text-blue-300', success: 'bg-emerald-500/20 text-emerald-300', warning: 'bg-amber-500/20 text-amber-300' };
+        list.innerHTML = msgs.map(m => `
+          <div class="rounded-xl border ${typeColors[m.type] || 'border-slate-700'} p-4">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold text-slate-100 text-sm">${m.title}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${typeBadge[m.type] || ''}">${m.type}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300">${m.target}</span>
+                  ${m.is_active ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">live</span>' : '<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-400">draft</span>'}
+                </div>
+                <p class="text-xs text-slate-400 mt-1">${m.body}</p>
+                ${m.cta_text ? `<a href="${m.cta_url || '#'}" class="text-xs text-indigo-400 mt-1 inline-block">${m.cta_text} →</a>` : ''}
+              </div>
+              <button onclick="deleteBroadcast('${m.id}')" class="flex-shrink-0 text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded border border-red-800/30 hover:bg-red-900/20">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = `<div class="text-red-400 text-sm">Error: ${err.message}</div>`;
+      }
+    }
+
+    async function createBroadcast() {
+      const statusEl = document.getElementById('msgCreateStatus');
+      statusEl.className = 'text-xs mt-1';
+      statusEl.classList.remove('hidden');
+      statusEl.textContent = 'Saving...';
+
+      const csrfToken = getCsrfToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
+      const pubAt = document.getElementById('msgPublishedAt').value;
+      const expAt = document.getElementById('msgExpiresAt').value;
+
+      try {
+        const res = await fetch('/api/v1/admin/messages', {
+          method: 'POST',
+          headers,
+          credentials: 'include',
+          body: JSON.stringify({
+            title: document.getElementById('msgTitle').value.trim(),
+            body: document.getElementById('msgBody').value.trim(),
+            type: document.getElementById('msgType').value,
+            target: document.getElementById('msgTarget').value,
+            cta_text: document.getElementById('msgCtaText').value.trim() || null,
+            cta_url: document.getElementById('msgCtaUrl').value.trim() || null,
+            published_at: pubAt ? new Date(pubAt).toISOString() : null,
+            expires_at: expAt ? new Date(expAt).toISOString() : null,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        statusEl.textContent = '✓ Created';
+        statusEl.classList.add('text-emerald-400');
+        document.getElementById('newMessageForm').classList.add('hidden');
+        loadBroadcastMessages();
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('text-red-400');
+      }
+    }
+
+    async function deleteBroadcast(id) {
+      const csrfToken = getCsrfToken();
+      const headers = {};
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+      try {
+        await fetch(`/api/v1/admin/messages/${id}`, { method: 'DELETE', headers, credentials: 'include' });
+        loadBroadcastMessages();
+      } catch (err) {
+        console.error('Error deleting message:', err);
+      }
+    }
+
     // Add event listeners
     document.getElementById('refreshTrialBtn')?.addEventListener('click', loadTrialMetrics);
     document.getElementById('refreshAbBtn')?.addEventListener('click', loadAbResults);
+    document.getElementById('refreshAttributionBtn')?.addEventListener('click', loadAttributionReport);
 
     // Load funnel metrics on page load if on funnel section
     if (document.getElementById('section-funnel').classList.contains('active')) {

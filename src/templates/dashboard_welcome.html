@@ -1752,5 +1752,53 @@
 
   <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
   <script src="{{ url_for('static', filename='js/dashboard_welcome.js') }}"></script>
+
+  <!-- In-app broadcast messages -->
+  <div id="inAppBanners" class="fixed top-0 left-0 right-0 z-[9998] flex flex-col gap-1 pointer-events-none"></div>
+  <script>
+    (function() {
+      const TYPE_STYLES = {
+        info:    { bar: 'bg-indigo-600/95 border-indigo-500/50',    icon: 'ℹ', btn: 'text-indigo-200 hover:text-white' },
+        success: { bar: 'bg-emerald-600/95 border-emerald-500/50',  icon: '✓', btn: 'text-emerald-200 hover:text-white' },
+        warning: { bar: 'bg-amber-600/95 border-amber-500/50',      icon: '⚠', btn: 'text-amber-200 hover:text-white' },
+      };
+
+      async function loadBanners() {
+        try {
+          const res = await fetch('/api/v1/messages/unread', { credentials: 'include' });
+          if (!res.ok) return;
+          const { messages } = await res.json();
+          if (!messages || !messages.length) return;
+
+          const container = document.getElementById('inAppBanners');
+          messages.forEach(msg => {
+            const s = TYPE_STYLES[msg.type] || TYPE_STYLES.info;
+            const banner = document.createElement('div');
+            banner.className = `pointer-events-auto flex items-center justify-between gap-3 px-4 py-2.5 border-b backdrop-blur ${s.bar} text-white text-sm shadow-lg`;
+            banner.dataset.msgId = msg.id;
+            banner.innerHTML = `
+              <div class="flex items-center gap-2 min-w-0 flex-1">
+                <span class="flex-shrink-0 font-bold">${s.icon}</span>
+                <span class="font-semibold flex-shrink-0">${msg.title}</span>
+                <span class="text-white/80 truncate">${msg.body}</span>
+                ${msg.cta_text && msg.cta_url ? `<a href="${msg.cta_url}" class="flex-shrink-0 underline underline-offset-2 ${s.btn} font-medium">${msg.cta_text}</a>` : ''}
+              </div>
+              <button class="flex-shrink-0 text-white/70 hover:text-white text-lg leading-none px-1" aria-label="Dismiss" onclick="dismissBanner('${msg.id}', this.closest('[data-msg-id]'))">×</button>
+            `;
+            container.appendChild(banner);
+          });
+        } catch (_) {}
+      }
+
+      window.dismissBanner = async function(id, el) {
+        if (el) el.remove();
+        try {
+          await fetch(`/api/v1/messages/${id}/dismiss`, { method: 'POST', credentials: 'include' });
+        } catch (_) {}
+      };
+
+      document.addEventListener('DOMContentLoaded', loadBanners);
+    })();
+  </script>
 </body>
 </html>

@@ -262,6 +262,18 @@ def make_celery(app) -> Celery:
                 if nurture_campaigns_enabled
                 else {}
             ),
+            # CRM social sync — daily at 6am (LinkedIn + Twitter profile verification)
+            **(
+                {
+                    "sync_social_crm_leads_daily": {
+                        "task": "marketing.sync_social_crm_leads",
+                        "schedule": crontab(hour=6, minute=0),
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if nurture_campaigns_enabled
+                else {}
+            ),
         },
     )
 

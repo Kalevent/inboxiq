@@ -522,6 +522,25 @@ def _legacy_settings_redirect(tab="team"):
   return redirect(url_for("settings.settings_page", tab=tab or "team"))
 
 
+@bp.route("/integrations/social/disconnect", methods=["POST"])
+@login_required_settings
+def integrations_social_disconnect():
+    """Disconnect a LinkedIn or Twitter social CRM connection."""
+    from src.models import InboxConnection
+    account_id = getattr(g, "current_account_id", None)
+    provider = request.form.get("provider", "").strip()
+    if provider not in ("linkedin_social", "twitter_social") or not account_id:
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+
+    conn = InboxConnection.query.filter_by(account_id=account_id, provider=provider).first()
+    if conn:
+        from src.extensions import db
+        db.session.delete(conn)
+        db.session.commit()
+
+    return redirect(url_for("settings.settings_page", tab="integrations"))
+
+
 @bp.route("/integrations/webhooks", methods=["GET", "POST"])
 @login_required_settings
 @limiter.limit("20 per minute", methods=["POST"])  # Rate limit: 20 provider configurations per minute

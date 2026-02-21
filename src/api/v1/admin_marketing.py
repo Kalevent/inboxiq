@@ -1,18 +1,23 @@
 """
-Admin API endpoints for nurture campaign and A/B test visibility.
+Admin API endpoints for marketing visibility.
 
 Provides:
-- GET /api/v1/admin/marketing/ab-results   — per-step A/B test evaluation
-- GET /api/v1/admin/marketing/nurture-stats — aggregate send stats by campaign/variant/vertical
+- GET  /api/v1/admin/marketing/ab-results      — per-step A/B test evaluation
+- GET  /api/v1/admin/marketing/nurture-stats   — aggregate send stats
+- GET  /api/v1/admin/marketing/referral-stats  — referral programme totals
+- GET  /api/v1/admin/marketing/attribution     — UTM source / campaign breakdown
+- GET  /api/v1/admin/messages                  — list broadcast messages
+- POST /api/v1/admin/messages                  — create broadcast message
+- DELETE /api/v1/admin/messages/<id>           — delete broadcast message
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from flask import jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import NurtureEmailSend, User
+from src.models import InAppMessage, InAppMessageDismissal, Lead, LeadAttribution, NurtureEmailSend, Referral, User
 import logging
 
 logger = logging.getLogger(__name__)
@@ -195,3 +200,277 @@ def get_nurture_stats():
     except Exception as exc:
         logger.exception("Failed to get nurture stats: %s", exc)
         return jsonify({"error": str(exc)}), 500
+
+
+# ── Referral Stats ─────────────────────────────────────────────────────────────
+
+@v1.route("/admin/marketing/referral-stats", methods=["GET"])
+@jwt_required()
+def get_referral_stats():
+    """
+    Aggregate referral programme statistics.
+
+    Returns:
+        {
+            "total_codes": N,
+            "clicked": N,
+            "converted": N,
+            "conversion_rate": float,
+            "recent": [{code, referrer_email, status, created_at, referred_email}]
+        }
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    try:
+        rows = db.session.query(Referral).order_by(Referral.created_at.desc()).limit(100).all()
+        total = len(rows)
+        clicked = sum(1 for r in rows if r.status in ("clicked", "converted", "rewarded"))
+        converted = sum(1 for r in rows if r.status in ("converted", "rewarded"))
+
+        return jsonify({
+            "total_codes": total,
+            "clicked": clicked,
+            "converted": converted,
+            "conversion_rate": round(converted / total, 4) if total else 0,
+            "recent": [
+                {
+                    "code": r.referral_code,
+                    "referrer_email": r.referrer_email,
+                    "status": r.status,
+                    "created_at": r.created_at.isoformat(),
+                    "referred_email": r.referred_email,
+                }
+                for r in rows[:20]
+            ],
+        }), 200
+
+    except Exception as exc:
+        logger.exception("Failed to get referral stats: %s", exc)
+        return jsonify({"error": str(exc)}), 500
+
+
+# ── Attribution Report ─────────────────────────────────────────────────────────
+
+@v1.route("/admin/marketing/attribution", methods=["GET"])
+@jwt_required()
+def get_admin_attribution_report():
+    """
+    UTM-based attribution report from existing Lead and LeadAttribution data.
+
+    Query params:
+        days: Number of days to look back (default: 30)
+
+    Returns:
+        {
+            "by_source": [{"source", "leads", "conversions", "conv_rate"}],
+            "by_campaign": [{"campaign", "leads", "conversions", "conv_rate"}],
+            "channel_mix": {"organic": %, "paid": %, "referral": %, "direct": %},
+            "totals": {"leads": N, "conversions": N, "overall_conv_rate": float},
+            "period_days": int
+        }
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    try:
+        days = int(request.args.get("days", 30))
+    except (ValueError, TypeError):
+        return jsonify({"error": "days must be an integer"}), 400
+
+    try:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        conversion_stages = ("conversion", "retention")
+
+        # Leads created in period grouped by utm_source
+        source_rows = db.session.query(
+            db.func.coalesce(Lead.utm_source, Lead.source, "direct").label("src"),
+            db.func.count().label("leads"),
+            db.func.sum(
+                db.cast(Lead.current_funnel_stage.in_(conversion_stages), db.Integer)
+            ).label("conversions"),
+        ).filter(
+            Lead.deleted == False,  # noqa: E712
+            Lead.created_at >= cutoff,
+        ).group_by(db.text("src")).order_by(db.desc(db.func.count())).limit(15).all()
+
+        by_source = []
+        total_leads = 0
+        total_conv = 0
+        for row in source_rows:
+            leads = row.leads or 0
+            convs = int(row.conversions or 0)
+            total_leads += leads
+            total_conv += convs
+            by_source.append({
+                "source": row.src or "direct",
+                "leads": leads,
+                "conversions": convs,
+                "conv_rate": round(convs / leads, 4) if leads else 0,
+            })
+
+        # By campaign
+        campaign_rows = db.session.query(
+            db.func.coalesce(Lead.utm_campaign, "none").label("campaign"),
+            db.func.count().label("leads"),
+            db.func.sum(
+                db.cast(Lead.current_funnel_stage.in_(conversion_stages), db.Integer)
+            ).label("conversions"),
+        ).filter(
+            Lead.deleted == False,  # noqa: E712
+            Lead.created_at >= cutoff,
+            Lead.utm_campaign.isnot(None),
+        ).group_by(db.text("campaign")).order_by(db.desc(db.func.count())).limit(10).all()
+
+        by_campaign = [
+            {
+                "campaign": row.campaign,
+                "leads": row.leads or 0,
+                "conversions": int(row.conversions or 0),
+                "conv_rate": round(int(row.conversions or 0) / (row.leads or 1), 4),
+            }
+            for row in campaign_rows
+        ]
+
+        # Channel mix: classify sources into buckets
+        organic_srcs = {"organic", "seo", "google_organic", "bing_organic"}
+        paid_srcs = {"cpc", "ppc", "paid", "google", "bing", "facebook", "meta",
+                     "linkedin_ads", "twitter_ads", "display"}
+        referral_srcs = {"referral", "linkedin", "twitter", "partner", "affiliate"}
+
+        channel_counts = {"organic": 0, "paid": 0, "referral": 0, "direct": 0}
+        for row in source_rows:
+            src = (row.src or "direct").lower()
+            leads = row.leads or 0
+            if src in organic_srcs or "organic" in src:
+                channel_counts["organic"] += leads
+            elif src in paid_srcs or "paid" in src or "cpc" in src or "ads" in src:
+                channel_counts["paid"] += leads
+            elif src in referral_srcs or "referral" in src:
+                channel_counts["referral"] += leads
+            else:
+                channel_counts["direct"] += leads
+
+        channel_total = sum(channel_counts.values()) or 1
+        channel_mix = {ch: round(n / channel_total * 100, 1) for ch, n in channel_counts.items()}
+
+        return jsonify({
+            "by_source": by_source,
+            "by_campaign": by_campaign,
+            "channel_mix": channel_mix,
+            "totals": {
+                "leads": total_leads,
+                "conversions": total_conv,
+                "overall_conv_rate": round(total_conv / total_leads, 4) if total_leads else 0,
+            },
+            "period_days": days,
+        }), 200
+
+    except Exception as exc:
+        logger.exception("Failed to get attribution report: %s", exc)
+        return jsonify({"error": str(exc)}), 500
+
+
+# ── Broadcast Messages (admin CRUD) ───────────────────────────────────────────
+
+@v1.route("/admin/messages", methods=["GET"])
+@jwt_required()
+def list_messages():
+    """List all broadcast messages (drafts + published)."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    msgs = db.session.query(InAppMessage).order_by(InAppMessage.created_at.desc()).all()
+    now = datetime.now(timezone.utc)
+    return jsonify({
+        "messages": [
+            {
+                "id": m.id,
+                "title": m.title,
+                "body": m.body,
+                "type": m.type,
+                "target": m.target,
+                "target_account_id": m.target_account_id,
+                "cta_text": m.cta_text,
+                "cta_url": m.cta_url,
+                "published_at": m.published_at.isoformat() if m.published_at else None,
+                "expires_at": m.expires_at.isoformat() if m.expires_at else None,
+                "created_at": m.created_at.isoformat(),
+                "is_active": bool(
+                    m.published_at
+                    and m.published_at <= now
+                    and (m.expires_at is None or m.expires_at > now)
+                ),
+            }
+            for m in msgs
+        ]
+    }), 200
+
+
+@v1.route("/admin/messages", methods=["POST"])
+@jwt_required()
+def create_message():
+    """
+    Create a broadcast message.
+
+    Body:
+        title: str (required)
+        body: str (required)
+        type: "info" | "success" | "warning"  (default "info")
+        target: "all" | "trial" | "paid"       (default "all")
+        target_account_id: int (optional)
+        cta_text: str (optional)
+        cta_url: str (optional)
+        published_at: ISO string (optional — omit to save as draft)
+        expires_at: ISO string (optional)
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    body = request.get_json(silent=True) or {}
+    title = (body.get("title") or "").strip()
+    text = (body.get("body") or "").strip()
+    if not title or not text:
+        return jsonify({"error": "title and body are required"}), 400
+
+    def _parse_dt(val):
+        if not val:
+            return None
+        try:
+            return datetime.fromisoformat(val.replace("Z", "+00:00"))
+        except Exception:
+            return None
+
+    msg = InAppMessage(
+        title=title[:200],
+        body=text,
+        type=body.get("type", "info") if body.get("type") in ("info", "success", "warning") else "info",
+        target=body.get("target", "all") if body.get("target") in ("all", "trial", "paid") else "all",
+        target_account_id=body.get("target_account_id"),
+        cta_text=(body.get("cta_text") or "")[:100] or None,
+        cta_url=(body.get("cta_url") or "")[:500] or None,
+        published_at=_parse_dt(body.get("published_at")),
+        expires_at=_parse_dt(body.get("expires_at")),
+    )
+    db.session.add(msg)
+    db.session.commit()
+
+    logger.info("InAppMessage created: %s (type=%s target=%s)", msg.id, msg.type, msg.target)
+    return jsonify({"id": msg.id, "status": "created"}), 201
+
+
+@v1.route("/admin/messages/<message_id>", methods=["DELETE"])
+@jwt_required()
+def delete_message(message_id: str):
+    """Delete a broadcast message and all its dismissals."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    msg = db.session.get(InAppMessage, message_id)
+    if not msg:
+        return jsonify({"error": "not found"}), 404
+
+    # Dismissals cascade via FK ondelete=CASCADE
+    db.session.delete(msg)
+    db.session.commit()
+    return jsonify({"status": "deleted"}), 200
