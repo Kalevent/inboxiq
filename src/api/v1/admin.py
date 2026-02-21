@@ -657,3 +657,89 @@ def admin_generate_blog():
     except Exception as exc:
         current_app.logger.exception("admin_generate_blog_failed", exc_info=exc)
         return jsonify({"error": "admin_generate_blog_failed", "message": str(exc)}), 500
+
+
+# ── Developer access admin endpoints ─────────────────────────────────────────
+
+@v1.route("/admin/developer/enable", methods=["POST"])
+@jwt_required()
+def admin_developer_enable():
+    """Enable developer_access for an account."""
+    admin = _require_admin()
+    if not admin:
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.models import Account
+    data = request.get_json() or {}
+    account_id = data.get("account_id")
+    if not account_id:
+        return jsonify({"error": "account_id required"}), 400
+
+    account = db.session.get(Account, account_id)
+    if not account:
+        return jsonify({"error": "account not found"}), 404
+
+    account.developer_access = True
+    db.session.commit()
+    current_app.logger.info(f"admin: developer_access enabled for account={account_id} by {admin.email}")
+    return jsonify({"ok": True, "account_id": account_id})
+
+
+@v1.route("/admin/developer/requests", methods=["GET"])
+@jwt_required()
+def admin_developer_requests():
+    """List all developer access requests."""
+    admin = _require_admin()
+    if not admin:
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.models import DeveloperAccessRequest
+    requests_all = DeveloperAccessRequest.query.order_by(
+        DeveloperAccessRequest.created_at.desc()
+    ).all()
+
+    return jsonify({
+        "requests": [
+            {
+                "id": r.id,
+                "account_id": r.account_id,
+                "full_name": r.full_name,
+                "company": r.company,
+                "use_case": r.use_case,
+                "scopes": r.scopes,
+                "callback_url": r.callback_url,
+                "status": r.status,
+                "created_at": r.created_at.strftime("%b %d, %Y") if r.created_at else None,
+            }
+            for r in requests_all
+        ]
+    })
+
+
+@v1.route("/admin/developer/requests/<request_id>/review", methods=["POST"])
+@jwt_required()
+def admin_developer_review(request_id):
+    """Approve or reject a developer access request."""
+    admin = _require_admin()
+    if not admin:
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.models import DeveloperAccessRequest
+    from datetime import datetime, timezone
+    data = request.get_json() or {}
+    status = data.get("status")
+    if status not in ("approved", "rejected"):
+        return jsonify({"error": "status must be approved or rejected"}), 400
+
+    req = db.session.get(DeveloperAccessRequest, request_id)
+    if not req:
+        return jsonify({"error": "not found"}), 404
+
+    req.status = status
+    req.reviewed_by = admin.id
+    req.reviewed_at = datetime.now(timezone.utc)
+    db.session.commit()
+    current_app.logger.info(
+        f"admin: developer request {request_id} {status} by {admin.email}"
+    )
+    return jsonify({"ok": True, "status": status})

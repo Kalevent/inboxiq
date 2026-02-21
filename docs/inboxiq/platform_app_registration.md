@@ -130,12 +130,22 @@ class RegisteredApp(db.Model):
 
 Nothing existing is touched. New system runs alongside the old one.
 
-### Phase 2 — Auth migration (after Phase 1 is stable in production)
+### Phase 2 — Auth migration + outbound webhook delivery (after Phase 1 is stable in production)
 
 - Update `src/api/v1/intake.py` to accept both `IntakeToken` and `RegisteredApp` credentials
 - Update `src/api/v1/search.py` to accept both
 - Migrate existing `IntakeToken` rows → `RegisteredApp` with `intake:write` scope
 - Notify any existing API users of the new credential format
+
+#### Outbound webhook delivery
+
+- Delivery origin: `hooks.kalevent.com` (dedicated subdomain, allowlistable by developers)
+- When events fire (ticket created, decision made, etc.), a Celery task POSTs a signed JSON payload to `RegisteredApp.webhook_url`
+- Payloads signed with HMAC-SHA256 using `webhook_secret_enc` — developer verifies on their end
+- Retry logic with exponential backoff on failure
+- Architecture:
+  - Inbound (external → InboxIQ): `kalevent.com/api/v1/intake` — unchanged
+  - Outbound (InboxIQ → external): `hooks.kalevent.com` — new subdomain
 
 ### Phase 3 — Cleanup (after Phase 2 confirmed stable)
 
