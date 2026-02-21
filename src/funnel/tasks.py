@@ -194,7 +194,23 @@ def check_stage_progression():
     }
 
     try:
-        # Check visits → discovery progression
+        # Queue qualification for leads that have never been scored (fit_score is null).
+        # Without this, new leads are permanently stuck in VISITS because the check
+        # below only re-qualifies leads that already have fit_score >= 6.
+        unscored_leads = db.session.query(Lead).filter(
+            Lead.current_funnel_stage == "visits",
+            Lead.fit_score.is_(None),
+            Lead.stage_entered_at < datetime.now() - timedelta(hours=1)
+        ).limit(100).all()
+
+        for lead in unscored_leads:
+            try:
+                qualify_visitor.delay(str(lead.id))
+                results["visits_to_discovery"] += 1
+            except Exception as e:
+                results["errors"].append(f"Qualify {lead.id}: {str(e)}")
+
+        # Check visits → discovery progression for already-scored leads
         visits_leads = db.session.query(Lead).filter(
             Lead.current_funnel_stage == "visits",
             Lead.fit_score >= 6,
@@ -203,7 +219,7 @@ def check_stage_progression():
 
         for lead in visits_leads:
             try:
-                result = qualify_visitor.delay(lead.id)
+                qualify_visitor.delay(str(lead.id))
                 results["visits_to_discovery"] += 1
             except Exception as e:
                 results["errors"].append(f"Lead {lead.id}: {str(e)}")

@@ -105,9 +105,11 @@ def _run_dspy_triage_impl(
     }
     case_json = json.dumps(case)
 
-    # Load compiled module or build fresh
-    module = _load_compiled_module(dspy, model_id, account_id, labels=label_config) or \
-             build_decision_program(dspy, label_config)
+    # Load compiled TriageModule (what training produces).
+    # Used as fallback when DecisionProgram fails; stored separately so we
+    # don't throw it away and rebuild an uncompiled module on error.
+    compiled_module = _load_compiled_module(dspy, model_id, account_id, labels=label_config)
+    module = compiled_module or build_decision_program(dspy, label_config)
 
     # Check if draft reply is enabled
     draft_enabled = draft_reply_enabled(context, account_id)
@@ -125,9 +127,40 @@ def _run_dspy_triage_impl(
     try:
         result = module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json)
     except Exception as exc:
-        logger.warning("DSPy decision program failed, falling back to simple triage: %s", exc)
-        module = build_triage_module(dspy, label_config)
-        result = module(content=prompt_payload)
+        logger.warning("DSPy decision program failed, falling back to compiled triage: %s", exc)
+        # Use compiled TriageModule if available (takes content= not case_json=),
+        # otherwise build a fresh one.
+        fallback_module = compiled_module or build_triage_module(dspy, label_config)
+        triage_pred = fallback_module(content=prompt_payload)
+        # Synthesize DecisionProgram-format JSON blobs from the flat TriageModule
+        # fields so the rest of the pipeline parses them correctly.
+        ar = str(getattr(triage_pred, "action_required", "optional")).lower().strip()
+        escalation_decision = (
+            "escalate" if ar == "true" else
+            "auto_resolve" if ar == "false" else
+            "ask_clarifying"
+        )
+        result = dspy.Prediction(
+            entities_json=json.dumps({
+                "intent": getattr(triage_pred, "intent", ""),
+                "sentiment": getattr(triage_pred, "sentiment", "neutral"),
+                "email_type": getattr(triage_pred, "email_type", "unknown"),
+                "is_automated": getattr(triage_pred, "is_automated", "false"),
+                "requires_human_response": str(ar == "true").lower(),
+            }),
+            route_json=json.dumps({
+                "queue": getattr(triage_pred, "category", ""),
+                "priority": getattr(triage_pred, "priority", "P3"),
+                "rationale": getattr(triage_pred, "ai_reason", ""),
+            }),
+            workflow_json="{}",
+            escalation_json=json.dumps({
+                "decision": escalation_decision,
+                "reason": getattr(triage_pred, "ai_reason", ""),
+                "required_role": getattr(triage_pred, "assigned_to", ""),
+            }),
+            reply_text=None,
+        )
 
     # Extract results
     entities_json = getattr(result, "entities_json", None)

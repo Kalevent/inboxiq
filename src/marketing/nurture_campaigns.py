@@ -197,20 +197,20 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
 
     # Initialize DSPy intelligence
     from src.dspy import _configure_dspy
+    from src.dspy.email_personalization import PersonalizedEmailModule
     _configure_dspy()
 
-    nurture_module = NurtureIntelligenceModule()
+    personalized_module = PersonalizedEmailModule()
 
     sent_count = 0
     failed_count = 0
+    vertical_counts: Dict[str, int] = {}
 
     for lead in eligible_leads:
         try:
-            # Determine day in sequence
-            # TODO: Track this in database - for now use days since stage entry
             days_in_stage = (datetime.now(timezone.utc) - lead.stage_entered_at).days
 
-            # Map days to sequence (1, 3, 7, 14, 21)
+            # Map days to sequence day number
             if days_in_stage < 3:
                 day_number = 1
             elif days_in_stage < 7:
@@ -222,30 +222,37 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
             else:
                 day_number = 21
 
-            # Generate personalized email
-            email_content = nurture_module.generate_nurture_email(
-                lead=lead,
-                day_number=day_number,
-                theme="education" if day_number <= 3 else "use_cases"
+            first_name = (lead.name or "").split()[0] or "there"
+            extra = f"Role: {lead.title or 'unknown'}. Company size: {lead.company_size or 'unknown'}."
+
+            email_content = personalized_module.generate(
+                lead_first_name=first_name,
+                company_name=lead.company_name or "your company",
+                industry=lead.industry,
+                email=lead.email,
+                funnel_stage="DISCOVERY",
+                sequence_day=day_number,
+                extra_context=extra,
             )
 
-            # Send email
             success = send_email(
                 to_email=lead.email,
-                subject=email_content["subject"],
-                html_body=email_content["body_html"],
-                from_email="growth@kalevent.com"
+                subject=email_content["subject_line"],
+                html_body=email_content["email_body_html"],
+                from_email="growth@kalevent.com",
+                preheader=email_content.get("preview_text"),
             )
 
             if success:
                 sent_count += 1
                 lead.last_email_sent_at = datetime.now(timezone.utc)
-                logger.info(f"Sent Discovery nurture Day {day_number} to {lead.email}")
+                vertical_counts[email_content["vertical"]] = vertical_counts.get(email_content["vertical"], 0) + 1
+                logger.info("Sent Discovery nurture Day %d (%s) to %s", day_number, email_content["vertical"], lead.email)
             else:
                 failed_count += 1
 
         except Exception as e:
-            logger.error(f"Failed to send Discovery nurture to {lead.email}: {e}")
+            logger.error("Failed to send Discovery nurture to %s: %s", lead.email, e)
             failed_count += 1
 
     db.session.commit()
@@ -254,7 +261,8 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
         "status": "completed",
         "sent": sent_count,
         "failed": failed_count,
-        "eligible_leads": len(eligible_leads)
+        "eligible_leads": len(eligible_leads),
+        "vertical_breakdown": vertical_counts,
     }
 
 
@@ -292,56 +300,64 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
 
     # Initialize DSPy
     from src.dspy import _configure_dspy
+    from src.dspy.email_personalization import PersonalizedEmailModule
     _configure_dspy()
 
-    nurture_module = NurtureIntelligenceModule()
+    personalized_module = PersonalizedEmailModule()
 
     sent_count = 0
     failed_count = 0
+    vertical_counts: Dict[str, int] = {}
 
     for lead in eligible_leads:
         try:
-            # Determine day in sequence
             days_in_stage = (datetime.now(timezone.utc) - lead.stage_entered_at).days
 
             # Consideration sequence: Demo, ROI, Case Study, Final Ask
             if days_in_stage < 3:
                 day_number = 1
-                theme = "demo_offer"
             elif days_in_stage < 7:
                 day_number = 3
-                theme = "roi_calculator"
             elif days_in_stage < 14:
                 day_number = 7
-                theme = "case_study"
             else:
                 day_number = 14
-                theme = "final_ask"
 
-            # Generate personalized email
-            email_content = nurture_module.generate_nurture_email(
-                lead=lead,
-                day_number=day_number,
-                theme=theme
+            first_name = (lead.name or "").split()[0] or "there"
+            extra = (
+                f"Role: {lead.title or 'unknown'}. "
+                f"Company size: {lead.company_size or 'unknown'}. "
+                f"Engagement count: {lead.engagement_count or 0}."
             )
 
-            # Send email
+            email_content = personalized_module.generate(
+                lead_first_name=first_name,
+                company_name=lead.company_name or "your company",
+                industry=lead.industry,
+                email=lead.email,
+                funnel_stage="CONSIDERATION",
+                sequence_day=day_number,
+                extra_context=extra,
+            )
+
             success = send_email(
                 to_email=lead.email,
-                subject=email_content["subject"],
-                html_body=email_content["body_html"],
-                from_email="growth@kalevent.com"
+                subject=email_content["subject_line"],
+                html_body=email_content["email_body_html"],
+                from_email="growth@kalevent.com",
+                preheader=email_content.get("preview_text"),
             )
 
             if success:
                 sent_count += 1
                 lead.last_email_sent_at = datetime.now(timezone.utc)
-                logger.info(f"Sent Consideration nurture Day {day_number} ({theme}) to {lead.email}")
+                vertical_counts[email_content["vertical"]] = vertical_counts.get(email_content["vertical"], 0) + 1
+                logger.info("Sent Consideration nurture Day %d (%s) to %s", day_number, email_content["vertical"], lead.email)
             else:
                 failed_count += 1
 
         except Exception as e:
-            logger.error(f"Failed to send Consideration nurture to {lead.email}: {e}")
+            logger.error("Failed to send Consideration nurture to %s: %s", lead.email, e)
             failed_count += 1
 
     db.session.commit()
@@ -350,7 +366,8 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
         "status": "completed",
         "sent": sent_count,
         "failed": failed_count,
-        "eligible_leads": len(eligible_leads)
+        "eligible_leads": len(eligible_leads),
+        "vertical_breakdown": vertical_counts,
     }
 
 

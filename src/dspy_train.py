@@ -307,11 +307,16 @@ def _metric(gold: dspy.Example, pred: dspy.Example, trace=None) -> bool:
 
     gold_priority = _normalize_priority(gold.priority)
     pred_priority = _normalize_priority(pred.priority)
-    priority_match = gold_priority == pred_priority
 
-    # For BootstrapFewShot, we use a focused metric on the most important fields
-    # This gives the optimizer more signal to learn from
-    return action_match and priority_match
+    # action_required is binary-critical and must match exactly
+    if not action_match:
+        return False
+
+    # Priority: accept ±1 level so BootstrapFewShot has enough demonstrations.
+    # P1 vs P2 is a minor mis-calibration; P1 vs P4 is a real failure.
+    gold_p_num = int(gold_priority[-1]) if gold_priority and gold_priority[-1].isdigit() else 3
+    pred_p_num = int(pred_priority[-1]) if pred_priority and pred_priority[-1].isdigit() else 3
+    return abs(gold_p_num - pred_p_num) <= 1
 
 
 def _detailed_metric(gold: dspy.Example, pred: dspy.Example) -> dict:
@@ -461,6 +466,7 @@ def train_from_overrides(
         "status": "compiled",
         "count": len(samples),
         "seed_count": len(seed_examples),
+        "eval_count": len(eval_samples),
         "artifact_path": artifact_path,
         "train_accuracy": round(train_accuracy, 4),
         "eval_accuracy": round(eval_accuracy, 4) if eval_accuracy is not None else None,
@@ -508,7 +514,7 @@ def main() -> None:
                     model_id=model_id,
                     provider=(os.getenv("DSPY_PROVIDER") or "openai").lower(),
                     sample_count=result.get("count") or 0,
-                    eval_count=extra_meta.get("eval_count") if "extra_meta" in locals() else None,
+                    eval_count=result.get("eval_count"),
                     train_accuracy=result.get("train_accuracy"),
                     eval_accuracy=result.get("eval_accuracy"),
                 )

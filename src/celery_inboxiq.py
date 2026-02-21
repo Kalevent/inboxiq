@@ -108,17 +108,30 @@ def make_celery(app) -> Celery:
             ),
             **(
                 {
-                    "content_weekly_blog_generation": {
+                    # B2B SaaS blog post — Monday
+                    "content_weekly_blog_b2b_saas": {
                         "task": "content.generate_blog_post",
                         "schedule": crontab(day_of_week=content_gen_day, hour=content_gen_hour, minute=content_gen_minute),
                         "args": [
-                            "Revenue Operations",  # niche
-                            "VP Revenue Operations, B2B SaaS, 100-500 employees",  # audience
+                            "B2B SaaS customer support automation",
+                            "Head of Support / VP Customer Success, B2B SaaS, 50-500 employees",
                             0,  # topic_index
-                            True,  # auto_publish - ENABLE AUTO-PUBLISH
+                            True,  # auto_publish → always goes through distribution pipeline
                         ],
                         "options": {"queue": "inbox"},
-                    }
+                    },
+                    # E-commerce blog post — Thursday (stagger to avoid same-day publish)
+                    "content_weekly_blog_ecommerce": {
+                        "task": "content.generate_blog_post",
+                        "schedule": crontab(day_of_week=4, hour=content_gen_hour, minute=content_gen_minute),
+                        "args": [
+                            "E-commerce post-purchase support",
+                            "E-commerce operations manager, DTC brands, 10-200 employees",
+                            0,
+                            True,
+                        ],
+                        "options": {"queue": "inbox"},
+                    },
                 }
                 if content_gen_enabled
                 else {}

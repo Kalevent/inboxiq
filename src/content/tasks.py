@@ -254,11 +254,21 @@ def generate_blog_post(
         import math
         read_time = math.ceil(write_result.word_count / 200) if write_result.word_count else 1
 
+        # Ensure slug is unique (avoid collision if same topic re-generated)
+        base_slug = seo_result.slug
+        unique_slug = base_slug
+        suffix = 1
+        while db.session.query(BlogPost).filter(BlogPost.slug == unique_slug).first():
+            unique_slug = f"{base_slug}-{suffix}"
+            suffix += 1
+
         # Create blog post entry
+        # When auto_publish=True, set status="ready" so the distribution pipeline
+        # picks it up and handles LinkedIn/Twitter/email before marking published.
         blog_post = BlogPost(
             title=seo_result.meta_title,
-            slug=seo_result.slug,
-            status="ready" if not auto_publish else "published",
+            slug=unique_slug,
+            status="ready",  # always go through distribution pipeline
             funnel_stage=selected_topic.get("target_stage", "discovery"),
             primary_keyword=selected_topic["target_keyword"],
             secondary_keywords=selected_topic.get("secondary_keywords", []),
@@ -273,7 +283,7 @@ def generate_blog_post(
             generated_content_id=generated_content.id,
             auto_generated=True,
             dspy_quality_score=float(seo_result.seo_score) / 100.0,
-            published_at=datetime.now() if auto_publish else None,
+            published_at=None,  # set by distribution pipeline on actual publish
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
