@@ -1,0 +1,174 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}{{ page.headline }} — Kalevent{% endblock %}
+{% block meta_description %}{% if page.subheadline %}{{ page.subheadline }}{% else %}{{ page.headline }}{% endif %}{% endblock %}
+{% block canonical %}{{ request.host_url }}lp/{{ page.slug }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .lp-cta-indigo  { background-color: #6366f1; }
+  .lp-cta-indigo:hover  { background-color: #4f46e5; }
+  .lp-cta-emerald { background-color: #10b981; }
+  .lp-cta-emerald:hover { background-color: #059669; }
+  .lp-cta-amber   { background-color: #f59e0b; }
+  .lp-cta-amber:hover   { background-color: #d97706; }
+  .lp-cta-rose    { background-color: #f43f5e; }
+  .lp-cta-rose:hover    { background-color: #e11d48; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="min-h-[80vh] flex items-center py-16">
+  <div class="marketing-shell w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+      <!-- Left: headline + body -->
+      <div>
+        <h1 class="text-4xl sm:text-5xl font-bold text-white leading-tight tracking-tight">
+          {{ page.headline }}
+        </h1>
+        {% if page.subheadline %}
+        <p class="mt-4 text-lg text-slate-300 leading-relaxed">{{ page.subheadline }}</p>
+        {% endif %}
+
+        {% if page.body_html %}
+        <div class="mt-6 prose prose-invert prose-sm text-slate-300 max-w-none">
+          {{ page.body_html | safe }}
+        </div>
+        {% endif %}
+
+        <!-- Trust signals -->
+        <div class="mt-8 flex flex-wrap gap-4 text-sm text-slate-400">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            No credit card required
+          </span>
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Set up in minutes
+          </span>
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            Join thousands of teams
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: lead capture form -->
+      <div class="rounded-2xl border border-slate-700/50 bg-slate-900/70 backdrop-blur p-8 shadow-2xl">
+        <div id="lp-form-wrap">
+          <h2 class="text-xl font-semibold text-white mb-6">Get early access</h2>
+
+          <form id="lp-form" class="space-y-4" novalidate>
+            <!-- UTM passthrough hidden fields -->
+            <input type="hidden" name="utm_source"   value="{{ utm.utm_source }}">
+            <input type="hidden" name="utm_medium"   value="{{ utm.utm_medium }}">
+            <input type="hidden" name="utm_campaign" value="{{ utm.utm_campaign }}">
+            <input type="hidden" name="utm_term"     value="{{ utm.utm_term }}">
+            <input type="hidden" name="utm_content"  value="{{ utm.utm_content }}">
+
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1" for="lp-name">Full name <span class="text-rose-400">*</span></label>
+              <input id="lp-name" name="name" type="text" autocomplete="name" required
+                class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Jane Smith">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1" for="lp-email">Work email <span class="text-rose-400">*</span></label>
+              <input id="lp-email" name="email" type="email" autocomplete="email" required
+                class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="jane@company.com">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1" for="lp-company">Company <span class="text-slate-500 font-normal">(optional)</span></label>
+              <input id="lp-company" name="company" type="text" autocomplete="organization"
+                class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Acme Inc.">
+            </div>
+
+            <div id="lp-error" class="hidden rounded-lg bg-rose-900/30 border border-rose-700/40 text-rose-300 text-sm px-3 py-2"></div>
+
+            <button type="submit" id="lp-submit"
+              class="lp-cta-{{ page.cta_color }} w-full text-white font-semibold rounded-lg px-4 py-3 text-sm transition-colors shadow-lg mt-2">
+              {{ page.cta_text }}
+            </button>
+
+            <p class="text-center text-xs text-slate-500 mt-2">
+              By submitting you agree to our <a href="/privacy" class="underline hover:text-slate-300">Privacy Policy</a>.
+            </p>
+          </form>
+        </div>
+
+        <!-- Success state (hidden until submit) -->
+        <div id="lp-success" class="hidden text-center py-6">
+          <div class="inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 mb-4">
+            <svg class="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-white">You're on the list!</h3>
+          <p class="text-slate-400 text-sm mt-1">We'll be in touch shortly.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  var form = document.getElementById('lp-form');
+  var submitBtn = document.getElementById('lp-submit');
+  var errorBox = document.getElementById('lp-error');
+  var successBox = document.getElementById('lp-success');
+  var formWrap = document.getElementById('lp-form-wrap');
+
+  if (!form) return;
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    errorBox.classList.add('hidden');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+
+    var data = new FormData(form);
+    var body = {};
+    data.forEach(function (v, k) { body[k] = v; });
+
+    fetch('/lp/{{ page.slug }}/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    .then(function (res) { return res.json().then(function (j) { return { ok: res.ok, json: j }; }); })
+    .then(function (r) {
+      if (r.ok) {
+        formWrap.classList.add('hidden');
+        successBox.classList.remove('hidden');
+      } else {
+        errorBox.textContent = r.json.error || 'Something went wrong. Please try again.';
+        errorBox.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '{{ page.cta_text }}';
+      }
+    })
+    .catch(function () {
+      errorBox.textContent = 'Network error. Please try again.';
+      errorBox.classList.remove('hidden');
+      submitBtn.disabled = false;
+      submitBtn.textContent = '{{ page.cta_text }}';
+    });
+  });
+})();
+</script>
+{% endblock %}

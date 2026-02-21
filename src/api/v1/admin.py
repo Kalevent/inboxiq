@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import request, jsonify, url_for, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -743,3 +743,230 @@ def admin_developer_review(request_id):
         f"admin: developer request {request_id} {status} by {admin.email}"
     )
     return jsonify({"ok": True, "status": status})
+
+
+# ── SaaS Metrics ──────────────────────────────────────────────────────────────
+
+@v1.route("/admin/saas-metrics", methods=["GET"])
+@jwt_required()
+def admin_saas_metrics():
+    """
+    Core SaaS health metrics for the admin dashboard.
+
+    Returns:
+        mrr                 — Monthly Recurring Revenue (sum of active plan prices, GBP)
+        new_mrr             — MRR added this calendar month (new active subscriptions)
+        churned_mrr         — MRR lost this calendar month (canceled subscriptions)
+        net_mrr             — new_mrr - churned_mrr
+        active_customers    — count of active (non-trialing) paid subscriptions
+        trialing_customers  — count of trialing subscriptions
+        monthly_churn_rate  — canceled_this_month / (active_now + canceled_this_month)
+        arpu                — average revenue per active paying user (GBP)
+        ltv_estimate        — ARPU / monthly_churn_rate (null if churn_rate = 0)
+        cac                 — total marketing spend this month / new_customers_this_month
+                              (null if no spend data entered)
+        ltv_cac_ratio       — ltv_estimate / cac (null if either is null)
+        spend_this_month    — sum of MarketingSpend entries for current period
+        new_customers_this_month — new active subscriptions started this calendar month
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.billing.models import Plan, Subscription, table_exists
+    from src.models import MarketingSpend
+
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    period_str = now.strftime("%Y-%m")
+
+    # Defaults
+    mrr = 0.0
+    new_mrr = 0.0
+    churned_mrr = 0.0
+    active_customers = 0
+    trialing_customers = 0
+    monthly_churn_rate = 0.0
+    arpu = 0.0
+    ltv_estimate = None
+    cac = None
+    ltv_cac_ratio = None
+    spend_this_month = 0.0
+    new_customers_this_month = 0
+
+    if table_exists(Subscription) and table_exists(Plan):
+        try:
+            # Active paid subscriptions (excludes trialing)
+            active_rows = (
+                db.session.query(Plan.price_cents)
+                .join(Subscription, Subscription.plan_id == Plan.id)
+                .filter(Subscription.status == "active")
+                .all()
+            )
+            active_customers = len(active_rows)
+            mrr = sum(r[0] for r in active_rows) / 100.0
+            arpu = mrr / active_customers if active_customers else 0.0
+
+            # Trialing
+            trialing_customers = (
+                db.session.query(func.count(Subscription.id))
+                .filter(Subscription.status == "trialing")
+                .scalar() or 0
+            )
+
+            # New active subscriptions this calendar month
+            new_rows = (
+                db.session.query(Plan.price_cents)
+                .join(Subscription, Subscription.plan_id == Plan.id)
+                .filter(Subscription.status == "active")
+                .filter(Subscription.created_at >= month_start)
+                .all()
+            )
+            new_customers_this_month = len(new_rows)
+            new_mrr = sum(r[0] for r in new_rows) / 100.0
+
+            # Canceled subscriptions this calendar month (churn)
+            canceled_rows = (
+                db.session.query(Plan.price_cents)
+                .join(Subscription, Subscription.plan_id == Plan.id)
+                .filter(Subscription.status == "canceled")
+                .filter(Subscription.updated_at >= month_start)
+                .all()
+            )
+            canceled_this_month = len(canceled_rows)
+            churned_mrr = sum(r[0] for r in canceled_rows) / 100.0
+
+            # Monthly churn rate: canceled / (active + canceled_this_month)
+            denom = active_customers + canceled_this_month
+            monthly_churn_rate = round(canceled_this_month / denom, 4) if denom else 0.0
+
+            # LTV = ARPU / churn_rate (average customer lifetime × ARPU)
+            if monthly_churn_rate > 0 and arpu > 0:
+                ltv_estimate = round(arpu / monthly_churn_rate, 2)
+
+        except Exception as exc:
+            current_app.logger.warning("saas_metrics billing query failed: %s", exc)
+
+    # CAC from manual spend entries
+    try:
+        spend_rows = (
+            db.session.query(MarketingSpend.amount_gbp)
+            .filter(MarketingSpend.period == period_str)
+            .all()
+        )
+        spend_this_month = round(sum(r[0] for r in spend_rows), 2)
+        if spend_this_month > 0 and new_customers_this_month > 0:
+            cac = round(spend_this_month / new_customers_this_month, 2)
+        elif spend_this_month > 0:
+            cac = None  # spend exists but no new customers yet this month
+    except Exception as exc:
+        current_app.logger.warning("saas_metrics spend query failed: %s", exc)
+
+    if ltv_estimate and cac and cac > 0:
+        ltv_cac_ratio = round(ltv_estimate / cac, 2)
+
+    return jsonify({
+        "mrr": round(mrr, 2),
+        "new_mrr": round(new_mrr, 2),
+        "churned_mrr": round(churned_mrr, 2),
+        "net_mrr": round(new_mrr - churned_mrr, 2),
+        "active_customers": active_customers,
+        "trialing_customers": trialing_customers,
+        "monthly_churn_rate": monthly_churn_rate,
+        "monthly_churn_pct": round(monthly_churn_rate * 100, 2),
+        "arpu": round(arpu, 2),
+        "ltv_estimate": ltv_estimate,
+        "cac": cac,
+        "ltv_cac_ratio": ltv_cac_ratio,
+        "spend_this_month": spend_this_month,
+        "new_customers_this_month": new_customers_this_month,
+        "period": period_str,
+    })
+
+
+# ── Marketing Spend (manual CAC input) ────────────────────────────────────────
+
+@v1.route("/admin/marketing-spend", methods=["GET"])
+@jwt_required()
+def list_marketing_spend():
+    """List recent marketing spend entries (last 6 months)."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.models import MarketingSpend
+    rows = (
+        db.session.query(MarketingSpend)
+        .order_by(MarketingSpend.period.desc(), MarketingSpend.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    return jsonify({
+        "entries": [
+            {
+                "id": r.id,
+                "period": r.period,
+                "channel": r.channel,
+                "amount_gbp": r.amount_gbp,
+                "notes": r.notes,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in rows
+        ]
+    })
+
+
+@v1.route("/admin/marketing-spend", methods=["POST"])
+@jwt_required()
+def create_marketing_spend():
+    """
+    Record ad spend for a period.
+
+    Body: {period: "2026-02", channel: "google", amount_gbp: 1500.00, notes: "..."}
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.models import MarketingSpend
+    body = request.get_json(silent=True) or {}
+    period = (body.get("period") or "").strip()
+    channel = (body.get("channel") or "").strip()
+    amount_gbp = body.get("amount_gbp")
+
+    if not period or not channel or amount_gbp is None:
+        return jsonify({"error": "period, channel, and amount_gbp are required"}), 400
+
+    import re
+    if not re.match(r'^\d{4}-\d{2}$', period):
+        return jsonify({"error": "period must be YYYY-MM format"}), 400
+
+    try:
+        amount_gbp = float(amount_gbp)
+        if amount_gbp < 0:
+            return jsonify({"error": "amount_gbp must be non-negative"}), 400
+    except (TypeError, ValueError):
+        return jsonify({"error": "amount_gbp must be a number"}), 400
+
+    entry = MarketingSpend(
+        period=period,
+        channel=channel[:100],
+        amount_gbp=amount_gbp,
+        notes=(body.get("notes") or "").strip()[:500] or None,
+    )
+    db.session.add(entry)
+    db.session.commit()
+    return jsonify({"id": entry.id, "status": "created"}), 201
+
+
+@v1.route("/admin/marketing-spend/<entry_id>", methods=["DELETE"])
+@jwt_required()
+def delete_marketing_spend(entry_id: str):
+    """Delete a marketing spend entry."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    from src.models import MarketingSpend
+    entry = db.session.get(MarketingSpend, entry_id)
+    if not entry:
+        return jsonify({"error": "not found"}), 404
+    db.session.delete(entry)
+    db.session.commit()
+    return jsonify({"status": "deleted"}), 200

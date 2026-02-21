@@ -1955,3 +1955,74 @@ class InAppMessageDismissal(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
                         primary_key=True, nullable=False)
     dismissed_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class LandingPage(db.Model):
+    """
+    Admin-created campaign landing pages served at /lp/<slug>.
+
+    Each page captures leads via a public form — name, email, optional company.
+    UTM params from the query string are stored on the Lead and LeadAttribution records
+    created on form submit, enabling end-to-end paid ad attribution.
+
+    status:
+      "draft"     — not publicly visible (404 on GET /lp/<slug>)
+      "published" — live; view_count and lead_count incremented automatically
+      "archived"  — removed from public view, data retained
+    """
+    __tablename__ = "landing_pages"
+    __table_args__ = (
+        db.Index("idx_landing_page_slug", "slug", unique=True),
+        db.Index("idx_landing_page_account", "account_id"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False)
+
+    # Content
+    title = db.Column(db.String(200), nullable=False)                    # internal admin label
+    slug = db.Column(db.String(200), nullable=False)                     # URL slug → /lp/<slug>
+    headline = db.Column(db.String(300), nullable=False)                 # hero headline
+    subheadline = db.Column(db.String(500), nullable=True)
+    body_html = db.Column(db.Text, nullable=True)                        # sanitized rich body
+
+    # CTA config
+    cta_text = db.Column(db.String(100), nullable=False, default="Get Started")
+    cta_color = db.Column(db.String(20), nullable=False, default="indigo")  # indigo|emerald|amber|rose
+
+    # Publishing
+    status = db.Column(db.String(20), nullable=False, default="draft")   # draft|published|archived
+    published_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    # Analytics counters (best-effort; no locking required)
+    view_count = db.Column(db.Integer, nullable=False, default=0)
+    lead_count = db.Column(db.Integer, nullable=False, default=0)
+
+    # Optional UTM annotation for admin reference only (not pre-filled in form)
+    utm_source = db.Column(db.String(200), nullable=True)
+    utm_campaign = db.Column(db.String(200), nullable=True)
+
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False,
+                           server_default=func.now(), onupdate=func.now())
+
+
+class MarketingSpend(db.Model):
+    """
+    Manual ad spend entries for CAC calculation.
+
+    Admin enters monthly spend per channel (Google, LinkedIn, etc.).
+    CAC = total_spend_period / new_customers_period.
+    period is stored as "YYYY-MM" strings for easy grouping.
+    """
+    __tablename__ = "marketing_spend"
+    __table_args__ = (
+        db.Index("idx_marketing_spend_period", "period"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    period = db.Column(db.String(7), nullable=False)                     # "2026-02"
+    channel = db.Column(db.String(100), nullable=False)                  # google|linkedin|twitter|other
+    amount_gbp = db.Column(db.Float, nullable=False)
+    notes = db.Column(db.String(500), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())

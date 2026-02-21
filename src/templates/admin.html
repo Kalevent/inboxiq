@@ -138,6 +138,11 @@
             <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded font-medium">NEW</span>
           </button>
 
+          <button class="sidebar-nav-item w-full text-left" data-section="saas">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>SaaS Metrics</span>
+          </button>
+
           <button class="sidebar-nav-item w-full text-left" data-section="marketing">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
             <span>Marketing</span>
@@ -546,6 +551,140 @@
           </div>
         </section>
 
+        <!-- SaaS Metrics Section -->
+        <section id="section-saas" class="admin-section">
+          <div class="content-container space-y-6">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">SaaS Metrics</h1>
+              <p class="text-sm text-slate-300 mt-1">MRR, ARPU, LTV, CAC and churn — the metrics that matter.
+                <span class="text-slate-500">Trial conversion is in the <button class="underline hover:text-slate-300" onclick="document.querySelector('[data-section=trial]').click()">Trial section</button>.</span>
+              </p>
+            </div>
+
+            <!-- Row 1: Revenue -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">MRR</p>
+                <p id="saas-mrr" class="text-2xl font-bold text-emerald-300 mt-1">—</p>
+                <p class="text-xs text-slate-500 mt-1">Active subscriptions</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Net MRR (this month)</p>
+                <p id="saas-net-mrr" class="text-2xl font-bold text-indigo-300 mt-1">—</p>
+                <p id="saas-net-mrr-detail" class="text-xs text-slate-500 mt-1">—</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Active Customers</p>
+                <p id="saas-active" class="text-2xl font-bold text-slate-100 mt-1">—</p>
+                <p id="saas-trialing" class="text-xs text-slate-500 mt-1">—</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Monthly Churn</p>
+                <p id="saas-churn" class="text-2xl font-bold text-rose-300 mt-1">—</p>
+                <p class="text-xs text-slate-500 mt-1">Cancellations this month</p>
+              </div>
+            </div>
+
+            <!-- Row 2: Unit Economics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">ARPU</p>
+                <p id="saas-arpu" class="text-2xl font-bold text-slate-100 mt-1">—</p>
+                <p class="text-xs text-slate-500 mt-1">Avg revenue / paying user</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">LTV Estimate</p>
+                <p id="saas-ltv" class="text-2xl font-bold text-amber-300 mt-1">—</p>
+                <p class="text-xs text-slate-500 mt-1">ARPU ÷ churn rate</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">CAC</p>
+                <p id="saas-cac" class="text-2xl font-bold text-slate-100 mt-1">—</p>
+                <p id="saas-cac-detail" class="text-xs text-slate-500 mt-1">Spend ÷ new customers</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 relative">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">LTV : CAC</p>
+                <p id="saas-ratio" class="text-2xl font-bold mt-1">—</p>
+                <p id="saas-ratio-note" class="text-xs text-slate-500 mt-1">Target: ≥ 3×</p>
+              </div>
+            </div>
+
+            <!-- Ad Spend / CAC input -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Marketing Spend</h2>
+                  <p class="text-xs text-slate-400 mt-1">Enter monthly ad spend per channel to calculate CAC.</p>
+                </div>
+                <button onclick="document.getElementById('newSpendForm').classList.toggle('hidden')"
+                        class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">+ Add Spend</button>
+              </div>
+
+              <div id="newSpendForm" class="hidden mb-6 rounded-xl border border-slate-700 bg-slate-950/40 p-4">
+                <div class="grid md:grid-cols-4 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Period (YYYY-MM) *</label>
+                    <input id="spendPeriod" type="text" maxlength="7" placeholder="2026-02"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Channel *</label>
+                    <select id="spendChannel" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                      <option value="google">Google Ads</option>
+                      <option value="linkedin">LinkedIn</option>
+                      <option value="twitter">Twitter/X</option>
+                      <option value="meta">Meta (FB/IG)</option>
+                      <option value="content">Content / SEO</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Amount (GBP) *</label>
+                    <input id="spendAmount" type="number" min="0" step="0.01" placeholder="1500.00"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Notes</label>
+                    <input id="spendNotes" type="text" maxlength="200" placeholder="Optional"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div id="spendCreateStatus" class="hidden text-xs mt-2"></div>
+                <div class="flex gap-3 mt-3">
+                  <button onclick="createSpendEntry()" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">Save</button>
+                  <button onclick="document.getElementById('newSpendForm').classList.add('hidden')" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:text-slate-100">Cancel</button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-800">
+                      <th class="py-2 pr-3">Period</th>
+                      <th class="py-2 pr-3">Channel</th>
+                      <th class="py-2 pr-3 text-right">Amount (GBP)</th>
+                      <th class="py-2 pr-3">Notes</th>
+                      <th class="py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="spendTableBody">
+                    <tr><td colspan="5" class="text-center py-6 text-slate-400">No spend entries yet.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Methodology note -->
+            <div class="rounded-xl border border-slate-700/40 bg-slate-900/30 p-4 text-xs text-slate-400 space-y-1">
+              <p><span class="text-slate-300 font-medium">MRR</span> = sum of active (paid, non-trialing) subscription plan prices.</p>
+              <p><span class="text-slate-300 font-medium">Churn %</span> = subscriptions canceled this calendar month ÷ (active + canceled this month). Uses <code class="text-indigo-300">Subscription.updated_at</code> as cancel proxy.</p>
+              <p><span class="text-slate-300 font-medium">LTV</span> = ARPU ÷ monthly churn rate (average customer lifetime × revenue). Shows "—" until churn data exists.</p>
+              <p><span class="text-slate-300 font-medium">CAC</span> = total spend this month ÷ new paid customers this month. Enter spend above to unlock.</p>
+              <p><span class="text-slate-300 font-medium">LTV:CAC ≥ 3</span> is the healthy SaaS benchmark. AI SaaS: adjust LTV for per-customer compute cost.</p>
+            </div>
+          </div>
+        </section>
+
         <!-- Marketing Section -->
         <section id="section-marketing" class="admin-section">
           <div class="content-container space-y-6">
@@ -745,6 +884,102 @@
                 <div class="text-slate-400 text-sm">Loading...</div>
               </div>
             </div>
+
+            <!-- Landing Pages -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Landing Pages</h2>
+                  <p class="text-xs text-slate-400 mt-1">Campaign pages at <code class="text-indigo-300">/lp/&lt;slug&gt;</code> — each captures leads with UTM attribution.</p>
+                </div>
+                <button onclick="document.getElementById('newLpForm').classList.toggle('hidden')"
+                        class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">+ New Page</button>
+              </div>
+
+              <!-- Create form -->
+              <div id="newLpForm" class="hidden mb-6 rounded-xl border border-slate-700 bg-slate-950/40 p-4 space-y-3">
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Account ID *</label>
+                    <input id="lpAccountId" type="number" placeholder="1"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Internal title *</label>
+                    <input id="lpTitle" type="text" maxlength="200" placeholder="e.g. Google Spring Campaign"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Slug * (URL: /lp/&lt;slug&gt;)</label>
+                    <input id="lpSlug" type="text" maxlength="200" placeholder="spring-launch-2026"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">CTA text</label>
+                    <input id="lpCtaText" type="text" maxlength="100" placeholder="Get Started"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400">Headline *</label>
+                  <input id="lpHeadline" type="text" maxlength="300" placeholder="Automate your inbox in minutes"
+                         class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400">Subheadline</label>
+                  <input id="lpSubheadline" type="text" maxlength="500" placeholder="Short supporting line"
+                         class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                </div>
+                <div class="grid md:grid-cols-3 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">CTA color</label>
+                    <select id="lpCtaColor" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                      <option value="indigo">Indigo</option>
+                      <option value="emerald">Emerald</option>
+                      <option value="amber">Amber</option>
+                      <option value="rose">Rose</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">UTM Source (annotation)</label>
+                    <input id="lpUtmSource" type="text" maxlength="200" placeholder="google"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">UTM Campaign (annotation)</label>
+                    <input id="lpUtmCampaign" type="text" maxlength="200" placeholder="spring-2026"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div id="lpCreateStatus" class="hidden text-xs mt-1"></div>
+                <div class="flex gap-3 pt-1">
+                  <button onclick="createLandingPage()" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">Create (Draft)</button>
+                  <button onclick="createLandingPage('published')" class="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-sm font-semibold text-white">Create &amp; Publish</button>
+                  <button onclick="document.getElementById('newLpForm').classList.add('hidden')" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:text-slate-100">Cancel</button>
+                </div>
+              </div>
+
+              <!-- Pages list -->
+              <div id="lpList" class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-800">
+                      <th class="py-2 pr-3">Slug / URL</th>
+                      <th class="py-2 pr-3">Headline</th>
+                      <th class="py-2 pr-3">Status</th>
+                      <th class="py-2 pr-3 text-right">Views</th>
+                      <th class="py-2 pr-3 text-right">Leads</th>
+                      <th class="py-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lpTableBody">
+                    <tr><td colspan="6" class="text-center py-6 text-slate-400">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -904,6 +1139,9 @@
           loadDevRequests();
         } else if (section === 'marketing') {
           loadMarketingData();
+        } else if (section === 'saas') {
+          loadSaasMetrics();
+          loadSpendEntries();
         }
       });
     });
@@ -1264,6 +1502,7 @@
         loadReferralStats(),
         loadAttributionReport(),
         loadBroadcastMessages(),
+        loadLandingPages(),
       ]);
     }
 
@@ -1611,6 +1850,239 @@
       } catch (err) {
         console.error('Error deleting message:', err);
       }
+    }
+
+    // ── Landing Pages ──────────────────────────────────────────────────────
+
+    async function loadLandingPages() {
+      const tbody = document.getElementById('lpTableBody');
+      if (!tbody) return;
+      try {
+        const r = await fetch('/api/v1/admin/landing-pages', { credentials: 'include' });
+        const data = await r.json();
+        const pages = data.landing_pages || [];
+        if (!pages.length) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400">No landing pages yet. Create one above.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = pages.map(p => {
+          const statusBadge = p.status === 'published'
+            ? '<span class="rounded-full bg-emerald-500/20 text-emerald-300 px-2 py-0.5 text-xs">Live</span>'
+            : p.status === 'archived'
+              ? '<span class="rounded-full bg-slate-700 text-slate-400 px-2 py-0.5 text-xs">Archived</span>'
+              : '<span class="rounded-full bg-amber-500/20 text-amber-300 px-2 py-0.5 text-xs">Draft</span>';
+          const url = `/lp/${p.slug}`;
+          const publishBtn = p.status !== 'published'
+            ? `<button onclick="publishLandingPage('${p.id}')" class="text-emerald-400 hover:text-emerald-300 text-xs underline">Publish</button>`
+            : `<button onclick="archiveLandingPage('${p.id}')" class="text-slate-400 hover:text-slate-300 text-xs underline">Archive</button>`;
+          return `
+            <tr class="border-b border-slate-800/60 hover:bg-slate-800/30">
+              <td class="py-2 pr-3 text-xs">
+                <a href="${url}" target="_blank" class="text-indigo-300 hover:text-indigo-200 underline font-mono">${p.slug}</a>
+              </td>
+              <td class="py-2 pr-3 text-slate-200 text-sm truncate max-w-[200px]">${p.headline}</td>
+              <td class="py-2 pr-3">${statusBadge}</td>
+              <td class="py-2 pr-3 text-right text-slate-300 text-sm">${(p.view_count || 0).toLocaleString()}</td>
+              <td class="py-2 pr-3 text-right text-slate-300 text-sm">${(p.lead_count || 0).toLocaleString()}</td>
+              <td class="py-2 flex items-center gap-3">
+                ${publishBtn}
+                <button onclick="deleteLandingPage('${p.id}')" class="text-rose-400 hover:text-rose-300 text-xs underline">Delete</button>
+              </td>
+            </tr>`;
+        }).join('');
+      } catch (err) {
+        document.getElementById('lpTableBody').innerHTML = `<tr><td colspan="6" class="text-center py-6 text-red-400">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function createLandingPage(status = 'draft') {
+      const statusEl = document.getElementById('lpCreateStatus');
+      statusEl.className = 'text-xs mt-1';
+      statusEl.classList.remove('hidden');
+      statusEl.textContent = 'Creating…';
+      const csrfToken = getCsrfToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+      try {
+        const body = {
+          account_id: document.getElementById('lpAccountId').value.trim(),
+          title: document.getElementById('lpTitle').value.trim(),
+          slug: document.getElementById('lpSlug').value.trim().toLowerCase(),
+          headline: document.getElementById('lpHeadline').value.trim(),
+          subheadline: document.getElementById('lpSubheadline').value.trim(),
+          cta_text: document.getElementById('lpCtaText').value.trim() || 'Get Started',
+          cta_color: document.getElementById('lpCtaColor').value,
+          utm_source: document.getElementById('lpUtmSource').value.trim(),
+          utm_campaign: document.getElementById('lpUtmCampaign').value.trim(),
+          status,
+        };
+        const r = await fetch('/api/v1/admin/landing-pages', {
+          method: 'POST', headers, credentials: 'include', body: JSON.stringify(body),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Failed');
+        statusEl.textContent = status === 'published' ? '✓ Published' : '✓ Created (draft)';
+        statusEl.classList.add('text-emerald-400');
+        document.getElementById('newLpForm').classList.add('hidden');
+        loadLandingPages();
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('text-red-400');
+      }
+    }
+
+    async function publishLandingPage(id) {
+      const csrfToken = getCsrfToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+      try {
+        await fetch(`/api/v1/admin/landing-pages/${id}`, {
+          method: 'PATCH', headers, credentials: 'include', body: JSON.stringify({ status: 'published' }),
+        });
+        loadLandingPages();
+      } catch (err) { console.error('Publish failed:', err); }
+    }
+
+    async function archiveLandingPage(id) {
+      const csrfToken = getCsrfToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+      try {
+        await fetch(`/api/v1/admin/landing-pages/${id}`, {
+          method: 'PATCH', headers, credentials: 'include', body: JSON.stringify({ status: 'archived' }),
+        });
+        loadLandingPages();
+      } catch (err) { console.error('Archive failed:', err); }
+    }
+
+    async function deleteLandingPage(id) {
+      if (!confirm('Delete this landing page? This cannot be undone.')) return;
+      const csrfToken = getCsrfToken();
+      const headers = {};
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+      try {
+        await fetch(`/api/v1/admin/landing-pages/${id}`, { method: 'DELETE', headers, credentials: 'include' });
+        loadLandingPages();
+      } catch (err) { console.error('Delete failed:', err); }
+    }
+
+    // ── SaaS Metrics ──────────────────────────────────────────────────────
+
+    const fmt = (n, prefix = '£') => n == null ? '—' : `${prefix}${Number(n).toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    const fmtN = (n) => n == null ? '—' : Number(n).toLocaleString('en-GB');
+
+    async function loadSaasMetrics() {
+      try {
+        const d = await fetchJSON('/api/v1/admin/saas-metrics');
+
+        document.getElementById('saas-mrr').textContent = fmt(d.mrr);
+        const netSign = d.net_mrr > 0 ? '+' : '';
+        document.getElementById('saas-net-mrr').textContent = `${netSign}${fmt(d.net_mrr)}`;
+        document.getElementById('saas-net-mrr').className = `text-2xl font-bold mt-1 ${d.net_mrr >= 0 ? 'text-emerald-300' : 'text-rose-300'}`;
+        document.getElementById('saas-net-mrr-detail').textContent = `+${fmt(d.new_mrr)} new  −${fmt(d.churned_mrr)} churned`;
+
+        document.getElementById('saas-active').textContent = fmtN(d.active_customers);
+        document.getElementById('saas-trialing').textContent = `${fmtN(d.trialing_customers)} trialing`;
+
+        document.getElementById('saas-churn').textContent = d.monthly_churn_pct != null ? `${d.monthly_churn_pct}%` : '—';
+
+        document.getElementById('saas-arpu').textContent = fmt(d.arpu);
+        document.getElementById('saas-ltv').textContent = fmt(d.ltv_estimate);
+
+        document.getElementById('saas-cac').textContent = fmt(d.cac);
+        document.getElementById('saas-cac-detail').textContent = d.spend_this_month > 0
+          ? `${fmt(d.spend_this_month)} spend ÷ ${fmtN(d.new_customers_this_month)} new`
+          : 'Add spend below to calculate';
+
+        const ratio = d.ltv_cac_ratio;
+        const ratioEl = document.getElementById('saas-ratio');
+        const ratioNote = document.getElementById('saas-ratio-note');
+        if (ratio == null) {
+          ratioEl.textContent = '—';
+          ratioEl.className = 'text-2xl font-bold mt-1 text-slate-400';
+          ratioNote.textContent = 'Needs LTV and CAC data';
+        } else {
+          ratioEl.textContent = `${ratio}×`;
+          if (ratio >= 3) {
+            ratioEl.className = 'text-2xl font-bold mt-1 text-emerald-300';
+            ratioNote.textContent = `Healthy (≥ 3×)`;
+          } else if (ratio >= 1) {
+            ratioEl.className = 'text-2xl font-bold mt-1 text-amber-300';
+            ratioNote.textContent = `Below target (< 3×)`;
+          } else {
+            ratioEl.className = 'text-2xl font-bold mt-1 text-rose-400';
+            ratioNote.textContent = `Critical: LTV < CAC`;
+          }
+        }
+      } catch (err) {
+        console.error('loadSaasMetrics error:', err);
+      }
+    }
+
+    async function loadSpendEntries() {
+      const tbody = document.getElementById('spendTableBody');
+      if (!tbody) return;
+      try {
+        const d = await fetchJSON('/api/v1/admin/marketing-spend');
+        const entries = d.entries || [];
+        if (!entries.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">No spend entries yet.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = entries.map(e => `
+          <tr class="border-b border-slate-800/60 hover:bg-slate-800/30">
+            <td class="py-2 pr-3 text-slate-300 font-mono text-xs">${e.period}</td>
+            <td class="py-2 pr-3 text-slate-300 capitalize">${e.channel}</td>
+            <td class="py-2 pr-3 text-right text-emerald-300 font-medium">${fmt(e.amount_gbp)}</td>
+            <td class="py-2 pr-3 text-slate-400 text-xs">${e.notes || '—'}</td>
+            <td class="py-2"><button onclick="deleteSpendEntry('${e.id}')" class="text-rose-400 hover:text-rose-300 text-xs underline">Delete</button></td>
+          </tr>`).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-400">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function createSpendEntry() {
+      const statusEl = document.getElementById('spendCreateStatus');
+      statusEl.className = 'text-xs mt-2';
+      statusEl.classList.remove('hidden');
+      statusEl.textContent = 'Saving…';
+      const csrfToken = getCsrfToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+      try {
+        const body = {
+          period: document.getElementById('spendPeriod').value.trim(),
+          channel: document.getElementById('spendChannel').value,
+          amount_gbp: parseFloat(document.getElementById('spendAmount').value),
+          notes: document.getElementById('spendNotes').value.trim(),
+        };
+        const r = await fetch('/api/v1/admin/marketing-spend', {
+          method: 'POST', headers, credentials: 'include', body: JSON.stringify(body),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || 'Failed');
+        statusEl.textContent = '✓ Saved';
+        statusEl.classList.add('text-emerald-400');
+        document.getElementById('newSpendForm').classList.add('hidden');
+        loadSpendEntries();
+        loadSaasMetrics();
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('text-red-400');
+      }
+    }
+
+    async function deleteSpendEntry(id) {
+      if (!confirm('Delete this spend entry?')) return;
+      const csrfToken = getCsrfToken();
+      const headers = {};
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+      try {
+        await fetch(`/api/v1/admin/marketing-spend/${id}`, { method: 'DELETE', headers, credentials: 'include' });
+        loadSpendEntries();
+        loadSaasMetrics();
+      } catch (err) { console.error('Delete spend failed:', err); }
     }
 
     // Add event listeners

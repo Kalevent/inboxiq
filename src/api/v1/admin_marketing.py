@@ -9,6 +9,10 @@ Provides:
 - GET  /api/v1/admin/messages                  — list broadcast messages
 - POST /api/v1/admin/messages                  — create broadcast message
 - DELETE /api/v1/admin/messages/<id>           — delete broadcast message
+- GET    /api/v1/admin/landing-pages           — list landing pages
+- POST   /api/v1/admin/landing-pages           — create landing page
+- PATCH  /api/v1/admin/landing-pages/<id>      — update landing page
+- DELETE /api/v1/admin/landing-pages/<id>      — delete landing page
 """
 from datetime import datetime, timedelta, timezone
 
@@ -17,7 +21,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import InAppMessage, InAppMessageDismissal, Lead, LeadAttribution, NurtureEmailSend, Referral, User
+from src.models import InAppMessage, InAppMessageDismissal, LandingPage, Lead, LeadAttribution, NurtureEmailSend, Referral, User
+from src.sanitize import sanitize_html
 import logging
 
 logger = logging.getLogger(__name__)
@@ -472,5 +477,182 @@ def delete_message(message_id: str):
 
     # Dismissals cascade via FK ondelete=CASCADE
     db.session.delete(msg)
+    db.session.commit()
+    return jsonify({"status": "deleted"}), 200
+
+
+# ── Landing Pages ──────────────────────────────────────────────────────────────
+
+def _page_to_dict(page: LandingPage) -> dict:
+    return {
+        "id": page.id,
+        "account_id": page.account_id,
+        "title": page.title,
+        "slug": page.slug,
+        "headline": page.headline,
+        "subheadline": page.subheadline,
+        "cta_text": page.cta_text,
+        "cta_color": page.cta_color,
+        "status": page.status,
+        "published_at": page.published_at.isoformat() if page.published_at else None,
+        "view_count": page.view_count,
+        "lead_count": page.lead_count,
+        "utm_source": page.utm_source,
+        "utm_campaign": page.utm_campaign,
+        "created_at": page.created_at.isoformat() if page.created_at else None,
+    }
+
+
+@v1.route("/admin/landing-pages", methods=["GET"])
+@jwt_required()
+def list_landing_pages():
+    """List all landing pages (admin)."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    pages = db.session.query(LandingPage).order_by(LandingPage.created_at.desc()).limit(100).all()
+    return jsonify({"landing_pages": [_page_to_dict(p) for p in pages]}), 200
+
+
+@v1.route("/admin/landing-pages", methods=["POST"])
+@jwt_required()
+def create_landing_page():
+    """
+    Create a landing page.
+
+    Body (JSON):
+        title        — required; internal admin label
+        slug         — required; unique URL slug (alphanumeric + hyphens)
+        headline     — required; hero headline
+        subheadline  — optional
+        body_html    — optional; sanitized before storage
+        cta_text     — optional; default "Get Started"
+        cta_color    — optional; indigo|emerald|amber|rose (default indigo)
+        status       — optional; draft|published (default draft)
+        utm_source   — optional; annotation only
+        utm_campaign — optional; annotation only
+        account_id   — required; which account owns this page
+    """
+    user = _require_admin()
+    if not user:
+        return jsonify({"error": "forbidden"}), 403
+
+    body = request.get_json(silent=True) or {}
+    title = (body.get("title") or "").strip()
+    slug = (body.get("slug") or "").strip().lower()
+    headline = (body.get("headline") or "").strip()
+    account_id = body.get("account_id")
+
+    if not title or not slug or not headline or not account_id:
+        return jsonify({"error": "title, slug, headline, and account_id are required"}), 400
+
+    # Validate slug format (alphanumeric + hyphens only)
+    import re
+    if not re.match(r'^[a-z0-9][a-z0-9\-]*[a-z0-9]$', slug) and len(slug) > 1:
+        return jsonify({"error": "slug must contain only lowercase letters, numbers, and hyphens"}), 400
+
+    # Check slug uniqueness
+    if db.session.query(LandingPage).filter_by(slug=slug).first():
+        return jsonify({"error": f"slug '{slug}' is already taken"}), 409
+
+    raw_html = body.get("body_html") or ""
+    safe_html = sanitize_html(raw_html) if raw_html.strip() else None
+
+    status = body.get("status", "draft")
+    if status not in ("draft", "published", "archived"):
+        status = "draft"
+
+    now = datetime.now(timezone.utc)
+    page = LandingPage(
+        account_id=int(account_id),
+        title=title,
+        slug=slug,
+        headline=headline,
+        subheadline=(body.get("subheadline") or "").strip() or None,
+        body_html=safe_html,
+        cta_text=(body.get("cta_text") or "Get Started").strip(),
+        cta_color=body.get("cta_color", "indigo") if body.get("cta_color") in ("indigo", "emerald", "amber", "rose") else "indigo",
+        status=status,
+        published_at=now if status == "published" else None,
+        utm_source=(body.get("utm_source") or "").strip() or None,
+        utm_campaign=(body.get("utm_campaign") or "").strip() or None,
+    )
+    db.session.add(page)
+    db.session.commit()
+
+    logger.info("LandingPage created: %s (slug=%s account=%s)", page.id, slug, account_id)
+    return jsonify(_page_to_dict(page)), 201
+
+
+@v1.route("/admin/landing-pages/<page_id>", methods=["PATCH"])
+@jwt_required()
+def update_landing_page(page_id: str):
+    """
+    Update a landing page.
+
+    Accepted fields (all optional):
+        title, slug, headline, subheadline, body_html,
+        cta_text, cta_color, status, utm_source, utm_campaign
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    page = db.session.get(LandingPage, page_id)
+    if not page:
+        return jsonify({"error": "not found"}), 404
+
+    body = request.get_json(silent=True) or {}
+
+    if "title" in body:
+        page.title = (body["title"] or "").strip() or page.title
+    if "headline" in body:
+        page.headline = (body["headline"] or "").strip() or page.headline
+    if "subheadline" in body:
+        page.subheadline = (body["subheadline"] or "").strip() or None
+    if "body_html" in body:
+        raw = body.get("body_html") or ""
+        page.body_html = sanitize_html(raw) if raw.strip() else None
+    if "cta_text" in body:
+        page.cta_text = (body["cta_text"] or "Get Started").strip()
+    if "cta_color" in body and body["cta_color"] in ("indigo", "emerald", "amber", "rose"):
+        page.cta_color = body["cta_color"]
+    if "utm_source" in body:
+        page.utm_source = (body["utm_source"] or "").strip() or None
+    if "utm_campaign" in body:
+        page.utm_campaign = (body["utm_campaign"] or "").strip() or None
+
+    if "slug" in body:
+        import re
+        new_slug = (body["slug"] or "").strip().lower()
+        if new_slug and new_slug != page.slug:
+            if not re.match(r'^[a-z0-9][a-z0-9\-]*[a-z0-9]$', new_slug) and len(new_slug) > 1:
+                return jsonify({"error": "invalid slug format"}), 400
+            if db.session.query(LandingPage).filter_by(slug=new_slug).first():
+                return jsonify({"error": f"slug '{new_slug}' is already taken"}), 409
+            page.slug = new_slug
+
+    if "status" in body:
+        new_status = body["status"]
+        if new_status in ("draft", "published", "archived"):
+            if new_status == "published" and page.status != "published":
+                page.published_at = datetime.now(timezone.utc)
+            page.status = new_status
+
+    db.session.commit()
+    return jsonify(_page_to_dict(page)), 200
+
+
+@v1.route("/admin/landing-pages/<page_id>", methods=["DELETE"])
+@jwt_required()
+def delete_landing_page(page_id: str):
+    """Delete a landing page."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    page = db.session.get(LandingPage, page_id)
+    if not page:
+        return jsonify({"error": "not found"}), 404
+
+    db.session.delete(page)
     db.session.commit()
     return jsonify({"status": "deleted"}), 200
