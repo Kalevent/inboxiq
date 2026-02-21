@@ -8,7 +8,7 @@ from src.config import Config, DevelopmentConfig, ProductionConfig, TestConfig
 from src.extensions import db, migrate, jwt, cache, limiter
 from src.crash_report import configure_crash_email
 from flask_cors import CORS
-from src.models import Account, User, Ticket, InboxConnection, BlogPost, Feedback, IntakeToken  # noqa: F401  # ensure models are registered
+from src.models import Account, User, Ticket, InboxConnection, BlogPost, Feedback  # noqa: F401  # ensure models are registered
 from src.admin import bp as admin_bp
 from src.auth import bp as auth_bp
 from src.users import bp as users_bp

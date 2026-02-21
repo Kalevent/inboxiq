@@ -6,7 +6,7 @@ from uuid import uuid4
 from flask import current_app, flash, g, jsonify, redirect, render_template, request, url_for
 
 from src.extensions import db, limiter
-from src.models import IntakeToken, User, Passkey, TOTPDevice, Account, InboxConnection, WebhookProvider, RegisteredApp, DeveloperAccessRequest
+from src.models import User, Passkey, TOTPDevice, Account, InboxConnection, WebhookProvider, RegisteredApp, DeveloperAccessRequest
 from src.crypto import encrypt_value, decrypt_value
 from src.api.v1.access_control import account_allows_api
 from src.settings import bp, login_required_settings
@@ -526,32 +526,14 @@ def _legacy_settings_redirect(tab="team"):
 @login_required_settings
 @limiter.limit("20 per minute", methods=["POST"])  # Rate limit: 20 provider configurations per minute
 def integrations_webhooks():
-  import hashlib
-  from werkzeug.utils import secure_filename
-  from src.uploads import upload_bytes
-
   user = getattr(g, "current_user", None)
   account_id = getattr(g, "current_account_id", None)
   api_allowed = account_allows_api(account_id) if account_id else False
-  voice_connection = None
-  voice_prefill = {"account_sid": "", "webhook_url": ""}
   crm_connection = None
   crm_prefill = {}
   linkedin_connection = None
   twitter_connection = None
   if account_id:
-    voice_connection = InboxConnection.query.filter_by(account_id=account_id, provider="voice").first()
-    if voice_connection and voice_connection.metadata_json:
-      meta = voice_connection.metadata_json
-      if meta.get("account_sid_enc"):
-        voice_prefill["account_sid"] = decrypt_value(meta.get("account_sid_enc")) or ""
-      elif meta.get("account_sid"):
-        voice_prefill["account_sid"] = meta.get("account_sid") or ""
-      if meta.get("webhook_url_enc"):
-        voice_prefill["webhook_url"] = decrypt_value(meta.get("webhook_url_enc")) or ""
-      elif meta.get("webhook_url"):
-        voice_prefill["webhook_url"] = meta.get("webhook_url") or ""
-
     # Load CRM connection data
     crm_connection = InboxConnection.query.filter_by(account_id=account_id, provider="crm").first()
     if crm_connection and crm_connection.metadata_json:
@@ -581,218 +563,6 @@ def integrations_webhooks():
       except Exception:
         expires_at = None
 
-    if action == "save_voice" and account_id:
-      provider = (request.form.get("voice_provider") or "twilio").strip().lower()
-      account_sid = (request.form.get("twilio_account_sid") or "").strip()
-      auth_token = (request.form.get("twilio_auth_token") or "").strip()
-      webhook_url = (request.form.get("voice_webhook_url") or "").strip()
-      status = "connected" if (account_sid or webhook_url or auth_token) else "pending"
-
-      metadata = (voice_connection.metadata_json or {}) if voice_connection else {}
-      metadata.update(
-        {
-          "channel": "voice",
-          "provider": provider or "twilio",
-        }
-      )
-      if account_sid:
-        metadata["account_sid_enc"] = encrypt_value(account_sid)
-        metadata.pop("account_sid", None)
-      if webhook_url:
-        metadata["webhook_url_enc"] = encrypt_value(webhook_url)
-        metadata.pop("webhook_url", None)
-      if auth_token:
-        metadata["auth_token_enc"] = encrypt_value(auth_token)
-
-      file = request.files.get("voice_csv")
-      if file and file.filename:
-        filename = secure_filename(file.filename or "")
-        data = file.read()
-        if data:
-          uploads_bucket = current_app.config.get("UPLOADS_BUCKET")
-          uploads_host = current_app.config.get("UPLOADS_HOST")
-          if not uploads_bucket or not uploads_host:
-            return jsonify({"error": "uploads_not_configured"}), 503
-          if len(data) > 10 * 1024 * 1024:
-            return jsonify({"error": "file_too_large", "max_bytes": 10 * 1024 * 1024}), 413
-          key = f"public/{uuid4().hex}_{filename}"
-          url = upload_bytes(
-            key=key,
-            data=data,
-            content_type=file.mimetype or "text/csv",
-            content_disposition=f'attachment; filename="{filename}"',
-          )
-          metadata["csv_upload"] = {"key": key, "url": url, "filename": filename}
-
-      if voice_connection:
-        voice_connection.metadata_json = metadata
-        voice_connection.status = status
-      else:
-        voice_connection = InboxConnection(
-          user_id=user.id if user else None,
-          account_id=account_id,
-          provider="voice",
-          status=status,
-          metadata_json=metadata,
-        )
-        db.session.add(voice_connection)
-      db.session.commit()
-      return render_template(
-        "settings/index.html",
-        active_tab="integrations",
-        integrations_view="webhooks",
-        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
-        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
-        new_token=None,
-        team_view=None,
-        billing_view=None,
-        security_view=None,
-        api_allowed=api_allowed,
-        account_id=account_id,
-        voice_connection=voice_connection,
-        voice_prefill=voice_prefill,
-        voice_saved=True,
-        crm_connection=crm_connection,
-        crm_prefill=crm_prefill,
-      )
-    if action == "save_social" and account_id:
-      platform = (request.form.get("social_platform") or "whatsapp").strip().lower()
-      provider = (request.form.get("provider") or platform).strip().lower()
-      api_key = (request.form.get("social_api_key") or "").strip()
-      api_secret = (request.form.get("social_api_secret") or "").strip()
-      identifier = (request.form.get("social_identifier") or "").strip()
-      webhook_url = (request.form.get("social_webhook_url") or "").strip()
-      status = "connected" if (api_key or api_secret) else "pending"
-
-      # Check if social connection already exists
-      social_connection = InboxConnection.query.filter_by(account_id=account_id, provider="social").first()
-
-      metadata = (social_connection.metadata_json or {}) if social_connection else {}
-      metadata.update(
-        {
-          "channel": "social",
-          "platform": platform,
-          "provider": provider,
-        }
-      )
-      if api_key:
-        metadata["api_key_enc"] = encrypt_value(api_key)
-        metadata.pop("api_key", None)
-      if api_secret:
-        metadata["api_secret_enc"] = encrypt_value(api_secret)
-        metadata.pop("api_secret", None)
-      if identifier:
-        metadata["identifier_enc"] = encrypt_value(identifier)
-        metadata.pop("identifier", None)
-      if webhook_url:
-        metadata["webhook_url_enc"] = encrypt_value(webhook_url)
-        metadata.pop("webhook_url", None)
-
-      if social_connection:
-        social_connection.metadata_json = metadata
-        social_connection.status = status
-      else:
-        social_connection = InboxConnection(
-          user_id=user.id if user else None,
-          account_id=account_id,
-          provider="social",
-          status=status,
-          metadata_json=metadata,
-        )
-        db.session.add(social_connection)
-      db.session.commit()
-      return render_template(
-        "settings/index.html",
-        active_tab="integrations",
-        integrations_view="webhooks",
-        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
-        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
-        new_token=None,
-        team_view=None,
-        billing_view=None,
-        security_view=None,
-        api_allowed=api_allowed,
-        account_id=account_id,
-        voice_connection=voice_connection,
-        voice_prefill=voice_prefill,
-        social_saved=True,
-        crm_connection=crm_connection,
-        crm_prefill=crm_prefill,
-      )
-    if action == "save_chat" and account_id:
-      platform = (request.form.get("platform") or "inboxiq").strip().lower()
-      api_key = (request.form.get("chat_api_key") or "").strip()
-      api_secret = (request.form.get("chat_api_secret") or "").strip()
-      webhook_url = (request.form.get("chat_webhook_url") or "").strip()
-
-      # InboxIQ native widget settings
-      capture_leads = request.form.get("chat_capture_leads") == "on"
-      show_on_all_pages = request.form.get("chat_show_on_all_pages") == "on"
-      require_email = request.form.get("chat_require_email") == "on"
-      welcome_message = (request.form.get("chat_welcome_message") or "").strip()
-
-      status = "connected" if (platform == "inboxiq" or api_key or api_secret) else "pending"
-
-      # Check if chat connection already exists
-      chat_connection = InboxConnection.query.filter_by(account_id=account_id, provider="chat").first()
-
-      metadata = (chat_connection.metadata_json or {}) if chat_connection else {}
-      metadata.update(
-        {
-          "channel": "chat",
-          "platform": platform,
-        }
-      )
-
-      # External platform credentials
-      if api_key:
-        metadata["api_key_enc"] = encrypt_value(api_key)
-        metadata.pop("api_key", None)
-      if api_secret:
-        metadata["api_secret_enc"] = encrypt_value(api_secret)
-        metadata.pop("api_secret", None)
-      if webhook_url:
-        metadata["webhook_url_enc"] = encrypt_value(webhook_url)
-        metadata.pop("webhook_url", None)
-
-      # InboxIQ native widget settings
-      if platform == "inboxiq":
-        metadata["capture_leads"] = capture_leads
-        metadata["show_on_all_pages"] = show_on_all_pages
-        metadata["require_email"] = require_email
-        metadata["welcome_message"] = welcome_message
-
-      if chat_connection:
-        chat_connection.metadata_json = metadata
-        chat_connection.status = status
-      else:
-        chat_connection = InboxConnection(
-          user_id=user.id if user else None,
-          account_id=account_id,
-          provider="chat",
-          status=status,
-          metadata_json=metadata,
-        )
-        db.session.add(chat_connection)
-      db.session.commit()
-      return render_template(
-        "settings/index.html",
-        active_tab="integrations",
-        integrations_view="webhooks",
-        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
-        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
-        new_token=None,
-        team_view=None,
-        billing_view=None,
-        security_view=None,
-        api_allowed=api_allowed,
-        account_id=account_id,
-        voice_connection=voice_connection,
-        voice_prefill=voice_prefill,
-        chat_saved=True,
-        crm_connection=crm_connection,
-        crm_prefill=crm_prefill,
-      )
     if action == "save_crm" and account_id:
       platform = (request.form.get("crm_platform") or "").strip().lower()
 
@@ -815,16 +585,11 @@ def integrations_webhooks():
           "settings/index.html",
           active_tab="integrations",
           integrations_view="webhooks",
-          intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
-          tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
-          new_token=None,
           team_view=None,
           billing_view=None,
           security_view=None,
           api_allowed=api_allowed,
           account_id=account_id,
-          voice_connection=voice_connection,
-          voice_prefill=voice_prefill,
           crm_connection=crm_connection,
           crm_prefill=crm_prefill,
         )
@@ -888,16 +653,11 @@ def integrations_webhooks():
         "settings/index.html",
         active_tab="integrations",
         integrations_view=None,
-        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
-        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
-        new_token=None,
         team_view=None,
         billing_view=None,
         security_view=None,
         api_allowed=api_allowed,
         account_id=account_id,
-        voice_connection=voice_connection,
-        voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_saved=True,
         linkedin_connection=linkedin_connection,
@@ -918,16 +678,11 @@ def integrations_webhooks():
           "settings/index.html",
           active_tab="integrations",
           integrations_view="webhooks",
-          intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
-          tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
-          new_token=None,
           team_view=None,
           billing_view=None,
           security_view=None,
           api_allowed=api_allowed,
           account_id=account_id,
-          voice_connection=voice_connection,
-          voice_prefill=voice_prefill,
           crm_connection=crm_connection,
           crm_prefill=crm_prefill,
           webhook_providers=WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all(),
@@ -1047,16 +802,11 @@ def integrations_webhooks():
         "settings/index.html",
         active_tab="integrations",
         integrations_view="webhooks",
-        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
-        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
-        new_token=None,
         team_view=None,
         billing_view=None,
         security_view=None,
         api_allowed=api_allowed,
         account_id=account_id,
-        voice_connection=voice_connection,
-        voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_prefill=crm_prefill,
         webhook_providers=WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all(),
@@ -1079,68 +829,26 @@ def integrations_webhooks():
         "settings/index.html",
         active_tab="integrations",
         integrations_view="webhooks",
-        intake_token_set=bool(IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all()),
-        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
-        new_token=None,
         team_view=None,
         billing_view=None,
         security_view=None,
         api_allowed=api_allowed,
         account_id=account_id,
-        voice_connection=voice_connection,
-        voice_prefill=voice_prefill,
         crm_connection=crm_connection,
         crm_prefill=crm_prefill,
         webhook_providers=WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all(),
       )
 
-    if action == "generate" and account_id and api_allowed:
-      token_value = str(uuid4())
-      token_hash = hashlib.sha256(token_value.encode("utf-8")).hexdigest()
-      token = IntakeToken(
-        account_id=account_id,
-        label=label,
-        token_hash=token_hash,
-        allowed_ips=allowed_ips,
-        expires_at=expires_at,
-      )
-      db.session.add(token)
-      db.session.commit()
-      return render_template(
-        "settings/index.html",
-        active_tab="integrations",
-        integrations_view="webhooks",
-        intake_token_set=True,
-        tokens=IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all(),
-        new_token=token_value,
-        team_view=None,
-        billing_view=None,
-        security_view=None,
-        api_allowed=api_allowed,
-        account_id=account_id,
-        voice_connection=voice_connection,
-        voice_prefill=voice_prefill,
-        crm_connection=crm_connection,
-        crm_prefill=crm_prefill,
-        webhook_providers=WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all(),
-      )
-  active_tokens = IntakeToken.query.filter_by(account_id=account_id, revoked_at=None).all() if account_id else []
-  intake_token_set = bool(active_tokens)
   webhook_providers = WebhookProvider.query.filter_by(account_id=account_id).order_by(WebhookProvider.created_at.desc()).all() if account_id else []
   return render_template(
     "settings/index.html",
     active_tab="integrations",
     integrations_view="webhooks",
-    intake_token_set=intake_token_set,
-    tokens=active_tokens,
-    new_token=None,
     team_view=None,
     billing_view=None,
     security_view=None,
     api_allowed=api_allowed,
     account_id=account_id,
-    voice_connection=voice_connection,
-    voice_prefill=voice_prefill,
     crm_connection=crm_connection,
     crm_prefill=crm_prefill,
     webhook_providers=webhook_providers,

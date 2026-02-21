@@ -1,7 +1,4 @@
 import os
-import hashlib
-import hmac
-import time
 import json
 from collections import defaultdict
 from functools import lru_cache
@@ -12,7 +9,7 @@ import requests
 
 from src.api.v1 import v1
 from src.inboxiq_logic import normalize_email_payload
-from src.models import IntakeToken, InboxConnection, User
+from src.models import InboxConnection, User
 from src.extensions import db, limiter
 from src.sanitize import sanitize_html
 from datetime import datetime, timezone
@@ -20,10 +17,6 @@ from src.api.v1.inboxiq import _get_account_id
 from src.api.v1.access_control import account_allows_api
 from src.api.v1.app_auth import _require_registered_app, _NO_BASIC_AUTH
 
-
-_RATE_LIMIT_WINDOW = 60  # seconds
-_RATE_LIMIT_MAX = 120  # requests per token per window
-_RATE_LIMITS = defaultdict(list)
 
 @lru_cache(maxsize=1)
 def _celery_client() -> Celery:
@@ -33,67 +26,11 @@ def _celery_client() -> Celery:
 
 
 def _require_intake_token():
-    # Try RegisteredApp Basic Auth first (new scheme)
+    """Authenticate via RegisteredApp Basic Auth (client_id:client_secret)."""
     result = _require_registered_app("intake:write")
-    if result is not _NO_BASIC_AUTH:
-        return result  # None = success, tuple = error
-
-    # Fall back to legacy X-Intake-Token scheme
-    header = request.headers.get("X-Intake-Token") or request.headers.get("X-InboxIQ-Token")
-    signature = request.headers.get("X-Signature")
-    timestamp = request.headers.get("X-Timestamp")
-
-    if not header or not signature or not timestamp:
-        return jsonify({"error": "unauthorized", "message": "missing token/signature/timestamp"}), 401
-
-    header_hash = hashlib.sha256(header.encode("utf-8")).hexdigest()
-    token_row = IntakeToken.query.filter_by(token_hash=header_hash, revoked_at=None).first()
-    if not token_row:
-        return jsonify({"error": "unauthorized"}), 401
-
-    if token_row.expires_at and token_row.expires_at < datetime.now(timezone.utc):
-        return jsonify({"error": "unauthorized", "message": "token expired"}), 401
-
-    if token_row.allowed_ips:
-        remote_ip = request.remote_addr
-        if not remote_ip or remote_ip not in token_row.allowed_ips:
-            return jsonify({"error": "forbidden", "message": "ip_not_allowed"}), 403
-
-    try:
-        ts_val = int(timestamp)
-    except ValueError:
-        return jsonify({"error": "unauthorized", "message": "invalid timestamp"}), 401
-    now = int(time.time())
-    if abs(now - ts_val) > 300:
-        return jsonify({"error": "unauthorized", "message": "stale timestamp"}), 401
-
-    body_bytes = request.get_data() or b""
-    expected = hmac.new(header.encode("utf-8"), msg=(str(ts_val).encode("utf-8") + b"." + body_bytes), digestmod=hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(expected, signature.lower()):
-        return jsonify({"error": "unauthorized", "message": "invalid signature"}), 401
-
-    # Rate limit per token
-    window_start = now - _RATE_LIMIT_WINDOW
-    entries = _RATE_LIMITS[header_hash]
-    entries[:] = [t for t in entries if t >= window_start]
-    if len(entries) >= _RATE_LIMIT_MAX:
-        return jsonify({"error": "rate_limited"}), 429
-    entries.append(now)
-
-    g.intake_account_id = token_row.account_id
-
-    # Enforce plan: API/webhook allowed only for eligible accounts.
-    if not account_allows_api(token_row.account_id):
-        return (
-            jsonify(
-                {
-                    "error": "plan_required",
-                    "message": "API/webhooks require Business plan or active trial. Contact sales to upgrade.",
-                }
-            ),
-            403,
-        )
-    return None
+    if result is _NO_BASIC_AUTH:
+        return jsonify({"error": "unauthorized", "message": "credentials required — use HTTP Basic Auth with your client_id and client_secret"}), 401
+    return result  # None = success, tuple = error response
 
 
 @v1.route("/intake", methods=["POST"])
@@ -272,8 +209,8 @@ _SHIM_TARGET_URL = os.getenv("INTAKE_URL")  # Optional override; defaults to loc
 @v1.route("/intake/shim", methods=["POST"])
 def intake_shim():
     """
-    Compatibility adapter: accept simple form or JSON, sign with IntakeToken, forward to /intake.
-    If your source can already send JSON with X-Intake-Token/X-Timestamp/X-Signature, call /intake directly.
+    Compatibility adapter: accept simple form or JSON and forward to /intake.
+    If your source can already send JSON with Basic Auth, call /intake directly.
     """
     if not _SHIM_INTAKE_TOKEN:
         return jsonify({"error": "config_error", "message": "INTAKE_TOKEN not configured for shim"}), 500

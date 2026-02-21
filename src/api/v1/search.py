@@ -1,8 +1,4 @@
-import hashlib
 import os
-import time
-from collections import defaultdict
-from datetime import datetime, timezone
 from typing import Optional
 from urllib.parse import urljoin
 
@@ -12,7 +8,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import func
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import Ticket, IntakeToken
+from src.models import Ticket
 from src.api.v1.access_control import account_allows_api
 from src.api.v1.app_auth import _require_registered_app, _NO_BASIC_AUTH
 
@@ -20,13 +16,8 @@ SEARXNG_URL = os.getenv("SEARXNG_URL", "").rstrip("/")
 SEARXNG_ENGINES = [e.strip() for e in (os.getenv("SEARXNG_ENGINES") or "").split(",") if e.strip()]
 SEARXNG_TIMEOUT = float(os.getenv("SEARXNG_TIMEOUT", "10"))
 
-_RATE_LIMIT_WINDOW = 60  # seconds
-_RATE_LIMIT_MAX = 120  # requests per token per window
-_RATE_LIMITS = defaultdict(list)
-
 
 def _to_tsquery(term: str) -> str:
-    # Simple sanitizer: replace spaces with & for AND search, quote phrases as needed.
     cleaned = " & ".join(t for t in term.split() if t)
     return cleaned or ""
 
@@ -39,40 +30,11 @@ def _client_ip() -> str:
 
 
 def _verify_api_key() -> Optional[tuple]:
-    # Try RegisteredApp Basic Auth first (new scheme)
+    """Authenticate via RegisteredApp Basic Auth (client_id:client_secret)."""
     result = _require_registered_app("tickets:read")
-    if result is not _NO_BASIC_AUTH:
-        return result  # None = success, tuple = error
-
-    # Fall back to legacy X-API-Key scheme
-    api_key = request.headers.get("X-API-Key")
-    if not api_key:
-        return jsonify({"error": "unauthorized", "message": "missing api key or credentials"}), 401
-
-    header_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
-    token_row = IntakeToken.query.filter_by(token_hash=header_hash, revoked_at=None).first()
-    if not token_row:
-        return jsonify({"error": "unauthorized"}), 401
-    g.intake_account_id = token_row.account_id
-
-    now = datetime.now(timezone.utc)
-    if token_row.expires_at and token_row.expires_at < now:
-        return jsonify({"error": "unauthorized", "message": "token expired"}), 401
-
-    client_ip = _client_ip()
-    if token_row.allowed_ips:
-        if not client_ip or client_ip not in token_row.allowed_ips:
-            return jsonify({"error": "forbidden", "message": "ip_not_allowed"}), 403
-
-    ts_now = int(time.time())
-    window_start = ts_now - _RATE_LIMIT_WINDOW
-    entries = _RATE_LIMITS[header_hash]
-    entries[:] = [t for t in entries if t >= window_start]
-    if len(entries) >= _RATE_LIMIT_MAX:
-        return jsonify({"error": "rate_limited"}), 429
-    entries.append(ts_now)
-
-    return None
+    if result is _NO_BASIC_AUTH:
+        return jsonify({"error": "unauthorized", "message": "credentials required — use HTTP Basic Auth with your client_id and client_secret"}), 401
+    return result  # None = success, tuple = error response
 
 
 @v1.route("/search/tickets", methods=["GET"])
@@ -117,7 +79,7 @@ def search_tickets():
 def searx_proxy():
     """
     Authenticated proxy to SearxNG for external agents.
-    Expects: X-API-Key header containing a valid IntakeToken plaintext.
+    Expects: HTTP Basic Auth with client_id and client_secret (tickets:read scope).
     """
     if not SEARXNG_URL:
         return jsonify({"error": "config_error", "message": "SEARXNG_URL not set"}), 500

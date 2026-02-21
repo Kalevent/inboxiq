@@ -487,34 +487,6 @@ class Feedback(db.Model):
         }
 
 
-class IntakeToken(db.Model):
-    __tablename__ = "intake_tokens"
-    __table_args__ = (db.UniqueConstraint("token_hash", name="uq_intake_token_hash"),)
-
-    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
-    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
-    label = db.Column(db.String(128), nullable=True)
-    token_hash = db.Column(db.String(128), nullable=False)
-    revoked_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    allowed_ips = db.Column(db.JSON, nullable=False, default=list)
-    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
-
-    def is_active(self) -> bool:
-        return self.revoked_at is None
-
-    def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "account_id": self.account_id,
-            "label": self.label,
-            "token": None,  # never expose the hash
-            "allowed_ips": self.allowed_ips or [],
-            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
-            "revoked_at": self.revoked_at.isoformat() if self.revoked_at else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-        }
-
 
 class Passkey(db.Model):
     __tablename__ = "passkeys"
