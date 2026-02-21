@@ -14,6 +14,7 @@ from src.api.v1 import v1
 from src.extensions import db
 from src.models import Ticket, IntakeToken
 from src.api.v1.access_control import account_allows_api
+from src.api.v1.app_auth import _require_registered_app, _NO_BASIC_AUTH
 
 SEARXNG_URL = os.getenv("SEARXNG_URL", "").rstrip("/")
 SEARXNG_ENGINES = [e.strip() for e in (os.getenv("SEARXNG_ENGINES") or "").split(",") if e.strip()]
@@ -38,9 +39,15 @@ def _client_ip() -> str:
 
 
 def _verify_api_key() -> Optional[tuple]:
+    # Try RegisteredApp Basic Auth first (new scheme)
+    result = _require_registered_app("tickets:read")
+    if result is not _NO_BASIC_AUTH:
+        return result  # None = success, tuple = error
+
+    # Fall back to legacy X-API-Key scheme
     api_key = request.headers.get("X-API-Key")
     if not api_key:
-        return jsonify({"error": "unauthorized", "message": "missing api key"}), 401
+        return jsonify({"error": "unauthorized", "message": "missing api key or credentials"}), 401
 
     header_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
     token_row = IntakeToken.query.filter_by(token_hash=header_hash, revoked_at=None).first()
