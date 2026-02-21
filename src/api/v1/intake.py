@@ -11,7 +11,7 @@ import requests
 
 from src.api.v1 import v1
 from src.inboxiq_logic import normalize_email_payload
-from src.models import Account, InboxConnection, User
+from src.models import Account, InboxConnection, User, Lead, LeadFunnelStage
 from src.extensions import db, limiter
 from src.sanitize import sanitize_html
 from datetime import datetime, timezone
@@ -385,6 +385,46 @@ def chat_submit():
     except Exception as exc:
         # Log the queue failure but continue — visitor still gets the AI reply
         current_app.logger.warning("Chat Celery enqueue failed (non-fatal): %s", exc)
+
+    # Capture lead into funnel if email provided and capture_lead is set
+    if email and context.get("capture_lead", True):
+        try:
+            existing = Lead.query.filter_by(email=email, account_id=account_id_int).first()
+            if not existing:
+                now_dt = datetime.now(timezone.utc)
+                lead = Lead(
+                    account_id=account_id_int,
+                    name=name or email.split("@")[0],
+                    email=email,
+                    company_name=company or None,
+                    source="chat",
+                    status="New Lead",
+                    current_funnel_stage="discovery",
+                    stage_entered_at=now_dt,
+                    last_engagement_at=now_dt,
+                    engagement_count=1,
+                    created_at=now_dt,
+                    updated_at=now_dt,
+                )
+                db.session.add(lead)
+                db.session.flush()  # get lead.id before commit
+                funnel_stage = LeadFunnelStage(
+                    lead_id=lead.id,
+                    stage="discovery",
+                    sub_stage="chat_widget",
+                    metadata_json={"page_url": context.get("page_url"), "message_preview": message[:100]},
+                )
+                db.session.add(funnel_stage)
+                db.session.commit()
+                current_app.logger.info("Chat lead created: lead_id=%s email=%s account=%s", lead.id, email, account_id_int)
+            else:
+                # Update engagement on return visitor
+                existing.last_engagement_at = datetime.now(timezone.utc)
+                existing.engagement_count = (existing.engagement_count or 0) + 1
+                db.session.commit()
+        except Exception as exc:
+            db.session.rollback()
+            current_app.logger.warning("Chat lead capture failed (non-fatal): %s", exc)
 
     # Extract and sanitize conversation history (cap at 10 turns)
     raw_history = context.get("history") or []
