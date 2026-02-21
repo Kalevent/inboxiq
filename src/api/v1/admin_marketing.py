@@ -295,7 +295,6 @@ def get_admin_attribution_report():
                 db.cast(Lead.current_funnel_stage.in_(conversion_stages), db.Integer)
             ).label("conversions"),
         ).filter(
-            Lead.deleted == False,  # noqa: E712
             Lead.created_at >= cutoff,
         ).group_by(db.text("src")).order_by(db.desc(db.func.count())).limit(15).all()
 
@@ -322,7 +321,6 @@ def get_admin_attribution_report():
                 db.cast(Lead.current_funnel_stage.in_(conversion_stages), db.Integer)
             ).label("conversions"),
         ).filter(
-            Lead.deleted == False,  # noqa: E712
             Lead.created_at >= cutoff,
             Lead.utm_campaign.isnot(None),
         ).group_by(db.text("campaign")).order_by(db.desc(db.func.count())).limit(10).all()
