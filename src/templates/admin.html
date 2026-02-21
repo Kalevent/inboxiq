@@ -1142,6 +1142,8 @@
         } else if (section === 'saas') {
           loadSaasMetrics();
           loadSpendEntries();
+        } else if (section === 'system') {
+          loadSystemData();
         }
       });
     });
@@ -2098,6 +2100,54 @@
     // Load trial metrics on page load if on trial section
     if (document.getElementById('section-trial')?.classList.contains('active')) {
       loadTrialMetrics();
+    }
+
+    // ── System: Billing + Security ─────────────────────────────────────────
+    async function loadSystemData() {
+      const csrfToken = getCsrfToken();
+      const [billingResp, securityResp] = await Promise.all([
+        fetch('/api/v1/admin/billing',  { credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': csrfToken } }),
+        fetch('/api/v1/admin/security', { credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': csrfToken } }),
+      ]);
+
+      // --- Billing ---
+      const billingEl = document.getElementById('billing');
+      try {
+        const b = await billingResp.json();
+        const rows = [];
+        if (b.arpu != null) rows.push(`<li class="flex justify-between"><span class="text-slate-400">ARPU (active)</span><span class="font-semibold">$${b.arpu.toFixed(2)}</span></li>`);
+        if (b.plan_mix && b.plan_mix.length) {
+          rows.push(`<li class="text-slate-500 text-xs uppercase tracking-wide pt-2">Plan mix</li>`);
+          b.plan_mix.forEach(p => rows.push(`<li class="flex justify-between"><span class="text-slate-400 capitalize">${p.plan}</span><span>${p.count} account${p.count !== 1 ? 's' : ''}</span></li>`));
+        }
+        if (b.trials_expiring && b.trials_expiring.length) {
+          rows.push(`<li class="text-slate-500 text-xs uppercase tracking-wide pt-2">Trials expiring (next 14 days)</li>`);
+          b.trials_expiring.forEach(t => rows.push(`<li class="flex justify-between"><span class="text-slate-400">Account ${t.account_id}</span><span>${t.trial_end ? t.trial_end.slice(0,10) : '—'}</span></li>`));
+        }
+        if (b.failed_payments && b.failed_payments.length) {
+          rows.push(`<li class="text-slate-500 text-xs uppercase tracking-wide pt-2">Failed payments (30d)</li>`);
+          b.failed_payments.forEach(f => rows.push(`<li class="flex justify-between text-red-300"><span>${f.provider}</span><span>${f.count} failed</span></li>`));
+        }
+        billingEl.innerHTML = rows.length ? rows.join('') : '<li class="text-slate-500">No billing data yet.</li>';
+      } catch(e) {
+        billingEl.innerHTML = '<li class="text-red-400">Failed to load billing data.</li>';
+      }
+
+      // --- Security ---
+      const securityEl = document.getElementById('security');
+      try {
+        const s = await securityResp.json();
+        securityEl.innerHTML = [
+          `<li class="flex justify-between"><span class="text-slate-400">Total users</span><span class="font-semibold">${s.users_total ?? '—'}</span></li>`,
+          `<li class="text-slate-500 text-xs uppercase tracking-wide pt-2">Last 30 days</li>`,
+          `<li class="flex justify-between"><span class="text-slate-400">Successful logins</span><span>${s.successful_logins ?? 0}</span></li>`,
+          `<li class="flex justify-between"><span class="text-slate-400">Failed logins</span><span class="${s.failed_logins > 10 ? 'text-red-300 font-semibold' : ''}">${s.failed_logins ?? 0}</span></li>`,
+          `<li class="flex justify-between"><span class="text-slate-400">Password reset requests</span><span>${s.password_reset_requests ?? 0}</span></li>`,
+          `<li class="flex justify-between"><span class="text-slate-400">Password resets completed</span><span>${s.password_resets ?? 0}</span></li>`,
+        ].join('');
+      } catch(e) {
+        securityEl.innerHTML = '<li class="text-red-400">Failed to load security data.</li>';
+      }
     }
 
     // ── Developer access helpers ───────────────────────────────────────────
