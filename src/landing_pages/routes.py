@@ -16,6 +16,7 @@ from uuid import uuid4
 from flask import Blueprint, abort, jsonify, render_template, request
 
 from src.extensions import db, limiter
+from src.funnel_stages import DISCOVERY
 from src.models import Lead, LeadAttribution, LandingPage
 from src.sanitize import sanitize_html
 
@@ -104,7 +105,7 @@ def capture_lead(slug: str):
             utm_medium=utm_medium,
             utm_campaign=utm_campaign,
             utm_term=utm_term,
-            current_funnel_stage="discovery",
+            current_funnel_stage=DISCOVERY,
             stage_entered_at=now,
         )
         db.session.add(lead)

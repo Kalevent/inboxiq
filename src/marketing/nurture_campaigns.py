@@ -22,6 +22,7 @@ from typing import Dict, Any
 
 from src.celery_inboxiq import celery
 from src.extensions import db
+from src.funnel_stages import DISCOVERY, CONSIDERATION
 from src.models import Lead, NurtureEmailSend
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,7 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
     ).subquery()
 
     eligible_leads = db.session.query(Lead).filter(
-        Lead.current_funnel_stage == "DISCOVERY",
+        Lead.current_funnel_stage == DISCOVERY,
         Lead.stage_entered_at <= two_days_ago,
         Lead.deleted == False,  # noqa: E712
         Lead.email.isnot(None),
@@ -144,7 +145,7 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
                 company_name=lead.company_name or "your company",
                 industry=lead.industry,
                 email=lead.email,
-                funnel_stage="DISCOVERY",
+                funnel_stage=DISCOVERY,
                 sequence_day=day_number,
                 extra_context=extra,
             )
@@ -208,7 +209,7 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
     ).subquery()
 
     eligible_leads = db.session.query(Lead).filter(
-        Lead.current_funnel_stage == "CONSIDERATION",
+        Lead.current_funnel_stage == CONSIDERATION,
         Lead.stage_entered_at <= two_days_ago,
         Lead.deleted == False,  # noqa: E712
         Lead.email.isnot(None),
@@ -257,7 +258,7 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
                 company_name=lead.company_name or "your company",
                 industry=lead.industry,
                 email=lead.email,
-                funnel_stage="CONSIDERATION",
+                funnel_stage=CONSIDERATION,
                 sequence_day=day_number,
                 extra_context=extra,
             )

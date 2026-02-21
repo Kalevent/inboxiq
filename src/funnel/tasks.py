@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from celery import shared_task
 
 from src.extensions import db
+from src.funnel_stages import VISITS, DISCOVERY, CONSIDERATION, RETENTION
 from src.models import Lead, LeadFunnelStage, LeadEngagementEvent, FunnelMetricsDaily
 
 # Import DSPy modules
@@ -75,13 +76,13 @@ def qualify_visitor(lead_id: str):
 
         # Auto-progress to discovery if qualified
         if result.qualification_status == "qualified" and int(result.fit_score) >= 6:
-            lead.current_funnel_stage = "discovery"
+            lead.current_funnel_stage = DISCOVERY
             lead.stage_entered_at = datetime.now()
 
             # Create stage history entry
             stage_entry = LeadFunnelStage(
                 lead_id=lead_id,
-                stage="discovery",
+                stage=DISCOVERY,
                 entered_at=datetime.now(),
                 conversion_probability=None,
                 notes=f"Auto-qualified with fit score {result.fit_score}"
@@ -148,13 +149,13 @@ def update_interest_score(lead_id: str):
         lead.intent_score = int(result.intent_score)
 
         # Auto-progress to consideration if intent is high
-        if lead.current_funnel_stage == "discovery" and int(result.intent_score) >= 8:
-            lead.current_funnel_stage = "consideration"
+        if lead.current_funnel_stage == DISCOVERY and int(result.intent_score) >= 8:
+            lead.current_funnel_stage = CONSIDERATION
             lead.stage_entered_at = datetime.now()
 
             stage_entry = LeadFunnelStage(
                 lead_id=lead_id,
-                stage="consideration",
+                stage=CONSIDERATION,
                 entered_at=datetime.now(),
                 notes=f"Auto-progressed with intent score {result.intent_score}"
             )
@@ -198,7 +199,7 @@ def check_stage_progression():
         # Without this, new leads are permanently stuck in VISITS because the check
         # below only re-qualifies leads that already have fit_score >= 6.
         unscored_leads = db.session.query(Lead).filter(
-            Lead.current_funnel_stage == "visits",
+            Lead.current_funnel_stage == VISITS,
             Lead.fit_score.is_(None),
             Lead.stage_entered_at < datetime.now() - timedelta(hours=1)
         ).limit(100).all()
@@ -212,7 +213,7 @@ def check_stage_progression():
 
         # Check visits → discovery progression for already-scored leads
         visits_leads = db.session.query(Lead).filter(
-            Lead.current_funnel_stage == "visits",
+            Lead.current_funnel_stage == VISITS,
             Lead.fit_score >= 6,
             Lead.stage_entered_at < datetime.now() - timedelta(days=3)
         ).limit(50).all()
@@ -226,7 +227,7 @@ def check_stage_progression():
 
         # Check discovery → consideration progression
         discovery_leads = db.session.query(Lead).filter(
-            Lead.current_funnel_stage == "discovery",
+            Lead.current_funnel_stage == DISCOVERY,
             Lead.intent_score >= 8,
             Lead.engagement_count >= 5,
             Lead.stage_entered_at < datetime.now() - timedelta(days=7)
@@ -268,7 +269,7 @@ def churn_risk_analysis():
     try:
         # Get customers in retention stage
         retention_customers = db.session.query(Lead).filter(
-            Lead.current_funnel_stage == "retention"
+            Lead.current_funnel_stage == RETENTION
         ).limit(100).all()
 
         module = ChurnPredictorModule()
@@ -399,7 +400,7 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
                 company_name=company_name,
                 source="searxng_discovery",
                 status="New Lead",  # Required enum field
-                current_funnel_stage="visits",
+                current_funnel_stage=VISITS,
                 fit_score=5,  # Default, will be updated by qualification
                 notes=f"Auto-discovered via search: {niche}\nDomain: {domain}\nURL: {company.get('url', '')}"
             )
@@ -410,7 +411,7 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
             # Create initial funnel stage entry
             stage_entry = LeadFunnelStage(
                 lead_id=str(lead.id),
-                stage="visits",
+                stage=VISITS,
                 entered_at=datetime.now(),
                 notes=f"Discovered via web search for: {niche}"
             )
@@ -515,7 +516,7 @@ def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results
                     company_name=company_name,
                     source="buying_signal_discovery",
                     status="New Lead",
-                    current_funnel_stage="visits",
+                    current_funnel_stage=VISITS,
                     fit_score=7,  # Higher score for buying signals
                     notes=f"Discovered via buying signal: {signal_type}\nSignal: {signal.get('title', 'N/A')}\nURL: {signal.get('url', 'N/A')}"
                 )
@@ -525,7 +526,7 @@ def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results
                 # Create initial funnel stage entry
                 stage_entry = LeadFunnelStage(
                     lead_id=str(lead.id),
-                    stage="visits",
+                    stage=VISITS,
                     entered_at=datetime.now(),
                     notes=f"Discovered via {signal_type} signal in {niche}"
                 )

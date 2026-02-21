@@ -19,6 +19,7 @@ from sqlalchemy import func, case
 
 from src.api.v1 import v1
 from src.extensions import db
+from src.funnel_stages import VISITS
 from src.models import Lead, LeadFunnelStage, LeadEngagementEvent, LeadAttribution, FunnelMetricsDaily
 
 
@@ -449,7 +450,7 @@ def get_cohorts():
             }
 
         cohorts[cohort_key]["total_leads"] += 1
-        current_stage = lead.current_funnel_stage or "visits"
+        current_stage = lead.current_funnel_stage or VISITS
         cohorts[cohort_key]["stage_counts"][current_stage] += 1
 
     # Calculate retention percentages for each cohort

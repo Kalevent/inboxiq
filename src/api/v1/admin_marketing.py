@@ -21,6 +21,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
 from src.extensions import db
+from src.funnel_stages import CONVERSION_STAGES
 from src.models import InAppMessage, InAppMessageDismissal, LandingPage, Lead, LeadAttribution, NurtureEmailSend, Referral, User
 from src.sanitize import sanitize_html
 import logging
@@ -285,7 +286,7 @@ def get_admin_attribution_report():
 
     try:
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-        conversion_stages = ("conversion", "retention")
+        conversion_stages = CONVERSION_STAGES
 
         # Leads created in period grouped by utm_source
         source_rows = db.session.query(

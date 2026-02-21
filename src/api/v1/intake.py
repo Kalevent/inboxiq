@@ -10,6 +10,7 @@ from celery import Celery
 import requests
 
 from src.api.v1 import v1
+from src.funnel_stages import VISITS, DISCOVERY
 from src.inboxiq_logic import normalize_email_payload
 from src.models import Account, InboxConnection, User, Lead, LeadFunnelStage
 from src.extensions import db, limiter
@@ -399,7 +400,7 @@ def chat_submit():
                     company_name=company or None,
                     source="chat",
                     status="New Lead",
-                    current_funnel_stage="discovery",
+                    current_funnel_stage=DISCOVERY,
                     stage_entered_at=now_dt,
                     last_engagement_at=now_dt,
                     engagement_count=1,
@@ -410,7 +411,7 @@ def chat_submit():
                 db.session.flush()  # get lead.id before commit
                 funnel_stage = LeadFunnelStage(
                     lead_id=lead.id,
-                    stage="discovery",
+                    stage=DISCOVERY,
                     sub_stage="chat_widget",
                     metadata_json={"page_url": context.get("page_url"), "message_preview": message[:100]},
                 )
@@ -422,12 +423,12 @@ def chat_submit():
                 now_dt = datetime.now(timezone.utc)
                 existing.last_engagement_at = now_dt
                 existing.engagement_count = (existing.engagement_count or 0) + 1
-                if existing.current_funnel_stage == "visits":
-                    existing.current_funnel_stage = "discovery"
+                if existing.current_funnel_stage == VISITS:
+                    existing.current_funnel_stage = DISCOVERY
                     existing.stage_entered_at = now_dt
                     funnel_stage = LeadFunnelStage(
                         lead_id=existing.id,
-                        stage="discovery",
+                        stage=DISCOVERY,
                         sub_stage="chat_widget",
                         metadata_json={"page_url": context.get("page_url"), "message_preview": message[:100]},
                     )

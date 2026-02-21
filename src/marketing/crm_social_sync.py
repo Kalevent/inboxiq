@@ -25,6 +25,7 @@ import requests
 
 from src.celery_inboxiq import celery
 from src.extensions import db
+from src.funnel_stages import DISCOVERY
 from src.models import InboxConnection, Lead
 
 logger = logging.getLogger(__name__)
@@ -179,7 +180,7 @@ def _upsert_lead(account_id: int, source: str, profile: Dict[str, Any]) -> Lead:
         name=name,
         email=email,
         source=source,
-        current_funnel_stage="discovery",
+        current_funnel_stage=DISCOVERY,
         stage_entered_at=datetime.now(timezone.utc),
     )
 

@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from src.api.v1 import v1
 from src.extensions import db
+from src.funnel_stages import VISITS
 from src.models import LeadAttribution, Lead
 import logging
 
@@ -81,7 +82,7 @@ def track_attribution():
                     utm_medium=payload.get("medium"),
                     utm_campaign=payload.get("campaign"),
                     utm_term=payload.get("term"),
-                    current_funnel_stage="VISITS",
+                    current_funnel_stage=VISITS,
                     status="new",
                     stage_entered_at=datetime.now(timezone.utc)
                 )

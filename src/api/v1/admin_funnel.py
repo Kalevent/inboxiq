@@ -17,6 +17,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
 from src.extensions import db
+from src.funnel_stages import RETENTION, ORDERED as FUNNEL_STAGE_ORDER
 from src.models import Lead, LeadFunnelStage, FunnelMetricsDaily, User
 
 
@@ -141,9 +142,8 @@ def move_stage():
     if not lead_id or not new_stage:
         return jsonify({"error": "lead_id and new_stage required"}), 400
 
-    valid_stages = ['visits', 'discovery', 'consideration', 'conversion', 'retention']
-    if new_stage not in valid_stages:
-        return jsonify({"error": f"Invalid stage. Must be one of: {valid_stages}"}), 400
+    if new_stage not in FUNNEL_STAGE_ORDER:
+        return jsonify({"error": f"Invalid stage. Must be one of: {list(FUNNEL_STAGE_ORDER)}"}), 400
 
     lead = db.session.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
@@ -220,7 +220,7 @@ def analyze_churn():
     if not lead:
         return jsonify({"error": f"Lead {lead_id} not found"}), 404
 
-    if lead.current_funnel_stage != "retention":
+    if lead.current_funnel_stage != RETENTION:
         return jsonify({"error": "Lead must be in retention stage"}), 400
 
     # Run churn analysis for this specific lead

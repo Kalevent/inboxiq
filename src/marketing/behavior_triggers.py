@@ -26,6 +26,7 @@ from typing import Dict, Any
 
 from src.celery_inboxiq import celery
 from src.extensions import db
+from src.funnel_stages import DISCOVERY, CONSIDERATION
 from src.models import Lead, LeadEngagementEvent, NurtureEmailSend
 
 logger = logging.getLogger(__name__)
@@ -84,12 +85,12 @@ def _send_triggered_email(lead: Lead, trigger_type: str, subject: str, body_html
 
 
 def _advance_to_consideration(lead: Lead) -> None:
-    """Move a DISCOVERY lead to CONSIDERATION stage."""
-    if lead.current_funnel_stage != "DISCOVERY":
+    """Move a discovery lead to consideration stage."""
+    if lead.current_funnel_stage != DISCOVERY:
         return
-    lead.current_funnel_stage = "CONSIDERATION"
+    lead.current_funnel_stage = CONSIDERATION
     lead.stage_entered_at = datetime.now(timezone.utc)
-    logger.info("Behavior trigger advanced lead %s to CONSIDERATION", lead.id)
+    logger.info("Behavior trigger advanced lead %s to consideration", lead.id)
 
 
 @celery.task(name="marketing.check_behavior_triggers")
@@ -134,7 +135,7 @@ def check_behavior_triggers(max_per_trigger: int = 20) -> Dict[str, Any]:
 
         pricing_leads = db.session.query(Lead).filter(
             Lead.id.in_(pricing_lead_ids),
-            Lead.current_funnel_stage == "DISCOVERY",
+            Lead.current_funnel_stage == DISCOVERY,
             Lead.deleted == False,  # noqa: E712
             Lead.email.isnot(None),
         ).limit(max_per_trigger).all()
@@ -167,7 +168,7 @@ def check_behavior_triggers(max_per_trigger: int = 20) -> Dict[str, Any]:
     # ── Trigger 2: Engagement spike (active lead stuck in DISCOVERY) ─────────
     try:
         spike_leads = db.session.query(Lead).filter(
-            Lead.current_funnel_stage == "DISCOVERY",
+            Lead.current_funnel_stage == DISCOVERY,
             Lead.engagement_count >= _ENGAGEMENT_SPIKE_THRESHOLD,
             Lead.deleted == False,  # noqa: E712
         ).limit(max_per_trigger).all()
@@ -189,7 +190,7 @@ def check_behavior_triggers(max_per_trigger: int = 20) -> Dict[str, Any]:
     # ── Trigger 3: Dark lead re-engagement ───────────────────────────────────
     try:
         dark_leads = db.session.query(Lead).filter(
-            Lead.current_funnel_stage.in_(["DISCOVERY", "CONSIDERATION"]),
+            Lead.current_funnel_stage.in_([DISCOVERY, CONSIDERATION]),
             Lead.stage_entered_at <= old_stage_cutoff,
             db.or_(
                 Lead.last_engagement_at.is_(None),
