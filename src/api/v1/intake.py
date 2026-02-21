@@ -9,7 +9,7 @@ import requests
 
 from src.api.v1 import v1
 from src.inboxiq_logic import normalize_email_payload
-from src.models import InboxConnection, User
+from src.models import Account, InboxConnection, User
 from src.extensions import db, limiter
 from src.sanitize import sanitize_html
 from datetime import datetime, timezone
@@ -382,7 +382,67 @@ def chat_submit():
         current_app.logger.exception("failed to enqueue chat message", exc_info=exc)
         return jsonify({"error": "server_error", "message": "Unable to send message"}), 500
 
-    return jsonify({"success": True, "status": "queued", "task_id": task.id}), 202
+    # Generate AI reply (best-effort; never blocks on failure)
+    reply = _generate_chat_reply(account_id_int, message, name, company)
+    if not reply:
+        reply = "Thanks for reaching out! A member of our team will get back to you shortly."
+
+    return jsonify({"success": True, "status": "queued", "task_id": task.id, "reply": reply}), 202
+
+
+def _generate_chat_reply(account_id_int: int, message: str, name: str, company: str) -> str | None:
+    """Generate a contextual AI reply for the chat widget. Returns None if AI is unavailable."""
+    import os
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return None
+
+    # Fetch account name for context
+    try:
+        account = Account.query.get(account_id_int)
+        account_name = account.name if account else "our company"
+    except Exception:
+        account_name = "our company"
+
+    system_prompt = (
+        f"You are a friendly, knowledgeable AI assistant for {account_name}. "
+        "Your role is to help website visitors understand how the product can help their team, "
+        "answer questions about features, and encourage them to get started. "
+        "Be conversational and concise — keep replies to 2-3 sentences. "
+        "If asked about pricing or trials, mention there is a free trial available. "
+        "If you cannot answer a specific question, suggest they start a free trial or contact the team directly."
+    )
+
+    user_content = f"[Visitor: {name}] {message}" if name else message
+
+    try:
+        resp = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            json={
+                "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_content},
+                ],
+                "max_tokens": 150,
+                "temperature": 0.7,
+            },
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            timeout=8,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            choice = (data.get("choices") or [{}])[0]
+            content = (choice.get("message") or {}).get("content", "").strip()
+            return content or None
+    except Exception as exc:
+        current_app.logger.debug("Chat AI reply failed: %s", exc)
+
+    return None
 
 
 def _ensure_chat_connection(account_id: int) -> None:

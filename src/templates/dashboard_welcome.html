@@ -1671,11 +1671,15 @@
             <div>
               <label class="block text-sm font-semibold text-slate-200 mb-2">Embed Code</label>
               <div class="relative">
-                <pre id="chatEmbedCode" class="text-xs text-slate-200 bg-slate-950/80 border border-slate-700 rounded-xl p-4 overflow-x-auto font-mono"><!-- Add this before closing </body> tag -->
+                <pre id="chatEmbedCode"
+                  data-account="{{ account_id or 'YOUR_ACCOUNT_ID' }}"
+                  data-src="{{ request.url_root.rstrip('/') }}/static/js/chat-widget.js"
+                  class="text-xs text-slate-200 bg-slate-950/80 border border-slate-700 rounded-xl p-4 overflow-x-auto font-mono"><!-- Add this before closing </body> tag -->
 &lt;script&gt;
-  (function(w,d,s,i){
+  (function(w,d,s){
     w.InboxIQ=w.InboxIQ||{};
     w.InboxIQ.account='{{ account_id or "YOUR_ACCOUNT_ID" }}';
+    w.InboxIQ.config={welcomeMessage:'Hi! How can we help you today?',captureLeads:true,requireEmail:true};
     var f=d.getElementsByTagName(s)[0],j=d.createElement(s);
     j.async=true;j.src='{{ request.url_root.rstrip('/') }}/static/js/chat-widget.js';
     f.parentNode.insertBefore(j,f);
@@ -1752,6 +1756,49 @@
 
   <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
   <script src="{{ url_for('static', filename='js/dashboard_welcome.js') }}"></script>
+  <script>
+  (function () {
+    function updateChatEmbedCode() {
+      var pre = document.getElementById('chatEmbedCode');
+      if (!pre) return;
+      var acct = pre.dataset.account || 'YOUR_ACCOUNT_ID';
+      var src = pre.dataset.src || '';
+      var welcomeEl = document.getElementById('chatWelcomeMessage');
+      var captureEl = document.getElementById('chatCaptureLeads');
+      var requireEl = document.getElementById('chatRequireEmail');
+      var welcome = (welcomeEl ? welcomeEl.value : 'Hi! How can we help you today?')
+        .replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n') || 'Hi! How can we help you today?';
+      var captureLeads = captureEl ? captureEl.checked : true;
+      var requireEmail = requireEl ? requireEl.checked : true;
+      pre.textContent =
+        '<!-- Add this before closing </body> tag -->\n' +
+        '<script>\n' +
+        '  (function(w,d,s){\n' +
+        '    w.InboxIQ=w.InboxIQ||{};\n' +
+        "    w.InboxIQ.account='" + acct + "';\n" +
+        '    w.InboxIQ.config={\n' +
+        "      welcomeMessage:'" + welcome + "',\n" +
+        '      captureLeads:' + captureLeads + ',\n' +
+        '      requireEmail:' + requireEmail + '\n' +
+        '    };\n' +
+        '    var f=d.getElementsByTagName(s)[0],j=d.createElement(s);\n' +
+        "    j.async=true;j.src='" + src + "';\n" +
+        '    f.parentNode.insertBefore(j,f);\n' +
+        "  })(window,document,'script');\n" +
+        '<\/script>';
+    }
+
+    ['chatWelcomeMessage', 'chatCaptureLeads', 'chatRequireEmail'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', updateChatEmbedCode);
+        el.addEventListener('change', updateChatEmbedCode);
+      }
+    });
+
+    updateChatEmbedCode();
+  })();
+  </script>
 
   <!-- In-app broadcast messages -->
   <div id="inAppBanners" class="fixed top-0 left-0 right-0 z-[9998] flex flex-col gap-1 pointer-events-none"></div>

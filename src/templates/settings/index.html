@@ -1687,6 +1687,36 @@ Content-Type: application/json
                     </div>
                     {% endif %}
 
+                    <div>
+                      <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Chat widget — bring your own bot</div>
+                      <p class="text-xs text-slate-400 mb-2">
+                        Add <code class="text-indigo-300">webhookUrl</code> to your embed config to power the widget with your own chatbot backend.
+                        The widget will POST visitor messages to your endpoint and display the reply inline — no InboxIQ AI needed.
+                      </p>
+                      <p class="text-xs text-slate-400 mb-1 font-medium">Embed code (add webhookUrl to config):</p>
+                      <pre class="rounded-lg bg-slate-950 border border-slate-800 p-3 text-xs text-slate-300 overflow-x-auto font-mono mb-3">w.InboxIQ.config = {
+  welcomeMessage: 'Hi! How can we help?',
+  captureLeads: true,
+  requireEmail: true,
+  webhookUrl: 'https://yourserver.com/api/chat'
+};</pre>
+                      <p class="text-xs text-slate-400 mb-1 font-medium">Your endpoint receives:</p>
+                      <pre class="rounded-lg bg-slate-950 border border-slate-800 p-3 text-xs text-slate-300 overflow-x-auto font-mono mb-3">POST https://yourserver.com/api/chat
+Content-Type: application/json
+
+{
+  "message": "How does pricing work?",
+  "context": {
+    "name": "Jane", "email": "jane@example.com",
+    "company": "Acme", "account_id": "42",
+    "page_url": "https://yoursite.com/pricing"
+  }
+}</pre>
+                      <p class="text-xs text-slate-400 mb-1 font-medium">Your endpoint must return:</p>
+                      <pre class="rounded-lg bg-slate-950 border border-slate-800 p-3 text-xs text-slate-300 overflow-x-auto font-mono">{ "reply": "We offer flexible monthly plans starting at £29/mo..." }</pre>
+                      <p class="text-xs text-slate-500 mt-2">HTTP 200 with <code>reply</code> shows the bot's message. Non-2xx falls back to the default message on the visitor's side.</p>
+                    </div>
+
                   </div>
                 </div>
 

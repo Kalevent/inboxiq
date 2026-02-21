@@ -8,6 +8,9 @@
   const captureLeads = config.captureLeads !== false;
   const requireEmail = config.requireEmail !== false;
   const primaryColor = config.primaryColor || '#6366f1';
+  // Optional custom chatbot webhook. Must be https:// to be used.
+  const webhookUrl = (typeof config.webhookUrl === 'string' && config.webhookUrl.startsWith('https://'))
+    ? config.webhookUrl : null;
 
   // Widget state
   let isOpen = false;
@@ -207,25 +210,47 @@
         company: company,
         account_id: account,
         capture_lead: captureLeads && !hasSubmittedLead,
+        page_url: window.location.href,
       },
     };
 
     try {
-      // Use public chat endpoint (no auth required)
-      const response = await fetch('/api/v1/chat/submit', {
+      let endpoint, body;
+
+      if (webhookUrl) {
+        // Custom chatbot webhook — send a clean payload the developer controls
+        endpoint = webhookUrl;
+        body = JSON.stringify({
+          message: message,
+          context: {
+            name: name,
+            email: email,
+            company: company,
+            account_id: account,
+            page_url: window.location.href,
+          },
+        });
+      } else {
+        // InboxIQ native endpoint
+        endpoint = '/api/v1/chat/submit';
+        body = JSON.stringify(payload);
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: body,
       });
 
       if (response.ok) {
+        const data = await response.json();
         hasSubmittedLead = true;
-        return true;
+        return { ok: true, reply: data.reply || null };
       }
-      return false;
+      return { ok: false, reply: null };
     } catch (err) {
       console.error('InboxIQ chat error:', err);
-      return false;
+      return { ok: false, reply: null };
     }
   }
 
@@ -237,6 +262,19 @@
     msg.textContent = text;
     messagesDiv.appendChild(msg);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    return msg;
+  }
+
+  // Show a typing indicator bubble
+  function addTypingIndicator() {
+    const messagesDiv = document.getElementById('inboxiq-chat-messages');
+    const typing = document.createElement('div');
+    typing.className = 'inboxiq-message bot';
+    typing.setAttribute('data-typing', 'true');
+    typing.textContent = '…';
+    messagesDiv.appendChild(typing);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    return typing;
   }
 
   // Handle form submission
@@ -246,7 +284,9 @@
     const name = document.getElementById('inboxiq-name')?.value || '';
     const email = document.getElementById('inboxiq-email')?.value || '';
     const company = document.getElementById('inboxiq-company')?.value || '';
-    const message = document.getElementById('inboxiq-message').value;
+    const messageInput = document.getElementById('inboxiq-message');
+    const message = messageInput.value;
+    const submitBtn = document.querySelector('#inboxiq-chat-form button[type="submit"]');
 
     if (!message.trim()) return;
 
@@ -258,22 +298,31 @@
     // Add user message to UI
     addMessage(message, false);
 
+    // Disable input while waiting for AI reply
+    if (submitBtn) submitBtn.disabled = true;
+    messageInput.value = '';
+
+    // Show typing indicator
+    const typingEl = addTypingIndicator();
+
     // Send to backend
-    sendMessage(name, email, company, message).then(success => {
-      if (success) {
-        addMessage('Thanks! We\'ll get back to you soon.', true);
+    sendMessage(name, email, company, message).then(result => {
+      typingEl.remove();
+      if (submitBtn) submitBtn.disabled = false;
+
+      if (result.ok) {
+        const reply = result.reply || "Thanks! We'll get back to you soon.";
+        addMessage(reply, true);
 
         // Hide lead form after first submission
         if (captureLeads) {
-          document.getElementById('inboxiq-lead-form').style.display = 'none';
+          const leadForm = document.getElementById('inboxiq-lead-form');
+          if (leadForm) leadForm.style.display = 'none';
         }
       } else {
         addMessage('Sorry, something went wrong. Please try again.', true);
       }
     });
-
-    // Clear message input
-    document.getElementById('inboxiq-message').value = '';
   }
 
   // Initialize widget
