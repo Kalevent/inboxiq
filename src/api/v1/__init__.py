@@ -30,4 +30,5 @@ from src.api.v1 import (  # noqa: F401
     webhook_providers,
     attribution,
     admin_insights,
+    admin_marketing,
 )

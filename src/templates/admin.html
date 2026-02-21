@@ -138,6 +138,11 @@
             <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded font-medium">NEW</span>
           </button>
 
+          <button class="sidebar-nav-item w-full text-left" data-section="marketing">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <span>Marketing</span>
+          </button>
+
           <button class="sidebar-nav-item w-full text-left" data-section="ai">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
             <span>AI & Training</span>
@@ -541,6 +546,82 @@
           </div>
         </section>
 
+        <!-- Marketing Section -->
+        <section id="section-marketing" class="admin-section">
+          <div class="content-container space-y-6">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">Marketing</h1>
+              <p class="text-sm text-slate-300 mt-1">Nurture campaign performance and A/B test results (last 30 days).</p>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="grid md:grid-cols-4 gap-4">
+              <div class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-indigo-300 mb-1">Total Sends</div>
+                <p id="nurtureTotalSends" class="text-3xl font-semibold text-slate-50 mb-1">--</p>
+                <div class="text-xs text-slate-400">All nurture emails</div>
+              </div>
+              <div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-emerald-300 mb-1">Overall Open Rate</div>
+                <p id="nurtureOpenRate" class="text-3xl font-semibold text-slate-50 mb-1">--%</p>
+                <div class="text-xs text-slate-400"><span id="nurtureTotalOpens">--</span> opens</div>
+              </div>
+              <div class="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-blue-300 mb-1">Variant A Open Rate</div>
+                <p id="nurtureVariantARate" class="text-3xl font-semibold text-slate-50 mb-1">--%</p>
+                <div class="text-xs text-slate-400">Pain-point focus</div>
+              </div>
+              <div class="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-amber-300 mb-1">Variant B Open Rate</div>
+                <p id="nurtureVariantBRate" class="text-3xl font-semibold text-slate-50 mb-1">--%</p>
+                <div class="text-xs text-slate-400">ROI / case-study focus</div>
+              </div>
+            </div>
+
+            <!-- A/B Test Results Table -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">A/B Test Results by Step</h2>
+                  <p class="text-xs text-slate-400 mt-0.5">Requires ≥ 50 sends per variant to call a winner (p &lt; 0.05).</p>
+                </div>
+                <button id="refreshAbBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">
+                  ↻ Refresh
+                </button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="border-b border-slate-800">
+                    <tr>
+                      <th class="text-left p-2 text-slate-400 font-medium">Step</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">A Sends</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">A Open%</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">B Sends</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">B Open%</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">Lift</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">p-value</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Winner</th>
+                    </tr>
+                  </thead>
+                  <tbody id="abTestTable" class="divide-y divide-slate-800">
+                    <tr>
+                      <td colspan="8" class="text-center py-8 text-slate-400">Loading A/B results...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Sends by Vertical -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <h2 class="text-lg font-semibold text-slate-100 mb-4">Sends by Vertical</h2>
+              <div id="nurtureVerticals" class="grid md:grid-cols-4 gap-3">
+                <div class="text-center text-slate-400 text-sm">Loading...</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- AI & Training Section -->
         <section id="section-ai" class="admin-section">
           <div class="content-container space-y-6">
@@ -695,6 +776,8 @@
           loadFunnelMetrics();
         } else if (section === 'developer') {
           loadDevRequests();
+        } else if (section === 'marketing') {
+          loadMarketingData();
         }
       });
     });
@@ -1047,6 +1130,94 @@
       }
     }
 
+    // Marketing: load both nurture stats and A/B results
+    async function loadMarketingData() {
+      await Promise.all([loadNurtureStats(), loadAbResults()]);
+    }
+
+    async function loadNurtureStats() {
+      try {
+        const res = await fetch('/api/v1/admin/marketing/nurture-stats', { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        document.getElementById('nurtureTotalSends').textContent = (data.total_sends || 0).toLocaleString();
+        document.getElementById('nurtureTotalOpens').textContent = (data.total_opens || 0).toLocaleString();
+        document.getElementById('nurtureOpenRate').textContent = ((data.overall_open_rate || 0) * 100).toFixed(1) + '%';
+
+        const varA = (data.by_variant || {})['A'] || {};
+        const varB = (data.by_variant || {})['B'] || {};
+        document.getElementById('nurtureVariantARate').textContent = ((varA.open_rate || 0) * 100).toFixed(1) + '%';
+        document.getElementById('nurtureVariantBRate').textContent = ((varB.open_rate || 0) * 100).toFixed(1) + '%';
+
+        const verts = data.by_vertical || {};
+        const vertContainer = document.getElementById('nurtureVerticals');
+        const entries = Object.entries(verts);
+        if (entries.length === 0) {
+          vertContainer.innerHTML = '<div class="text-slate-500 text-sm col-span-4">No data yet.</div>';
+        } else {
+          vertContainer.innerHTML = entries.map(([vert, sends]) => `
+            <div class="bg-slate-800/50 rounded-xl p-3 text-center">
+              <div class="text-lg font-bold text-indigo-400">${sends.toLocaleString()}</div>
+              <div class="text-xs text-slate-400 mt-1 capitalize">${vert.replace(/_/g, ' ')}</div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Error loading nurture stats:', err);
+      }
+    }
+
+    async function loadAbResults() {
+      const tbody = document.getElementById('abTestTable');
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-slate-400">Loading...</td></tr>';
+      try {
+        const res = await fetch('/api/v1/admin/marketing/ab-results', { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (!data.steps || data.steps.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-slate-400">No data yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.steps.map(step => {
+          const varA = step.variant_a || {};
+          const varB = step.variant_b || {};
+          const aRate = varA.open_rate != null ? (varA.open_rate * 100).toFixed(1) + '%' : '--';
+          const bRate = varB.open_rate != null ? (varB.open_rate * 100).toFixed(1) + '%' : '--';
+          const lift = step.lift_pct != null ? step.lift_pct.toFixed(1) + '%' : '--';
+          const pVal = step.p_value != null ? step.p_value.toFixed(4) : '--';
+
+          let winnerBadge;
+          if (step.winner === 'A') {
+            winnerBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-500/20 text-blue-300">A wins</span>';
+          } else if (step.winner === 'B') {
+            winnerBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/20 text-amber-300">B wins</span>';
+          } else {
+            const reasonShort = (step.reason || 'inconclusive').replace('below_min_sample', 'not enough data').replace('missing_variant', 'no data').replace('not_significant', 'no sig.');
+            winnerBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-700/50 text-slate-400">${reasonShort}</span>`;
+          }
+
+          const label = step.key || `${step.campaign_type}:day${step.sequence_day}`;
+          return `
+            <tr class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-2 font-mono text-xs text-slate-300">${label}</td>
+              <td class="p-2 text-right text-slate-300">${(varA.sends || 0).toLocaleString()}</td>
+              <td class="p-2 text-right text-blue-300">${aRate}</td>
+              <td class="p-2 text-right text-slate-300">${(varB.sends || 0).toLocaleString()}</td>
+              <td class="p-2 text-right text-amber-300">${bRate}</td>
+              <td class="p-2 text-right text-emerald-300">${lift}</td>
+              <td class="p-2 text-right text-slate-400 text-xs">${pVal}</td>
+              <td class="p-2">${winnerBadge}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-red-400">Error: ${err.message}</td></tr>`;
+      }
+    }
+
     // Load trial onboarding metrics
     async function loadTrialMetrics() {
       try {
@@ -1141,6 +1312,7 @@
 
     // Add event listeners
     document.getElementById('refreshTrialBtn')?.addEventListener('click', loadTrialMetrics);
+    document.getElementById('refreshAbBtn')?.addEventListener('click', loadAbResults);
 
     // Load funnel metrics on page load if on funnel section
     if (document.getElementById('section-funnel').classList.contains('active')) {
