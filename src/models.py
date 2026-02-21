@@ -1855,3 +1855,32 @@ class RegisteredApp(db.Model):
     status             = db.Column(db.String(32), nullable=False, default="active")  # active | suspended
     created_at         = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_used_at       = db.Column(db.DateTime(timezone=True), nullable=True)
+
+
+class NurtureEmailSend(db.Model):
+    """
+    Tracks individual nurture email sends for deduplication and A/B test analysis.
+
+    One row per (lead, campaign_type, sequence_day) — the unique constraint prevents
+    the same email from being sent twice to the same lead.
+
+    ab_variant "A" = baseline (pain-point focus)
+    ab_variant "B" = ROI/case-study focus
+    """
+    __tablename__ = "nurture_email_sends"
+    __table_args__ = (
+        db.UniqueConstraint("lead_id", "campaign_type", "sequence_day", name="uq_nurture_send"),
+        db.Index("idx_nurture_ab", "campaign_type", "ab_variant", "sequence_day"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    lead_id = db.Column(db.String(64), db.ForeignKey("leads.id", ondelete="CASCADE"), nullable=False)
+    campaign_type = db.Column(db.String(50), nullable=False, comment="discovery | consideration")
+    sequence_day = db.Column(db.Integer, nullable=False, comment="1, 3, 7, 14, or 21")
+    ab_variant = db.Column(db.String(1), nullable=True, comment="A or B")
+    subject_line = db.Column(db.String(500), nullable=True, comment="Actual subject sent — for comparing variants")
+    vertical = db.Column(db.String(50), nullable=True, comment="b2b_saas or ecommerce")
+    opened = db.Column(db.Boolean, server_default="false", nullable=False)
+    clicked = db.Column(db.Boolean, server_default="false", nullable=False)
+    sent_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+    opened_at = db.Column(db.DateTime(timezone=True), nullable=True)

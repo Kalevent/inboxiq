@@ -4,163 +4,69 @@ Intelligent nurture campaign automation using DSPy.
 Creates personalized nurture sequences for:
 - Discovery stage: Educational content, thought leadership
 - Consideration stage: Demos, ROI calculators, case studies
-- Retention stage: Feature adoption, success stories
 
-Uses DSPy to personalize content based on:
-- Industry/vertical
-- Company size
-- Role/persona
-- Engagement history
-- Pain points
+Uses PersonalizedEmailModule (B2B SaaS / E-commerce playbooks) for vertical-specific
+copy. A/B variants are assigned deterministically via lead_id hash so each lead always
+gets the same variant across multiple runs.
+
+  Variant A (hash % 2 == 0): pain-point focused (baseline)
+  Variant B (hash % 2 == 1): ROI / case-study focused
+
+NurtureEmailSend records prevent duplicate sends of the same sequence step.
 """
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 from src.celery_inboxiq import celery
 from src.extensions import db
-from src.models import Lead, EmailCampaign
-import dspy
+from src.models import Lead, NurtureEmailSend
 
 logger = logging.getLogger(__name__)
 
-
-class NurtureEmailGenerator(dspy.Signature):
-    """
-    Generate personalized nurture email content.
-
-    Adapts messaging based on lead attributes and funnel stage.
-    """
-    lead_name = dspy.InputField(desc="Lead's first name")
-    company_name = dspy.InputField(desc="Company name")
-    industry = dspy.InputField(desc="Industry/vertical (healthcare, insurance, B2B SaaS)")
-    role = dspy.InputField(desc="Lead's role/title")
-    funnel_stage = dspy.InputField(desc="Current funnel stage (DISCOVERY, CONSIDERATION, CONVERSION)")
-    email_sequence_day = dspy.InputField(desc="Day number in nurture sequence (1, 3, 7, 14)")
-    pain_points = dspy.InputField(desc="Known pain points or interests")
-    engagement_history = dspy.InputField(desc="Brief engagement summary (opened emails, visited pages)")
-
-    subject_line = dspy.OutputField(desc="Personalized subject line (40-60 chars)")
-    email_body = dspy.OutputField(desc="Email body in HTML with personalization")
-    call_to_action = dspy.OutputField(desc="Primary CTA text and URL")
-    personalization_angle = dspy.OutputField(desc="Why this message resonates with this lead")
+# Minimum days between any two nurture emails to the same lead.
+_MIN_SEND_INTERVAL_DAYS = 6
 
 
-class NurtureSequenceDesigner(dspy.Signature):
-    """
-    Design optimal nurture sequence for a lead.
-
-    Determines timing, content themes, and channel mix.
-    """
-    lead_profile = dspy.InputField(desc="JSON of lead attributes (industry, role, company_size, pain_points)")
-    funnel_stage = dspy.InputField(desc="Current funnel stage")
-    engagement_level = dspy.InputField(desc="Engagement level: high, medium, low")
-    available_content = dspy.InputField(desc="Available content types: blog, case_study, webinar, demo, calculator")
-
-    sequence_length_days = dspy.OutputField(desc="Total sequence duration in days (7, 14, 21, 30)")
-    email_days = dspy.OutputField(desc="Comma-separated list of days to send emails (e.g., '1,3,7,14')")
-    content_themes = dspy.OutputField(desc="JSON array of content themes per email [{day: 1, theme: 'education'}, ...]")
-    channel_mix = dspy.OutputField(desc="JSON of channel distribution {email: 70%, linkedin: 20%, retargeting: 10%}")
-    reasoning = dspy.OutputField(desc="Explanation of sequence design")
+def _ab_variant(lead_id: str) -> str:
+    """Deterministically assign A/B variant from lead_id hash."""
+    return "B" if hash(lead_id) % 2 else "A"
 
 
-class NurtureIntelligenceModule(dspy.Module):
-    """
-    Complete nurture campaign intelligence module.
+def _variant_extra(variant: str, base_extra: str) -> str:
+    """Append variant-specific instruction for the DSPy generator."""
+    if variant == "B":
+        return base_extra + " Emphasize concrete ROI metrics and a specific case study number in the subject line."
+    return base_extra
 
-    Combines sequence design with personalized email generation.
-    """
 
-    def __init__(self):
-        super().__init__()
-        self.sequence_designer = dspy.ChainOfThought(NurtureSequenceDesigner)
-        self.email_generator = dspy.ChainOfThought(NurtureEmailGenerator)
+def _already_sent(lead_id: str, campaign_type: str, sequence_day: int) -> bool:
+    """Return True if this exact step was already sent to this lead."""
+    return db.session.query(NurtureEmailSend).filter_by(
+        lead_id=lead_id,
+        campaign_type=campaign_type,
+        sequence_day=sequence_day,
+    ).first() is not None
 
-    def design_nurture_sequence(
-        self,
-        lead: Lead,
-        engagement_level: str = "medium"
-    ) -> Dict[str, Any]:
-        """
-        Design personalized nurture sequence for a lead.
 
-        Args:
-            lead: Lead object
-            engagement_level: high, medium, or low
-
-        Returns:
-            Nurture sequence design with timing and themes
-        """
-        # Build lead profile
-        lead_profile = {
-            "industry": lead.industry or "B2B SaaS",
-            "company_name": lead.company_name or "their company",
-            "company_size": lead.company_size or "mid-market",
-            "role": lead.title or "Operations Leader",
-            "pain_points": lead.pain_points or "inbox overload, manual triage"
-        }
-
-        # Determine available content
-        available_content = "blog, case_study, webinar, demo, calculator, testimonials"
-
-        # Design sequence
-        sequence = self.sequence_designer(
-            lead_profile=str(lead_profile),
-            funnel_stage=lead.current_funnel_stage,
-            engagement_level=engagement_level,
-            available_content=available_content
+def _log_send(lead_id: str, campaign_type: str, sequence_day: int,
+              variant: str, subject_line: str, vertical: str) -> None:
+    """Record a successful send in NurtureEmailSend."""
+    try:
+        send = NurtureEmailSend(
+            lead_id=lead_id,
+            campaign_type=campaign_type,
+            sequence_day=sequence_day,
+            ab_variant=variant,
+            subject_line=subject_line[:500] if subject_line else None,
+            vertical=vertical,
         )
-
-        return {
-            "sequence_length_days": int(sequence.sequence_length_days),
-            "email_days": [int(d.strip()) for d in sequence.email_days.split(',')],
-            "content_themes": sequence.content_themes,
-            "channel_mix": sequence.channel_mix,
-            "reasoning": sequence.reasoning
-        }
-
-    def generate_nurture_email(
-        self,
-        lead: Lead,
-        day_number: int,
-        theme: str = "education"
-    ) -> Dict[str, str]:
-        """
-        Generate personalized nurture email.
-
-        Args:
-            lead: Lead object
-            day_number: Day in sequence (1, 3, 7, etc.)
-            theme: Content theme (education, social_proof, demo_offer, etc.)
-
-        Returns:
-            Email with subject, body, CTA
-        """
-        # Build engagement history
-        engagement_summary = f"Visited site {lead.visit_count or 0} times"
-        if lead.last_page_visited:
-            engagement_summary += f", last viewed: {lead.last_page_visited}"
-
-        # Generate email
-        email = self.email_generator(
-            lead_name=lead.name.split()[0] if lead.name else "there",
-            company_name=lead.company_name or "your company",
-            industry=lead.industry or "your industry",
-            role=lead.title or "your role",
-            funnel_stage=lead.current_funnel_stage,
-            email_sequence_day=str(day_number),
-            pain_points=lead.pain_points or "inbox management challenges",
-            engagement_history=engagement_summary
-        )
-
-        return {
-            "subject": email.subject_line,
-            "body_html": email.email_body,
-            "cta": email.call_to_action,
-            "personalization_angle": email.personalization_angle
-        }
+        db.session.add(send)
+        # Flush within the caller's transaction; the caller commits.
+    except Exception as exc:
+        logger.warning("Failed to log nurture send for lead %s: %s", lead_id, exc)
 
 
 @celery.task(name="marketing.send_discovery_nurture")
@@ -168,38 +74,39 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
     """
     Send Discovery stage nurture emails.
 
-    Sends educational content to leads in DISCOVERY stage who:
-    - Have been in stage for 2+ days
-    - Haven't received a nurture email in 7 days
-    - Are engaged (opened/clicked recent emails)
-
-    Args:
-        max_sends: Maximum emails to send in this run
+    Targets leads that:
+    - Are in DISCOVERY stage for 2+ days
+    - Have not received a nurture email in the last 6 days
+    - Have not already received this exact sequence day email
 
     Returns:
-        Summary of emails sent
+        Summary dict: status, sent, failed, eligible_leads, vertical_breakdown
     """
     from src.email_utils import send_email
 
-    # Find leads ready for Discovery nurture
-    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     two_days_ago = datetime.now(timezone.utc) - timedelta(days=2)
+    cooldown_cutoff = datetime.now(timezone.utc) - timedelta(days=_MIN_SEND_INTERVAL_DAYS)
+
+    # Exclude leads that received any nurture email too recently.
+    # We join NurtureEmailSend and exclude lead IDs with a recent send.
+    recently_emailed_ids = db.session.query(NurtureEmailSend.lead_id).filter(
+        NurtureEmailSend.sent_at > cooldown_cutoff,
+    ).subquery()
 
     eligible_leads = db.session.query(Lead).filter(
         Lead.current_funnel_stage == "DISCOVERY",
         Lead.stage_entered_at <= two_days_ago,
         Lead.deleted == False,  # noqa: E712
-        Lead.email.isnot(None)
+        Lead.email.isnot(None),
+        ~Lead.id.in_(recently_emailed_ids),
     ).limit(max_sends).all()
 
     if not eligible_leads:
         return {"status": "no_eligible_leads", "sent": 0}
 
-    # Initialize DSPy intelligence
     from src.dspy import _configure_dspy
     from src.dspy.email_personalization import PersonalizedEmailModule
     _configure_dspy()
-
     personalized_module = PersonalizedEmailModule()
 
     sent_count = 0
@@ -210,7 +117,6 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
         try:
             days_in_stage = (datetime.now(timezone.utc) - lead.stage_entered_at).days
 
-            # Map days to sequence day number
             if days_in_stage < 3:
                 day_number = 1
             elif days_in_stage < 7:
@@ -222,8 +128,16 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
             else:
                 day_number = 21
 
+            if _already_sent(lead.id, "discovery", day_number):
+                continue
+
+            variant = _ab_variant(lead.id)
             first_name = (lead.name or "").split()[0] or "there"
-            extra = f"Role: {lead.title or 'unknown'}. Company size: {lead.company_size or 'unknown'}."
+            base_extra = (
+                f"Company size: {lead.company_size_bucket or 'unknown'}. "
+                f"Engagement events: {lead.engagement_count or 0}."
+            )
+            extra = _variant_extra(variant, base_extra)
 
             email_content = personalized_module.generate(
                 lead_first_name=first_name,
@@ -245,14 +159,19 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
 
             if success:
                 sent_count += 1
-                lead.last_email_sent_at = datetime.now(timezone.utc)
-                vertical_counts[email_content["vertical"]] = vertical_counts.get(email_content["vertical"], 0) + 1
-                logger.info("Sent Discovery nurture Day %d (%s) to %s", day_number, email_content["vertical"], lead.email)
+                vert = email_content.get("vertical", "unknown")
+                vertical_counts[vert] = vertical_counts.get(vert, 0) + 1
+                _log_send(lead.id, "discovery", day_number, variant,
+                          email_content["subject_line"], vert)
+                logger.info(
+                    "Sent Discovery nurture Day %d variant=%s (%s) to %s",
+                    day_number, variant, vert, lead.email,
+                )
             else:
                 failed_count += 1
 
-        except Exception as e:
-            logger.error("Failed to send Discovery nurture to %s: %s", lead.email, e)
+        except Exception as exc:
+            logger.error("Failed to send Discovery nurture to %s: %s", getattr(lead, "email", "?"), exc)
             failed_count += 1
 
     db.session.commit()
@@ -271,38 +190,37 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
     """
     Send Consideration stage nurture emails.
 
-    Sends conversion-focused content to leads in CONSIDERATION:
-    - Demo offers with personalized value props
-    - ROI calculators
-    - Industry-specific case studies
-    - Customer testimonials
-
-    Args:
-        max_sends: Maximum emails to send
+    Targets leads that:
+    - Are in CONSIDERATION stage for 2+ days
+    - Have not received a nurture email in the last 6 days
+    - Have not already received this exact sequence day email
 
     Returns:
-        Summary of emails sent
+        Summary dict: status, sent, failed, eligible_leads, vertical_breakdown
     """
     from src.email_utils import send_email
 
-    # Find leads in Consideration stage
     two_days_ago = datetime.now(timezone.utc) - timedelta(days=2)
+    cooldown_cutoff = datetime.now(timezone.utc) - timedelta(days=_MIN_SEND_INTERVAL_DAYS)
+
+    recently_emailed_ids = db.session.query(NurtureEmailSend.lead_id).filter(
+        NurtureEmailSend.sent_at > cooldown_cutoff,
+    ).subquery()
 
     eligible_leads = db.session.query(Lead).filter(
         Lead.current_funnel_stage == "CONSIDERATION",
         Lead.stage_entered_at <= two_days_ago,
         Lead.deleted == False,  # noqa: E712
-        Lead.email.isnot(None)
+        Lead.email.isnot(None),
+        ~Lead.id.in_(recently_emailed_ids),
     ).limit(max_sends).all()
 
     if not eligible_leads:
         return {"status": "no_eligible_leads", "sent": 0}
 
-    # Initialize DSPy
     from src.dspy import _configure_dspy
     from src.dspy.email_personalization import PersonalizedEmailModule
     _configure_dspy()
-
     personalized_module = PersonalizedEmailModule()
 
     sent_count = 0
@@ -313,7 +231,6 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
         try:
             days_in_stage = (datetime.now(timezone.utc) - lead.stage_entered_at).days
 
-            # Consideration sequence: Demo, ROI, Case Study, Final Ask
             if days_in_stage < 3:
                 day_number = 1
             elif days_in_stage < 7:
@@ -323,12 +240,17 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
             else:
                 day_number = 14
 
-            first_name = (lead.name or "").split()[0] or "there"
-            extra = (
-                f"Role: {lead.title or 'unknown'}. "
-                f"Company size: {lead.company_size or 'unknown'}. "
-                f"Engagement count: {lead.engagement_count or 0}."
+            if _already_sent(lead.id, "consideration", day_number):
+                continue
+
+            variant = _ab_variant(lead.id)
+            base_extra = (
+                f"Company size: {lead.company_size_bucket or 'unknown'}. "
+                f"Engagement events: {lead.engagement_count or 0}."
             )
+            extra = _variant_extra(variant, base_extra)
+
+            first_name = (lead.name or "").split()[0] or "there"
 
             email_content = personalized_module.generate(
                 lead_first_name=first_name,
@@ -350,14 +272,19 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
 
             if success:
                 sent_count += 1
-                lead.last_email_sent_at = datetime.now(timezone.utc)
-                vertical_counts[email_content["vertical"]] = vertical_counts.get(email_content["vertical"], 0) + 1
-                logger.info("Sent Consideration nurture Day %d (%s) to %s", day_number, email_content["vertical"], lead.email)
+                vert = email_content.get("vertical", "unknown")
+                vertical_counts[vert] = vertical_counts.get(vert, 0) + 1
+                _log_send(lead.id, "consideration", day_number, variant,
+                          email_content["subject_line"], vert)
+                logger.info(
+                    "Sent Consideration nurture Day %d variant=%s (%s) to %s",
+                    day_number, variant, vert, lead.email,
+                )
             else:
                 failed_count += 1
 
-        except Exception as e:
-            logger.error("Failed to send Consideration nurture to %s: %s", lead.email, e)
+        except Exception as exc:
+            logger.error("Failed to send Consideration nurture to %s: %s", getattr(lead, "email", "?"), exc)
             failed_count += 1
 
     db.session.commit()
@@ -369,85 +296,3 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
         "eligible_leads": len(eligible_leads),
         "vertical_breakdown": vertical_counts,
     }
-
-
-# Convenience functions
-
-def create_nurture_campaign(
-    name: str,
-    funnel_stage: str,
-    sequence_days: List[int],
-    content_themes: List[str]
-) -> EmailCampaign:
-    """
-    Create a new nurture campaign in the database.
-
-    Args:
-        name: Campaign name
-        funnel_stage: Target funnel stage
-        sequence_days: List of days to send (e.g., [1, 3, 7, 14])
-        content_themes: Content theme per email
-
-    Returns:
-        Created EmailCampaign object
-    """
-    from uuid import uuid4
-
-    campaign = EmailCampaign(
-        id=str(uuid4()),
-        name=name,
-        description=f"Nurture sequence for {funnel_stage} stage",
-        campaign_type="nurture",
-        status="active",
-        target_funnel_stage=funnel_stage,
-        follow_up_delays_days=sequence_days[1:],  # Exclude day 0
-        created_at=datetime.now(timezone.utc)
-    )
-
-    db.session.add(campaign)
-    db.session.commit()
-
-    logger.info(f"Created nurture campaign: {name} for {funnel_stage}")
-
-    return campaign
-
-
-def get_next_nurture_email_for_lead(lead_id: str) -> Optional[Dict[str, Any]]:
-    """
-    Determine what nurture email should be sent next for a lead.
-
-    Args:
-        lead_id: Lead UUID
-
-    Returns:
-        {
-            "day_number": 3,
-            "theme": "use_cases",
-            "send_at": "2026-02-18T10:00:00Z"
-        }
-        or None if no email due
-    """
-    lead = db.session.get(Lead, lead_id)
-    if not lead:
-        return None
-
-    days_in_stage = (datetime.now(timezone.utc) - lead.stage_entered_at).days
-
-    # Determine next email based on stage and days
-    if lead.current_funnel_stage == "DISCOVERY":
-        sequence = [(1, "education"), (3, "use_cases"), (7, "thought_leadership"), (14, "community")]
-    elif lead.current_funnel_stage == "CONSIDERATION":
-        sequence = [(1, "demo_offer"), (3, "roi_calculator"), (7, "case_study"), (14, "final_ask")]
-    else:
-        return None
-
-    # Find next email
-    for day, theme in sequence:
-        if days_in_stage >= day and days_in_stage < day + 2:  # 2-day send window
-            return {
-                "day_number": day,
-                "theme": theme,
-                "send_at": datetime.now(timezone.utc).isoformat()
-            }
-
-    return None

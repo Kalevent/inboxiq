@@ -238,6 +238,30 @@ def make_celery(app) -> Celery:
                 if nurture_campaigns_enabled
                 else {}
             ),
+            # Behavior-triggered campaigns — every 4 hours
+            **(
+                {
+                    "check_behavior_triggers_4h": {
+                        "task": "marketing.check_behavior_triggers",
+                        "schedule": crontab(minute=30, hour="*/4"),  # :30 past every 4 hours
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if nurture_campaigns_enabled
+                else {}
+            ),
+            # A/B test evaluation — weekly on Monday at 7am
+            **(
+                {
+                    "evaluate_nurture_ab_tests_weekly": {
+                        "task": "marketing.evaluate_nurture_ab_tests",
+                        "schedule": crontab(day_of_week=1, hour=7, minute=0),
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if nurture_campaigns_enabled
+                else {}
+            ),
         },
     )
 
