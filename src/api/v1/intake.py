@@ -418,9 +418,21 @@ def chat_submit():
                 db.session.commit()
                 current_app.logger.info("Chat lead created: lead_id=%s email=%s account=%s", lead.id, email, account_id_int)
             else:
-                # Update engagement on return visitor
-                existing.last_engagement_at = datetime.now(timezone.utc)
+                # Return visitor — update engagement and promote stage if still at visits
+                now_dt = datetime.now(timezone.utc)
+                existing.last_engagement_at = now_dt
                 existing.engagement_count = (existing.engagement_count or 0) + 1
+                if existing.current_funnel_stage == "visits":
+                    existing.current_funnel_stage = "discovery"
+                    existing.stage_entered_at = now_dt
+                    funnel_stage = LeadFunnelStage(
+                        lead_id=existing.id,
+                        stage="discovery",
+                        sub_stage="chat_widget",
+                        metadata_json={"page_url": context.get("page_url"), "message_preview": message[:100]},
+                    )
+                    db.session.add(funnel_stage)
+                    current_app.logger.info("Chat promoted lead to discovery: lead_id=%s email=%s", existing.id, email)
                 db.session.commit()
         except Exception as exc:
             db.session.rollback()
