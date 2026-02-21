@@ -386,15 +386,24 @@ def chat_submit():
         # Log the queue failure but continue — visitor still gets the AI reply
         current_app.logger.warning("Chat Celery enqueue failed (non-fatal): %s", exc)
 
+    # Extract and sanitize conversation history (cap at 10 turns)
+    raw_history = context.get("history") or []
+    chat_history = []
+    for entry in raw_history[-10:]:
+        role = str(entry.get("role", ""))
+        content = sanitize_html(str(entry.get("content", "")))[:800]
+        if role in ("user", "assistant") and content:
+            chat_history.append({"role": role, "content": content})
+
     # Generate AI reply regardless of whether Celery succeeded
-    reply = _generate_chat_reply(account_id_int, message, name, company)
+    reply = _generate_chat_reply(account_id_int, message, name, company, history=chat_history)
     if not reply:
         reply = "Thanks for reaching out! A member of our team will get back to you shortly."
 
     return jsonify({"success": True, "status": "queued" if task_id else "ai_only", "task_id": task_id, "reply": reply}), 200
 
 
-def _generate_chat_reply(account_id_int: int, message: str, name: str, company: str) -> str | None:
+def _generate_chat_reply(account_id_int: int, message: str, name: str, company: str, history: list | None = None) -> str | None:
     """Generate a contextual AI reply for the chat widget. Returns None if AI is unavailable."""
     import os
 
@@ -418,17 +427,19 @@ def _generate_chat_reply(account_id_int: int, message: str, name: str, company: 
         "If you cannot answer a specific question, suggest they start a free trial or contact the team directly."
     )
 
+    # Build messages: system + conversation history + current message
     user_content = f"[Visitor: {name}] {message}" if name else message
+    messages = [{"role": "system", "content": system_prompt}]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": user_content})
 
     try:
         resp = requests.post(
             "https://api.openai.com/v1/chat/completions",
             json={
                 "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_content},
-                ],
+                "messages": messages,
                 "max_tokens": 150,
                 "temperature": 0.7,
             },

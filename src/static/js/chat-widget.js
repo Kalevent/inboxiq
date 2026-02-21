@@ -16,6 +16,7 @@
   let isOpen = false;
   let hasSubmittedLead = false;
   let visitorInfo = {};
+  let conversationHistory = []; // [{role: 'user'|'assistant', content: '...'}]
 
   // Create widget HTML
   function createWidget() {
@@ -211,6 +212,7 @@
         account_id: account,
         capture_lead: captureLeads && !hasSubmittedLead,
         page_url: window.location.href,
+        history: conversationHistory.slice(-10), // last 5 exchanges
       },
     };
 
@@ -313,6 +315,10 @@
       if (result.ok) {
         const reply = result.reply || "Thanks! We'll get back to you soon.";
         addMessage(reply, true);
+
+        // Record this exchange in conversation history
+        conversationHistory.push({ role: 'user', content: message });
+        conversationHistory.push({ role: 'assistant', content: reply });
 
         // Hide lead form after first submission
         if (captureLeads) {
