@@ -102,14 +102,68 @@
       {% block content %}{% endblock %}
     </main>
 
-    <footer class="marketing-footer border-t border-slate-800/10 bg-slate-950/80 text-slate-300">
-      <div class="marketing-shell py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <span class="text-slate-400">&copy; 2024 Kalevent. All rights reserved.</span>
-        <div class="flex items-center gap-4 text-sm">
-          <a href="/privacy" class="hover:text-white">Privacy</a>
-          <a href="/terms" class="hover:text-white">Terms</a>
-          <a href="mailto:support@kalevent.com" class="hover:text-white">Contact</a>
-          <a href="/settings/developer" class="hover:text-white">Developer</a>
+    <footer class="marketing-footer border-t border-slate-800/20 bg-slate-950/90 text-slate-400">
+      <div class="marketing-shell py-12">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10">
+
+          <!-- Solutions -->
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">Solutions</p>
+            <ul class="space-y-2 text-sm">
+              <li><a href="{{ url_for('solutions_unified_intake') }}" class="hover:text-white transition-colors">Unified Intake</a></li>
+              <li><a href="{{ url_for('solutions_decisions') }}" class="hover:text-white transition-colors">Decisions</a></li>
+              <li class="pt-2 text-[11px] uppercase tracking-wide text-slate-600">Channels</li>
+              <li><a href="{{ url_for('solutions_voice') }}" class="hover:text-white transition-colors">Voice (IVR)</a></li>
+              <li><a href="{{ url_for('solutions_social') }}" class="hover:text-white transition-colors">Social</a></li>
+              <li><a href="{{ url_for('solutions_forms') }}" class="hover:text-white transition-colors">Forms</a></li>
+              <li><a href="{{ url_for('solutions_chat') }}" class="hover:text-white transition-colors">Chat</a></li>
+              <li><a href="{{ url_for('solutions_crm') }}" class="hover:text-white transition-colors">CRM</a></li>
+              <li><a href="{{ url_for('solutions_api') }}" class="hover:text-white transition-colors">API / Webhooks</a></li>
+            </ul>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">Email</p>
+            <ul class="space-y-2 text-sm">
+              <li><a href="{{ url_for('solutions_email_ai_triage') }}" class="hover:text-white transition-colors">AI Email Triage</a></li>
+              <li><a href="{{ url_for('solutions_email_triage_automation') }}" class="hover:text-white transition-colors">Email Triage Automation</a></li>
+              <li><a href="{{ url_for('solutions_email_shared_inbox') }}" class="hover:text-white transition-colors">Shared Inbox</a></li>
+              <li><a href="{{ url_for('solutions_email_support_automation') }}" class="hover:text-white transition-colors">Support Automation</a></li>
+            </ul>
+          </div>
+
+          <!-- Use Cases -->
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">Use Cases</p>
+            <ul class="space-y-2 text-sm">
+              <li><a href="{{ url_for('use_case_support') }}" class="hover:text-white transition-colors">Support Triage</a></li>
+              <li><a href="{{ url_for('use_case_healthcare_triage') }}" class="hover:text-white transition-colors">Healthcare Triage</a></li>
+              <li><a href="{{ url_for('use_case_claims') }}" class="hover:text-white transition-colors">Insurance Claims</a></li>
+              <li><a href="{{ url_for('use_case_hr') }}" class="hover:text-white transition-colors">HR Requests</a></li>
+              <li><a href="{{ url_for('use_case_finance') }}" class="hover:text-white transition-colors">Finance Approvals</a></li>
+            </ul>
+          </div>
+
+          <!-- Company -->
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">Company</p>
+            <ul class="space-y-2 text-sm">
+              <li><a href="/privacy" class="hover:text-white transition-colors">Privacy</a></li>
+              <li><a href="/terms" class="hover:text-white transition-colors">Terms</a></li>
+              <li><a href="mailto:support@kalevent.com" class="hover:text-white transition-colors">Contact</a></li>
+              <li><a href="/settings/developer" class="hover:text-white transition-colors">Developer</a></li>
+            </ul>
+          </div>
+
+        </div>
+
+        <div class="border-t border-slate-800/40 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <a href="/" class="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white">
+            <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500 text-white text-xs">KI</span>
+            <span>Kalevent</span>
+          </a>
+          <span class="text-xs text-slate-500">&copy; 2025 Kalevent. All rights reserved.</span>
         </div>
       </div>
     </footer>
