@@ -360,34 +360,36 @@ def chat_submit():
         current_app.logger.warning("chat intake validation failed: %s", exc)
         return jsonify({"error": "validation_error", "message": "Invalid message format"}), 400
 
-    # Queue to Celery for processing
+    # Queue to Celery for processing (best-effort — never fail the chat if the queue is down)
+    task_id = None
     try:
         task = _celery_client().send_task(
             "inboxiq.process_incoming_email",
             args=[{"email": normalized, "user_id": None, "account_id": account_id_int}],
             queue="inbox",
         )
+        task_id = task.id
 
         # Ensure chat connection exists (non-blocking)
         try:
             _ensure_chat_connection(account_id_int)
         except Exception:
-            pass  # Don't fail submission if connection update fails
+            pass
 
         current_app.logger.info(
-            f"Chat message queued: account={account_id_int}, task={task.id}, ip={remote_ip}"
+            f"Chat message queued: account={account_id_int}, task={task_id}, ip={remote_ip}"
         )
 
     except Exception as exc:
-        current_app.logger.exception("failed to enqueue chat message", exc_info=exc)
-        return jsonify({"error": "server_error", "message": "Unable to send message"}), 500
+        # Log the queue failure but continue — visitor still gets the AI reply
+        current_app.logger.warning("Chat Celery enqueue failed (non-fatal): %s", exc)
 
-    # Generate AI reply (best-effort; never blocks on failure)
+    # Generate AI reply regardless of whether Celery succeeded
     reply = _generate_chat_reply(account_id_int, message, name, company)
     if not reply:
         reply = "Thanks for reaching out! A member of our team will get back to you shortly."
 
-    return jsonify({"success": True, "status": "queued", "task_id": task.id, "reply": reply}), 202
+    return jsonify({"success": True, "status": "queued" if task_id else "ai_only", "task_id": task_id, "reply": reply}), 200
 
 
 def _generate_chat_reply(account_id_int: int, message: str, name: str, company: str) -> str | None:
