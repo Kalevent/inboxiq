@@ -28,6 +28,10 @@ CLAUDE.md
 # VSCode settings
 .vscode/
 
+# Node / Tailwind build tooling
+src/node_modules/
+src/package-lock.json
+
 # Development/planning docs
 docs/inboxiq/DEPRECATION_LIST.md
 docs/inboxiq/PHASE_3_INTEGRATION_GUIDE.md
