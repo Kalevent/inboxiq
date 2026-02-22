@@ -605,6 +605,20 @@ def execute_workflow_with_tool_calling_agent(
     if not workflow.enabled:
         return {"executed": False, "reason": "workflow_disabled"}
 
+    # Feature gate + usage counter
+    if workflow.account_id:
+        try:
+            from src.features import feature_enabled
+            from src.quota import check_and_increment, FeatureDisabled
+            if not feature_enabled("automation", workflow.account_id):
+                return {"executed": False, "reason": "feature_disabled", "message": "Automation Studio is not available on your current plan."}
+            check_and_increment("automation_runs", workflow.account_id)
+        except FeatureDisabled as _fd:
+            return {"executed": False, "reason": "feature_disabled", "message": str(_fd)}
+        except Exception as _qe:
+            import logging as _log
+            _log.getLogger(__name__).warning("Quota check failed for automation account=%s: %s", workflow.account_id, _qe)
+
     # Create tool-calling agent
     agent = ToolCallingAutomationAgent(workflow, trigger_context)
     return agent.execute(trigger_event)

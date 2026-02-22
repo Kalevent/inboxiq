@@ -980,6 +980,104 @@
                 </table>
               </div>
             </div>
+
+            <!-- Enterprise Inquiries -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Enterprise Inquiries</h2>
+                  <p class="text-xs text-slate-400 mt-1">Organisations interested in value-based Enterprise pricing. Each inquiry triggers an admin email notification.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <select id="eiStatusFilter" onchange="loadEnterpriseInquiries()"
+                          class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100">
+                    <option value="">All</option>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                  <button onclick="loadEnterpriseInquiries()"
+                          class="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:text-slate-100">↻ Refresh</button>
+                </div>
+              </div>
+
+              <!-- Savings calculator -->
+              <div class="mb-5 rounded-xl border border-slate-700 bg-slate-950/40 p-4">
+                <p class="text-xs text-slate-400 mb-3">ROI / Savings calculator — enter an account ID to generate a personalised savings report for a prospect.</p>
+                <div class="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Account ID</label>
+                    <input id="eiSavingsAccountId" type="number" placeholder="e.g. 20"
+                           class="mt-1 w-32 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Months</label>
+                    <input id="eiSavingsMonths" type="number" value="3" min="1" max="24"
+                           class="mt-1 w-20 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Mins / decision</label>
+                    <input id="eiSavingsMins" type="number" value="3" min="1"
+                           class="mt-1 w-24 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Hourly rate (£)</label>
+                    <input id="eiSavingsRate" type="number" value="30" min="1"
+                           class="mt-1 w-24 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <button onclick="loadSavingsReport()"
+                          class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">Calculate</button>
+                </div>
+                <div id="eiSavingsResult" class="hidden mt-4"></div>
+              </div>
+
+              <!-- Inquiries table -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-800">
+                      <th class="py-2 pr-3">Name / Company</th>
+                      <th class="py-2 pr-3">Email</th>
+                      <th class="py-2 pr-3 text-right">Employees</th>
+                      <th class="py-2 pr-3">Status</th>
+                      <th class="py-2 pr-3">Received</th>
+                      <th class="py-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="eiTableBody">
+                    <tr><td colspan="6" class="text-center py-6 text-slate-400">Loading…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Notes modal -->
+              <div id="eiNotesModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                <div class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md space-y-4 shadow-2xl">
+                  <h3 class="text-base font-semibold text-slate-100">Update Inquiry</h3>
+                  <input type="hidden" id="eiModalId" />
+                  <div>
+                    <label class="text-xs text-slate-400">Status</label>
+                    <select id="eiModalStatus" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                      <option value="new">New</option>
+                      <option value="contacted">Contacted</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Admin notes</label>
+                    <textarea id="eiModalNotes" rows="4" placeholder="Call scheduled, quote sent, etc."
+                              class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 resize-none"></textarea>
+                  </div>
+                  <div class="flex gap-3 pt-1">
+                    <button onclick="saveEnterpriseInquiry()"
+                            class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">Save</button>
+                    <button onclick="document.getElementById('eiNotesModal').classList.add('hidden')"
+                            class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:text-slate-100">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </section>
 
@@ -1505,6 +1603,7 @@
         loadAttributionReport(),
         loadBroadcastMessages(),
         loadLandingPages(),
+        loadEnterpriseInquiries(),
       ]);
     }
 
@@ -1966,6 +2065,130 @@
         await fetch(`/api/v1/admin/landing-pages/${id}`, { method: 'DELETE', headers, credentials: 'include' });
         loadLandingPages();
       } catch (err) { console.error('Delete failed:', err); }
+    }
+
+    // ── Enterprise Inquiries ──────────────────────────────────────────────
+
+    async function loadEnterpriseInquiries() {
+      const tbody = document.getElementById('eiTableBody');
+      if (!tbody) return;
+      const status = document.getElementById('eiStatusFilter')?.value || '';
+      const url = '/api/v1/admin/enterprise/inquiries' + (status ? `?status=${status}` : '');
+      try {
+        const r = await fetch(url, { credentials: 'include' });
+        const data = await r.json();
+        const items = data.inquiries || [];
+        if (!items.length) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400">No inquiries yet.</td></tr>';
+          return;
+        }
+        const statusBadge = s => ({
+          new: '<span class="rounded-full bg-indigo-500/20 text-indigo-300 px-2 py-0.5 text-xs">New</span>',
+          contacted: '<span class="rounded-full bg-amber-500/20 text-amber-300 px-2 py-0.5 text-xs">Contacted</span>',
+          closed: '<span class="rounded-full bg-slate-700 text-slate-400 px-2 py-0.5 text-xs">Closed</span>',
+        }[s] || `<span class="text-xs text-slate-400">${s}</span>`);
+
+        tbody.innerHTML = items.map(i => {
+          const date = i.created_at ? new Date(i.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+          const savingsBtn = i.account_id
+            ? `<button onclick="quickSavings(${i.account_id})" class="text-indigo-400 hover:text-indigo-300 text-xs underline">ROI</button>`
+            : '';
+          return `
+            <tr class="border-b border-slate-800/60 hover:bg-slate-800/30">
+              <td class="py-2 pr-3">
+                <div class="text-slate-100 text-sm font-medium">${i.name}</div>
+                <div class="text-xs text-slate-400">${i.company || '—'}</div>
+                ${i.admin_notes ? `<div class="text-xs text-amber-300/80 mt-0.5 italic truncate max-w-[180px]">${i.admin_notes}</div>` : ''}
+              </td>
+              <td class="py-2 pr-3 text-xs text-slate-300">${i.email}</td>
+              <td class="py-2 pr-3 text-right text-sm text-slate-300">${i.employee_count || '—'}</td>
+              <td class="py-2 pr-3">${statusBadge(i.status)}</td>
+              <td class="py-2 pr-3 text-xs text-slate-400">${date}</td>
+              <td class="py-2 flex items-center gap-3">
+                <button onclick="openInquiryModal('${i.id}','${i.status}',${JSON.stringify(i.admin_notes || '')})"
+                        class="text-indigo-400 hover:text-indigo-300 text-xs underline">Edit</button>
+                ${savingsBtn}
+              </td>
+            </tr>`;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-red-400">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    function openInquiryModal(id, status, notes) {
+      document.getElementById('eiModalId').value = id;
+      document.getElementById('eiModalStatus').value = status;
+      document.getElementById('eiModalNotes').value = notes || '';
+      document.getElementById('eiNotesModal').classList.remove('hidden');
+    }
+
+    async function saveEnterpriseInquiry() {
+      const id = document.getElementById('eiModalId').value;
+      const status = document.getElementById('eiModalStatus').value;
+      const admin_notes = document.getElementById('eiModalNotes').value.trim();
+      const csrfToken = getCsrfToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+      try {
+        await fetch(`/api/v1/admin/enterprise/inquiries/${id}`, {
+          method: 'PATCH', headers, credentials: 'include',
+          body: JSON.stringify({ status, admin_notes }),
+        });
+        document.getElementById('eiNotesModal').classList.add('hidden');
+        loadEnterpriseInquiries();
+      } catch (err) { console.error('Save inquiry failed:', err); }
+    }
+
+    async function loadSavingsReport() {
+      const accountId = document.getElementById('eiSavingsAccountId').value;
+      if (!accountId) { alert('Enter an account ID first.'); return; }
+      const months = document.getElementById('eiSavingsMonths').value || 3;
+      const mins = document.getElementById('eiSavingsMins').value || 3;
+      const rate = document.getElementById('eiSavingsRate').value || 30;
+      const resultEl = document.getElementById('eiSavingsResult');
+      resultEl.classList.remove('hidden');
+      resultEl.innerHTML = '<p class="text-xs text-slate-400">Loading…</p>';
+      try {
+        const url = `/api/v1/admin/savings-report?account_id=${accountId}&months=${months}&mins_per_decision=${mins}&hourly_rate=${rate}`;
+        const r = await fetch(url, { credentials: 'include' });
+        if (!r.ok) { const e = await r.json(); throw new Error(e.error || r.status); }
+        const d = await r.json();
+        const t = d.totals;
+        const roi = d.roi_summary;
+        const fmtGbp = n => `£${Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        resultEl.innerHTML = `
+          <div class="rounded-xl border border-slate-700 bg-slate-900 p-4 space-y-3">
+            <p class="text-sm font-semibold text-slate-100">${d.account_name} — ${months}-month ROI report</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="rounded-lg bg-slate-800 p-3 text-center">
+                <div class="text-lg font-bold text-indigo-300">${(t.ai_decisions || 0).toLocaleString()}</div>
+                <div class="text-xs text-slate-400 mt-0.5">AI Decisions</div>
+              </div>
+              <div class="rounded-lg bg-slate-800 p-3 text-center">
+                <div class="text-lg font-bold text-indigo-300">${(t.hours_saved || 0).toLocaleString()}</div>
+                <div class="text-xs text-slate-400 mt-0.5">Hours Saved</div>
+              </div>
+              <div class="rounded-lg bg-slate-800 p-3 text-center">
+                <div class="text-lg font-bold text-emerald-300">${fmtGbp(t.cost_saved_gbp)}</div>
+                <div class="text-xs text-slate-400 mt-0.5">Cost Saved (${months}mo)</div>
+              </div>
+              <div class="rounded-lg bg-slate-800 p-3 text-center">
+                <div class="text-lg font-bold text-amber-300">${fmtGbp(roi.enterprise_price_estimate_monthly_gbp)}/mo</div>
+                <div class="text-xs text-slate-400 mt-0.5">Enterprise Est. (12%)</div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400">Projected annual saving: <span class="text-emerald-300 font-medium">${fmtGbp(roi.projected_annual_saving_gbp)}</span>
+              · Avg monthly saving: <span class="text-emerald-300 font-medium">${fmtGbp(roi.avg_monthly_saving_gbp)}</span></p>
+          </div>`;
+      } catch (err) {
+        resultEl.innerHTML = `<p class="text-xs text-red-400">Error: ${err.message}</p>`;
+      }
+    }
+
+    function quickSavings(accountId) {
+      document.getElementById('eiSavingsAccountId').value = accountId;
+      loadSavingsReport();
     }
 
     // ── SaaS Metrics ──────────────────────────────────────────────────────

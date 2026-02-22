@@ -37,7 +37,7 @@ def _get_service() -> BillingService:
 def _stripe_price_for_plan(plan_choice: str) -> str | None:
     """
     Map plan choice to Stripe price id via config. Configure env:
-    STRIPE_PRICE_PRO, STRIPE_PRICE_BUSINESS.
+    STRIPE_PRICE_PRO, STRIPE_PRICE_BUSINESS, STRIPE_PRICE_SCALE.
     """
     plan = (plan_choice or "").lower()
     cfg = current_app.config
@@ -45,6 +45,8 @@ def _stripe_price_for_plan(plan_choice: str) -> str | None:
         return cfg.get("STRIPE_PRICE_PRO")
     if plan == "business":
         return cfg.get("STRIPE_PRICE_BUSINESS")
+    if plan == "scale":
+        return cfg.get("STRIPE_PRICE_SCALE")
     return None
 
 

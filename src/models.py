@@ -2026,3 +2026,33 @@ class MarketingSpend(db.Model):
     amount_gbp = db.Column(db.Float, nullable=False)
     notes = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class EnterpriseInquiry(db.Model):
+    """
+    Enterprise plan inquiries submitted via the in-app form or public page.
+
+    Stores enough context for the sales team to follow up, plus the account_id
+    of the submitter if they are already a logged-in user.
+    """
+    __tablename__ = "enterprise_inquiries"
+    __table_args__ = (
+        db.Index("idx_enterprise_inquiries_account", "account_id"),
+        db.Index("idx_enterprise_inquiries_created", "created_at"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    # Submitter details
+    name = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    company = db.Column(db.String(200), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    employee_count = db.Column(db.Integer, nullable=True)       # rough org size
+    message = db.Column(db.Text, nullable=True)                 # free-text from user
+    # Link to account if already signed in
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True)
+    # Status tracking
+    status = db.Column(db.String(30), nullable=False, default="new")  # new | contacted | closed
+    admin_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())

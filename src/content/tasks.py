@@ -121,7 +121,8 @@ def generate_blog_post(
     niche: str = "Revenue Operations",
     audience: str = "VP Revenue Operations, B2B SaaS, 100-500 employees",
     topic_index: int = 0,
-    auto_publish: bool = False
+    auto_publish: bool = False,
+    account_id: int = None,
 ):
     """
     Generate a full blog post using DSPy content pipeline.
@@ -131,10 +132,25 @@ def generate_blog_post(
         audience: Target audience
         topic_index: Which topic to use from generated list
         auto_publish: Auto-publish (default: False, requires review)
+        account_id: Account to charge the content_posts quota against
 
     Returns:
         Dict with generated content ID and details
     """
+    # Feature gate + usage counter
+    if account_id:
+        try:
+            from src.features import feature_enabled
+            from src.quota import check_and_increment, FeatureDisabled
+            if not feature_enabled("content_gen", account_id):
+                return {"status": "error", "error": "Content generation is not available on your current plan."}
+            check_and_increment("content_posts", account_id)
+        except FeatureDisabled as _fd:
+            return {"status": "error", "error": str(_fd)}
+        except Exception as _qe:
+            import logging as _log
+            _log.getLogger(__name__).warning("Quota check failed for content_gen account=%s: %s", account_id, _qe)
+
     initialize_dspy()
 
     try:

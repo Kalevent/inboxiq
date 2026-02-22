@@ -116,6 +116,15 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
 
     for lead in eligible_leads:
         try:
+            # Feature gate per account
+            if lead.account_id:
+                try:
+                    from src.features import feature_enabled
+                    if not feature_enabled("nurture", lead.account_id):
+                        continue
+                except Exception:
+                    pass  # Don't block send on gate failure
+
             days_in_stage = (datetime.now(timezone.utc) - lead.stage_entered_at).days
 
             if days_in_stage < 3:
@@ -168,6 +177,12 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
                     "Sent Discovery nurture Day %d variant=%s (%s) to %s",
                     day_number, variant, vert, lead.email,
                 )
+                if lead.account_id:
+                    try:
+                        from src.quota import check_and_increment
+                        check_and_increment("nurture_emails", lead.account_id)
+                    except Exception as _qe:
+                        logger.warning("Quota increment failed for nurture_emails account=%s: %s", lead.account_id, _qe)
             else:
                 failed_count += 1
 
@@ -230,6 +245,15 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
 
     for lead in eligible_leads:
         try:
+            # Feature gate per account
+            if lead.account_id:
+                try:
+                    from src.features import feature_enabled
+                    if not feature_enabled("nurture", lead.account_id):
+                        continue
+                except Exception:
+                    pass  # Don't block send on gate failure
+
             days_in_stage = (datetime.now(timezone.utc) - lead.stage_entered_at).days
 
             if days_in_stage < 3:
@@ -281,6 +305,12 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
                     "Sent Consideration nurture Day %d variant=%s (%s) to %s",
                     day_number, variant, vert, lead.email,
                 )
+                if lead.account_id:
+                    try:
+                        from src.quota import check_and_increment
+                        check_and_increment("nurture_emails", lead.account_id)
+                    except Exception as _qe:
+                        logger.warning("Quota increment failed for nurture_emails account=%s: %s", lead.account_id, _qe)
             else:
                 failed_count += 1
 

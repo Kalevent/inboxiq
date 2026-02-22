@@ -1,0 +1,20 @@
+{
+  "name": "src",
+  "version": "1.0.0",
+  "description": "- Python 3.11, virtualenv, Docker running - Env: `export FLASK_APP=src.manage:app` - Local DB: Postgres 15 via compose (`docker compose -f src/docker-compose.yml up -d db`)",
+  "main": "tailwind.config.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/css/tailwind.input.css -o ./static/css/tailwind.min.css --config ./tailwind.config.js --minify",
+    "watch:css": "tailwindcss -i ./static/css/tailwind.input.css -o ./static/css/tailwind.min.css --config ./tailwind.config.js --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

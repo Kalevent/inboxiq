@@ -376,6 +376,14 @@ def process_incoming_email_task(self, payload: dict) -> dict:
 
         span.set_attribute("email.duplicate", False)
 
+        # Count one AI decision per unique email processed (after dedupe, before triage)
+        if account_id:
+            try:
+                from src.quota import check_and_increment
+                check_and_increment("ai_decisions", int(account_id))
+            except Exception as _quota_exc:
+                logging.getLogger(__name__).warning("Quota increment failed for ai_decisions account=%s: %s", account_id, _quota_exc)
+
         # Pre-filter check: skip full triage for obvious spam/marketing/auto-replies
         skip_triage, pre_filter_type, pre_filter_reason = should_skip_triage(normalized)
         span.set_attribute("email.skip_triage", skip_triage)

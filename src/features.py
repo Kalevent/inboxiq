@@ -84,6 +84,52 @@ def check_draft_reply_access(account_id: int, context: Optional[dict] = None) ->
     return False
 
 
+def feature_enabled(feature: str, account_id: int) -> bool:
+    """
+    Return True if the account's plan has the given feature enabled,
+    OR if the account is on an active trial (full access during trial).
+
+    Features: "chat", "automation", "content_gen", "lead_discovery",
+              "nurture", "distribution", "api_access"
+
+    Raises:
+        KeyError: if feature is not a recognised feature name.
+    """
+    _FEATURE_FLAG_MAP = {
+        "chat":            "chat_enabled",
+        "automation":      "automation_enabled",
+        "content_gen":     "content_gen_enabled",
+        "lead_discovery":  "lead_discovery_enabled",
+        "nurture":         "nurture_enabled",
+        "distribution":    "distribution_enabled",
+        "api_access":      "api_access_enabled",
+    }
+    flag_col = _FEATURE_FLAG_MAP.get(feature)
+    if flag_col is None:
+        raise KeyError(f"Unknown feature: {feature!r}")
+
+    from src.billing.models import Plan
+
+    profile = (
+        CustomerBillingProfile.query
+        .filter_by(account_id=account_id)
+        .first()
+    )
+
+    # Active trial → full access
+    if profile and profile.trial_status == "active":
+        return True
+
+    if not profile or not profile.plan_choice:
+        return False
+
+    plan = Plan.query.filter_by(code=profile.plan_choice).first()
+    if not plan:
+        return False
+
+    return bool(getattr(plan, flag_col, False))
+
+
 def get_draft_reply_config(account_id: int) -> dict:
     """
     Get draft reply configuration for an account.

@@ -355,6 +355,19 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
         "errors": []
     }
 
+    # Feature gate (quota incremented per lead found below, not here)
+    if account_id:
+        try:
+            from src.features import feature_enabled
+            from src.quota import FeatureDisabled
+            if not feature_enabled("lead_discovery", int(account_id)):
+                return {**results, "status": "error", "error": "Lead discovery is not available on your current plan."}
+        except FeatureDisabled as _fd:
+            return {**results, "status": "error", "error": str(_fd)}
+        except Exception as _qe:
+            import logging as _log
+            _log.getLogger(__name__).warning("Feature check failed for lead_discovery account=%s: %s", account_id, _qe)
+
     try:
         # Import lead discovery MCP tools dynamically
         from src.mcp.lead_discovery_mcp import discover_companies
@@ -418,6 +431,15 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
             db.session.add(stage_entry)
 
             results["discovered"] += 1
+
+            # Count one lead discovered against plan quota
+            if account_id:
+                try:
+                    from src.quota import check_and_increment
+                    check_and_increment("leads_discovered", int(account_id))
+                except Exception as _qe:
+                    import logging as _log
+                    _log.getLogger(__name__).warning("Quota increment failed for leads_discovered account=%s: %s", account_id, _qe)
 
             # Trigger enrichment for new lead
             try:

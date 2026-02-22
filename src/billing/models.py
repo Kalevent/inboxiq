@@ -57,12 +57,39 @@ class Plan(db.Model):
     __tablename__ = "plans"
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
-    code = db.Column(db.String(32), nullable=False, unique=True)  # pro|business
+    code = db.Column(db.String(32), nullable=False, unique=True)  # pro|business|scale
     price_cents = db.Column(db.Integer, nullable=False)
     currency = db.Column(db.String(8), nullable=False, default="GBP")
+    # Legacy field — superseded by ai_decisions_limit below; kept for backward compat
     ai_actions = db.Column(db.Integer, nullable=True)
     seats = db.Column(db.Integer, nullable=True)
     metadata_json = db.Column("metadata", db.JSON, nullable=False, default=dict)
+
+    # Feature gates (False = disabled on this plan)
+    chat_enabled             = db.Column(db.Boolean, nullable=False, default=False)
+    automation_enabled       = db.Column(db.Boolean, nullable=False, default=False)
+    content_gen_enabled      = db.Column(db.Boolean, nullable=False, default=False)
+    lead_discovery_enabled   = db.Column(db.Boolean, nullable=False, default=False)
+    nurture_enabled          = db.Column(db.Boolean, nullable=False, default=False)
+    distribution_enabled     = db.Column(db.Boolean, nullable=False, default=False)
+    api_access_enabled       = db.Column(db.Boolean, nullable=False, default=False)
+    registered_apps_limit    = db.Column(db.Integer, nullable=False, default=0)
+
+    # Monthly included quotas (None = unlimited)
+    ai_decisions_limit       = db.Column(db.Integer, nullable=True)
+    chat_limit               = db.Column(db.Integer, nullable=True)
+    automation_runs_limit    = db.Column(db.Integer, nullable=True)
+    content_posts_limit      = db.Column(db.Integer, nullable=True)
+    leads_limit              = db.Column(db.Integer, nullable=True)
+    nurture_emails_limit     = db.Column(db.Integer, nullable=True)
+
+    # Stripe metered price IDs for overage reporting (set after Stripe setup)
+    stripe_ai_overage_price_id         = db.Column(db.String(128), nullable=True)
+    stripe_chat_overage_price_id       = db.Column(db.String(128), nullable=True)
+    stripe_automation_overage_price_id = db.Column(db.String(128), nullable=True)
+    stripe_leads_overage_price_id      = db.Column(db.String(128), nullable=True)
+    stripe_nurture_overage_price_id    = db.Column(db.String(128), nullable=True)
+
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -113,6 +140,26 @@ class ChargeAttempt(db.Model):
     used_fallback = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class AccountUsageCounter(db.Model):
+    """Monthly usage counters per account. Composite PK on (account_id, billing_month).
+
+    billing_month format: "YYYY-MM" (e.g. "2026-02").
+    Counters are incremented by quota.check_and_increment(); never decremented.
+    Overage units are reported to Stripe when a counter crosses its plan limit.
+    """
+    __tablename__ = "account_usage_counters"
+
+    account_id         = db.Column(db.Integer, db.ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True)
+    billing_month      = db.Column(db.String(7), primary_key=True)
+    ai_decisions       = db.Column(db.Integer, nullable=False, default=0)
+    chat_conversations = db.Column(db.Integer, nullable=False, default=0)
+    automation_runs    = db.Column(db.Integer, nullable=False, default=0)
+    content_posts      = db.Column(db.Integer, nullable=False, default=0)
+    leads_discovered   = db.Column(db.Integer, nullable=False, default=0)
+    nurture_emails     = db.Column(db.Integer, nullable=False, default=0)
+    updated_at         = db.Column(db.DateTime(timezone=True), onupdate=func.now())
 
 
 def table_exists(model) -> bool:

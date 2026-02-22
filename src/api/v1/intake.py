@@ -315,6 +315,19 @@ def chat_submit():
     except (ValueError, TypeError):
         return jsonify({"error": "validation_error", "message": "Invalid account"}), 400
 
+    # Feature gate + usage counter
+    try:
+        from src.features import feature_enabled
+        from src.quota import check_and_increment, FeatureDisabled
+        if not feature_enabled("chat", account_id_int):
+            return jsonify({"error": "feature_disabled", "message": "Chat widget is not available on your current plan."}), 403
+        check_and_increment("chat_conversations", account_id_int)
+    except FeatureDisabled as _fd:
+        return jsonify({"error": "feature_disabled", "message": str(_fd)}), 403
+    except Exception as _qe:
+        import logging as _log
+        _log.getLogger(__name__).warning("Quota check failed for chat account=%d: %s", account_id_int, _qe)
+
     # Build subject from visitor info
     if name and email:
         subject = f"Chat from {name} ({email})"

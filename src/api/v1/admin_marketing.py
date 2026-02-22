@@ -13,6 +13,11 @@ Provides:
 - POST   /api/v1/admin/landing-pages           — create landing page
 - PATCH  /api/v1/admin/landing-pages/<id>      — update landing page
 - DELETE /api/v1/admin/landing-pages/<id>      — delete landing page
+- POST   /api/v1/enterprise/inquiry            — public enterprise inquiry form (rate-limited)
+- GET    /api/v1/admin/enterprise/inquiries    — list enterprise inquiries (admin)
+- PATCH  /api/v1/admin/enterprise/inquiries/<id> — update inquiry status / notes (admin)
+- GET    /api/v1/admin/savings-report          — monthly savings report (admin, any account)
+- GET    /api/v1/billing/savings-report        — monthly savings report (account-scoped, jwt)
 """
 from datetime import datetime, timedelta, timezone
 
@@ -20,9 +25,10 @@ from flask import jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
+from src.billing.models import AccountUsageCounter
 from src.extensions import db
 from src.funnel_stages import CONVERSION_STAGES
-from src.models import InAppMessage, InAppMessageDismissal, LandingPage, Lead, LeadAttribution, NurtureEmailSend, Referral, User
+from src.models import Account, EnterpriseInquiry, InAppMessage, InAppMessageDismissal, LandingPage, Lead, LeadAttribution, NurtureEmailSend, Referral, User
 from src.sanitize import sanitize_html
 import logging
 
@@ -655,3 +661,314 @@ def delete_landing_page(page_id: str):
     db.session.delete(page)
     db.session.commit()
     return jsonify({"status": "deleted"}), 200
+
+
+# ── Enterprise inquiry endpoints ──────────────────────────────────────────────
+
+def _inquiry_to_dict(inq: EnterpriseInquiry) -> dict:
+    return {
+        "id": inq.id,
+        "name": inq.name,
+        "email": inq.email,
+        "company": inq.company,
+        "phone": inq.phone,
+        "employee_count": inq.employee_count,
+        "message": inq.message,
+        "account_id": inq.account_id,
+        "status": inq.status,
+        "admin_notes": inq.admin_notes,
+        "created_at": inq.created_at.isoformat() if inq.created_at else None,
+        "updated_at": inq.updated_at.isoformat() if inq.updated_at else None,
+    }
+
+
+@v1.route("/enterprise/inquiry", methods=["POST"])
+def submit_enterprise_inquiry():
+    """
+    Public endpoint — submit an Enterprise plan inquiry.
+
+    Rate-limited to 5/hour per IP by Flask-Limiter (if configured in the app).
+    No JWT required: prospective customers and existing users can both submit.
+
+    Body (JSON):
+        name        str  required
+        email       str  required
+        company     str  optional
+        phone       str  optional
+        employee_count  int  optional
+        message     str  optional
+        account_id  int  optional  — passed by frontend if user is logged in
+    """
+    body = request.get_json(silent=True) or {}
+
+    name = (body.get("name") or "").strip()
+    email = (body.get("email") or "").strip().lower()
+    if not name or not email or "@" not in email:
+        return jsonify({"error": "name and a valid email are required"}), 400
+
+    company = (body.get("company") or "").strip() or None
+    phone = (body.get("phone") or "").strip() or None
+    employee_count = body.get("employee_count")
+    if employee_count is not None:
+        try:
+            employee_count = int(employee_count)
+        except (ValueError, TypeError):
+            employee_count = None
+    message = (body.get("message") or "").strip() or None
+    account_id = body.get("account_id")
+    if account_id is not None:
+        try:
+            account_id = int(account_id)
+        except (ValueError, TypeError):
+            account_id = None
+
+    inq = EnterpriseInquiry(
+        name=name,
+        email=email,
+        company=company,
+        phone=phone,
+        employee_count=employee_count,
+        message=message,
+        account_id=account_id,
+        status="new",
+    )
+    db.session.add(inq)
+    db.session.commit()
+
+    # Notify admins
+    try:
+        from src.billing.emailing import _send_email
+        admin_emails_raw = current_app.config.get("ADMIN_EMAILS", "")
+        admin_list = [e.strip() for e in admin_emails_raw.split(",") if e.strip()]
+        subject = f"[Enterprise Inquiry] {name} — {company or email}"
+        text_body = (
+            f"New Enterprise plan inquiry received.\n\n"
+            f"Name:           {name}\n"
+            f"Email:          {email}\n"
+            f"Company:        {company or '—'}\n"
+            f"Phone:          {phone or '—'}\n"
+            f"Employees:      {employee_count or '—'}\n"
+            f"Account ID:     {account_id or '—'}\n\n"
+            f"Message:\n{message or '(none)'}\n\n"
+            f"Inquiry ID: {inq.id}\n"
+            f"Review at: https://kalevent.com/admin"
+        )
+        html_body = (
+            f"<h2>New Enterprise Plan Inquiry</h2>"
+            f"<table style='border-collapse:collapse'>"
+            f"<tr><td><strong>Name</strong></td><td>{name}</td></tr>"
+            f"<tr><td><strong>Email</strong></td><td>{email}</td></tr>"
+            f"<tr><td><strong>Company</strong></td><td>{company or '—'}</td></tr>"
+            f"<tr><td><strong>Phone</strong></td><td>{phone or '—'}</td></tr>"
+            f"<tr><td><strong>Employees</strong></td><td>{employee_count or '—'}</td></tr>"
+            f"<tr><td><strong>Account ID</strong></td><td>{account_id or '—'}</td></tr>"
+            f"</table>"
+            f"<p><strong>Message:</strong><br/>{message or '(none)'}</p>"
+            f"<p>Inquiry ID: <code>{inq.id}</code></p>"
+        )
+        for admin_email in admin_list:
+            _send_email(admin_email, subject, text_body, html_body)
+    except Exception as exc:
+        logger.warning("Enterprise inquiry admin notification failed: %s", exc)
+
+    return jsonify({"status": "received", "inquiry_id": inq.id}), 201
+
+
+@v1.route("/admin/enterprise/inquiries", methods=["GET"])
+@jwt_required()
+def list_enterprise_inquiries():
+    """List all enterprise inquiries, newest first. Admin only."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    try:
+        status_filter = request.args.get("status")
+        q = db.session.query(EnterpriseInquiry).order_by(EnterpriseInquiry.created_at.desc())
+        if status_filter:
+            q = q.filter(EnterpriseInquiry.status == status_filter)
+        inquiries = q.limit(200).all()
+        return jsonify({"inquiries": [_inquiry_to_dict(i) for i in inquiries]}), 200
+    except Exception as exc:
+        logger.error("list_enterprise_inquiries failed: %s", exc)
+        return jsonify({"error": "database error", "detail": str(exc)}), 503
+
+
+@v1.route("/admin/enterprise/inquiries/<inquiry_id>", methods=["PATCH"])
+@jwt_required()
+def update_enterprise_inquiry(inquiry_id: str):
+    """
+    Update status and/or admin_notes on an inquiry. Admin only.
+
+    Body: { status: "new|contacted|closed", admin_notes: "..." }
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    inq = db.session.get(EnterpriseInquiry, inquiry_id)
+    if not inq:
+        return jsonify({"error": "not found"}), 404
+
+    body = request.get_json(silent=True) or {}
+    if "status" in body and body["status"] in ("new", "contacted", "closed"):
+        inq.status = body["status"]
+    if "admin_notes" in body:
+        inq.admin_notes = (body["admin_notes"] or "").strip() or None
+
+    db.session.commit()
+    return jsonify(_inquiry_to_dict(inq)), 200
+
+
+# ── Savings / ROI report ──────────────────────────────────────────────────────
+
+# Default assumptions for ROI calculation.
+# Each AI decision (email triage + draft) saves ~3 minutes of manual work.
+# Adjust via query params if needed.
+_DEFAULT_MINS_PER_DECISION = 3
+_DEFAULT_HOURLY_RATE_GBP = 30
+
+
+def _build_savings_report(account_id: int, months: int, mins_per_decision: int, hourly_rate: float) -> dict:
+    """
+    Build savings report for a given account over the last N billing months.
+
+    Returns a dict with per-month breakdown and totals.
+    """
+    # Determine the last `months` billing_month strings ("YYYY-MM")
+    now = datetime.now(timezone.utc)
+    billing_months = []
+    for i in range(months - 1, -1, -1):
+        # Go back i months from current month
+        year = now.year
+        month = now.month - i
+        while month <= 0:
+            month += 12
+            year -= 1
+        billing_months.append(f"{year:04d}-{month:02d}")
+
+    # Query usage counters for those months
+    rows = (
+        db.session.query(AccountUsageCounter)
+        .filter(
+            AccountUsageCounter.account_id == account_id,
+            AccountUsageCounter.billing_month.in_(billing_months),
+        )
+        .all()
+    )
+    row_by_month = {r.billing_month: r for r in rows}
+
+    monthly_breakdown = []
+    total_ai_decisions = 0
+    total_automation_runs = 0
+    total_nurture_emails = 0
+
+    for bm in billing_months:
+        row = row_by_month.get(bm)
+        ai = row.ai_decisions if row else 0
+        auto = row.automation_runs if row else 0
+        nurture = row.nurture_emails if row else 0
+        # Savings: AI decisions + automation runs each save ~mins_per_decision minutes
+        units_saved = ai + auto
+        hours_saved = round(units_saved * mins_per_decision / 60, 2)
+        cost_saved = round(hours_saved * hourly_rate, 2)
+        monthly_breakdown.append({
+            "month": bm,
+            "ai_decisions": ai,
+            "automation_runs": auto,
+            "nurture_emails": nurture,
+            "hours_saved": hours_saved,
+            "cost_saved_gbp": cost_saved,
+        })
+        total_ai_decisions += ai
+        total_automation_runs += auto
+        total_nurture_emails += nurture
+
+    total_units = total_ai_decisions + total_automation_runs
+    total_hours = round(total_units * mins_per_decision / 60, 2)
+    total_cost = round(total_hours * hourly_rate, 2)
+    # Enterprise value-based price estimate: 12% of annual savings
+    annual_cost_est = round(total_cost / max(months, 1) * 12, 2)
+    enterprise_price_est = round(annual_cost_est * 0.12 / 12, 2)  # monthly
+
+    return {
+        "account_id": account_id,
+        "months": months,
+        "assumptions": {
+            "mins_per_decision": mins_per_decision,
+            "hourly_rate_gbp": hourly_rate,
+        },
+        "monthly_breakdown": monthly_breakdown,
+        "totals": {
+            "ai_decisions": total_ai_decisions,
+            "automation_runs": total_automation_runs,
+            "nurture_emails": total_nurture_emails,
+            "hours_saved": total_hours,
+            "cost_saved_gbp": total_cost,
+        },
+        "roi_summary": {
+            "avg_monthly_saving_gbp": round(total_cost / max(months, 1), 2),
+            "projected_annual_saving_gbp": annual_cost_est,
+            "enterprise_price_estimate_monthly_gbp": enterprise_price_est,
+        },
+    }
+
+
+@v1.route("/admin/savings-report", methods=["GET"])
+@jwt_required()
+def admin_savings_report():
+    """
+    Admin: view savings report for any account.
+
+    Query params:
+        account_id  int  required
+        months      int  1-24, default 3
+        mins_per_decision  int  default 3
+        hourly_rate float  default 30
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    try:
+        account_id = int(request.args["account_id"])
+    except (KeyError, ValueError, TypeError):
+        return jsonify({"error": "account_id is required"}), 400
+
+    account = db.session.get(Account, account_id)
+    if not account:
+        return jsonify({"error": "account not found"}), 404
+
+    months = min(int(request.args.get("months", 3)), 24)
+    mins_per_decision = int(request.args.get("mins_per_decision", _DEFAULT_MINS_PER_DECISION))
+    hourly_rate = float(request.args.get("hourly_rate", _DEFAULT_HOURLY_RATE_GBP))
+
+    report = _build_savings_report(account_id, months, mins_per_decision, hourly_rate)
+    report["account_name"] = account.name
+    return jsonify(report), 200
+
+
+@v1.route("/billing/savings-report", methods=["GET"])
+@jwt_required()
+def my_savings_report():
+    """
+    Account-scoped savings report for the logged-in user's account.
+
+    Query params:
+        months      int  1-24, default 3
+        mins_per_decision  int  default 3
+        hourly_rate float  default 30
+    """
+    user_id = get_jwt_identity()
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "unauthorized"}), 401
+
+    account = db.session.get(Account, user.account_id)
+    if not account:
+        return jsonify({"error": "account not found"}), 404
+
+    months = min(int(request.args.get("months", 3)), 24)
+    mins_per_decision = int(request.args.get("mins_per_decision", _DEFAULT_MINS_PER_DECISION))
+    hourly_rate = float(request.args.get("hourly_rate", _DEFAULT_HOURLY_RATE_GBP))
+
+    report = _build_savings_report(user.account_id, months, mins_per_decision, hourly_rate)
+    report["account_name"] = account.name
+    return jsonify(report), 200
