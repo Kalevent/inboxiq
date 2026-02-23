@@ -159,6 +159,7 @@ class AccountUsageCounter(db.Model):
     content_posts      = db.Column(db.Integer, nullable=False, default=0)
     leads_discovered   = db.Column(db.Integer, nullable=False, default=0)
     nurture_emails     = db.Column(db.Integer, nullable=False, default=0)
+    incoming_signals   = db.Column(db.Integer, nullable=False, default=0)
     updated_at         = db.Column(db.DateTime(timezone=True), onupdate=func.now())
 
 

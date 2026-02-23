@@ -267,3 +267,121 @@
     ctaForm.addEventListener('submit', handleCtaSubmit);
   }
 })();
+
+// ── Enterprise Inquiry Modal ───────────────────────────────────────────────
+// Wrapped in DOMContentLoaded: modal HTML sits after this script tag in index.html.
+document.addEventListener('DOMContentLoaded', function () {
+  var modal     = document.getElementById('enterpriseModal');
+  var form      = document.getElementById('eiInquiryForm');
+  var statusEl  = document.getElementById('eiFormStatus');
+  var submitBtn = document.getElementById('eiSubmitBtn');
+
+  function openEnterpriseModal() {
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    var first = document.getElementById('eiName');
+    if (first) setTimeout(function () { first.focus(); }, 50);
+  }
+
+  function closeEnterpriseModal() {
+    if (!modal) return;
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  window.openEnterpriseModal  = openEnterpriseModal;
+  window.closeEnterpriseModal = closeEnterpriseModal;
+
+  // Backdrop click
+  var backdrop = document.getElementById('eiModalBackdrop');
+  if (backdrop) backdrop.addEventListener('click', closeEnterpriseModal);
+
+  // Close button
+  var closeBtn = document.getElementById('eiModalClose');
+  if (closeBtn) closeBtn.addEventListener('click', closeEnterpriseModal);
+
+  // Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal && modal.style.display !== 'none') closeEnterpriseModal();
+  });
+
+  // Wire "Talk to sales" anchor on pricing card
+  document.querySelectorAll('a[href="#cta"]').forEach(function (el) {
+    if (el.textContent.trim() === 'Talk to sales') {
+      el.addEventListener('click', function (e) { e.preventDefault(); openEnterpriseModal(); });
+    }
+  });
+
+  // Wire "Contact us for Enterprise pricing." span below pricing cards
+  var enterpriseSpan = document.querySelector('span.text-indigo-300.underline');
+  if (enterpriseSpan) {
+    enterpriseSpan.style.cursor = 'pointer';
+    enterpriseSpan.addEventListener('click', openEnterpriseModal);
+  }
+
+  function setStatus(type, msg) {
+    if (!statusEl) return;
+    statusEl.textContent = msg; // textContent — never innerHTML — prevents XSS
+    if (!msg) { statusEl.style.display = 'none'; return; }
+    statusEl.className = 'rounded-lg px-3 py-2 text-xs border ' + (
+      type === 'success'
+        ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+        : 'bg-red-950 text-red-300 border-red-800'
+    );
+    statusEl.style.display = 'block';
+  }
+
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      handleSubmit();
+    });
+  }
+
+  async function handleSubmit() {
+    var name      = (document.getElementById('eiName').value || '').trim();
+    var email     = (document.getElementById('eiEmailInput').value || '').trim();
+    var company   = (document.getElementById('eiCompany').value || '').trim();
+    var phone     = (document.getElementById('eiPhone').value || '').trim();
+    var employees = parseInt(document.getElementById('eiEmployees').value, 10) || null;
+    var message   = (document.getElementById('eiMessage').value || '').trim();
+
+    if (!name || !email || !email.includes('@')) {
+      setStatus('error', 'Please enter your full name and a valid work email.');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+    setStatus('', '');
+
+    try {
+      var r = await fetch('/api/v1/enterprise/inquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:           name,
+          email:          email,
+          company:        company  || null,
+          phone:          phone    || null,
+          employee_count: employees,
+          message:        message  || null,
+        }),
+      });
+      var data = await r.json();
+      if (r.ok) {
+        form.reset();
+        submitBtn.style.display = 'none';
+        setStatus('success', 'Thank you — our team will be in touch within one business day.');
+      } else {
+        setStatus('error', data.error || 'Something went wrong. Please try again.');
+      }
+    } catch (_err) {
+      setStatus('error', 'Unable to send. Please check your connection and try again.');
+    } finally {
+      submitBtn.disabled = false;
+      if (submitBtn.style.display !== 'none') submitBtn.textContent = 'Send inquiry →';
+    }
+  }
+});

@@ -701,20 +701,20 @@ def submit_enterprise_inquiry():
     """
     body = request.get_json(silent=True) or {}
 
-    name = (body.get("name") or "").strip()
+    name = sanitize_html((body.get("name") or "").strip())
     email = (body.get("email") or "").strip().lower()
     if not name or not email or "@" not in email:
         return jsonify({"error": "name and a valid email are required"}), 400
 
-    company = (body.get("company") or "").strip() or None
-    phone = (body.get("phone") or "").strip() or None
+    company = sanitize_html((body.get("company") or "").strip()) or None
+    phone = sanitize_html((body.get("phone") or "").strip()) or None
     employee_count = body.get("employee_count")
     if employee_count is not None:
         try:
             employee_count = int(employee_count)
         except (ValueError, TypeError):
             employee_count = None
-    message = (body.get("message") or "").strip() or None
+    message = sanitize_html((body.get("message") or "").strip()) or None
     account_id = body.get("account_id")
     if account_id is not None:
         try:
@@ -827,7 +827,7 @@ _DEFAULT_MINS_PER_DECISION = 3
 _DEFAULT_HOURLY_RATE_GBP = 30
 
 
-def _build_savings_report(account_id: int, months: int, mins_per_decision: int, hourly_rate: float) -> dict:
+def _build_savings_report(account_id: int, months: int, mins_per_decision: int, hourly_rate: float, override_signals_per_month: int = 0) -> dict:
     """
     Build savings report for a given account over the last N billing months.
 
@@ -860,18 +860,22 @@ def _build_savings_report(account_id: int, months: int, mins_per_decision: int, 
     total_ai_decisions = 0
     total_automation_runs = 0
     total_nurture_emails = 0
+    total_incoming_signals = 0
 
     for bm in billing_months:
         row = row_by_month.get(bm)
         ai = row.ai_decisions if row else 0
         auto = row.automation_runs if row else 0
         nurture = row.nurture_emails if row else 0
+        # Use override_signals_per_month for prospects with no tracked data yet
+        signals = (row.incoming_signals if row else 0) or override_signals_per_month
         # Savings: AI decisions + automation runs each save ~mins_per_decision minutes
         units_saved = ai + auto
         hours_saved = round(units_saved * mins_per_decision / 60, 2)
         cost_saved = round(hours_saved * hourly_rate, 2)
         monthly_breakdown.append({
             "month": bm,
+            "incoming_signals": signals,
             "ai_decisions": ai,
             "automation_runs": auto,
             "nurture_emails": nurture,
@@ -881,7 +885,9 @@ def _build_savings_report(account_id: int, months: int, mins_per_decision: int, 
         total_ai_decisions += ai
         total_automation_runs += auto
         total_nurture_emails += nurture
+        total_incoming_signals += signals
 
+    avg_signals = round(total_incoming_signals / max(months, 1))
     total_units = total_ai_decisions + total_automation_runs
     total_hours = round(total_units * mins_per_decision / 60, 2)
     total_cost = round(total_hours * hourly_rate, 2)
@@ -895,9 +901,12 @@ def _build_savings_report(account_id: int, months: int, mins_per_decision: int, 
         "assumptions": {
             "mins_per_decision": mins_per_decision,
             "hourly_rate_gbp": hourly_rate,
+            "override_signals_per_month": override_signals_per_month,
         },
         "monthly_breakdown": monthly_breakdown,
         "totals": {
+            "incoming_signals": total_incoming_signals,
+            "avg_monthly_signals": avg_signals,
             "ai_decisions": total_ai_decisions,
             "automation_runs": total_automation_runs,
             "nurture_emails": total_nurture_emails,
@@ -939,8 +948,9 @@ def admin_savings_report():
     months = min(int(request.args.get("months", 3)), 24)
     mins_per_decision = int(request.args.get("mins_per_decision", _DEFAULT_MINS_PER_DECISION))
     hourly_rate = float(request.args.get("hourly_rate", _DEFAULT_HOURLY_RATE_GBP))
+    override_signals = int(request.args.get("override_signals", 0))
 
-    report = _build_savings_report(account_id, months, mins_per_decision, hourly_rate)
+    report = _build_savings_report(account_id, months, mins_per_decision, hourly_rate, override_signals)
     report["account_name"] = account.name
     return jsonify(report), 200
 

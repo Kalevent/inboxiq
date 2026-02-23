@@ -148,6 +148,28 @@ def _report_stripe_overage(plan: Plan, account_id: int, meter: str, units: int) 
         logger.warning("Stripe overage report failed account=%d meter=%s units=%d: %s", account_id, meter, units, exc)
 
 
+def increment_signals(account_id: int, quantity: int = 1) -> None:
+    """
+    Increment incoming_signals counter for observability and ROI reporting.
+    No quota enforcement, no Stripe reporting — pure volume tracking.
+    Best-effort: errors are swallowed so intake is never blocked.
+    """
+    billing_month = _current_billing_month()
+    try:
+        db.session.execute(
+            text("""
+                INSERT INTO account_usage_counters (account_id, billing_month, incoming_signals)
+                VALUES (:account_id, :billing_month, :qty)
+                ON CONFLICT (account_id, billing_month)
+                DO UPDATE SET incoming_signals = account_usage_counters.incoming_signals + :qty
+            """),
+            {"account_id": account_id, "billing_month": billing_month, "qty": quantity},
+        )
+        db.session.commit()
+    except Exception as exc:
+        logger.warning("increment_signals failed account=%d: %s", account_id, exc)
+
+
 def check_and_increment(meter: str, account_id: int, quantity: int = 1) -> None:
     """
     Enforce quota for the given meter on an account.

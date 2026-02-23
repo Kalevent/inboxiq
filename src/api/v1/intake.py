@@ -104,6 +104,14 @@ def intake():
         current_app.logger.exception("failed to enqueue intake payload", exc_info=exc)
         return jsonify({"error": "enqueue_failed", "message": str(exc)}), 502
 
+    # Track raw incoming signal volume for ROI reporting (best-effort)
+    if account_id:
+        try:
+            from src.quota import increment_signals
+            increment_signals(int(account_id))
+        except Exception:
+            pass
+
     return jsonify({"success": True, "status": "queued", "task_id": task.id}), 202
 
 
@@ -318,10 +326,11 @@ def chat_submit():
     # Feature gate + usage counter
     try:
         from src.features import feature_enabled
-        from src.quota import check_and_increment, FeatureDisabled
+        from src.quota import check_and_increment, increment_signals, FeatureDisabled
         if not feature_enabled("chat", account_id_int):
             return jsonify({"error": "feature_disabled", "message": "Chat widget is not available on your current plan."}), 403
         check_and_increment("chat_conversations", account_id_int)
+        increment_signals(account_id_int)
     except FeatureDisabled as _fd:
         return jsonify({"error": "feature_disabled", "message": str(_fd)}), 403
     except Exception as _qe:

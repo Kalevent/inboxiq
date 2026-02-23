@@ -379,8 +379,9 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         # Count one AI decision per unique email processed (after dedupe, before triage)
         if account_id:
             try:
-                from src.quota import check_and_increment
+                from src.quota import check_and_increment, increment_signals
                 check_and_increment("ai_decisions", int(account_id))
+                increment_signals(int(account_id))
             except Exception as _quota_exc:
                 logging.getLogger(__name__).warning("Quota increment failed for ai_decisions account=%s: %s", account_id, _quota_exc)
 
