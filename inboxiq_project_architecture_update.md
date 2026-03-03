@@ -185,20 +185,39 @@ src/models/
 ## Phase D — Naming and structural fixes
 
 **Risk:** Low (renames only). One at a time.
-**Status:** Not started
+**Status:** ✅ Done
 
-### File naming collisions to resolve
+### Naming collisions — resolved
 
-| Problem | Fix |
+| Problem | Outcome |
 | --- | --- |
-| `src/admin/admin_marketing.py` vs `src/api/v1/admin_marketing.py` | Rename `src/admin/admin_marketing.py` → `src/admin/marketing_routes.py` |
-| `email_utils.py` (transactional) vs `email_outreach.py` (campaign) | After Phase B move, rename clearly |
-| `src/admin/admin.py` and `src/admin/routes.py` | Consolidate or clarify split |
+| `src/admin/admin_marketing.py` vs `src/api/v1/admin_marketing.py` | `src/admin/` only ever had `routes.py` — no real collision existed |
+| `email_utils.py` vs `email_outreach.py` | Resolved in Phase B: `notifications/emails.py` and `outreach/email.py` |
+| `src/admin/admin.py` and `src/admin/routes.py` | `admin.py` never existed in `src/admin/` — no real collision |
 
-### Template audit
+### `_require_admin()` duplication — resolved
 
-`src/templates/admin.html` is known to be very large — split into partials per section
-(Marketing, Billing, Users, Content) using Jinja2 `{% include %}`.
+Was defined identically in 8 files. Now defined once in `src/api/v1/admin.py`
+and imported in `admin_marketing.py`, `admin_content.py`, `admin_funnel.py`,
+`admin_insights.py`, `admin_trial.py`, `outreach.py`.
+`src/admin/routes.py` keeps its own placeholder stub (different blueprint, returns True).
+
+### Template split — resolved
+
+`src/templates/admin.html`: 2,489 lines → 1,475 lines
+9 section partials extracted to `src/templates/admin/`:
+
+| Partial | Lines | Content |
+| --- | --- | --- |
+| `section_overview.html` | 57 | Dashboard overview + testimonial invite |
+| `section_funnel.html` | 140 | Funnel v2 metrics + lead discovery |
+| `section_content.html` | 77 | Content & publishing |
+| `section_trial.html` | 102 | Trial onboarding stats |
+| `section_saas.html` | 132 | SaaS metrics + revenue |
+| `section_marketing.html` | 399 | A/B tests, nurture, attribution, landing pages |
+| `section_ai.html` | 63 | AI & DSPy training |
+| `section_developer.html` | 34 | Developer section |
+| `section_system.html` | 19 | System section |
 
 ---
 

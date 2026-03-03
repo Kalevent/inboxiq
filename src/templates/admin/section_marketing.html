@@ -1,0 +1,399 @@
+        <section id="section-marketing" class="admin-section">
+          <div class="content-container space-y-6">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">Marketing</h1>
+              <p class="text-sm text-slate-300 mt-1">Nurture campaign performance and A/B test results (last 30 days).</p>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="grid md:grid-cols-4 gap-4">
+              <div class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-indigo-300 mb-1">Total Sends</div>
+                <p id="nurtureTotalSends" class="text-3xl font-semibold text-slate-50 mb-1">--</p>
+                <div class="text-xs text-slate-400">All nurture emails</div>
+              </div>
+              <div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-emerald-300 mb-1">Overall Open Rate</div>
+                <p id="nurtureOpenRate" class="text-3xl font-semibold text-slate-50 mb-1">--%</p>
+                <div class="text-xs text-slate-400"><span id="nurtureTotalOpens">--</span> opens</div>
+              </div>
+              <div class="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-blue-300 mb-1">Variant A Open Rate</div>
+                <p id="nurtureVariantARate" class="text-3xl font-semibold text-slate-50 mb-1">--%</p>
+                <div class="text-xs text-slate-400">Pain-point focus</div>
+              </div>
+              <div class="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-amber-300 mb-1">Variant B Open Rate</div>
+                <p id="nurtureVariantBRate" class="text-3xl font-semibold text-slate-50 mb-1">--%</p>
+                <div class="text-xs text-slate-400">ROI / case-study focus</div>
+              </div>
+            </div>
+
+            <!-- A/B Test Results Table -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">A/B Test Results by Step</h2>
+                  <p class="text-xs text-slate-400 mt-0.5">Requires ≥ 50 sends per variant to call a winner (p &lt; 0.05).</p>
+                </div>
+                <button id="refreshAbBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">
+                  ↻ Refresh
+                </button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="border-b border-slate-800">
+                    <tr>
+                      <th class="text-left p-2 text-slate-400 font-medium">Step</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">A Sends</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">A Open%</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">B Sends</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">B Open%</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">Lift</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">p-value</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Winner</th>
+                    </tr>
+                  </thead>
+                  <tbody id="abTestTable" class="divide-y divide-slate-800">
+                    <tr>
+                      <td colspan="8" class="text-center py-8 text-slate-400">Loading A/B results...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Sends by Vertical -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <h2 class="text-lg font-semibold text-slate-100 mb-4">Sends by Vertical</h2>
+              <div id="nurtureVerticals" class="grid md:grid-cols-4 gap-3">
+                <div class="text-center text-slate-400 text-sm">Loading...</div>
+              </div>
+            </div>
+
+            <!-- Referral Stats -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <h2 class="text-lg font-semibold text-slate-100 mb-4">Referral Programme</h2>
+              <div id="referralStats" class="grid md:grid-cols-3 gap-4 mb-4">
+                <div class="text-center text-slate-400 text-sm">Loading...</div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="border-b border-slate-800">
+                    <tr>
+                      <th class="text-left p-2 text-slate-400 font-medium">Referrer</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Code</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Referred</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Status</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody id="referralTable" class="divide-y divide-slate-800">
+                    <tr><td colspan="5" class="text-center py-6 text-slate-400">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Attribution Report -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Paid Ad Attribution</h2>
+                  <p class="text-xs text-slate-400 mt-0.5">UTM-based source & campaign breakdown (last 30 days).</p>
+                </div>
+                <button id="refreshAttributionBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">↻ Refresh</button>
+              </div>
+              <div id="channelMix" class="grid md:grid-cols-4 gap-3 mb-6">
+                <div class="text-center text-slate-400 text-sm">Loading...</div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="border-b border-slate-800">
+                    <tr>
+                      <th class="text-left p-2 text-slate-400 font-medium">Source</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">Leads</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">Conversions</th>
+                      <th class="text-right p-2 text-slate-400 font-medium">Conv. Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody id="attributionTable" class="divide-y divide-slate-800">
+                    <tr><td colspan="4" class="text-center py-6 text-slate-400">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Broadcast Messages -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-100">Broadcast Messages</h2>
+                <button onclick="document.getElementById('newMessageForm').classList.toggle('hidden')"
+                        class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">+ New Message</button>
+              </div>
+              <div id="newMessageForm" class="hidden mb-6 rounded-xl border border-slate-700 bg-slate-950/40 p-4 space-y-3">
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Title *</label>
+                    <input id="msgTitle" type="text" maxlength="200" placeholder="e.g. New feature: Smart Replies"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="text-xs text-slate-400">Type</label>
+                      <select id="msgType" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                        <option value="info">Info</option>
+                        <option value="success">Success</option>
+                        <option value="warning">Warning</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="text-xs text-slate-400">Target</label>
+                      <select id="msgTarget" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                        <option value="all">All users</option>
+                        <option value="trial">Trial only</option>
+                        <option value="paid">Paid only</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400">Body *</label>
+                  <textarea id="msgBody" rows="2" placeholder="Message body..."
+                            class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"></textarea>
+                </div>
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">CTA Label (optional)</label>
+                    <input id="msgCtaText" type="text" maxlength="100" placeholder="e.g. Learn more"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">CTA URL (optional)</label>
+                    <input id="msgCtaUrl" type="text" maxlength="500" placeholder="https://..."
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Publish at (blank = draft)</label>
+                    <input id="msgPublishedAt" type="datetime-local"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Expires at (optional)</label>
+                    <input id="msgExpiresAt" type="datetime-local"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="createBroadcast()" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">Save</button>
+                  <button onclick="document.getElementById('newMessageForm').classList.add('hidden')" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:text-slate-100">Cancel</button>
+                </div>
+                <div id="msgCreateStatus" class="hidden text-xs mt-1"></div>
+              </div>
+              <div id="broadcastList" class="space-y-2">
+                <div class="text-slate-400 text-sm">Loading...</div>
+              </div>
+            </div>
+
+            <!-- Landing Pages -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Landing Pages</h2>
+                  <p class="text-xs text-slate-400 mt-1">Campaign pages at <code class="text-indigo-300">/lp/&lt;slug&gt;</code> — each captures leads with UTM attribution.</p>
+                </div>
+                <button onclick="document.getElementById('newLpForm').classList.toggle('hidden')"
+                        class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">+ New Page</button>
+              </div>
+
+              <!-- Create form -->
+              <div id="newLpForm" class="hidden mb-6 rounded-xl border border-slate-700 bg-slate-950/40 p-4 space-y-3">
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Account ID *</label>
+                    <input id="lpAccountId" type="number" placeholder="1"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Internal title *</label>
+                    <input id="lpTitle" type="text" maxlength="200" placeholder="e.g. Google Spring Campaign"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Slug * (URL: /lp/&lt;slug&gt;)</label>
+                    <input id="lpSlug" type="text" maxlength="200" placeholder="spring-launch-2026"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">CTA text</label>
+                    <input id="lpCtaText" type="text" maxlength="100" placeholder="Get Started"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400">Headline *</label>
+                  <input id="lpHeadline" type="text" maxlength="300" placeholder="Automate your inbox in minutes"
+                         class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400">Subheadline</label>
+                  <input id="lpSubheadline" type="text" maxlength="500" placeholder="Short supporting line"
+                         class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                </div>
+                <div class="grid md:grid-cols-3 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">CTA color</label>
+                    <select id="lpCtaColor" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                      <option value="indigo">Indigo</option>
+                      <option value="emerald">Emerald</option>
+                      <option value="amber">Amber</option>
+                      <option value="rose">Rose</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">UTM Source (annotation)</label>
+                    <input id="lpUtmSource" type="text" maxlength="200" placeholder="google"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">UTM Campaign (annotation)</label>
+                    <input id="lpUtmCampaign" type="text" maxlength="200" placeholder="spring-2026"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div id="lpCreateStatus" class="hidden text-xs mt-1"></div>
+                <div class="flex gap-3 pt-1">
+                  <button onclick="createLandingPage()" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">Create (Draft)</button>
+                  <button onclick="createLandingPage('published')" class="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-sm font-semibold text-white">Create &amp; Publish</button>
+                  <button onclick="document.getElementById('newLpForm').classList.add('hidden')" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:text-slate-100">Cancel</button>
+                </div>
+              </div>
+
+              <!-- Pages list -->
+              <div id="lpList" class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-800">
+                      <th class="py-2 pr-3">Slug / URL</th>
+                      <th class="py-2 pr-3">Headline</th>
+                      <th class="py-2 pr-3">Status</th>
+                      <th class="py-2 pr-3 text-right">Views</th>
+                      <th class="py-2 pr-3 text-right">Leads</th>
+                      <th class="py-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lpTableBody">
+                    <tr><td colspan="6" class="text-center py-6 text-slate-400">Loading...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Enterprise Inquiries -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Enterprise Inquiries</h2>
+                  <p class="text-xs text-slate-400 mt-1">Organisations interested in value-based Enterprise pricing. Each inquiry triggers an admin email notification.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <select id="eiStatusFilter" onchange="loadEnterpriseInquiries()"
+                          class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100">
+                    <option value="">All</option>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                  <button onclick="loadEnterpriseInquiries()"
+                          class="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:text-slate-100">↻ Refresh</button>
+                </div>
+              </div>
+
+              <!-- Savings calculator -->
+              <div class="mb-5 rounded-xl border border-slate-700 bg-slate-950/40 p-4">
+                <p class="text-xs text-slate-400 mb-3">ROI / Savings calculator — enter an account ID to generate a personalised savings report. For new prospects without an account, enter estimated signals/month to project savings.</p>
+                <div class="flex flex-wrap items-end gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Account ID</label>
+                    <input id="eiSavingsAccountId" type="number" placeholder="e.g. 20"
+                           class="mt-1 w-32 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Months</label>
+                    <input id="eiSavingsMonths" type="number" value="3" min="1" max="24"
+                           class="mt-1 w-20 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Mins / decision</label>
+                    <input id="eiSavingsMins" type="number" value="3" min="1"
+                           class="mt-1 w-24 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Hourly rate (£)</label>
+                    <input id="eiSavingsRate" type="number" value="30" min="1"
+                           class="mt-1 w-24 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Signals/mo <span class="text-slate-500">(prospect override)</span></label>
+                    <input id="eiSavingsSignals" type="number" value="0" min="0" placeholder="0 = use actual"
+                           class="mt-1 w-32 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <button onclick="loadSavingsReport()"
+                          class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">Calculate</button>
+                </div>
+                <div id="eiSavingsResult" class="hidden mt-4"></div>
+              </div>
+
+              <!-- Inquiries table -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-800">
+                      <th class="py-2 pr-3">Name / Company</th>
+                      <th class="py-2 pr-3">Email</th>
+                      <th class="py-2 pr-3 text-right">Employees</th>
+                      <th class="py-2 pr-3">Status</th>
+                      <th class="py-2 pr-3">Received</th>
+                      <th class="py-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="eiTableBody">
+                    <tr><td colspan="6" class="text-center py-6 text-slate-400">Loading…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Notes modal -->
+              <div id="eiNotesModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                <div class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-md space-y-4 shadow-2xl">
+                  <h3 class="text-base font-semibold text-slate-100">Update Inquiry</h3>
+                  <input type="hidden" id="eiModalId" />
+                  <div>
+                    <label class="text-xs text-slate-400">Status</label>
+                    <select id="eiModalStatus" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                      <option value="new">New</option>
+                      <option value="contacted">Contacted</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Admin notes</label>
+                    <textarea id="eiModalNotes" rows="4" placeholder="Call scheduled, quote sent, etc."
+                              class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 resize-none"></textarea>
+                  </div>
+                  <div class="flex gap-3 pt-1">
+                    <button onclick="saveEnterpriseInquiry()"
+                            class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">Save</button>
+                    <button onclick="document.getElementById('eiNotesModal').classList.add('hidden')"
+                            class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:text-slate-100">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>

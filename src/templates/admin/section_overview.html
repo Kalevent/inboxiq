@@ -1,0 +1,57 @@
+        <section id="section-overview" class="admin-section active">
+          <div class="relative overflow-hidden border-b border-slate-800">
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/15 via-fuchsia-500/5 to-slate-900/60 pointer-events-none"></div>
+            <div class="absolute -left-20 top-10 h-64 w-64 bg-indigo-500/20 rounded-full blur-3xl"></div>
+            <div class="absolute -right-10 bottom-10 h-64 w-64 bg-fuchsia-500/10 rounded-full blur-3xl"></div>
+
+            <div class="content-container relative z-10 space-y-6">
+              <div>
+                <h1 class="text-2xl font-semibold tracking-tight">System Overview</h1>
+                <p class="text-sm text-slate-300 mt-1">At-a-glance adoption, tickets, integrations, and user testimonials.</p>
+              </div>
+
+              <!-- Testimonial Invite -->
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <h2 class="text-lg font-semibold text-slate-100 mb-3">Invite to testimonial</h2>
+                <form id="testimonialForm" class="grid gap-3 md:grid-cols-3 items-end">
+                  <div>
+                    <label class="text-xs text-slate-400">Account ID</label>
+                    <input id="testimonialAccount" type="number" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="e.g. 18" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">User ID (optional)</label>
+                    <input id="testimonialUser" type="number" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="e.g. 42" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Send to email (optional)</label>
+                    <input id="testimonialEmail" type="email" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="you@company.com" />
+                  </div>
+                  <button id="testimonialButton" type="submit" class="inline-flex justify-center items-center rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60">
+                    Generate invite link
+                  </button>
+                </form>
+                <div id="testimonialResult" class="mt-3 text-xs text-slate-300 break-all"></div>
+              </div>
+
+              <!-- Stats Grid -->
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-2">Adoption</h2>
+                  <ul id="adoption" class="text-sm text-slate-200 space-y-1"></ul>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-2">Tickets</h2>
+                  <ul id="tickets" class="text-sm text-slate-200 space-y-1"></ul>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-2">Integrations</h2>
+                  <ul id="integrations" class="text-sm text-slate-200 space-y-1"></ul>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-2">AI Agent Health</h2>
+                  <ul id="agentHealth" class="text-sm text-slate-200 space-y-1"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>

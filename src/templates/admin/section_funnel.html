@@ -1,0 +1,140 @@
+        <section id="section-funnel" class="admin-section">
+          <div class="relative overflow-hidden border-b border-slate-800">
+            <div class="absolute inset-0 bg-gradient-to-br from-green-500/15 via-emerald-500/5 to-slate-900/60 pointer-events-none"></div>
+            <div class="content-container relative z-10 space-y-6">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h1 class="text-2xl font-semibold tracking-tight">Funnel v2.0 Management</h1>
+                  <p class="text-sm text-slate-300 mt-1">5-stage funnel system (Visits → Discovery → Consideration → Conversion → Retention)</p>
+                </div>
+                <a href="/funnel/dashboard" target="_blank" class="rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all">
+                  📊 Open Full Dashboard
+                </a>
+              </div>
+
+              <!-- Funnel Metrics -->
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="text-lg font-semibold text-slate-100">Funnel Metrics</h2>
+                  <button id="refreshFunnelMetrics" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-sm font-semibold text-white">
+                    Refresh
+                  </button>
+                </div>
+                <div id="funnelMetrics" class="grid md:grid-cols-5 gap-4"></div>
+                <div id="funnelConversionRates" class="mt-4 grid md:grid-cols-4 gap-4"></div>
+              </div>
+
+              <!-- Manual Controls -->
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-3">Qualify Lead</h2>
+                  <p class="text-xs text-slate-400 mb-3">Test DSPy visitor qualification module</p>
+                  <div class="flex gap-2">
+                    <input id="qualifyLeadId" type="text" placeholder="Lead UUID" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                    <button id="qualifyLeadBtn" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">
+                      Qualify
+                    </button>
+                  </div>
+                  <div id="qualifyLeadResult" class="mt-3 text-xs text-slate-300"></div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-3">Update Interest Score</h2>
+                  <p class="text-xs text-slate-400 mb-3">Test DSPy interest scoring module</p>
+                  <div class="flex gap-2">
+                    <input id="interestLeadId" type="text" placeholder="Lead UUID" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                    <button id="interestLeadBtn" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">
+                      Update
+                    </button>
+                  </div>
+                  <div id="interestLeadResult" class="mt-3 text-xs text-slate-300"></div>
+                </div>
+
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 md:col-span-2">
+                  <h2 class="text-lg font-semibold text-slate-100 mb-3">Move Lead to Stage</h2>
+                  <p class="text-xs text-slate-400 mb-3">Manually move lead to different stage (testing only)</p>
+                  <div class="grid md:grid-cols-3 gap-2">
+                    <input id="moveStageLeadId" type="text" placeholder="Lead UUID" class="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                    <select id="moveStageTarget" class="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100">
+                      <option value="">Select stage...</option>
+                      <option value="visits">Visits</option>
+                      <option value="discovery">Discovery</option>
+                      <option value="consideration">Consideration</option>
+                      <option value="conversion">Conversion</option>
+                      <option value="retention">Retention</option>
+                    </select>
+                    <button id="moveStageBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+                      Move Stage
+                    </button>
+                  </div>
+                  <div id="moveStageResult" class="mt-3 text-xs text-slate-300"></div>
+                </div>
+              </div>
+
+              <!-- Orchestration -->
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <h2 class="text-lg font-semibold text-slate-100 mb-3">Automation Jobs</h2>
+                <p class="text-xs text-slate-400 mb-4">Manually trigger automated funnel orchestration tasks</p>
+                <div class="flex gap-3">
+                  <button id="runOrchestrationBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+                    Run Full Orchestration
+                  </button>
+                  <button id="checkProgressionBtn" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">
+                    Check Stage Progression
+                  </button>
+                </div>
+                <div id="orchestrationResult" class="mt-3 text-xs text-slate-300"></div>
+              </div>
+
+              <!-- Lead Discovery -->
+              <div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/20 to-slate-900/70 p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <h2 class="text-lg font-semibold text-emerald-100">🔍 Automated Lead Discovery</h2>
+                    <p class="text-xs text-slate-400 mt-1">Find companies with buying signals (hiring support agents) and create leads automatically</p>
+                  </div>
+                  <button id="refreshLeadsBtn" class="rounded-lg bg-slate-700 hover:bg-slate-600 px-3 py-2 text-sm font-semibold text-white">
+                    Refresh List
+                  </button>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-3 mb-4">
+                  <div>
+                    <label class="text-xs text-slate-400">Niche/Industry</label>
+                    <select id="discoveryNiche" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100">
+                      <option value="B2B SaaS customer support">B2B SaaS Support</option>
+                      <option value="E-commerce customer service">E-commerce</option>
+                      <option value="Healthcare customer support">Healthcare</option>
+                      <option value="Fintech customer support">Fintech</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Buying Signal</label>
+                    <select id="discoverySignal" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100">
+                      <option value="hiring">Hiring</option>
+                      <option value="funding">Funding</option>
+                      <option value="expansion">Expansion</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Max Results</label>
+                    <input id="discoveryMaxResults" type="number" value="30" min="10" max="50" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+
+                <button id="discoverLeadsBtn" class="rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all">
+                  🚀 Discover Leads Now
+                </button>
+                <div id="discoveryResult" class="mt-3 text-xs text-slate-300"></div>
+
+                <!-- Recently Discovered Leads -->
+                <div class="mt-4 pt-4 border-t border-slate-800">
+                  <h3 class="text-sm font-semibold text-slate-200 mb-2">Recently Discovered Leads</h3>
+                  <div id="recentLeadsList" class="space-y-2 max-h-64 overflow-y-auto">
+                    <p class="text-xs text-slate-400">Click "Refresh List" to load leads...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>

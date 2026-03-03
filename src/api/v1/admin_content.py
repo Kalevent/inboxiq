@@ -17,6 +17,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 
 from src.api.v1 import v1
+from src.api.v1.admin import _require_admin
 from src.extensions import db
 from src.models import GeneratedContent, BlogPost, User, PitchedBlogTopic
 from src.content.tasks import (
@@ -33,19 +34,6 @@ def _safe_json():
     return request.get_json(silent=True) or {}
 
 
-def _require_admin():
-    """Check if user is admin based on email allowlist."""
-    user_id = get_jwt_identity()
-    user = db.session.get(User, user_id) if user_id else None
-    default_admin = "support@kalevent.com"
-    allowed = set(
-        e.strip().lower()
-        for e in (current_app.config.get("ADMIN_EMAILS", "") or default_admin).split(",")
-        if e.strip()
-    )
-    if not user or (allowed and user.email.lower() not in allowed):
-        return None
-    return user
 
 
 @v1.route("/admin/content/generate-blog", methods=["POST"])

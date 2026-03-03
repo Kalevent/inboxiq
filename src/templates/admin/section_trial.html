@@ -1,0 +1,102 @@
+        <section id="section-trial" class="admin-section">
+          <div class="content-container space-y-6">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">Trial Onboarding Metrics</h1>
+              <p class="text-sm text-slate-300 mt-1">Monitor trial users and email delivery (Days 1, 3, 5, 7)</p>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="grid md:grid-cols-4 gap-4">
+              <div class="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-blue-300 mb-1">Active Trials</div>
+                <p id="totalActiveTrials" class="text-3xl font-semibold text-slate-50 mb-1">--</p>
+                <div class="text-xs text-slate-400">Trial users</div>
+              </div>
+
+              <div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-emerald-300 mb-1">Converted</div>
+                <p id="convertedUsers" class="text-3xl font-semibold text-slate-50 mb-1">--</p>
+                <div class="text-xs text-slate-400"><span id="conversionRate">--%</span> conversion rate</div>
+              </div>
+
+              <div class="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-amber-300 mb-1">Ending Soon</div>
+                <p id="endingSoon" class="text-3xl font-semibold text-slate-50 mb-1">--</p>
+                <div class="text-xs text-slate-400">&lt;3 days remaining</div>
+              </div>
+
+              <div class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/20 to-slate-900/70 p-4">
+                <div class="text-xs uppercase tracking-wide text-indigo-300 mb-1">Day 7 Eligible</div>
+                <p id="day7Eligible" class="text-3xl font-semibold text-slate-50 mb-1">--</p>
+                <div class="text-xs text-slate-400">Received all 4 emails</div>
+              </div>
+            </div>
+
+            <!-- Email Delivery Stats -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <h2 class="text-lg font-semibold text-slate-100 mb-4">Email Delivery Status</h2>
+              <div class="grid md:grid-cols-4 gap-4">
+                <div class="text-center">
+                  <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Day 1 Welcome</div>
+                  <div id="day1Count" class="text-2xl font-semibold text-emerald-400">--</div>
+                  <div class="text-xs text-slate-500 mt-1">eligible users</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Day 3 Use Cases</div>
+                  <div id="day3Count" class="text-2xl font-semibold text-emerald-400">--</div>
+                  <div class="text-xs text-slate-500 mt-1">eligible users</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Day 5 Demo</div>
+                  <div id="day5Count" class="text-2xl font-semibold text-emerald-400">--</div>
+                  <div class="text-xs text-slate-500 mt-1">eligible users</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Day 7 Upgrade</div>
+                  <div id="day7Count" class="text-2xl font-semibold text-emerald-400">--</div>
+                  <div class="text-xs text-slate-500 mt-1">eligible users</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Distribution by Days Since Signup -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <h2 class="text-lg font-semibold text-slate-100 mb-4">Distribution by Days Since Signup</h2>
+              <div id="trialDistribution" class="grid md:grid-cols-4 gap-4">
+                <div class="text-center">
+                  <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">Loading...</div>
+                  <div class="text-xl font-semibold text-indigo-400">--</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trial Users Table -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-slate-100">Active Trial Users</h2>
+                <button id="refreshTrialBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors">
+                  ↻ Refresh
+                </button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="border-b border-slate-800">
+                    <tr>
+                      <th class="text-left p-2 text-slate-400 font-medium">Email</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Account</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Days Since Signup</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Days Remaining</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Emails Sent</th>
+                      <th class="text-left p-2 text-slate-400 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="trialUsersTable" class="divide-y divide-slate-800">
+                    <tr>
+                      <td colspan="6" class="text-center py-8 text-slate-400">Loading trial users...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>

@@ -1,0 +1,77 @@
+        <section id="section-content" class="admin-section">
+          <div class="content-container space-y-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <h1 class="text-2xl font-semibold tracking-tight">Content & Publishing</h1>
+                <p class="text-sm text-slate-300 mt-1">Blog posts, SEO, and publishing workflow management.</p>
+              </div>
+              <button id="generateBlogBtn" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+                Generate Blog Post Now
+              </button>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <h2 class="text-lg font-semibold text-slate-100 mb-2">Blog / SEO</h2>
+              <ul id="blogMetrics" class="text-sm text-slate-200 space-y-1"></ul>
+            </div>
+
+            <!-- Pitched Topics -->
+            <div class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/20 to-slate-900/70 p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h2 class="text-lg font-semibold text-indigo-100">Pitched Blog Topics</h2>
+                  <p class="text-xs text-slate-400 mt-1">Manually submit and manage blog topic ideas for the content agent to generate.</p>
+                </div>
+                <a href="/admin/pitched-topics" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+                  Manage Topics
+                </a>
+              </div>
+            </div>
+
+            <!-- Recently Published Posts -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Recently Published Posts</h2>
+                  <p class="text-xs text-slate-400 mt-1">Auto-published blog posts from Content Generation Agent</p>
+                </div>
+                <button id="refreshPublishedBtn" class="rounded-lg bg-slate-700 hover:bg-slate-600 px-3 py-2 text-xs font-semibold text-white">
+                  Refresh
+                </button>
+              </div>
+              <div id="publishedPosts" class="space-y-2"></div>
+            </div>
+
+            <!-- Publishing Draft Review -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div>
+                <h2 class="text-lg font-semibold text-slate-100">Publishing (draft review)</h2>
+                <p class="text-xs text-slate-400 mt-1">Drafts require login; only approved items should be published.</p>
+              </div>
+              <div class="grid md:grid-cols-2 gap-4 mt-4">
+                <div class="space-y-2">
+                  <div class="text-xs text-slate-400 font-semibold">Blog drafts</div>
+                  <a href="/api/v1/publishing/blogs?include_unpublished=true" class="block rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm text-slate-100 border border-slate-700" target="_blank">View draft list (JSON)</a>
+                  <a href="/publishing/blogs/view" class="block rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm text-slate-100 border border-slate-700" target="_blank">View draft list (HTML)</a>
+                  <div class="flex gap-2">
+                    <input id="blogDraftId" type="text" placeholder="blog draft id" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs text-slate-100" />
+                    <button id="openBlogDraft" type="button" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-xs font-semibold text-white">Preview</button>
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <div class="text-xs text-slate-400 font-semibold">Newsletters / Whitepapers</div>
+                  <a href="/publishing/newsletter/drafts" class="block rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm text-slate-100 border border-slate-700" target="_blank">Newsletter drafts (JSON)</a>
+                  <a href="/publishing/newsletter/drafts/view" class="block rounded-lg bg-slate-800 hover:bg-slate-700 px-3 py-2 text-sm text-slate-100 border border-slate-700" target="_blank">View draft list (HTML)</a>
+                  <div class="flex gap-2">
+                    <input id="newsletterDraftId" type="text" placeholder="newsletter draft id" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs text-slate-100" />
+                    <button id="openNewsletterDraft" type="button" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-xs font-semibold text-white">Preview</button>
+                  </div>
+                  <div class="flex gap-2">
+                    <input id="whitepaperDraftId" type="text" placeholder="whitepaper draft id" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-xs text-slate-100" />
+                    <button id="openWhitepaperDraft" type="button" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-2 text-xs font-semibold text-white">Download/Preview</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>

@@ -1,0 +1,132 @@
+        <section id="section-saas" class="admin-section">
+          <div class="content-container space-y-6">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">SaaS Metrics</h1>
+              <p class="text-sm text-slate-300 mt-1">MRR, ARPU, LTV, CAC and churn — the metrics that matter.
+                <span class="text-slate-500">Trial conversion is in the <button class="underline hover:text-slate-300" onclick="document.querySelector('[data-section=trial]').click()">Trial section</button>.</span>
+              </p>
+            </div>
+
+            <!-- Row 1: Revenue -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">MRR</p>
+                <p id="saas-mrr" class="text-2xl font-bold text-emerald-300 mt-1">—</p>
+                <p class="text-xs text-slate-500 mt-1">Active subscriptions</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Net MRR (this month)</p>
+                <p id="saas-net-mrr" class="text-2xl font-bold text-indigo-300 mt-1">—</p>
+                <p id="saas-net-mrr-detail" class="text-xs text-slate-500 mt-1">—</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Active Customers</p>
+                <p id="saas-active" class="text-2xl font-bold text-slate-100 mt-1">—</p>
+                <p id="saas-trialing" class="text-xs text-slate-500 mt-1">—</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">Monthly Churn</p>
+                <p id="saas-churn" class="text-2xl font-bold text-rose-300 mt-1">—</p>
+                <p class="text-xs text-slate-500 mt-1">Cancellations this month</p>
+              </div>
+            </div>
+
+            <!-- Row 2: Unit Economics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">ARPU</p>
+                <p id="saas-arpu" class="text-2xl font-bold text-slate-100 mt-1">—</p>
+                <p class="text-xs text-slate-500 mt-1">Avg revenue / paying user</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">LTV Estimate</p>
+                <p id="saas-ltv" class="text-2xl font-bold text-amber-300 mt-1">—</p>
+                <p class="text-xs text-slate-500 mt-1">ARPU ÷ churn rate</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">CAC</p>
+                <p id="saas-cac" class="text-2xl font-bold text-slate-100 mt-1">—</p>
+                <p id="saas-cac-detail" class="text-xs text-slate-500 mt-1">Spend ÷ new customers</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 relative">
+                <p class="text-xs text-slate-400 uppercase tracking-wide">LTV : CAC</p>
+                <p id="saas-ratio" class="text-2xl font-bold mt-1">—</p>
+                <p id="saas-ratio-note" class="text-xs text-slate-500 mt-1">Target: ≥ 3×</p>
+              </div>
+            </div>
+
+            <!-- Ad Spend / CAC input -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Marketing Spend</h2>
+                  <p class="text-xs text-slate-400 mt-1">Enter monthly ad spend per channel to calculate CAC.</p>
+                </div>
+                <button onclick="document.getElementById('newSpendForm').classList.toggle('hidden')"
+                        class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">+ Add Spend</button>
+              </div>
+
+              <div id="newSpendForm" class="hidden mb-6 rounded-xl border border-slate-700 bg-slate-950/40 p-4">
+                <div class="grid md:grid-cols-4 gap-3">
+                  <div>
+                    <label class="text-xs text-slate-400">Period (YYYY-MM) *</label>
+                    <input id="spendPeriod" type="text" maxlength="7" placeholder="2026-02"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Channel *</label>
+                    <select id="spendChannel" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                      <option value="google">Google Ads</option>
+                      <option value="linkedin">LinkedIn</option>
+                      <option value="twitter">Twitter/X</option>
+                      <option value="meta">Meta (FB/IG)</option>
+                      <option value="content">Content / SEO</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Amount (GBP) *</label>
+                    <input id="spendAmount" type="number" min="0" step="0.01" placeholder="1500.00"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Notes</label>
+                    <input id="spendNotes" type="text" maxlength="200" placeholder="Optional"
+                           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                  </div>
+                </div>
+                <div id="spendCreateStatus" class="hidden text-xs mt-2"></div>
+                <div class="flex gap-3 mt-3">
+                  <button onclick="createSpendEntry()" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">Save</button>
+                  <button onclick="document.getElementById('newSpendForm').classList.add('hidden')" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:text-slate-100">Cancel</button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-800">
+                      <th class="py-2 pr-3">Period</th>
+                      <th class="py-2 pr-3">Channel</th>
+                      <th class="py-2 pr-3 text-right">Amount (GBP)</th>
+                      <th class="py-2 pr-3">Notes</th>
+                      <th class="py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="spendTableBody">
+                    <tr><td colspan="5" class="text-center py-6 text-slate-400">No spend entries yet.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Methodology note -->
+            <div class="rounded-xl border border-slate-700/40 bg-slate-900/30 p-4 text-xs text-slate-400 space-y-1">
+              <p><span class="text-slate-300 font-medium">MRR</span> = sum of active (paid, non-trialing) subscription plan prices.</p>
+              <p><span class="text-slate-300 font-medium">Churn %</span> = subscriptions canceled this calendar month ÷ (active + canceled this month). Uses <code class="text-indigo-300">Subscription.updated_at</code> as cancel proxy.</p>
+              <p><span class="text-slate-300 font-medium">LTV</span> = ARPU ÷ monthly churn rate (average customer lifetime × revenue). Shows "—" until churn data exists.</p>
+              <p><span class="text-slate-300 font-medium">CAC</span> = total spend this month ÷ new paid customers this month. Enter spend above to unlock.</p>
+              <p><span class="text-slate-300 font-medium">LTV:CAC ≥ 3</span> is the healthy SaaS benchmark. AI SaaS: adjust LTV for per-customer compute cost.</p>
+            </div>
+          </div>
+        </section>

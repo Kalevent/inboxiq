@@ -4,31 +4,13 @@ API endpoints for email outreach campaigns.
 from flask import jsonify, request, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.api.v1 import v1
+from src.api.v1.admin import _require_admin
 from src.extensions import db
 from src.models import EmailCampaign, EmailOutreach, Lead
 from src.outreach.tasks import send_campaign_emails, track_email_event
 from io import BytesIO
 from datetime import datetime
 
-
-def _require_admin():
-    """Check if current user is admin."""
-    from src.models import User
-    from flask import current_app
-
-    identity = get_jwt_identity()
-    if not identity:
-        return False
-
-    user = db.session.get(User, identity)
-    if not user:
-        return False
-
-    # Check if user email is in ADMIN_EMAILS config
-    admin_emails = current_app.config.get("ADMIN_EMAILS", "support@kalevent.com")
-    allowed = set(e.strip().lower() for e in admin_emails.split(",") if e.strip())
-
-    return user.email.lower() in allowed
 
 
 @v1.route("/outreach/campaigns", methods=["GET"])
