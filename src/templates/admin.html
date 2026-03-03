@@ -2119,6 +2119,8 @@
                 <button onclick="openInquiryModal('${i.id}','${i.status}',${JSON.stringify(i.admin_notes || '')})"
                         class="text-indigo-400 hover:text-indigo-300 text-xs underline">Edit</button>
                 ${savingsBtn}
+                <button onclick="notifyEngineering('${i.id}')"
+                        class="text-emerald-400 hover:text-emerald-300 text-xs underline" title="Email engineering team the activation command">Notify</button>
               </td>
             </tr>`;
         }).join('');
@@ -2149,6 +2151,22 @@
         document.getElementById('eiNotesModal').classList.add('hidden');
         loadEnterpriseInquiries();
       } catch (err) { console.error('Save inquiry failed:', err); }
+    }
+
+    async function notifyEngineering(inquiryId) {
+      if (!confirm('Send the kubectl activation command to the engineering team via email?')) return;
+      const csrfToken = getCsrfToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+      try {
+        const r = await fetch(`/api/v1/admin/enterprise/inquiries/${inquiryId}/notify-engineering`, {
+          method: 'POST', headers, credentials: 'include',
+        });
+        const d = await r.json();
+        if (!r.ok) { alert('Failed: ' + (d.error || r.status)); return; }
+        alert('✅ Activation command emailed to: ' + d.to.join(', '));
+        loadEnterpriseInquiries(); // refresh to show status change to 'contacted'
+      } catch (err) { alert('Error: ' + err.message); }
     }
 
     async function loadSavingsReport() {

@@ -394,3 +394,204 @@ def send_onboarding_reminder(to_email: str, stage: int) -> bool:
     except Exception as exc:  # pragma: no cover - defensive
         app.logger.warning({"event": "email.failed.reminder", "to": to_email, "stage": stage, "error": str(exc)})
         return False
+
+
+def send_enterprise_onboarding_notification(
+    to_emails: list[str],
+    inquiry_name: str,
+    inquiry_email: str,
+    inquiry_company: str,
+    account_id: int | None,
+) -> bool:
+    """
+    Email the engineering/admin team with the kubectl command to activate
+    an Enterprise account after a deal is closed.
+    """
+    app = current_app
+    host = app.config.get("SMTP_HOST")
+    port = app.config.get("SMTP_PORT")
+    user = app.config.get("SMTP_USER")
+    password = app.config.get("SMTP_PASSWORD")
+    use_tls = app.config.get("SMTP_USE_TLS", True)
+    use_ssl = app.config.get("SMTP_USE_SSL", False)
+    mail_from = app.config.get("MAIL_FROM", "noreply@kalevent.com")
+
+    if not host:
+        app.logger.info({"event": "email.disabled", "reason": "SMTP_HOST not configured"})
+        return False
+
+    if account_id:
+        command = (
+            f"kubectl exec <web-pod> -n kaley -c inboxiq -- "
+            f"flask --app src.manage:app set-enterprise-account --account-id {account_id}"
+        )
+        account_line = f"Account ID: {account_id}"
+    else:
+        command = (
+            "Account not yet created. Look up account by email below, then run:\n"
+            "kubectl exec <web-pod> -n kaley -c inboxiq -- "
+            "flask --app src.manage:app set-enterprise-account --account-id <ID>"
+        )
+        account_line = "Account ID: not linked yet (look up by email)"
+
+    body = f"""Enterprise deal approved — action required.
+
+Customer: {inquiry_name}
+Email:    {inquiry_email}
+Company:  {inquiry_company}
+{account_line}
+
+Run this command to activate their Enterprise plan:
+
+  {command}
+
+Then run seed-plans first if you haven't already:
+  kubectl exec <web-pod> -n kaley -c inboxiq -- flask --app src.manage:app seed-plans
+
+---
+Sent by InboxIQ admin panel.
+"""
+    body_html = f"""
+<p><strong>Enterprise deal approved — action required.</strong></p>
+<table style="border-collapse:collapse;font-family:monospace">
+  <tr><td style="padding:2px 12px 2px 0"><strong>Customer</strong></td><td>{inquiry_name}</td></tr>
+  <tr><td style="padding:2px 12px 2px 0"><strong>Email</strong></td><td>{inquiry_email}</td></tr>
+  <tr><td style="padding:2px 12px 2px 0"><strong>Company</strong></td><td>{inquiry_company or "—"}</td></tr>
+  <tr><td style="padding:2px 12px 2px 0"><strong>Account ID</strong></td><td>{account_id or "not linked yet"}</td></tr>
+</table>
+<p>Run this command to activate their Enterprise plan:</p>
+<pre style="background:#f4f4f4;padding:12px;border-radius:4px">{command}</pre>
+<hr>
+<p style="color:#888;font-size:12px">Sent by InboxIQ admin panel.</p>
+"""
+
+    msg = EmailMessage()
+    msg["Subject"] = f"🚀 Enterprise Activation: {inquiry_name} ({inquiry_company or inquiry_email})"
+    msg["From"] = mail_from
+    msg["To"] = ", ".join(to_emails)
+    msg.set_content(body)
+    msg.add_alternative(body_html, subtype="html")
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port) as server:
+                if user and password:
+                    server.login(user, password)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port) as server:
+                if use_tls:
+                    server.starttls()
+                if user and password:
+                    server.login(user, password)
+                server.send_message(msg)
+        app.logger.info({"event": "email.sent.enterprise_onboarding", "to": to_emails})
+        return True
+    except Exception as exc:
+        app.logger.warning({"event": "email.failed.enterprise_onboarding", "error": str(exc)})
+        return False
+
+
+def send_enterprise_value_report_email(
+    to_email: str,
+    account_name: str,
+    month_label: str,
+    ai_decisions: int,
+    hours_saved: float,
+    value_gbp: float,
+) -> bool:
+    """
+    Monthly value report email sent to Enterprise accounts showing ROI
+    delivered in the previous month.
+    """
+    app = current_app
+    host = app.config.get("SMTP_HOST")
+    port = app.config.get("SMTP_PORT")
+    user = app.config.get("SMTP_USER")
+    password = app.config.get("SMTP_PASSWORD")
+    use_tls = app.config.get("SMTP_USE_TLS", True)
+    use_ssl = app.config.get("SMTP_USE_SSL", False)
+    mail_from = app.config.get("MAIL_FROM", "noreply@kalevent.com")
+
+    if not host:
+        app.logger.info({"event": "email.disabled", "reason": "SMTP_HOST not configured"})
+        return False
+
+    hours_str = f"{hours_saved:,.1f}"
+    value_str = f"£{value_gbp:,.0f}"
+    decisions_str = f"{ai_decisions:,}"
+
+    body = f"""Hi {account_name},
+
+Here's your InboxIQ value summary for {month_label}:
+
+  Emails handled by AI:  {decisions_str}
+  Estimated hours saved: {hours_str} hrs
+  Estimated value:       {value_str}
+
+This is the time your team didn't spend manually triaging, categorising,
+and drafting replies — InboxIQ handled it automatically.
+
+If you have questions or want to explore expanding your usage, reply to
+this email and we'll get back to you.
+
+— The InboxIQ Team
+"""
+    body_html = f"""
+<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">
+  <h2 style="color:#1e293b">Your InboxIQ Monthly Summary</h2>
+  <p style="color:#475569">{month_label} — {account_name}</p>
+
+  <div style="display:flex;gap:16px;margin:24px 0">
+    <div style="flex:1;background:#f0f9ff;border-radius:8px;padding:20px;text-align:center">
+      <div style="font-size:2rem;font-weight:700;color:#0369a1">{decisions_str}</div>
+      <div style="color:#64748b;font-size:0.85rem;margin-top:4px">Emails handled by AI</div>
+    </div>
+    <div style="flex:1;background:#f0fdf4;border-radius:8px;padding:20px;text-align:center">
+      <div style="font-size:2rem;font-weight:700;color:#15803d">{hours_str} hrs</div>
+      <div style="color:#64748b;font-size:0.85rem;margin-top:4px">Hours saved</div>
+    </div>
+    <div style="flex:1;background:#fefce8;border-radius:8px;padding:20px;text-align:center">
+      <div style="font-size:2rem;font-weight:700;color:#a16207">{value_str}</div>
+      <div style="color:#64748b;font-size:0.85rem;margin-top:4px">Estimated value</div>
+    </div>
+  </div>
+
+  <p style="color:#475569">This is the time your team didn't spend manually triaging,
+  categorising, and drafting replies — InboxIQ handled it automatically.</p>
+
+  <p style="color:#475569">Questions or want to expand usage?
+  <a href="mailto:support@kalevent.com">Reply to this email</a> and we'll get back to you.</p>
+
+  <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
+  <p style="color:#94a3b8;font-size:12px">
+    InboxIQ by Kalevent · <a href="https://inboxiq.kalevent.com/settings" style="color:#94a3b8">Manage notifications</a>
+  </p>
+</div>
+"""
+
+    msg = EmailMessage()
+    msg["Subject"] = f"InboxIQ saved your team {hours_str} hours in {month_label} — {value_str} value"
+    msg["From"] = mail_from
+    msg["To"] = to_email
+    msg.set_content(body)
+    msg.add_alternative(body_html, subtype="html")
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port) as server:
+                if user and password:
+                    server.login(user, password)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port) as server:
+                if use_tls:
+                    server.starttls()
+                if user and password:
+                    server.login(user, password)
+                server.send_message(msg)
+        app.logger.info({"event": "email.sent.enterprise_value_report", "to": to_email, "month": month_label})
+        return True
+    except Exception as exc:
+        app.logger.warning({"event": "email.failed.enterprise_value_report", "to": to_email, "error": str(exc)})
+        return False

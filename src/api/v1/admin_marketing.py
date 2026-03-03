@@ -818,6 +818,52 @@ def update_enterprise_inquiry(inquiry_id: str):
     return jsonify(_inquiry_to_dict(inq)), 200
 
 
+@v1.route("/admin/enterprise/inquiries/<inquiry_id>/notify-engineering", methods=["POST"])
+@jwt_required()
+def notify_engineering_for_inquiry(inquiry_id: str):
+    """
+    Email the admin/engineering team the kubectl activation command for an
+    Enterprise inquiry. Use after closing a deal — cheaper than Slack automation.
+
+    Sends to ADMIN_EMAILS env var (comma-separated).
+    Marks the inquiry as 'contacted' if it was 'new'.
+    """
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    inq = db.session.get(EnterpriseInquiry, inquiry_id)
+    if not inq:
+        return jsonify({"error": "not found"}), 404
+
+    from src.email_utils import send_enterprise_onboarding_notification
+
+    admin_emails = [
+        e.strip()
+        for e in (current_app.config.get("ADMIN_EMAILS") or "").split(",")
+        if e.strip()
+    ]
+    if not admin_emails:
+        return jsonify({"error": "ADMIN_EMAILS not configured"}), 500
+
+    sent = send_enterprise_onboarding_notification(
+        to_emails=admin_emails,
+        inquiry_name=inq.name,
+        inquiry_email=inq.email,
+        inquiry_company=inq.company or "",
+        account_id=inq.account_id,
+    )
+
+    if not sent:
+        return jsonify({"error": "Failed to send email. Check SMTP configuration."}), 502
+
+    # Auto-advance status to 'contacted' so it's clear action was taken
+    if inq.status == "new":
+        inq.status = "contacted"
+        db.session.commit()
+
+    return jsonify({"sent": True, "to": admin_emails, "inquiry": _inquiry_to_dict(inq)}), 200
+
+
 # ── Savings / ROI report ──────────────────────────────────────────────────────
 
 # Default assumptions for ROI calculation.

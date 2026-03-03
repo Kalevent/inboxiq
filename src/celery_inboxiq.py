@@ -262,6 +262,18 @@ def make_celery(app) -> Celery:
                 if nurture_campaigns_enabled
                 else {}
             ),
+            # Enterprise monthly value report — 1st of each month at 8am
+            **(
+                {
+                    "enterprise_value_report_monthly": {
+                        "task": "marketing.send_enterprise_value_reports",
+                        "schedule": crontab(hour=8, minute=0, day_of_month=1),
+                        "options": {"queue": "leads"},
+                    }
+                }
+                if nurture_campaigns_enabled
+                else {}
+            ),
         },
     )
 
