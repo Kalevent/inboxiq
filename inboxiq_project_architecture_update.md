@@ -1,0 +1,182 @@
+# InboxIQ — Project Architecture Cleanup Plan
+
+**Author:** Architecture review
+**Status:** Phase A in progress
+**Goal:** Make the codebase clean and maintainable without breaking the running app.
+
+---
+
+## Why This Is Needed
+
+The app started as a small Flask monolith and grew organically. The result:
+- ~25 loose Python files dumped at `src/` root that belong inside domain packages
+- Project root littered with one-off scripts, CSV exports, credentials, and planning docs
+- Files with duplicate names in different folders (two `admin_marketing.py`, two email files)
+- `models.py` likely 1000+ lines with every domain in one file
+
+No single change will fix it — this is a phased, low-risk cleanup done one commit at a time.
+
+---
+
+## Phase A — Root directory cleanup (zero risk)
+
+**Risk:** None. No code imports change. Files are not referenced by the app.
+**Status:** ✅ Done
+
+### Scripts → `scripts/`
+
+The following one-off and utility scripts were at the project root. Moved to `scripts/`:
+
+| File | Purpose |
+|---|---|
+| `check_csrf.py` | One-off CSRF header test |
+| `configure_account_labels.py` | One-off account label setup |
+| `find_automation_studio_leads.py` | Lead export utility |
+| `find_leads_simple.py` | Simplified lead lookup |
+| `test_csp_headers.py` | CSP header verification |
+| `test_lead_discovery.py` | Lead discovery smoke test |
+| `test_seo_cleanup.py` | SEO cleanup verification |
+| `test_security_headers.sh` | Security header HTTP tests |
+| `deploy-gsc-credentials.sh` | GSC credentials deployment |
+| `verify-gsc-secret.sh` | GSC secret verification |
+| `rebuild-and-deploy.sh` | Build + deploy helper |
+
+### Docs → `docs/`
+
+| File | Purpose |
+|---|---|
+| `IMPLEMENTATION_PLAN.md` | Original feature implementation plan |
+| `LEAD_DISCOVERY_STATUS.md` | Lead discovery progress notes |
+| `LEAD_DISCOVERY_SUMMARY.md` | Lead discovery summary |
+| `add_user_name_field.md` | Migration note |
+| `marketing_video_prompt.txt` | Marketing copy |
+
+### Data → `data/`
+
+These are exported data files — not source code. Created `data/` folder:
+
+| File | Purpose |
+|---|---|
+| `automation_studio_leads.csv` | Lead export |
+| `automation_studio_leads_20260207_112308.csv` | Lead export (timestamped) |
+| `automation_studio_leads_20260207_112721.csv` | Lead export (timestamped) |
+| `leads_export.csv` | Leads export |
+| `blog_post_maximizing-revenue-automation-in-revenue-operations.json` | Blog post data |
+
+### Credentials — stayed in place
+
+`gsc-service-account.json` — kept at root (referenced by `deploy-gsc-credentials.sh`).
+Ensure it is in `.gitignore` and never committed.
+
+### Runtime artifacts — add to `.gitignore`
+
+`celerybeat-schedule.db` — generated at runtime by Celery Beat. Should never be in the repo.
+Added to `.gitignore`.
+
+---
+
+## Phase B — Move loose `src/` root files into packages
+
+**Risk:** Low. Each file move requires updating import paths.
+**Rule:** One file per commit. Grep all imports. Verify deploy before next move.
+**Status:** Not started
+
+### Files to move (ordered safest → riskiest)
+
+| File | Move to | Notes |
+|---|---|---|
+| `seo_cleanup.py` | `src/marketing/seo_cleanup.py` | Low dependency count |
+| `funnel_stages.py` | `src/funnel/stages.py` | Used by funnel module |
+| `trial_onboarding.py` | `src/trial/onboarding.py` | Used by trial tasks |
+| `kb_integrations.py` | `src/integrations/kb.py` | Used by settings |
+| `mcp_client.py` | `src/mcp/client.py` | Used by MCP modules |
+| `quota.py` | `src/billing/quota.py` | Used by billing + features |
+| `crash_report.py` | `src/monitoring/crash_report.py` | Create `src/monitoring/` |
+| `observability.py` | `src/monitoring/observability.py` | Wide usage — do last |
+| `observability_sanitizer.py` | `src/monitoring/sanitizer.py` | Paired with observability |
+| `dspy_triage.py` | `src/dspy/triage_runner.py` | Rename to avoid clash |
+| `dspy_eval.py` | `src/dspy/training/eval.py` | Already a training util |
+| `dspy_train.py` | `src/dspy/training/train.py` | Already a training util |
+| `triage_config.py` | `src/dspy/triage_config.py` | DSPy config |
+| `triage_labels.py` | `src/dspy/triage_labels.py` | DSPy labels |
+| `agent_worker.py` | `src/agents/worker.py` | Create `src/agents/` |
+| `agents_registry.py` | `src/agents/registry.py` | Paired with worker |
+| `automation_studio.py` | `src/automation/studio.py` | Large file |
+| `blog_content.py` | `src/blog/content.py` | Blog utilities |
+| `decision_merger.py` | `src/inbox/merger.py` | Create `src/inbox/` |
+| `inboxiq_logic.py` | `src/inbox/logic.py` | Core inbox logic |
+| `llm_client.py` | `src/ai/client.py` | Create `src/ai/` |
+| `email_poll.py` | `src/email/poll.py` | Create `src/email/` |
+| `email_outreach.py` | `src/email/outreach.py` | High deps — do last |
+| `email_utils.py` | `src/email/utils.py` | Highest deps — do last |
+
+### Files to keep at `src/` root (legitimate shared utilities)
+
+- `app.py` — Flask factory
+- `config.py` — Configuration
+- `extensions.py` — Flask extensions
+- `models.py` — All ORM models (until Phase C)
+- `manage.py` — Flask CLI commands
+- `celery_inboxiq.py` — Celery config
+- `sanitize.py` — Shared HTML utility
+- `uploads.py` — Shared upload utility
+- `embeddings.py` — Shared embedding utility
+- `crypto.py` — Shared crypto utility
+- `security.py` — Shared security utility
+- `features.py` — Feature flags
+
+---
+
+## Phase C — Split `models.py` by domain
+
+**Risk:** Medium. SQLAlchemy relationships cross domains. Circular import risk.
+**Status:** Not started — requires test coverage or maintenance window
+
+### Target layout
+
+```
+src/models/
+    __init__.py          ← re-exports everything (existing imports unchanged)
+    accounts.py          ← Account, User, InboxConnection
+    leads.py             ← Lead, LeadAttribution, LeadFunnelStage, Referral
+    tickets.py           ← Ticket, TicketEmbedding, TicketEvent
+    content.py           ← GeneratedContent, KBArticle, etc.
+    billing.py           ← CustomerBillingProfile, Plan, AccountUsageCounter
+    marketing.py         ← InAppMessage, LandingPage, FunnelMetricsDaily
+    automation.py        ← AutomationRule, AgentEvent, WorkflowRun
+    publishing.py        ← kept in src/publishing/models.py (already done)
+```
+
+**Key rule:** `src/models/__init__.py` must re-export every class so all existing
+`from src.models import Foo` imports continue to work with zero changes.
+
+---
+
+## Phase D — Naming and structural fixes
+
+**Risk:** Low (renames only). One at a time.
+**Status:** Not started
+
+### File naming collisions to resolve
+
+| Problem | Fix |
+|---|---|
+| `src/admin/admin_marketing.py` vs `src/api/v1/admin_marketing.py` | Rename `src/admin/admin_marketing.py` → `src/admin/marketing_routes.py` |
+| `email_utils.py` (transactional) vs `email_outreach.py` (campaign) | After Phase B move, rename clearly |
+| `src/admin/admin.py` and `src/admin/routes.py` | Consolidate or clarify split |
+
+### Template audit
+
+`src/templates/admin.html` is known to be very large — split into partials per section
+(Marketing, Billing, Users, Content) using Jinja2 `{% include %}`.
+
+---
+
+## Rules for all phases
+
+1. **One file per commit.** Never batch moves — a regression needs to be trivially revertable.
+2. **Grep before moving.** Run `grep -r "from src.X import" src/` before moving any file.
+3. **Never move `models.py`** until Phase C is explicitly started.
+4. **Never rename Celery task names** (`name="marketing.foo"`) — Beat schedules reference these strings.
+5. **Never touch `index.html` with the Edit tool** — Tailwind whitespace issue (see MEMORY).
+6. **No `flask db migrate`** — Phase A and B don't touch models.
