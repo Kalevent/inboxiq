@@ -16,7 +16,7 @@ from celery import shared_task
 
 from src.extensions import db
 from src.funnel.stages import VISITS, DISCOVERY, CONSIDERATION, RETENTION
-from src.models import Lead, LeadFunnelStage, LeadEngagementEvent, FunnelMetricsDaily
+from src.models.leads import Lead, LeadFunnelStage, LeadEngagementEvent, FunnelMetricsDaily
 
 # Import DSPy modules
 try:

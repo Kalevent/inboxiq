@@ -9,7 +9,7 @@ from flask import Blueprint, current_app, jsonify, redirect, request, url_for
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from src.api.v1 import v1
-from src.models import InboxConnection, User
+from src.models.core import InboxConnection, User
 from src.extensions import db
 
 

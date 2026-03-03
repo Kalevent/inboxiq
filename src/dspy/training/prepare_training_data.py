@@ -19,7 +19,8 @@ from typing import List, Dict, Any
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../..'))
 
 from src.extensions import db
-from src.models import Lead, LeadFunnelStage, LeadEngagementEvent, BlogPost
+from src.models.content import BlogPost
+from src.models.leads import Lead, LeadFunnelStage, LeadEngagementEvent
 
 
 def export_visitor_qualification_data(output_dir: str) -> str:

@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.api.v1 import v1
 from src.extensions import db
 from src.billing.service import BillingService, guard_missing_tables
-from src.billing import models
+import src.models.billing as models
 from src.billing.idempotency import ensure_idempotency
 from src.billing.providers.barclay import BarclayHostedProvider
 

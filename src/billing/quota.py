@@ -25,7 +25,7 @@ from typing import Optional
 from sqlalchemy import text
 
 from src.extensions import db
-from src.billing.models import AccountUsageCounter, CustomerBillingProfile, Plan
+from src.models.billing import AccountUsageCounter, CustomerBillingProfile, Plan
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ def _report_stripe_overage(plan: Plan, account_id: int, meter: str, units: int) 
             logger.debug("STRIPE_SECRET_KEY not set; skipping overage report for meter=%s", meter)
             return
 
-        from src.billing.models import Subscription
+        from src.models.billing import Subscription
         # Find the account's active Stripe subscription
         profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
         if not profile:

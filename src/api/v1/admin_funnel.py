@@ -19,7 +19,8 @@ from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
 from src.extensions import db
 from src.funnel.stages import RETENTION, ORDERED as FUNNEL_STAGE_ORDER
-from src.models import Lead, LeadFunnelStage, FunnelMetricsDaily, User
+from src.models.core import User
+from src.models.leads import Lead, LeadFunnelStage, FunnelMetricsDaily
 
 
 def _safe_json():

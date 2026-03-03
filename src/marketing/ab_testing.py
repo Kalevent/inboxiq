@@ -28,7 +28,7 @@ from typing import Dict, Any, Tuple
 
 from src.celery_inboxiq import celery
 from src.extensions import db
-from src.models import NurtureEmailSend
+from src.models.campaigns import NurtureEmailSend
 
 logger = logging.getLogger(__name__)
 

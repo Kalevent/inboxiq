@@ -6,7 +6,9 @@ from sqlalchemy import func, desc, or_, cast, text
 
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import User, Account, Ticket, InboxConnection, Lead, TriageLabelConfig
+from src.models.core import User, Account, InboxConnection
+from src.models.leads import Lead
+from src.models.tickets import Ticket, TriageLabelConfig
 from src.api.v1.testimonials import generate_testimonial_token
 from src.billing.emailing import _send_email
 
@@ -269,7 +271,7 @@ def admin_agent_health():
 def admin_billing():
     if not _require_admin():
         return jsonify({"error": "forbidden"}), 403
-    from src.billing.models import CustomerBillingProfile, Subscription, Plan, ChargeAttempt, table_exists
+    from src.models.billing import CustomerBillingProfile, Subscription, Plan, ChargeAttempt, table_exists
     try:
         now = datetime.utcnow()
         plan_mix = []
@@ -772,7 +774,7 @@ def admin_saas_metrics():
     if not _require_admin():
         return jsonify({"error": "forbidden"}), 403
 
-    from src.billing.models import Plan, Subscription, table_exists
+    from src.models.billing import Plan, Subscription, table_exists
     from src.models import MarketingSpend
 
     now = datetime.now(timezone.utc)

@@ -6,7 +6,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
 from src.extensions import db
-from src.models import EmailCampaign, EmailOutreach, Lead
+from src.models.campaigns import EmailCampaign, EmailOutreach
+from src.models.leads import Lead
 from src.outreach.tasks import send_campaign_emails, track_email_event
 from io import BytesIO
 from datetime import datetime

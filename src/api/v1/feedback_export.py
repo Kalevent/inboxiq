@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
-from src.models import Ticket
+from src.models.tickets import Ticket
 
 
 feedback_bp = Blueprint("feedback_export", __name__)

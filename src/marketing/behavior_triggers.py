@@ -27,7 +27,8 @@ from typing import Dict, Any
 from src.celery_inboxiq import celery
 from src.extensions import db
 from src.funnel.stages import DISCOVERY, CONSIDERATION
-from src.models import Lead, LeadEngagementEvent, NurtureEmailSend
+from src.models.campaigns import NurtureEmailSend
+from src.models.leads import Lead, LeadEngagementEvent
 
 logger = logging.getLogger(__name__)
 

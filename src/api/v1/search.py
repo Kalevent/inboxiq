@@ -8,7 +8,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import func
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import Ticket
+from src.models.tickets import Ticket
 from src.api.v1.access_control import account_allows_api
 from src.api.v1.app_auth import _require_registered_app, _NO_BASIC_AUTH
 

@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from jinja2 import Template
 from src.extensions import db
-from src.models import EmailCampaign, EmailOutreach, Lead
+from src.models.campaigns import EmailCampaign, EmailOutreach
+from src.models.leads import Lead
 
 
 def get_ses_client():

@@ -26,10 +26,13 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
-from src.billing.models import AccountUsageCounter
+from src.models.billing import AccountUsageCounter
 from src.extensions import db
 from src.funnel.stages import CONVERSION_STAGES
-from src.models import Account, EnterpriseInquiry, InAppMessage, InAppMessageDismissal, LandingPage, Lead, LeadAttribution, NurtureEmailSend, Referral, User
+from src.models.campaigns import NurtureEmailSend
+from src.models.core import Account, User
+from src.models.leads import Lead, LeadAttribution
+from src.models.marketing import EnterpriseInquiry, InAppMessage, InAppMessageDismissal, LandingPage, Referral
 from src.sanitize import sanitize_html
 import logging
 

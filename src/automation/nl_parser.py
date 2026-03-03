@@ -17,7 +17,8 @@ import json
 from typing import Dict, Any, List, Optional
 import openai
 
-from src.models import Account, db
+from src.models.core import Account
+from src.extensions import db
 
 
 def parse_natural_language_rule(

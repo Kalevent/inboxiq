@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from src.extensions import db
-from src.models import AutomationRule, AutomationRuleExecution
+from src.models.automation import AutomationRule, AutomationRuleExecution
 from src.monitoring.observability import get_tracer
 from src.monitoring.sanitizer import (
     safe_span_attribute,

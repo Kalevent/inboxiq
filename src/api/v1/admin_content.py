@@ -19,7 +19,8 @@ from datetime import datetime
 from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
 from src.extensions import db
-from src.models import GeneratedContent, BlogPost, User, PitchedBlogTopic
+from src.models.content import GeneratedContent, BlogPost, PitchedBlogTopic
+from src.models.core import User
 from src.content.tasks import (
     generate_blog_post,
     generate_weekly_posts,

@@ -5,7 +5,7 @@ import logging
 from typing import List, Optional
 from sqlalchemy import text
 
-from src.models import KBArticle, KBArticleEmbedding, KBIntegration
+from src.models.content import KBArticle, KBArticleEmbedding, KBIntegration
 from src.embeddings import embed_text
 from src.extensions import db
 

@@ -5,8 +5,8 @@ Handles plan-based gating, feature flags, and trial access.
 import os
 from typing import Optional
 from src.extensions import db
-from src.models import Account, AccountFeatureFlags
-from src.billing.models import CustomerBillingProfile
+from src.models.core import Account, AccountFeatureFlags
+from src.models.billing import CustomerBillingProfile
 
 
 def _env_bool(key: str, default: bool = False) -> bool:
@@ -108,7 +108,7 @@ def feature_enabled(feature: str, account_id: int) -> bool:
     if flag_col is None:
         raise KeyError(f"Unknown feature: {feature!r}")
 
-    from src.billing.models import Plan
+    from src.models.billing import Plan
 
     profile = (
         CustomerBillingProfile.query

@@ -6,12 +6,12 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from threading import Lock
 
 from src.agents.registry import AgentRegistry, agent_to_dict
-from src.models import MCPServerCatalog
+from src.models.ai import MCPServerCatalog
 from src.extensions import db
 from src.api.v1 import v1
 from src.mcp.client import PersistentMCPClient
 from src.ai.client import invoke_llm
-from src.models import AgentEvent
+from src.models.ai import AgentEvent
 
 _registry_singleton: AgentRegistry | None = None
 _mcp_client_pool: dict[tuple[str, ...], PersistentMCPClient] = {}

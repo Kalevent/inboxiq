@@ -53,7 +53,7 @@ def send_enterprise_value_reports() -> Dict[str, Any]:
     Skips accounts with 0 AI decisions last month (nothing to report).
     """
     from src.models import AccountUsageCounter, Account, User
-    from src.billing.models import CustomerBillingProfile
+    from src.models.billing import CustomerBillingProfile
     from src.notifications.emails import send_enterprise_value_report_email
 
     billing_month = _previous_billing_month()

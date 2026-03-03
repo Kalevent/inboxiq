@@ -9,7 +9,8 @@ from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
-from src.models import WebhookProvider, db
+from src.models.automation import WebhookProvider
+from src.extensions import db
 from src.crypto import encrypt_value, decrypt_value
 from uuid import uuid4
 

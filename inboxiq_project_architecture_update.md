@@ -160,25 +160,31 @@ Added to `.gitignore`.
 ## Phase C — Split `models.py` by domain
 
 **Risk:** Medium. SQLAlchemy relationships cross domains. Circular import risk.
-**Status:** Not started — requires test coverage or maintenance window
+**Status:** ✅ Done — zero circular import issues (all relationships use string names)
 
-### Target layout
+### Final layout
 
 ```
 src/models/
-    __init__.py          ← re-exports everything (existing imports unchanged)
-    accounts.py          ← Account, User, InboxConnection
-    leads.py             ← Lead, LeadAttribution, LeadFunnelStage, Referral
-    tickets.py           ← Ticket, TicketEmbedding, TicketEvent
-    content.py           ← GeneratedContent, KBArticle, etc.
-    billing.py           ← CustomerBillingProfile, Plan, AccountUsageCounter
-    marketing.py         ← InAppMessage, LandingPage, FunnelMetricsDaily
-    automation.py        ← AutomationRule, AgentEvent, WorkflowRun
-    publishing.py        ← kept in src/publishing/models.py (already done)
+    __init__.py     ← re-exports all 47 classes (no external import changes needed)
+    core.py         ← Account, User, InboxConnection, AccountFeatureFlags
+    auth.py         ← AuthEvent, Passkey, TOTPDevice
+    tickets.py      ← Ticket, TicketEmbedding, TriageLabelConfig, DraftReplyFeedback, TriageConfig
+    ai.py           ← DspyTrainingMetric, AgentEvent, AgentModel, MCPServerCatalog
+    leads.py        ← Lead, LeadFunnelStage, LeadEngagementEvent, LeadAttribution, FunnelMetricsDaily
+    content.py      ← BlogPost, KBIntegration, KBArticle, KBArticleEmbedding, GeneratedContent, PitchedBlogTopic
+    campaigns.py    ← CampaignSender, HunterDomainCache, EmailCampaign, EmailOutreach, NurtureEmailSend
+    automation.py   ← AutomationStudioWaitlist, AutomationRule, AutomationRuleExecution, WebhookProvider, AutomationSuggestion
+    marketing.py    ← Referral, InAppMessage, InAppMessageDismissal, LandingPage, MarketingSpend, EnterpriseInquiry
+    misc.py         ← Testimonial, Feedback
+    developer.py    ← DeveloperAccessRequest, RegisteredApp
+    billing.py      ← PaymentProviderAccount, CustomerBillingProfile, PaymentMethod, Plan,
+                       Subscription, Invoice, ChargeAttempt, AccountUsageCounter, table_exists
+    publishing.py   ← NewsletterDraft, WhitepaperDraft
 ```
 
-**Key rule:** `src/models/__init__.py` must re-export every class so all existing
-`from src.models import Foo` imports continue to work with zero changes.
+`src/billing/models.py` and `src/publishing/models.py` have been deleted; all callers updated to
+`from src.models.billing import ...` / `from src.models.publishing import ...`.
 
 ---
 

@@ -5,7 +5,7 @@ from celery import Celery
 
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import InboxConnection, User
+from src.models.core import InboxConnection, User
 from src.inbox.logic import normalize_email_payload
 
 ALLOWED_CHANNELS = {

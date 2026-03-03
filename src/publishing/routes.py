@@ -12,14 +12,14 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.extensions import db
 from src.ai.client import call_openai
 from src.publishing import bp
-from src.publishing.models import NewsletterDraft, WhitepaperDraft
+from src.models.publishing import NewsletterDraft, WhitepaperDraft
 from src.publishing.service import (
     create_blog_draft,
     list_blogs,
     publish_blog,
     _read_icp,
 )
-from src.models import BlogPost
+from src.models.content import BlogPost
 
 try:
     from app.publishing.controllers import SYSTEM_NEWSLETTER, SYSTEM_WHITEPAPER

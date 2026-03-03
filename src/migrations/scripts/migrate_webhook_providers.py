@@ -13,7 +13,8 @@ from datetime import datetime
 from uuid import uuid4
 
 from src.extensions import db
-from src.models import InboxConnection, WebhookProvider
+from src.models.automation import WebhookProvider
+from src.models.core import InboxConnection
 from src.crypto import encrypt_value
 
 

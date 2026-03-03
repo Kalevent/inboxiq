@@ -15,7 +15,7 @@ from sqlalchemy import func, case
 from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
 from src.extensions import db
-from src.models import User, Account
+from src.models.core import User, Account
 
 
 

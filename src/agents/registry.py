@@ -5,7 +5,7 @@ from threading import RLock
 from typing import Dict, Optional
 from uuid import uuid4
 
-from src.models import AgentModel
+from src.models.ai import AgentModel
 from src.extensions import db
 
 

@@ -14,7 +14,7 @@ from uuid import uuid4
 from celery import shared_task
 from sqlalchemy import text
 from src.extensions import db
-from src.models import Lead
+from src.models.leads import Lead
 
 
 @shared_task(name="leads.enrich_lead_with_email", bind=True, max_retries=2, queue="leads")

@@ -4,7 +4,7 @@ from flask import Blueprint, current_app, g, redirect, request, url_for
 from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request
 
 from src.extensions import db
-from src.models import User
+from src.models.core import User
 from src.api.v1.access_control import account_allows_api
 
 bp = Blueprint("settings", __name__, url_prefix="")

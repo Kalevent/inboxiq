@@ -4,7 +4,9 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from src.api.v1 import v1
 from src.extensions import db
 from src.inbox.logic import run_dspy_decision, compute_due_at
-from src.models import Feedback, Ticket, User
+from src.models.core import User
+from src.models.misc import Feedback
+from src.models.tickets import Ticket
 
 
 @v1.route("/feedback", methods=["POST"])

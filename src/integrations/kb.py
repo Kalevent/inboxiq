@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import List
 from werkzeug.datastructures import FileStorage
 
-from src.models import KBIntegration, KBArticle, KBArticleEmbedding
+from src.models.content import KBIntegration, KBArticle, KBArticleEmbedding
 from src.embeddings import embed_text
 from src.extensions import db
 from src.sanitize import sanitize_html

@@ -12,7 +12,8 @@ import requests
 from src.api.v1 import v1
 from src.funnel.stages import VISITS, DISCOVERY
 from src.inbox.logic import normalize_email_payload
-from src.models import Account, InboxConnection, User, Lead, LeadFunnelStage
+from src.models.core import Account, InboxConnection, User
+from src.models.leads import Lead, LeadFunnelStage
 from src.extensions import db, limiter
 from src.sanitize import sanitize_html
 from datetime import datetime, timezone

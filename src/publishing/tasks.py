@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from src.celery_inboxiq import celery
 from src.extensions import db
-from src.models import BlogPost
+from src.models.content import BlogPost
 from src.publishing.service import generate_blog_content
 
 

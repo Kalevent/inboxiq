@@ -12,7 +12,8 @@ from src.agents.worker import process_email_with_agents
 from src.inbox.logic import normalize_email_payload, run_dspy_decision, compute_due_at
 from src.inbox.merger import merge_decisions, should_skip_triage
 from src.extensions import db
-from src.models import Ticket, InboxConnection, Account
+from src.models.core import InboxConnection, Account
+from src.models.tickets import Ticket
 from src.dspy.triage_labels import get_triage_labels
 from src.dspy.training.train import train_from_overrides
 from src.dspy import _configure_dspy

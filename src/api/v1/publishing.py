@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required
 from datetime import datetime
 
 from src.extensions import db
-from src.models import BlogPost
+from src.models.content import BlogPost
 
 from src.api.v1 import v1
 from src.publishing.service import create_blog_draft, list_blogs, publish_blog

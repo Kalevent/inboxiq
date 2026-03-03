@@ -8,7 +8,10 @@ from celery import Celery
 from sqlalchemy import func, or_, case, desc
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import Ticket, InboxConnection, Feedback, DspyTrainingMetric, DraftReplyFeedback
+from src.models.ai import DspyTrainingMetric
+from src.models.core import InboxConnection
+from src.models.misc import Feedback
+from src.models.tickets import Ticket, DraftReplyFeedback
 from src.inbox.logic import normalize_email_payload, run_dspy_decision, sample_messages, compute_due_at
 from src.inbox.poll import fetch_messages_gmail, fetch_messages_outlook
 

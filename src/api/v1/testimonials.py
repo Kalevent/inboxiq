@@ -6,7 +6,9 @@ from itsdangerous import URLSafeSerializer, BadSignature
 
 from src.api.v1 import v1
 from src.extensions import db
-from src.models import Testimonial, Ticket, User, Account
+from src.models.core import User, Account
+from src.models.misc import Testimonial
+from src.models.tickets import Ticket
 
 
 def _serializer() -> URLSafeSerializer:

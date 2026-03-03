@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from src.extensions import db
-from src.billing import models
+import src.models.billing as models
 from src.billing.emailing import send_dunning_notice
 from src.billing.service import BillingService
 

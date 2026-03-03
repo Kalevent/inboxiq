@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime, timezone
 
 from src.extensions import db, limiter
-from src.models import Account
+from src.models.core import Account
 
 bp = Blueprint("accounts", __name__, url_prefix='/accounts')
 

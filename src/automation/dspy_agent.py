@@ -20,7 +20,7 @@ from datetime import datetime
 import dspy
 from dspy import Signature, OutputField, InputField
 
-from src.models import AutomationRule, WebhookProvider, AutomationRuleExecution
+from src.models.automation import AutomationRule, WebhookProvider, AutomationRuleExecution
 from src.extensions import db
 from uuid import uuid4
 

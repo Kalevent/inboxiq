@@ -18,7 +18,7 @@ from flask import g, jsonify, request, current_app
 from src.api.v1.access_control import account_allows_api
 from src.crypto import decrypt_value
 from src.extensions import db
-from src.models import RegisteredApp
+from src.models.developer import RegisteredApp
 
 
 def _require_registered_app(required_scope: str):

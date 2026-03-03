@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional
 from sqlalchemy.exc import OperationalError
 from src.extensions import db
-from src.billing import models
+import src.models.billing as models
 from src.billing.idempotency import ensure_idempotency
 from src.billing.providers.stripe import StripeProvider
 from src.billing.providers.secondary import SecondaryProvider

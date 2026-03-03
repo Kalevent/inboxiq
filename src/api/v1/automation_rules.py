@@ -8,7 +8,8 @@ from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
-from src.models import AutomationRule, AutomationRuleExecution, db
+from src.models.automation import AutomationRule, AutomationRuleExecution
+from src.extensions import db
 from src.automation.nl_parser import parse_natural_language_rule, validate_workflow_structure
 from src.automation.roi_calculator import calculate_rule_roi, calculate_account_roi
 from uuid import uuid4

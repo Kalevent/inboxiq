@@ -8,7 +8,10 @@ from src.config import Config, DevelopmentConfig, ProductionConfig, TestConfig
 from src.extensions import db, migrate, jwt, cache, limiter
 from src.monitoring.crash_report import configure_crash_email
 from flask_cors import CORS
-from src.models import Account, User, Ticket, InboxConnection, BlogPost, Feedback  # noqa: F401  # ensure models are registered
+from src.models.content import BlogPost  # noqa: F401  # ensure models are registered
+from src.models.core import Account, User, InboxConnection  # noqa: F401  # ensure models are registered
+from src.models.misc import Feedback  # noqa: F401  # ensure models are registered
+from src.models.tickets import Ticket  # noqa: F401  # ensure models are registered
 from src.admin import bp as admin_bp
 from src.auth import bp as auth_bp
 from src.users import bp as users_bp
@@ -247,7 +250,7 @@ def create_app() -> Flask:
     if not account_id:
       return None
     try:
-      from src.billing.models import CustomerBillingProfile
+      from src.models.billing import CustomerBillingProfile
       return CustomerBillingProfile.query.filter_by(account_id=account_id).first()
     except Exception:
       return None

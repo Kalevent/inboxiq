@@ -65,7 +65,7 @@ def cli_billing_backfill_trial(email: str, days: int):
     Useful to backfill trials for existing accounts.
     """
     from src.models import User
-    from src.billing.models import CustomerBillingProfile
+    from src.models.billing import CustomerBillingProfile
 
     user = User.query.filter_by(email=email).first()
     if not user:
@@ -163,7 +163,7 @@ def cli_seed_plans():
     Safe to re-run: skips plans that already exist (matched by code).
     Run AFTER Stripe products and prices have been created.
     """
-    from src.billing.models import Plan
+    from src.models.billing import Plan
 
     definitions = [
         dict(
@@ -251,7 +251,7 @@ def cli_set_enterprise_account(account_id: int):
     Use for internal/owner accounts that should not be charged.
     The Enterprise plan has unlimited access to all features.
     """
-    from src.billing.models import CustomerBillingProfile, Plan
+    from src.models.billing import CustomerBillingProfile, Plan
 
     plan = Plan.query.filter_by(code="enterprise").first()
     if not plan:

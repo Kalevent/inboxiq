@@ -3,7 +3,7 @@ Automation Studio waitlist and pre-launch endpoints.
 """
 from flask import Blueprint, jsonify, request, redirect, render_template, flash
 from src.extensions import db
-from src.models import AutomationStudioWaitlist
+from src.models.automation import AutomationStudioWaitlist
 import logging
 
 logger = logging.getLogger(__name__)

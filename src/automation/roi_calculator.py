@@ -14,7 +14,8 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 from sqlalchemy import func
 
-from src.models import AutomationRule, AutomationRuleExecution, db
+from src.models.automation import AutomationRule, AutomationRuleExecution
+from src.extensions import db
 
 
 def calculate_rule_roi(

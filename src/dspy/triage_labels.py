@@ -9,7 +9,7 @@ import logging
 from typing import Any, Dict
 
 from src.extensions import db
-from src.models import TriageLabelConfig
+from src.models.tickets import TriageLabelConfig
 
 
 # Default labels when no configuration exists

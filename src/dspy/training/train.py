@@ -17,10 +17,10 @@ from datetime import datetime, timezone
 from dspy.teleprompt import BootstrapFewShot  # type: ignore[reportMissingImports]  # cspell:ignore teleprompt
 
 from src.app import create_app
-from src.models import Ticket
+from src.models.tickets import Ticket
 from src.dspy import build_triage_module, _format_payload, _configure_dspy, _save_compiled_module, _load_compiled_meta
 from src.extensions import db
-from src.models import DspyTrainingMetric
+from src.models.ai import DspyTrainingMetric
 from src.dspy.triage_labels import get_triage_labels
 
 

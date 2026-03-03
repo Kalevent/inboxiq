@@ -4,7 +4,7 @@ from sqlalchemy import func
 
 from src.admin import bp
 from src.extensions import db
-from src.models import PitchedBlogTopic
+from src.models.content import PitchedBlogTopic
 from src.content.tasks import generate_blog_from_pitched_topic
 
 

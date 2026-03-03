@@ -14,7 +14,8 @@ from typing import Dict, List, Any, Optional
 
 from src.celery_inboxiq import celery
 from src.extensions import db
-from src.models import BlogPost, GeneratedContent, Account
+from src.models.content import BlogPost, GeneratedContent
+from src.models.core import Account
 from src.sanitize import sanitize_html
 
 logger = logging.getLogger(__name__)

@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, request, current_app, url_for
 from flask_jwt_extended import get_jwt, jwt_required, create_access_token
 
 from src.extensions import db, limiter
-from src.models import Account, User
+from src.models.core import Account, User
 from src.security import hash_password
 from src.notifications.emails import send_activation_email
 

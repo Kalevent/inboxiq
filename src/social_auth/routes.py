@@ -39,7 +39,7 @@ from flask import current_app, g, redirect, render_template_string, request, url
 
 from src.crypto import encrypt_value
 from src.extensions import db
-from src.models import InboxConnection, User
+from src.models.core import InboxConnection, User
 from src.settings import login_required_settings
 from src.social_auth import bp
 

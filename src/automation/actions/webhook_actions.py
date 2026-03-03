@@ -12,7 +12,8 @@ from typing import Dict, Any
 from datetime import datetime
 from opentelemetry import trace
 
-from src.models import WebhookProvider, db
+from src.models.automation import WebhookProvider
+from src.extensions import db
 from src.automation.template_engine import render_template, build_context
 from src.monitoring.observability import safe_span_attribute
 

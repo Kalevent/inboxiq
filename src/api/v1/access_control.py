@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Set
 
-from src.models import Account
+from src.models.core import Account
 
 
 def _parse_id_set(raw: str) -> Set[int]:
@@ -41,7 +41,7 @@ def account_allows_api(account_id: int) -> bool:
     # If billing is enabled and the account already has an active/trialing subscription,
     # allow API access regardless of the trial window or business allowlist.
     try:
-        from src.billing.models import CustomerBillingProfile  # local import to avoid cycles
+        from src.models.billing import CustomerBillingProfile  # local import to avoid cycles
 
         profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
         if profile and profile.subscription_status in ("active", "trialing"):

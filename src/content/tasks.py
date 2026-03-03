@@ -14,7 +14,7 @@ from celery import shared_task
 import markdown
 
 from src.extensions import db
-from src.models import BlogPost, GeneratedContent, PitchedBlogTopic
+from src.models.content import BlogPost, GeneratedContent, PitchedBlogTopic
 
 # Import DSPy modules
 try:

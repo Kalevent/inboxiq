@@ -15,7 +15,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
 from src.extensions import db
-from src.models import User
+from src.models.core import User
 import logging
 
 logger = logging.getLogger(__name__)

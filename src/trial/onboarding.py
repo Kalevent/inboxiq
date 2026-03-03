@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 from jinja2 import Template
 
 from src.extensions import db
-from src.models import User, Account
+from src.models.core import User, Account
 
 logger = logging.getLogger(__name__)
 

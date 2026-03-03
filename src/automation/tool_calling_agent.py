@@ -22,7 +22,7 @@ from uuid import uuid4
 
 from openai import OpenAI
 
-from src.models import AutomationRule, WebhookProvider, AutomationRuleExecution
+from src.models.automation import AutomationRule, WebhookProvider, AutomationRuleExecution
 from src.extensions import db
 
 logger = logging.getLogger(__name__)

@@ -6,7 +6,10 @@ from uuid import uuid4
 from flask import current_app, flash, g, jsonify, redirect, render_template, request, url_for
 
 from src.extensions import db, limiter
-from src.models import User, Passkey, TOTPDevice, Account, InboxConnection, WebhookProvider, RegisteredApp, DeveloperAccessRequest
+from src.models.auth import Passkey, TOTPDevice
+from src.models.automation import WebhookProvider
+from src.models.core import User, Account, InboxConnection
+from src.models.developer import RegisteredApp, DeveloperAccessRequest
 from src.crypto import encrypt_value, decrypt_value
 from src.api.v1.access_control import account_allows_api
 from src.settings import bp, login_required_settings
@@ -90,7 +93,7 @@ def settings_page(tab):
   # Get current plan for billing tab
   plan_name = None
   if tab == "billing" and account_id:
-    from src.billing.models import CustomerBillingProfile
+    from src.models.billing import CustomerBillingProfile
     profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
     plan_name = profile.plan_choice.capitalize() if profile and profile.plan_choice else None
 
@@ -326,7 +329,7 @@ def billing_plan():
   seats_limit = account.seats_limit if account else None
 
   # Get current plan from billing profile
-  from src.billing.models import CustomerBillingProfile
+  from src.models.billing import CustomerBillingProfile
   profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first() if account_id else None
   current_plan = profile.plan_choice if profile else None
 
