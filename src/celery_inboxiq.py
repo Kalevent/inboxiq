@@ -75,21 +75,9 @@ def make_celery(app) -> Celery:
         enable_utc=True,
         broker_connection_retry_on_startup=True,
         beat_schedule={
-            "billing_trial_checker_daily": {
-                "task": "billing.run_trial_checker",
-                "schedule": crontab(hour=0, minute=15),
-                "options": {"queue": "billing"},
-            },
-            "billing_retry_hourly": {
-                "task": "billing.run_retry_processor",
-                "schedule": crontab(minute=0),
-                "options": {"queue": "billing"},
-            },
-            "billing_dunning_daily": {
-                "task": "billing.run_dunning_sender",
-                "schedule": crontab(hour=6, minute=0),
-                "options": {"queue": "billing"},
-            },
+            # NOTE: billing tasks (trial_checker, retry_processor, dunning_sender) are
+            # handled exclusively by celery_billing.py / inboxiq-celery-billing-beat.
+            # Do NOT add them here to avoid duplicate task execution.
             "inboxiq_poll_connections": {
                 "task": "inboxiq.poll_connections",
                 "schedule": crontab(minute="*/15"),

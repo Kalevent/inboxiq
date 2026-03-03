@@ -156,5 +156,120 @@ def cli_dspy_fix_priorities(confirm: bool):
     click.echo(f"Fixed {count} tickets with P0 priority (now P1).")
 
 
+@app.cli.command("seed-plans")
+def cli_seed_plans():
+    """
+    Seed the plans table with Pro, Business, Scale, Enterprise definitions.
+    Safe to re-run: skips plans that already exist (matched by code).
+    Run AFTER Stripe products and prices have been created.
+    """
+    from src.billing.models import Plan
+
+    definitions = [
+        dict(
+            code="pro",
+            price_cents=4900, currency="GBP", seats=2,
+            ai_decisions_limit=1000,
+            chat_enabled=False, chat_limit=None,
+            automation_enabled=False, automation_runs_limit=None,
+            content_gen_enabled=False, content_posts_limit=None,
+            lead_discovery_enabled=False, leads_limit=None,
+            nurture_enabled=False, nurture_emails_limit=None,
+            distribution_enabled=False,
+            api_access_enabled=False, registered_apps_limit=0,
+            stripe_ai_overage_price_id="price_1T3QtBJSevdfPcyKqixrbQD2",
+        ),
+        dict(
+            code="business",
+            price_cents=14900, currency="GBP", seats=5,
+            ai_decisions_limit=5000,
+            chat_enabled=True, chat_limit=200,
+            automation_enabled=True, automation_runs_limit=500,
+            content_gen_enabled=True, content_posts_limit=8,
+            lead_discovery_enabled=False, leads_limit=None,
+            nurture_enabled=True, nurture_emails_limit=2000,
+            distribution_enabled=False,
+            api_access_enabled=True, registered_apps_limit=2,
+            stripe_ai_overage_price_id="price_1T3QtBJSevdfPcyKO7az2Bnh",
+            stripe_chat_overage_price_id="price_1T3QtCJSevdfPcyKdXODzJ41",
+            stripe_automation_overage_price_id="price_1T3QtDJSevdfPcyKWvbnclxe",
+            stripe_nurture_overage_price_id="price_1T3QtDJSevdfPcyK5YUJsopX",
+        ),
+        dict(
+            code="scale",
+            price_cents=39900, currency="GBP", seats=15,
+            ai_decisions_limit=25000,
+            chat_enabled=True, chat_limit=1000,
+            automation_enabled=True, automation_runs_limit=5000,
+            content_gen_enabled=True, content_posts_limit=30,
+            lead_discovery_enabled=True, leads_limit=200,
+            nurture_enabled=True, nurture_emails_limit=20000,
+            distribution_enabled=True,
+            api_access_enabled=True, registered_apps_limit=999999,
+            stripe_ai_overage_price_id="price_1T3QtEJSevdfPcyKwEr1qCZM",
+            stripe_chat_overage_price_id="price_1T3QtEJSevdfPcyK0J9Cq240",
+            stripe_automation_overage_price_id="price_1T3QtFJSevdfPcyKSv89eccb",
+            stripe_nurture_overage_price_id="price_1T3QtGJSevdfPcyKtq1lPtMK",
+            stripe_leads_overage_price_id="price_1T3QtGJSevdfPcyKGoEpkwEj",
+        ),
+        dict(
+            code="enterprise",
+            price_cents=0, currency="GBP", seats=None,
+            ai_decisions_limit=None,
+            chat_enabled=True, chat_limit=None,
+            automation_enabled=True, automation_runs_limit=None,
+            content_gen_enabled=True, content_posts_limit=None,
+            lead_discovery_enabled=True, leads_limit=None,
+            nurture_enabled=True, nurture_emails_limit=None,
+            distribution_enabled=True,
+            api_access_enabled=True, registered_apps_limit=999999,
+        ),
+    ]
+
+    created = 0
+    skipped = 0
+    for defn in definitions:
+        existing = Plan.query.filter_by(code=defn["code"]).first()
+        if existing:
+            click.echo(f"  skip {defn['code']} (already exists)")
+            skipped += 1
+            continue
+        plan = Plan(**defn)
+        db.session.add(plan)
+        click.echo(f"  create {defn['code']}")
+        created += 1
+
+    db.session.commit()
+    click.echo(f"Done: {created} created, {skipped} skipped.")
+
+
+@app.cli.command("set-enterprise-account")
+@click.option("--account-id", required=True, type=int, help="Account ID to set as Enterprise.")
+def cli_set_enterprise_account(account_id: int):
+    """
+    Set an account to the Enterprise plan with no billing.
+    Use for internal/owner accounts that should not be charged.
+    The Enterprise plan has unlimited access to all features.
+    """
+    from src.billing.models import CustomerBillingProfile, Plan
+
+    plan = Plan.query.filter_by(code="enterprise").first()
+    if not plan:
+        click.echo("Enterprise plan not found. Run `flask seed-plans` first.")
+        return
+
+    profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
+    if not profile:
+        click.echo(f"No billing profile for account {account_id}.")
+        return
+
+    profile.plan_choice = "enterprise"
+    profile.trial_status = "ended"   # Not a trial — a real Enterprise account
+    profile.trial_end = None          # No expiry date — trial_checker ignores NULL trial_end
+    profile.subscription_status = "active"
+    db.session.commit()
+    click.echo(f"Account {account_id} set to Enterprise (no billing, unlimited access).")
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
