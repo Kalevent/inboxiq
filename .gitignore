@@ -22,8 +22,12 @@ google-*.json
 
 # Local planning/implementation docs
 IMPLEMENTATION_PLAN.md
+inboxiq_project_architecture_update.md
 CLAUDE.md
 .dockerignore
+
+# Exported data files — customer/lead data must not be committed
+data/
 
 # VSCode settings
 .vscode/
