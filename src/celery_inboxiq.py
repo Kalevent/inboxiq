@@ -8,13 +8,13 @@ from datetime import datetime, timedelta, timezone
 from celery import Celery
 from celery.schedules import crontab
 from src.app import create_app
-from src.agent_worker import process_email_with_agents
-from src.inboxiq_logic import normalize_email_payload, run_dspy_decision, compute_due_at
-from src.decision_merger import merge_decisions, should_skip_triage
+from src.agents.worker import process_email_with_agents
+from src.inbox.logic import normalize_email_payload, run_dspy_decision, compute_due_at
+from src.inbox.merger import merge_decisions, should_skip_triage
 from src.extensions import db
 from src.models import Ticket, InboxConnection, Account
-from src.triage_labels import get_triage_labels
-from src.dspy_train import train_from_overrides
+from src.dspy.triage_labels import get_triage_labels
+from src.dspy.training.train import train_from_overrides
 from src.dspy import _configure_dspy
 import logging
 
@@ -294,8 +294,8 @@ celery = make_celery(app)
 celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing"])
 
 # Initialize OpenTelemetry for Celery workers
-from src.observability import init_otel, get_tracer
-from src.observability_sanitizer import safe_span_attribute
+from src.monitoring.observability import init_otel, get_tracer
+from src.monitoring.sanitizer import safe_span_attribute
 
 init_otel(service_name="inboxiq-celery")
 tracer = get_tracer(__name__)
@@ -316,7 +316,7 @@ def _redact_body_preview(text: str) -> str:
 
 
 def _build_body_preview(text: str, account_id: int | None = None) -> str:
-    from src.triage_config import get_triage_config
+    from src.dspy.triage_config import get_triage_config
     limit = get_triage_config(account_id).body_preview_limit
     return _redact_body_preview(text or "")[:limit]
 
@@ -379,7 +379,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         # Count one AI decision per unique email processed (after dedupe, before triage)
         if account_id:
             try:
-                from src.quota import check_and_increment, increment_signals
+                from src.billing.quota import check_and_increment, increment_signals
                 check_and_increment("ai_decisions", int(account_id))
                 increment_signals(int(account_id))
             except Exception as _quota_exc:

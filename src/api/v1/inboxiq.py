@@ -9,8 +9,8 @@ from sqlalchemy import func, or_, case, desc
 from src.api.v1 import v1
 from src.extensions import db
 from src.models import Ticket, InboxConnection, Feedback, DspyTrainingMetric, DraftReplyFeedback
-from src.inboxiq_logic import normalize_email_payload, run_dspy_decision, sample_messages, compute_due_at
-from src.email_poll import fetch_messages_gmail, fetch_messages_outlook
+from src.inbox.logic import normalize_email_payload, run_dspy_decision, sample_messages, compute_due_at
+from src.inbox.poll import fetch_messages_gmail, fetch_messages_outlook
 
 BODY_PREVIEW_LIMIT = 240
 
@@ -279,7 +279,7 @@ def _parse_scope(scope: str | None):
 
 
 def _ticket_view(t: Ticket) -> dict:
-    from src.triage_config import get_triage_config
+    from src.dspy.triage_config import get_triage_config
     triage_cfg = get_triage_config(t.account_id)
 
     decision = t.decision or {}
@@ -454,7 +454,7 @@ def dashboard_data():
         if t.due_at and t.due_at <= now + timedelta(hours=1) and t.status not in ("auto_handled",):
             sla_risk_count += 1
 
-    from src.triage_config import get_triage_config
+    from src.dspy.triage_config import get_triage_config
     triage_cfg = get_triage_config(account_id)
 
     action_required_items = []

@@ -17,7 +17,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
 from src.extensions import db
-from src.funnel_stages import RETENTION, ORDERED as FUNNEL_STAGE_ORDER
+from src.funnel.stages import RETENTION, ORDERED as FUNNEL_STAGE_ORDER
 from src.models import Lead, LeadFunnelStage, FunnelMetricsDaily, User
 
 

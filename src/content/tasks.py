@@ -141,7 +141,7 @@ def generate_blog_post(
     if account_id:
         try:
             from src.features import feature_enabled
-            from src.quota import check_and_increment, FeatureDisabled
+            from src.billing.quota import check_and_increment, FeatureDisabled
             if not feature_enabled("content_gen", account_id):
                 return {"status": "error", "error": "Content generation is not available on your current plan."}
             check_and_increment("content_posts", account_id)
@@ -309,7 +309,7 @@ def generate_blog_post(
 
         # Send email notification for review
         try:
-            from src.email_utils import send_content_review_email
+            from src.notifications.emails import send_content_review_email
             import os
 
             notification_email = os.getenv("ADMIN_EMAILS", "support@kalevent.com").split(",")[0].strip()
@@ -641,7 +641,7 @@ def generate_blog_from_pitched_topic(topic_id: str):
 
         # Send email notification
         try:
-            from src.email_utils import send_content_review_email
+            from src.notifications.emails import send_content_review_email
 
             notification_email = os.getenv("ADMIN_EMAILS", "support@kalevent.com").split(",")[0].strip()
             blog_url = f"{os.getenv('API_BASE_URL', 'https://api.kalevent.com')}/blog/{seo_result.slug}"

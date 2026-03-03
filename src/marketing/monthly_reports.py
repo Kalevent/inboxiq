@@ -54,7 +54,7 @@ def send_enterprise_value_reports() -> Dict[str, Any]:
     """
     from src.models import AccountUsageCounter, Account, User
     from src.billing.models import CustomerBillingProfile
-    from src.email_utils import send_enterprise_value_report_email
+    from src.notifications.emails import send_enterprise_value_report_email
 
     billing_month = _previous_billing_month()
     month_label = _month_label(billing_month)

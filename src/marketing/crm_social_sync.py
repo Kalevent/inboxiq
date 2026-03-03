@@ -25,7 +25,7 @@ import requests
 
 from src.celery_inboxiq import celery
 from src.extensions import db
-from src.funnel_stages import DISCOVERY
+from src.funnel.stages import DISCOVERY
 from src.models import InboxConnection, Lead
 
 logger = logging.getLogger(__name__)

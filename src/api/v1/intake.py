@@ -10,8 +10,8 @@ from celery import Celery
 import requests
 
 from src.api.v1 import v1
-from src.funnel_stages import VISITS, DISCOVERY
-from src.inboxiq_logic import normalize_email_payload
+from src.funnel.stages import VISITS, DISCOVERY
+from src.inbox.logic import normalize_email_payload
 from src.models import Account, InboxConnection, User, Lead, LeadFunnelStage
 from src.extensions import db, limiter
 from src.sanitize import sanitize_html
@@ -107,7 +107,7 @@ def intake():
     # Track raw incoming signal volume for ROI reporting (best-effort)
     if account_id:
         try:
-            from src.quota import increment_signals
+            from src.billing.quota import increment_signals
             increment_signals(int(account_id))
         except Exception:
             pass
@@ -326,7 +326,7 @@ def chat_submit():
     # Feature gate + usage counter
     try:
         from src.features import feature_enabled
-        from src.quota import check_and_increment, increment_signals, FeatureDisabled
+        from src.billing.quota import check_and_increment, increment_signals, FeatureDisabled
         if not feature_enabled("chat", account_id_int):
             return jsonify({"error": "feature_disabled", "message": "Chat widget is not available on your current plan."}), 403
         check_and_increment("chat_conversations", account_id_int)

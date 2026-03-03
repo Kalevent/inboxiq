@@ -7,7 +7,7 @@ from flask_jwt_extended import get_jwt, jwt_required, create_access_token
 from src.extensions import db, limiter
 from src.models import Account, User
 from src.security import hash_password
-from src.email_utils import send_activation_email
+from src.notifications.emails import send_activation_email
 
 bp = Blueprint("users", __name__,  url_prefix='/users')
 

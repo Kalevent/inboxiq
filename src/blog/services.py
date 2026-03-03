@@ -1,6 +1,6 @@
 from flask import current_app
 from src.models import BlogPost
-from src.blog_content import get_fallback_posts, get_fallback_post_by_slug
+from src.blog.content import get_fallback_posts, get_fallback_post_by_slug
 
 import html
 import re

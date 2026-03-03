@@ -15,7 +15,7 @@ from flask import current_app
 
 from src.extensions import db
 from src.models import BlogPost
-from src.llm_client import call_openai
+from src.ai.client import call_openai
 
 SYSTEM_BLOG = """You are a B2B SaaS marketing writer. Create concise blog articles with a clear CTA, short intro, and scannable sections. Keep tone confident, direct, and helpful. Return Markdown only."""
 

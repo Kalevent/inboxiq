@@ -514,7 +514,7 @@ def _send_newsletter_email(to_email: str, user_name: str, post: BlogPost, html_c
         True if sent successfully, False otherwise
     """
     try:
-        from src.email_utils import send_email
+        from src.notifications.emails import send_email
 
         subject = f"📬 New on the blog: {post.title}"
 

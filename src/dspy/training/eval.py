@@ -15,7 +15,7 @@ from src.app import create_app
 from src.extensions import db
 from src.models import Ticket
 from src.dspy import run_dspy_triage
-from src.triage_labels import get_triage_labels
+from src.dspy.triage_labels import get_triage_labels
 
 
 def _label_from_ticket(ticket: Ticket) -> Dict[str, Any]:

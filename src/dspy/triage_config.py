@@ -5,7 +5,7 @@ This module consolidates all hardcoded triage values into one place and supports
 per-account customization via the TriageConfig database model.
 
 Usage:
-    from src.triage_config import get_triage_config
+    from src.dspy.triage_config import get_triage_config
 
     config = get_triage_config(account_id)
     sla = config.get_sla_display("P1")  # "4h"

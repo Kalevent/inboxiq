@@ -26,8 +26,8 @@ from src.dspy.draft_reply import (
     sanitize_reply,
     compute_reply_confidence,
 )
-from src.observability import get_tracer
-from src.observability_sanitizer import safe_span_attribute
+from src.monitoring.observability import get_tracer
+from src.monitoring.sanitizer import safe_span_attribute
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer(__name__)
@@ -264,7 +264,7 @@ def _run_dspy_triage_impl(
             decision_trace.append("fallback:unknown_priority")
 
     # Build AI reason using configurable fallbacks
-    from src.triage_config import get_triage_config
+    from src.dspy.triage_config import get_triage_config
     triage_cfg = get_triage_config(account_id)
 
     ai_reason = escalation.get("reason") or route.get("rationale")

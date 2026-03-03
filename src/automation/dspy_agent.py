@@ -540,7 +540,7 @@ class DSPyAutomationAgent:
         error_message: Optional[str] = None
     ):
         """Store execution record in database for analytics."""
-        from src.observability_sanitizer import sanitize_trigger_context
+        from src.monitoring.sanitizer import sanitize_trigger_context
 
         # Extract ticket/lead IDs if present
         ticket_id = None
@@ -619,7 +619,7 @@ def execute_workflow_with_dspy_agent(
     if workflow.account_id:
         try:
             from src.features import feature_enabled
-            from src.quota import check_and_increment, FeatureDisabled
+            from src.billing.quota import check_and_increment, FeatureDisabled
             if not feature_enabled("automation", workflow.account_id):
                 return {"executed": False, "reason": "feature_disabled", "message": "Automation Studio is not available on your current plan."}
             check_and_increment("automation_runs", workflow.account_id)

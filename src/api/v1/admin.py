@@ -469,7 +469,7 @@ def admin_dspy_eval():
     if not _require_admin():
         return jsonify({"error": "forbidden"}), 403
     try:
-        from src.dspy_eval import evaluate
+        from src.dspy.training.eval import evaluate
 
         limit = min(max(int(request.args.get("limit", 200)), 1), 500)
         account_id = request.args.get("account_id")
@@ -520,7 +520,7 @@ def admin_triage_labels():
     name = (payload.get("name") or "default").strip()[:128] or "default"
 
     try:
-        from src.triage_labels import save_triage_labels
+        from src.dspy.triage_labels import save_triage_labels
 
         return jsonify({"config": save_triage_labels(account_val, labels, name=name)})
     except ValueError as exc:

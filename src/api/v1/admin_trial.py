@@ -186,7 +186,7 @@ def send_test_trial_email():
         return jsonify({"error": f"User {user_id} not found"}), 404
 
     try:
-        from src.trial_onboarding import send_day_email
+        from src.trial.onboarding import send_day_email
 
         result = send_day_email(user_id, day)
 

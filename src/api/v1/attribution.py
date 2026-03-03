@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from src.api.v1 import v1
 from src.extensions import db
-from src.funnel_stages import VISITS
+from src.funnel.stages import VISITS
 from src.models import LeadAttribution, Lead
 import logging
 

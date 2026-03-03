@@ -20,7 +20,7 @@ from src.extensions import cache, db, jwt, limiter
 from src.models import User, AuthEvent, Passkey, TOTPDevice
 from src.security import hash_password, verify_password
 from src.models import Account
-from src.email_utils import send_activation_email, send_password_reset_email
+from src.notifications.emails import send_activation_email, send_password_reset_email
 import pyotp
 from webauthn import (
     generate_registration_options,

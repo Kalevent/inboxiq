@@ -123,14 +123,14 @@ def compute_due_at(priority: str, account_id: int | None = None) -> datetime | N
     """
     SLA mapping to a due_at timestamp using account-specific or system defaults.
     """
-    from src.triage_config import get_triage_config
+    from src.dspy.triage_config import get_triage_config
     triage_cfg = get_triage_config(account_id)
     now = datetime.now(timezone.utc)
     return now + triage_cfg.get_sla_timedelta(priority)
 
 
 def _reason_text(action_required: bool | str, reason: str, account_id: int | None = None) -> str:
-    from src.triage_config import get_triage_config
+    from src.dspy.triage_config import get_triage_config
     triage_cfg = get_triage_config(account_id)
 
     if action_required is True:
@@ -187,7 +187,7 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
 
     try:
         from src.dspy import run_dspy_triage
-        from src.triage_labels import get_triage_labels
+        from src.dspy.triage_labels import get_triage_labels
 
         label_config = get_triage_labels(account_id)
         categories = label_config.get("categories", [])

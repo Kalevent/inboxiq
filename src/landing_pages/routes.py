@@ -16,7 +16,7 @@ from uuid import uuid4
 from flask import Blueprint, abort, jsonify, render_template, request
 
 from src.extensions import db, limiter
-from src.funnel_stages import DISCOVERY
+from src.funnel.stages import DISCOVERY
 from src.models import Lead, LeadAttribution, LandingPage
 from src.sanitize import sanitize_html
 

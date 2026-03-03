@@ -23,8 +23,8 @@ from typing import Any, Dict
 
 import requests
 
-from src.observability import get_tracer
-from src.observability_sanitizer import safe_span_attribute
+from src.monitoring.observability import get_tracer
+from src.monitoring.sanitizer import safe_span_attribute
 
 tracer = get_tracer(__name__)
 

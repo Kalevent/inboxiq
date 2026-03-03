@@ -2,7 +2,7 @@
 Celery tasks for automated email outreach campaigns.
 """
 from celery import shared_task
-from src.email_outreach import process_campaign_outreach, process_followup_emails
+from src.outreach.email import process_campaign_outreach, process_followup_emails
 from src.models import EmailCampaign
 from src.extensions import db
 from datetime import datetime

@@ -87,7 +87,7 @@ def init_otel(app=None, service_name="inboxiq"):
 
     Example:
         # In Flask app initialization
-        from src.observability import init_otel
+        from src.monitoring.observability import init_otel
 
         app = Flask(__name__)
         tracer = init_otel(app, service_name="inboxiq-flask")
@@ -203,7 +203,7 @@ def get_tracer(name=__name__):
         Tracer: OpenTelemetry tracer instance
 
     Example:
-        from src.observability import get_tracer
+        from src.monitoring.observability import get_tracer
 
         tracer = get_tracer(__name__)
 

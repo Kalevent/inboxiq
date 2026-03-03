@@ -28,7 +28,7 @@ No single change will fix it — this is a phased, low-risk cleanup done one com
 The following one-off and utility scripts were at the project root. Moved to `scripts/`:
 
 | File | Purpose |
-|---|---|
+| --- | --- |
 | `check_csrf.py` | One-off CSRF header test |
 | `configure_account_labels.py` | One-off account label setup |
 | `find_automation_studio_leads.py` | Lead export utility |
@@ -44,7 +44,7 @@ The following one-off and utility scripts were at the project root. Moved to `sc
 ### Docs → `docs/`
 
 | File | Purpose |
-|---|---|
+| --- | --- |
 | `IMPLEMENTATION_PLAN.md` | Original feature implementation plan |
 | `LEAD_DISCOVERY_STATUS.md` | Lead discovery progress notes |
 | `LEAD_DISCOVERY_SUMMARY.md` | Lead discovery summary |
@@ -56,7 +56,7 @@ The following one-off and utility scripts were at the project root. Moved to `sc
 These are exported data files — not source code. Created `data/` folder:
 
 | File | Purpose |
-|---|---|
+| --- | --- |
 | `automation_studio_leads.csv` | Lead export |
 | `automation_studio_leads_20260207_112308.csv` | Lead export (timestamped) |
 | `automation_studio_leads_20260207_112721.csv` | Lead export (timestamped) |
@@ -79,7 +79,7 @@ Added to `.gitignore`.
 
 **Risk:** Low. Each file move requires updating import paths.
 **Rule:** One file per commit. Grep all imports. Verify deploy before next move.
-**Status:** Not started
+**Status:** ✅ Done
 
 ### Files to move (ordered safest → riskiest)
 
@@ -110,6 +110,35 @@ Added to `.gitignore`.
 | `email_outreach.py` | `src/email/outreach.py` | High deps — do last |
 | `email_utils.py` | `src/email/utils.py` | Highest deps — do last |
 
+### New packages created
+
+| Package | Contents |
+| --- | --- |
+| `src/monitoring/` | `crash_report.py`, `observability.py`, `sanitizer.py` (was observability_sanitizer) |
+| `src/inbox/` | `logic.py` (was inboxiq_logic), `poll.py` (was email_poll), `merger.py` (was decision_merger) |
+| `src/ai/` | `client.py` (was llm_client) |
+| `src/notifications/` | `emails.py` (was email_utils) |
+
+### Files moved into existing packages
+
+| File | Destination |
+| --- | --- |
+| `triage_config.py` | `src/dspy/triage_config.py` |
+| `triage_labels.py` | `src/dspy/triage_labels.py` |
+| `dspy_eval.py` | `src/dspy/training/eval.py` |
+| `dspy_train.py` | `src/dspy/training/train.py` |
+| `funnel_stages.py` | `src/funnel/stages.py` |
+| `quota.py` | `src/billing/quota.py` |
+| `seo_cleanup.py` | `src/marketing/seo_cleanup.py` |
+| `blog_content.py` | `src/blog/content.py` |
+| `trial_onboarding.py` | `src/trial/onboarding.py` |
+| `kb_integrations.py` | `src/integrations/kb.py` |
+| `mcp_client.py` | `src/mcp/client.py` |
+| `agent_worker.py` | `src/agents/worker.py` |
+| `agents_registry.py` | `src/agents/registry.py` |
+| `automation_studio.py` | `src/automation/studio.py` |
+| `email_outreach.py` | `src/outreach/email.py` |
+
 ### Files to keep at `src/` root (legitimate shared utilities)
 
 - `app.py` — Flask factory
@@ -124,6 +153,7 @@ Added to `.gitignore`.
 - `crypto.py` — Shared crypto utility
 - `security.py` — Shared security utility
 - `features.py` — Feature flags
+- `dspy_triage.py` — **Deprecated shim** (re-exports from `src.dspy.triage`); 0 callers; delete when confirmed safe
 
 ---
 
@@ -160,7 +190,7 @@ src/models/
 ### File naming collisions to resolve
 
 | Problem | Fix |
-|---|---|
+| --- | --- |
 | `src/admin/admin_marketing.py` vs `src/api/v1/admin_marketing.py` | Rename `src/admin/admin_marketing.py` → `src/admin/marketing_routes.py` |
 | `email_utils.py` (transactional) vs `email_outreach.py` (campaign) | After Phase B move, rename clearly |
 | `src/admin/admin.py` and `src/admin/routes.py` | Consolidate or clarify split |

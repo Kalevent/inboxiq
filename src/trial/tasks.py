@@ -2,7 +2,7 @@
 Celery tasks for trial onboarding email sequence.
 """
 from celery import shared_task
-from src.trial_onboarding import process_trial_onboarding_emails, enroll_user_in_trial_onboarding
+from src.trial.onboarding import process_trial_onboarding_emails, enroll_user_in_trial_onboarding
 import logging
 
 logger = logging.getLogger(__name__)

@@ -27,7 +27,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.api.v1 import v1
 from src.billing.models import AccountUsageCounter
 from src.extensions import db
-from src.funnel_stages import CONVERSION_STAGES
+from src.funnel.stages import CONVERSION_STAGES
 from src.models import Account, EnterpriseInquiry, InAppMessage, InAppMessageDismissal, LandingPage, Lead, LeadAttribution, NurtureEmailSend, Referral, User
 from src.sanitize import sanitize_html
 import logging
@@ -835,7 +835,7 @@ def notify_engineering_for_inquiry(inquiry_id: str):
     if not inq:
         return jsonify({"error": "not found"}), 404
 
-    from src.email_utils import send_enterprise_onboarding_notification
+    from src.notifications.emails import send_enterprise_onboarding_notification
 
     admin_emails = [
         e.strip()

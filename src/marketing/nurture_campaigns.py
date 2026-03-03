@@ -22,7 +22,7 @@ from typing import Dict, Any
 
 from src.celery_inboxiq import celery
 from src.extensions import db
-from src.funnel_stages import DISCOVERY, CONSIDERATION
+from src.funnel.stages import DISCOVERY, CONSIDERATION
 from src.models import Lead, NurtureEmailSend
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
     Returns:
         Summary dict: status, sent, failed, eligible_leads, vertical_breakdown
     """
-    from src.email_utils import send_email
+    from src.notifications.emails import send_email
 
     two_days_ago = datetime.now(timezone.utc) - timedelta(days=2)
     cooldown_cutoff = datetime.now(timezone.utc) - timedelta(days=_MIN_SEND_INTERVAL_DAYS)
@@ -179,7 +179,7 @@ def send_discovery_nurture(max_sends: int = 50) -> Dict[str, Any]:
                 )
                 if lead.account_id:
                     try:
-                        from src.quota import check_and_increment
+                        from src.billing.quota import check_and_increment
                         check_and_increment("nurture_emails", lead.account_id)
                     except Exception as _qe:
                         logger.warning("Quota increment failed for nurture_emails account=%s: %s", lead.account_id, _qe)
@@ -214,7 +214,7 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
     Returns:
         Summary dict: status, sent, failed, eligible_leads, vertical_breakdown
     """
-    from src.email_utils import send_email
+    from src.notifications.emails import send_email
 
     two_days_ago = datetime.now(timezone.utc) - timedelta(days=2)
     cooldown_cutoff = datetime.now(timezone.utc) - timedelta(days=_MIN_SEND_INTERVAL_DAYS)
@@ -307,7 +307,7 @@ def send_consideration_nurture(max_sends: int = 30) -> Dict[str, Any]:
                 )
                 if lead.account_id:
                     try:
-                        from src.quota import check_and_increment
+                        from src.billing.quota import check_and_increment
                         check_and_increment("nurture_emails", lead.account_id)
                     except Exception as _qe:
                         logger.warning("Quota increment failed for nurture_emails account=%s: %s", lead.account_id, _qe)

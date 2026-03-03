@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from celery import shared_task
 
 from src.extensions import db
-from src.funnel_stages import VISITS, DISCOVERY, CONSIDERATION, RETENTION
+from src.funnel.stages import VISITS, DISCOVERY, CONSIDERATION, RETENTION
 from src.models import Lead, LeadFunnelStage, LeadEngagementEvent, FunnelMetricsDaily
 
 # Import DSPy modules
@@ -359,7 +359,7 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
     if account_id:
         try:
             from src.features import feature_enabled
-            from src.quota import FeatureDisabled
+            from src.billing.quota import FeatureDisabled
             if not feature_enabled("lead_discovery", int(account_id)):
                 return {**results, "status": "error", "error": "Lead discovery is not available on your current plan."}
         except FeatureDisabled as _fd:
@@ -435,7 +435,7 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
             # Count one lead discovered against plan quota
             if account_id:
                 try:
-                    from src.quota import check_and_increment
+                    from src.billing.quota import check_and_increment
                     check_and_increment("leads_discovered", int(account_id))
                 except Exception as _qe:
                     import logging as _log

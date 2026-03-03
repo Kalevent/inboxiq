@@ -21,7 +21,7 @@ from src.models import Ticket
 from src.dspy import build_triage_module, _format_payload, _configure_dspy, _save_compiled_module, _load_compiled_meta
 from src.extensions import db
 from src.models import DspyTrainingMetric
-from src.triage_labels import get_triage_labels
+from src.dspy.triage_labels import get_triage_labels
 
 
 # Seed examples for non-actionable emails to teach the model what to auto-handle

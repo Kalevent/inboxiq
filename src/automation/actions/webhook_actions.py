@@ -14,7 +14,7 @@ from opentelemetry import trace
 
 from src.models import WebhookProvider, db
 from src.automation.template_engine import render_template, build_context
-from src.observability import safe_span_attribute
+from src.monitoring.observability import safe_span_attribute
 
 
 def execute_send_webhook(context: Dict[str, Any], config: Dict[str, Any], span: trace.Span) -> Dict[str, Any]:

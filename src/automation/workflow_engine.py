@@ -22,8 +22,8 @@ from uuid import uuid4
 
 from src.extensions import db
 from src.models import AutomationRule, AutomationRuleExecution
-from src.observability import get_tracer
-from src.observability_sanitizer import (
+from src.monitoring.observability import get_tracer
+from src.monitoring.sanitizer import (
     safe_span_attribute,
     sanitize_trigger_context,
     sanitize_value,

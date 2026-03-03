@@ -6,7 +6,7 @@ from flask import Flask, jsonify, render_template, current_app, request, redirec
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, get_jwt
 from src.config import Config, DevelopmentConfig, ProductionConfig, TestConfig
 from src.extensions import db, migrate, jwt, cache, limiter
-from src.crash_report import configure_crash_email
+from src.monitoring.crash_report import configure_crash_email
 from flask_cors import CORS
 from src.models import Account, User, Ticket, InboxConnection, BlogPost, Feedback  # noqa: F401  # ensure models are registered
 from src.admin import bp as admin_bp
@@ -19,13 +19,13 @@ from src.blog import bp as blog_bp
 from src.settings import bp as settings_bp
 from src.publishing import bp as publishing_bp
 from src.funnel.routes import funnel_bp
-from src.automation_studio import bp as automation_studio_bp
+from src.automation.studio import bp as automation_studio_bp
 from src.social_auth import bp as social_auth_bp
 from src.landing_pages.routes import bp as landing_pages_bp
 from src.api.v1.access_control import account_allows_api
 
-from src.email_utils import send_test_email as send_test_email_util, send_onboarding_reminder
-from src.crash_report import configure_crash_email
+from src.notifications.emails import send_test_email as send_test_email_util, send_onboarding_reminder
+from src.monitoring.crash_report import configure_crash_email
 from datetime import datetime, timezone, timedelta
 
 
@@ -95,7 +95,7 @@ def create_app() -> Flask:
   configure_crash_email(app)
 
   # Initialize OpenTelemetry (must be after Flask app + extensions init)
-  from src.observability import init_otel
+  from src.monitoring.observability import init_otel
   init_otel(app, service_name="inboxiq-flask")
 
   cors_origins_raw = app.config.get("CORS_ORIGINS", "")
@@ -267,7 +267,7 @@ def create_app() -> Flask:
   app.register_blueprint(landing_pages_bp, url_prefix="/lp")
 
   # Register SEO cleanup handlers for old URLs
-  from src.seo_cleanup import register_seo_cleanup
+  from src.marketing.seo_cleanup import register_seo_cleanup
   register_seo_cleanup(app)
 
   @app.route("/", methods=["GET"])
@@ -585,7 +585,7 @@ def create_app() -> Flask:
     has_admin_access = bool(user and user.email and ((not allowed) or (user.email.lower() in allowed)))
 
     # Build work queue groupings to match the UI sections (action required, optional, auto-handled).
-    from src.triage_config import get_triage_config
+    from src.dspy.triage_config import get_triage_config
     triage_cfg = get_triage_config(account_id)
 
     def _sla_display(priority: str | None) -> str:

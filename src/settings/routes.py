@@ -1253,7 +1253,7 @@ def knowledge_base_integration():
                 flash("No files selected", "error")
                 return redirect(url_for("settings.knowledge_base_integration"))
 
-            from src.kb_integrations import process_uploaded_files
+            from src.integrations.kb import process_uploaded_files
             result = process_uploaded_files(files, account_id)
 
             if result["success"] > 0:
@@ -1266,7 +1266,7 @@ def knowledge_base_integration():
 
         elif action == "delete_article":
             article_id = request.form.get("article_id")
-            from src.kb_integrations import delete_kb_article
+            from src.integrations.kb import delete_kb_article
             if delete_kb_article(article_id, account_id):
                 flash("Article deleted", "success")
             else:
@@ -1302,8 +1302,8 @@ def triage_config_settings():
         flash("Account not found", "error")
         return redirect(url_for("settings.settings_page"))
 
-    from src.triage_config import get_triage_config, save_triage_config, invalidate_triage_config
-    from src.triage_config import (
+    from src.dspy.triage_config import get_triage_config, save_triage_config, invalidate_triage_config
+    from src.dspy.triage_config import (
         DEFAULT_SLA_MAPPINGS, DEFAULT_SLA_HOURS, DEFAULT_FALLBACK_MESSAGES,
         DEFAULT_OWNER, DEFAULT_CATEGORY, DEFAULT_PRIORITY,
         DEFAULT_CONFIDENCE_THRESHOLD, DEFAULT_P2_NEUTRAL_AUTO_HANDLE,

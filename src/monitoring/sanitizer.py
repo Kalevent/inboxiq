@@ -14,7 +14,7 @@ Compliance:
 - HIPAA: No PHI in traces (if applicable)
 
 Usage:
-    from src.observability_sanitizer import safe_span_attribute, sanitize_trigger_context
+    from src.monitoring.sanitizer import safe_span_attribute, sanitize_trigger_context
 
     # Safe attribute setting
     safe_span_attribute(span, "email.subject", email.subject)  # PII auto-redacted

@@ -10,7 +10,7 @@ from flask import abort, jsonify, request, send_file, render_template, current_a
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.extensions import db
-from src.llm_client import call_openai
+from src.ai.client import call_openai
 from src.publishing import bp
 from src.publishing.models import NewsletterDraft, WhitepaperDraft
 from src.publishing.service import (

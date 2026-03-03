@@ -26,7 +26,7 @@ from typing import Dict, Any
 
 from src.celery_inboxiq import celery
 from src.extensions import db
-from src.funnel_stages import DISCOVERY, CONSIDERATION
+from src.funnel.stages import DISCOVERY, CONSIDERATION
 from src.models import Lead, LeadEngagementEvent, NurtureEmailSend
 
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ def _log_trigger_send(lead_id: str, trigger_type: str, subject_line: str, vertic
 
 def _send_triggered_email(lead: Lead, trigger_type: str, subject: str, body_html: str) -> bool:
     """Send a triggered email and log it. Returns True on success."""
-    from src.email_utils import send_email
+    from src.notifications.emails import send_email
     from src.dspy.email_personalization import infer_vertical
 
     try:
