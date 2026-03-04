@@ -121,15 +121,7 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/outreach/campaigns/{{campaign_id}}/outreaches?limit=50",
-          "query": [
-            {
-              "key": "limit",
-              "value": "50"
-            }
-          ]
-        },
+        "url": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/outreach/campaigns/{{campaign_id}}/outreaches?limit=50",
         "description": "Get all emails sent for a campaign"
       },
       "response": []

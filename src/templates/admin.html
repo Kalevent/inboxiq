@@ -148,6 +148,11 @@
             <span>Marketing</span>
           </button>
 
+          <button class="sidebar-nav-item w-full text-left" data-section="campaigns">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            <span>Email Outreach</span>
+          </button>
+
           <button class="sidebar-nav-item w-full text-left" data-section="ai">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
             <span>AI & Training</span>
@@ -184,6 +189,9 @@
 
         <!-- Marketing Section -->
         {% include 'admin/section_marketing.html' %}
+
+        <!-- Email Campaigns Section -->
+        {% include 'admin/section_campaigns.html' %}
 
         <!-- AI & Training Section -->
         {% include 'admin/section_ai.html' %}
@@ -228,6 +236,8 @@
           loadDevRequests();
         } else if (section === 'marketing') {
           loadMarketingData();
+        } else if (section === 'campaigns') {
+          loadCampaignsData();
         } else if (section === 'saas') {
           loadSaasMetrics();
           loadSpendEntries();
@@ -1469,6 +1479,348 @@
     function getToken() {
       return document.cookie.split(';').map(c => c.trim())
         .find(c => c.startsWith('access_token_cookie='))?.split('=')[1] || '';
+    }
+
+    // =========================================================
+    // Email Campaigns
+    // =========================================================
+    function _campHeaders() {
+      const h = { 'Content-Type': 'application/json' };
+      const csrf = getCsrfToken();
+      if (csrf) h['X-CSRF-TOKEN'] = csrf;
+      return h;
+    }
+
+    function _statusBadge(campaign) {
+      const isMaxed = campaign.max_recipients && campaign.total_sent >= campaign.max_recipients;
+      if (campaign.status === 'active' && isMaxed) {
+        return '<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300">ACTIVE · MAXED</span>';
+      }
+      const map = {
+        active: 'bg-emerald-500/20 text-emerald-300',
+        paused: 'bg-amber-500/20 text-amber-300',
+        draft:  'bg-slate-700 text-slate-400',
+        completed: 'bg-slate-700 text-slate-400',
+      };
+      const cls = map[campaign.status] || 'bg-slate-700 text-slate-400';
+      return `<span class="px-2 py-0.5 rounded-full text-xs font-semibold ${cls}">${campaign.status.toUpperCase()}</span>`;
+    }
+
+    function _campNote(c) {
+      const isMaxed = c.max_recipients && c.total_sent >= c.max_recipients;
+      if (c.status === 'active' && isMaxed) {
+        return `<p class="text-xs text-amber-300 mt-2">⚠ At recipient limit (${c.total_sent}/${c.max_recipients}). Extend the limit to keep sending, or create a new campaign.</p>`;
+      }
+      if (c.status === 'active') {
+        const remaining = c.max_recipients ? c.max_recipients - c.total_sent : '∞';
+        return `<p class="text-xs text-emerald-400 mt-2">✓ Active — ${remaining} recipient slots remaining.</p>`;
+      }
+      if (c.status === 'completed') {
+        return '<p class="text-xs text-slate-400 mt-2">Campaign completed. Extend the limit to resume sending.</p>';
+      }
+      if (c.status === 'paused') {
+        return '<p class="text-xs text-slate-400 mt-2">Campaign paused. Activate to resume sending to new leads.</p>';
+      }
+      if (c.status === 'draft') {
+        return '<p class="text-xs text-slate-400 mt-2">Draft — activate to start sending emails.</p>';
+      }
+      return '';
+    }
+
+    function _campActions(c) {
+      const id = c.id;
+      const isMaxed = c.max_recipients && c.total_sent >= c.max_recipients;
+      const btns = [];
+      if (c.status === 'draft' || c.status === 'paused') {
+        btns.push(`<button onclick="campaignAction('activate','${id}')" class="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white">Activate</button>`);
+      }
+      if (c.status === 'active' && !isMaxed) {
+        btns.push(`<button onclick="campaignAction('send','${id}')" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-1.5 text-xs font-semibold text-white">Send Now</button>`);
+        btns.push(`<button onclick="campaignAction('pause','${id}')" class="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:text-slate-100">Pause</button>`);
+      }
+      if (c.status === 'active' && isMaxed) {
+        btns.push(`<button onclick="openExtendModal('${id}',${c.max_recipients || 0})" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-1.5 text-xs font-semibold text-white">Extend Limit</button>`);
+        btns.push(`<button onclick="campaignAction('pause','${id}')" class="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:text-slate-100">Pause</button>`);
+      }
+      if (c.status === 'completed') {
+        btns.push(`<button onclick="openExtendModal('${id}',${c.max_recipients || 0})" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-1.5 text-xs font-semibold text-white">Extend &amp; Reactivate</button>`);
+      }
+      return btns.join(' ');
+    }
+
+    async function loadCampaignsData() {
+      const container = document.getElementById('campaignList');
+      container.innerHTML = '<p class="text-slate-400 text-sm">Loading...</p>';
+      try {
+        const resp = await fetch('/api/v1/outreach/campaigns', { credentials: 'include' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        const campaigns = data.campaigns || [];
+        if (!campaigns.length) {
+          container.innerHTML = '<p class="text-slate-400 text-sm">No campaigns yet. Create one above.</p>';
+          return;
+        }
+        container.innerHTML = campaigns.map(c => `
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5" id="camp-card-${c.id}">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-base font-semibold text-slate-100">${c.name}</span>
+                  ${_statusBadge(c)}
+                </div>
+                <div class="text-xs text-slate-400 mt-0.5">From: ${c.from_email} · Started: ${c.started_at ? new Date(c.started_at).toLocaleDateString() : 'Not started'}</div>
+              </div>
+              <div class="flex gap-2 flex-wrap">
+                ${_campActions(c)}
+              </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+              <div class="rounded-xl bg-slate-800/50 p-3">
+                <div class="text-xs text-slate-400 mb-1">Sent</div>
+                <div class="text-xl font-semibold ${c.max_recipients && c.total_sent >= c.max_recipients ? 'text-amber-300' : 'text-slate-100'}">${c.total_sent}</div>
+                <div class="text-[10px] text-slate-500">of ${c.max_recipients ?? '∞'} max</div>
+              </div>
+              <div class="rounded-xl bg-slate-800/50 p-3">
+                <div class="text-xs text-slate-400 mb-1">Opened</div>
+                <div class="text-xl font-semibold text-slate-100">${c.total_opened}</div>
+                <div class="text-[10px] text-slate-500">${c.open_rate}% rate</div>
+              </div>
+              <div class="rounded-xl bg-slate-800/50 p-3">
+                <div class="text-xs text-slate-400 mb-1">Clicked</div>
+                <div class="text-xl font-semibold text-slate-100">${c.total_clicked}</div>
+              </div>
+              <div class="rounded-xl bg-slate-800/50 p-3">
+                <div class="text-xs text-slate-400 mb-1">Replied</div>
+                <div class="text-xl font-semibold text-slate-100">${c.total_replied}</div>
+                <div class="text-[10px] text-slate-500">${c.reply_rate}% rate</div>
+              </div>
+              <div class="rounded-xl bg-slate-800/50 p-3">
+                <div class="text-xs text-slate-400 mb-1">Status</div>
+                <div class="text-sm font-semibold ${c.status === 'active' ? 'text-emerald-300' : 'text-slate-400'}">${c.status}</div>
+              </div>
+            </div>
+            <div id="camp-msg-${c.id}">
+              ${_campNote(c)}
+            </div>
+            <div class="flex gap-4 mt-3 pt-3 border-t border-slate-800">
+              <button onclick="toggleCampPanel('${c.id}','stats')" class="text-xs text-slate-400 hover:text-slate-200 transition-colors">↳ Stats breakdown</button>
+              <button onclick="toggleCampPanel('${c.id}','emails')" class="text-xs text-slate-400 hover:text-slate-200 transition-colors">↳ View emails (${c.total_sent})</button>
+            </div>
+            <div id="camp-stats-${c.id}" class="hidden mt-3"></div>
+            <div id="camp-emails-${c.id}" class="hidden mt-3"></div>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `<p class="text-sm text-red-400">Failed to load campaigns: ${e.message}</p>`;
+      }
+    }
+
+    async function campaignAction(action, campaignId) {
+      const msgEl = document.getElementById(`camp-msg-${campaignId}`);
+      if (msgEl) msgEl.innerHTML = '<p class="text-xs text-slate-400 mt-2">Working...</p>';
+      try {
+        const url = action === 'send'
+          ? `/api/v1/outreach/campaigns/${campaignId}/send`
+          : `/api/v1/outreach/campaigns/${campaignId}/${action}`;
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: _campHeaders(),
+          credentials: 'include',
+        });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          await loadCampaignsData();
+        } else {
+          if (msgEl) msgEl.innerHTML = `<p class="text-xs text-red-400 mt-2">Error: ${data.error || 'Unknown error'}</p>`;
+        }
+      } catch (e) {
+        if (msgEl) msgEl.innerHTML = `<p class="text-xs text-red-400 mt-2">Error: ${e.message}</p>`;
+      }
+    }
+
+    function openExtendModal(campaignId, currentMax) {
+      document.getElementById('extendCampaignId').value = campaignId;
+      document.getElementById('extendMaxValue').value = (currentMax || 0) + 20;
+      document.getElementById('extendStatus').classList.add('hidden');
+      document.getElementById('extendModal').classList.remove('hidden');
+    }
+
+    async function saveExtendLimit() {
+      const campaignId = document.getElementById('extendCampaignId').value;
+      const newMax = parseInt(document.getElementById('extendMaxValue').value, 10);
+      const statusEl = document.getElementById('extendStatus');
+      if (!newMax || newMax < 1) {
+        statusEl.textContent = 'Enter a valid number.';
+        statusEl.className = 'text-xs text-red-400';
+        statusEl.classList.remove('hidden');
+        return;
+      }
+      statusEl.textContent = 'Saving...';
+      statusEl.className = 'text-xs text-slate-400';
+      statusEl.classList.remove('hidden');
+      try {
+        const resp = await fetch(`/api/v1/outreach/campaigns/${campaignId}`, {
+          method: 'PATCH',
+          headers: _campHeaders(),
+          credentials: 'include',
+          body: JSON.stringify({ max_recipients: newMax }),
+        });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          document.getElementById('extendModal').classList.add('hidden');
+          // Trigger a send batch on the now-extended campaign
+          await campaignAction('send', campaignId);
+        } else {
+          statusEl.textContent = `Error: ${data.error || 'Unknown error'}`;
+          statusEl.className = 'text-xs text-red-400';
+        }
+      } catch (e) {
+        statusEl.textContent = `Error: ${e.message}`;
+        statusEl.className = 'text-xs text-red-400';
+      }
+    }
+
+    async function createCampaign(activate) {
+      const name = document.getElementById('campName').value.trim();
+      const subject = document.getElementById('campSubject').value.trim();
+      const body = document.getElementById('campBody').value.trim();
+      const statusEl = document.getElementById('campCreateStatus');
+      if (!name || !subject || !body) {
+        statusEl.textContent = 'Name, subject, and body are required.';
+        statusEl.className = 'text-xs text-red-400';
+        statusEl.classList.remove('hidden');
+        return;
+      }
+      statusEl.textContent = 'Creating...';
+      statusEl.className = 'text-xs text-slate-400';
+      statusEl.classList.remove('hidden');
+      try {
+        const payload = {
+          name,
+          subject_template: subject,
+          body_template: body,
+          from_email: document.getElementById('campFromEmail').value.trim() || undefined,
+          from_name: document.getElementById('campFromName').value.trim() || undefined,
+          max_recipients: parseInt(document.getElementById('campMaxRecipients').value, 10) || undefined,
+          target_source: document.getElementById('campTargetSource').value.trim() || undefined,
+        };
+        const resp = await fetch('/api/v1/outreach/campaigns', {
+          method: 'POST',
+          headers: _campHeaders(),
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) {
+          statusEl.textContent = `Error: ${data.error || 'Unknown error'}`;
+          statusEl.className = 'text-xs text-red-400';
+          return;
+        }
+        if (activate) {
+          await fetch(`/api/v1/outreach/campaigns/${data.campaign_id}/activate`, {
+            method: 'POST', headers: _campHeaders(), credentials: 'include'
+          });
+        }
+        document.getElementById('newCampaignForm').classList.add('hidden');
+        await loadCampaignsData();
+      } catch (e) {
+        statusEl.textContent = `Error: ${e.message}`;
+        statusEl.className = 'text-xs text-red-400';
+      }
+    }
+
+    function toggleCampPanel(id, panel) {
+      const el = document.getElementById(`camp-${panel}-${id}`);
+      if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        if (panel === 'stats') loadCampaignStats(id);
+        else loadCampaignOutreaches(id);
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    async function loadCampaignStats(id) {
+      const el = document.getElementById(`camp-stats-${id}`);
+      el.innerHTML = '<p class="text-xs text-slate-400">Loading...</p>';
+      try {
+        const resp = await fetch(`/api/v1/outreach/campaigns/${id}/stats`, { credentials: 'include' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        const c = data.campaign;
+        const breakdown = data.status_breakdown || {};
+        const rows = Object.entries(breakdown).map(([status, count]) =>
+          `<tr><td class="py-1.5 pr-6 text-slate-300 capitalize text-xs">${status}</td><td class="py-1.5 text-right font-semibold text-slate-100 text-sm">${count}</td></tr>`
+        ).join('');
+        el.innerHTML = `
+          <div class="rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+            <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Stats Breakdown</h4>
+            <div class="grid grid-cols-3 gap-4 mb-4">
+              <div><div class="text-xs text-slate-400">Open Rate</div><div class="text-lg font-semibold text-slate-100">${c.open_rate}%</div></div>
+              <div><div class="text-xs text-slate-400">Click Rate</div><div class="text-lg font-semibold text-slate-100">${c.click_rate}%</div></div>
+              <div><div class="text-xs text-slate-400">Reply Rate</div><div class="text-lg font-semibold text-slate-100">${c.reply_rate}%</div></div>
+            </div>
+            ${rows ? `<table class="w-auto text-sm"><tbody>${rows}</tbody></table>` : '<p class="text-xs text-slate-500">No delivery data yet.</p>'}
+          </div>`;
+      } catch (e) {
+        el.innerHTML = `<p class="text-xs text-red-400">Failed: ${e.message}</p>`;
+      }
+    }
+
+    function _outreachStatusBadge(status) {
+      const map = {
+        sent: 'bg-indigo-500/20 text-indigo-300',
+        delivered: 'bg-blue-500/20 text-blue-300',
+        opened: 'bg-emerald-500/20 text-emerald-300',
+        clicked: 'bg-emerald-500/20 text-emerald-300',
+        replied: 'bg-emerald-600/20 text-emerald-200',
+        failed: 'bg-red-500/20 text-red-300',
+        bounced: 'bg-red-500/20 text-red-300',
+        pending: 'bg-slate-700 text-slate-400',
+      };
+      const cls = map[status] || 'bg-slate-700 text-slate-400';
+      return `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium ${cls}">${status}</span>`;
+    }
+
+    async function loadCampaignOutreaches(id) {
+      const el = document.getElementById(`camp-emails-${id}`);
+      el.innerHTML = '<p class="text-xs text-slate-400">Loading...</p>';
+      try {
+        const resp = await fetch(`/api/v1/outreach/campaigns/${id}/outreaches?limit=50`, { credentials: 'include' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        const outreaches = data.outreaches || [];
+        if (!outreaches.length) {
+          el.innerHTML = '<p class="text-xs text-slate-500 mt-1">No emails sent yet.</p>';
+          return;
+        }
+        const rows = outreaches.map(o => `
+          <tr class="border-b border-slate-800/60">
+            <td class="py-2 pr-3 text-slate-200 text-xs">${o.recipient_email}</td>
+            <td class="py-2 pr-3 text-slate-400 text-xs max-w-xs truncate">${o.subject}</td>
+            <td class="py-2 pr-3">${_outreachStatusBadge(o.status)}</td>
+            <td class="py-2 pr-3 text-slate-400 text-xs">Step ${o.sequence_step + 1}</td>
+            <td class="py-2 text-slate-500 text-xs">${o.sent_at ? new Date(o.sent_at).toLocaleDateString() : '—'}</td>
+          </tr>`).join('');
+        el.innerHTML = `
+          <div class="rounded-xl border border-slate-700 bg-slate-950/50 p-4 overflow-x-auto">
+            <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Emails Sent — last ${outreaches.length}</h4>
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-xs text-slate-500 border-b border-slate-800">
+                  <th class="pb-2 pr-3">Recipient</th>
+                  <th class="pb-2 pr-3">Subject</th>
+                  <th class="pb-2 pr-3">Status</th>
+                  <th class="pb-2 pr-3">Step</th>
+                  <th class="pb-2">Sent</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+      } catch (e) {
+        el.innerHTML = `<p class="text-xs text-red-400">Failed: ${e.message}</p>`;
+      }
     }
   </script>
 </body>

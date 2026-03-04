@@ -24,6 +24,9 @@ certs/
 secrets/
 archive/
 
+# Node.js build tooling — Tailwind CSS is pre-compiled; node_modules not needed at runtime
+src/node_modules/
+
 # Project root directories not needed in the image
 data/
 scripts/

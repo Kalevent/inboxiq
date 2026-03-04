@@ -1,0 +1,91 @@
+        <section id="section-campaigns" class="admin-section">
+          <div class="content-container space-y-6">
+            <div class="flex items-start justify-between">
+              <div>
+                <h1 class="text-2xl font-semibold tracking-tight">Email Outreach</h1>
+                <p class="text-sm text-slate-300 mt-1">Manage outreach campaigns — view status, send emails to new leads, and adjust limits.</p>
+              </div>
+              <button onclick="document.getElementById('newCampaignForm').classList.toggle('hidden')"
+                      class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white transition-colors flex-shrink-0">
+                + New Campaign
+              </button>
+            </div>
+
+            <!-- Create Campaign Form -->
+            <div id="newCampaignForm" class="hidden rounded-2xl border border-indigo-500/30 bg-slate-900/70 p-6 space-y-4">
+              <h2 class="text-base font-semibold text-slate-100">Create Campaign</h2>
+              <div class="grid md:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs text-slate-400">Campaign name *</label>
+                  <input id="campName" type="text" placeholder="e.g. Automation Studio Beta Outreach"
+                         class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400">Max recipients (cap)</label>
+                  <input id="campMaxRecipients" type="number" placeholder="50" min="1"
+                         class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                </div>
+              </div>
+              <div>
+                <label class="text-xs text-slate-400">Subject template * (use &#123;&#123;FirstName&#125;&#125;, &#123;&#123;CompanyName&#125;&#125;)</label>
+                <input id="campSubject" type="text" placeholder="Quick question about {{CompanyName}}"
+                       class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+              </div>
+              <div>
+                <label class="text-xs text-slate-400">Email body * (plain text, supports template variables)</label>
+                <textarea id="campBody" rows="6" placeholder="Hi {{FirstName}},&#10;&#10;..."
+                          class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 font-mono text-xs"></textarea>
+              </div>
+              <div class="grid md:grid-cols-3 gap-3">
+                <div>
+                  <label class="text-xs text-slate-400">From email</label>
+                  <input id="campFromEmail" type="email" placeholder="support@kalevent.com"
+                         class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400">From name</label>
+                  <input id="campFromName" type="text" placeholder="Kofi from Kalevent"
+                         class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                </div>
+                <div>
+                  <label class="text-xs text-slate-400">Target source (lead filter)</label>
+                  <input id="campTargetSource" type="text" placeholder="buying_signal_discovery"
+                         class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                </div>
+              </div>
+              <div id="campCreateStatus" class="hidden text-xs mt-1"></div>
+              <div class="flex gap-3">
+                <button onclick="createCampaign(false)" class="rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm font-semibold text-white">Save as Draft</button>
+                <button onclick="createCampaign(true)" class="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-sm font-semibold text-white">Create &amp; Activate</button>
+                <button onclick="document.getElementById('newCampaignForm').classList.add('hidden')"
+                        class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:text-slate-100">Cancel</button>
+              </div>
+            </div>
+
+            <!-- Campaign list -->
+            <div id="campaignList" class="space-y-4">
+              <p class="text-slate-400 text-sm">Loading campaigns...</p>
+            </div>
+
+            <!-- Extend limit modal -->
+            <div id="extendModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+              <div class="rounded-2xl border border-slate-700 bg-slate-900 p-6 w-full max-w-sm space-y-4 shadow-2xl">
+                <h3 class="text-base font-semibold text-slate-100">Extend Recipient Limit</h3>
+                <input type="hidden" id="extendCampaignId" />
+                <div>
+                  <label class="text-xs text-slate-400">New max recipients</label>
+                  <input id="extendMaxValue" type="number" min="1"
+                         class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                </div>
+                <p class="text-xs text-slate-400">If the campaign was stopped because it reached the old limit, it will be reactivated automatically.</p>
+                <div id="extendStatus" class="hidden text-xs"></div>
+                <div class="flex gap-3">
+                  <button onclick="saveExtendLimit()" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">Save &amp; Send</button>
+                  <button onclick="document.getElementById('extendModal').classList.add('hidden')"
+                          class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:text-slate-100">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>

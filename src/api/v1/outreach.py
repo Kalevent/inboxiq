@@ -112,6 +112,54 @@ def create_campaign():
     }), 201
 
 
+@v1.route("/outreach/campaigns/<campaign_id>", methods=["PATCH"])
+@jwt_required()
+def update_campaign(campaign_id):
+    """Update campaign settings (max_recipients, name, status)."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    campaign = db.session.query(EmailCampaign).filter(EmailCampaign.id == campaign_id).first()
+    if not campaign:
+        return jsonify({"error": "Campaign not found"}), 404
+
+    data = request.json
+
+    if "max_recipients" in data:
+        new_max = data["max_recipients"]
+        # If raising the limit on a completed (auto-stopped) campaign, reactivate it
+        if new_max > (campaign.max_recipients or 0) and campaign.status == "completed":
+            campaign.status = "active"
+        campaign.max_recipients = new_max
+
+    if "name" in data:
+        campaign.name = data["name"]
+
+    if "status" in data and data["status"] in ("draft", "active", "paused", "completed"):
+        campaign.status = data["status"]
+
+    db.session.commit()
+    return jsonify({"success": True, "message": "Campaign updated"}), 200
+
+
+@v1.route("/outreach/campaigns/<campaign_id>/send", methods=["POST"])
+@jwt_required()
+def send_campaign_now(campaign_id):
+    """Trigger an immediate send batch for an active campaign."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    campaign = db.session.query(EmailCampaign).filter(EmailCampaign.id == campaign_id).first()
+    if not campaign:
+        return jsonify({"error": "Campaign not found"}), 404
+
+    if campaign.status != "active":
+        return jsonify({"error": "Campaign is not active. Activate it first."}), 400
+
+    task = send_campaign_emails.apply_async(args=[campaign_id, 10], queue='leads')
+    return jsonify({"success": True, "message": "Send batch queued.", "task_id": task.id}), 200
+
+
 @v1.route("/outreach/campaigns/<campaign_id>/activate", methods=["POST"])
 @jwt_required()
 def activate_campaign(campaign_id):
