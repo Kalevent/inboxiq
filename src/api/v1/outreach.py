@@ -61,9 +61,11 @@ def create_campaign():
         follow_up_delay_days: [3, 7] for Day 3 and Day 7 follow-ups
         target_source: Filter leads by source (optional)
     """
-    if not _require_admin():
+    admin = _require_admin()
+    if not admin:
         return jsonify({"error": "forbidden"}), 403
 
+    account_id = admin.account_id
     data = request.json
 
     # Get default sender from database or fallback to config
@@ -76,7 +78,7 @@ def create_campaign():
     if not from_email or not from_name:
         # Try to get default sender from database
         default_sender = CampaignSender.query.filter_by(
-            account_id=2,
+            account_id=account_id,
             is_default=True,
             enabled=True
         ).first()
@@ -90,7 +92,7 @@ def create_campaign():
             from_name = from_name or current_app.config.get("CAMPAIGN_DEFAULT_NAME", "Kofi from Kalevent")
 
     campaign = EmailCampaign(
-        account_id=2,
+        account_id=account_id,
         name=data.get("name"),
         subject_template=data.get("subject_template"),
         body_template=data.get("body_template"),
@@ -319,12 +321,13 @@ def campaign_stats(campaign_id):
 @jwt_required()
 def get_campaign_senders():
     """Get all campaign senders for the account."""
-    if not _require_admin():
+    admin = _require_admin()
+    if not admin:
         return jsonify({"error": "forbidden"}), 403
 
     from src.models import CampaignSender
 
-    senders = CampaignSender.query.filter_by(account_id=2).order_by(
+    senders = CampaignSender.query.filter_by(account_id=admin.account_id).order_by(
         CampaignSender.is_default.desc(),
         CampaignSender.created_at.desc()
     ).all()
@@ -346,12 +349,14 @@ def add_campaign_sender():
         name: Display name (e.g., "Kofi from Kalevent")
         is_default: Set as default sender (optional, default: false)
     """
-    if not _require_admin():
+    admin = _require_admin()
+    if not admin:
         return jsonify({"error": "forbidden"}), 403
 
     from src.models import CampaignSender
     from uuid import uuid4
 
+    account_id = admin.account_id
     data = request.json
 
     # Validate required fields
@@ -360,11 +365,11 @@ def add_campaign_sender():
 
     # If setting as default, unset other defaults
     if data.get("is_default"):
-        CampaignSender.query.filter_by(account_id=2, is_default=True).update({"is_default": False})
+        CampaignSender.query.filter_by(account_id=account_id, is_default=True).update({"is_default": False})
 
     sender = CampaignSender(
         id=str(uuid4()),
-        account_id=2,
+        account_id=account_id,
         email=data.get("email"),
         name=data.get("name"),
         is_default=data.get("is_default", False),
@@ -385,12 +390,14 @@ def add_campaign_sender():
 @jwt_required()
 def update_campaign_sender(sender_id):
     """Update a campaign sender (set as default, enable/disable, etc.)."""
-    if not _require_admin():
+    admin = _require_admin()
+    if not admin:
         return jsonify({"error": "forbidden"}), 403
 
     from src.models import CampaignSender
 
-    sender = CampaignSender.query.filter_by(id=sender_id, account_id=2).first()
+    account_id = admin.account_id
+    sender = CampaignSender.query.filter_by(id=sender_id, account_id=account_id).first()
     if not sender:
         return jsonify({"error": "Sender not found"}), 404
 
@@ -398,7 +405,7 @@ def update_campaign_sender(sender_id):
 
     # If setting as default, unset other defaults
     if data.get("is_default"):
-        CampaignSender.query.filter_by(account_id=2, is_default=True).update({"is_default": False})
+        CampaignSender.query.filter_by(account_id=account_id, is_default=True).update({"is_default": False})
         sender.is_default = True
 
     if "enabled" in data:
@@ -419,17 +426,19 @@ def update_campaign_sender(sender_id):
 @jwt_required()
 def delete_campaign_sender(sender_id):
     """Delete a campaign sender."""
-    if not _require_admin():
+    admin = _require_admin()
+    if not admin:
         return jsonify({"error": "forbidden"}), 403
 
     from src.models import CampaignSender
 
-    sender = CampaignSender.query.filter_by(id=sender_id, account_id=2).first()
+    account_id = admin.account_id
+    sender = CampaignSender.query.filter_by(id=sender_id, account_id=account_id).first()
     if not sender:
         return jsonify({"error": "Sender not found"}), 404
 
     # Don't allow deleting the last sender
-    total_senders = CampaignSender.query.filter_by(account_id=2, enabled=True).count()
+    total_senders = CampaignSender.query.filter_by(account_id=account_id, enabled=True).count()
     if total_senders <= 1:
         return jsonify({"error": "Cannot delete the last campaign sender"}), 400
 
