@@ -9,10 +9,22 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
 from src.models.automation import AutomationRule, AutomationRuleExecution
+from src.models.core import User
 from src.extensions import db
 from src.automation.nl_parser import parse_natural_language_rule, validate_workflow_structure
 from src.automation.roi_calculator import calculate_rule_roi, calculate_account_roi
 from uuid import uuid4
+
+_VIEW_ROLES = {"owner", "admin", "agent"}
+_MANAGE_ROLES = {"owner", "admin"}
+_DELETE_ROLES = {"admin"}
+
+
+def _user_role():
+    """Return (user, role) for the current JWT identity."""
+    user = db.session.get(User, get_jwt_identity())
+    role = getattr(user, "role", "agent") if user else None
+    return user, role
 
 
 @v1.route("/automation/rules", methods=["GET"])
@@ -35,6 +47,9 @@ def list_rules():
             "offset": 0
         }
     """
+    _, role = _user_role()
+    if role not in _VIEW_ROLES:
+        return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
 
     # Build query
@@ -86,6 +101,9 @@ def create_rule():
             ...
         }
     """
+    _, role = _user_role()
+    if role not in _MANAGE_ROLES:
+        return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
     data = request.get_json()
 
@@ -147,6 +165,9 @@ def create_rule_from_nl():
             ...
         }
     """
+    _, role = _user_role()
+    if role not in _MANAGE_ROLES:
+        return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
     data = request.get_json()
 
@@ -186,6 +207,9 @@ def create_rule_from_nl():
 @jwt_required()
 def get_rule(rule_id):
     """Get a single automation rule by ID."""
+    _, role = _user_role()
+    if role not in _VIEW_ROLES:
+        return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
 
     rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
@@ -209,6 +233,9 @@ def update_rule(rule_id):
             "actions": [...]
         }
     """
+    _, role = _user_role()
+    if role not in _MANAGE_ROLES:
+        return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
     data = request.get_json()
 
@@ -241,6 +268,9 @@ def update_rule(rule_id):
 @jwt_required()
 def delete_rule(rule_id):
     """Delete an automation rule."""
+    _, role = _user_role()
+    if role not in _DELETE_ROLES:
+        return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
 
     rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
@@ -272,6 +302,9 @@ def get_rule_analytics(rule_id):
             "executions": {...}
         }
     """
+    _, role = _user_role()
+    if role not in _VIEW_ROLES:
+        return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
 
     rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
@@ -306,6 +339,9 @@ def get_account_analytics():
             "rules_breakdown": [...]
         }
     """
+    _, role = _user_role()
+    if role not in _VIEW_ROLES:
+        return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
     time_period = request.args.get("time_period", "month")
 
@@ -335,6 +371,9 @@ def get_rule_executions(rule_id):
             "offset": 0
         }
     """
+    _, role = _user_role()
+    if role not in _VIEW_ROLES:
+        return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
 
     # Verify rule belongs to account

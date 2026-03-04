@@ -29,6 +29,8 @@ class User(db.Model):
     name = db.Column(db.String(255), nullable=True)
     password_hash = db.Column(db.String(255), nullable=True)
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    role = db.Column(db.String(32), nullable=False, server_default="agent",
+                     comment="owner | admin | agent | viewer | billing")
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

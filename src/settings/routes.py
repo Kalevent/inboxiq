@@ -24,6 +24,8 @@ RBAC_DEFAULT_ROLES = [
       "Invite/remove users",
       "Manage integrations and security",
       "View and respond to tickets",
+      "Full access to Marketing Ops",
+      "Create & edit automation rules",
     ],
   },
   {
@@ -34,16 +36,20 @@ RBAC_DEFAULT_ROLES = [
       "Manage users (except owners)",
       "Manage integrations and security",
       "View and respond to tickets",
+      "Full access to Marketing Ops",
+      "Create, edit & delete automation rules",
     ],
   },
   {
     "key": "agent",
     "label": "Agent",
-    "description": "Day-to-day support work with no access to billing or security.",
+    "description": "Day-to-day support work with no access to billing, security, or marketing.",
     "permissions": [
       "View/triage/respond to tickets",
       "Create and edit macros",
       "View integrations status",
+      "View automation rules (read-only)",
+      "No access to Marketing Ops",
     ],
   },
   {
@@ -54,6 +60,7 @@ RBAC_DEFAULT_ROLES = [
       "Read tickets and metrics",
       "View integrations status",
       "No configuration access",
+      "No access to Marketing Ops or Automation Studio",
     ],
   },
   {
@@ -63,7 +70,7 @@ RBAC_DEFAULT_ROLES = [
     "permissions": [
       "Manage billing & invoices",
       "View seat usage",
-      "No ticket or integration access",
+      "No ticket, integration, or marketing access",
     ],
   },
 ]
@@ -277,30 +284,31 @@ def team_invite_page():
   )
 
 
-def _role_store():
-  return current_app.config.setdefault("ROLE_ASSIGNMENTS_STORE", {})
+_VALID_ROLES = {"owner", "admin", "agent", "viewer", "billing"}
 
 
-def _resolved_assignments(account_id, members):
-  """
-  Merge stored assignments with sensible defaults (first member is owner,
-  rest default to agent) while guaranteeing at least one owner.
-  """
-  store = _role_store()
-  stored = store.get(str(account_id)) or {}
+def _resolved_assignments(members):
+  """Read role assignments from DB, defaulting first member to owner."""
   assignments = {}
   for idx, member in enumerate(members):
-    default_role = "owner" if idx == 0 else "agent"
-    assignments[str(member.id)] = stored.get(str(member.id)) or default_role
+    role = getattr(member, "role", None)
+    if role not in _VALID_ROLES:
+      role = "owner" if idx == 0 else "agent"
+    assignments[str(member.id)] = role
   if members and "owner" not in assignments.values():
     assignments[str(members[0].id)] = "owner"
   return assignments
 
 
 def _save_assignments(account_id, assignments):
-  store = _role_store()
-  store[str(account_id)] = assignments
-  current_app.config["ROLE_ASSIGNMENTS_STORE"] = store
+  """Write role assignments to DB."""
+  for user_id_str, role in assignments.items():
+    if role not in _VALID_ROLES:
+      continue
+    user = db.session.get(User, int(user_id_str))
+    if user and user.account_id == account_id:
+      user.role = role
+  db.session.commit()
   return assignments
 
 
@@ -431,7 +439,7 @@ def team_roles_page():
   if not account_id:
     return redirect(url_for("dashboard_home"))
   members = User.query.filter_by(account_id=account_id).order_by(User.created_at.asc()).all()
-  assignments = _resolved_assignments(account_id, members)
+  assignments = _resolved_assignments(members)
   member_payload = _serialize_members(members, assignments)
   return render_template(
     "settings/index.html",
@@ -453,7 +461,7 @@ def api_roles():
   if not account_id:
     return jsonify({"error": "account not found"}), 404
   members = User.query.filter_by(account_id=account_id).order_by(User.created_at.asc()).all()
-  assignments = _resolved_assignments(account_id, members)
+  assignments = _resolved_assignments(members)
   return jsonify(
     {
       "roles": RBAC_DEFAULT_ROLES,
@@ -486,7 +494,7 @@ def api_update_role():
   if not target:
     return jsonify({"error": "user not found for this account"}), 404
 
-  assignments = _resolved_assignments(account_id, members)
+  assignments = _resolved_assignments(members)
   caller_role = assignments.get(str(user.id))
   if caller_role not in {"owner", "admin"}:
     return jsonify({"error": "insufficient permissions"}), 403
@@ -875,6 +883,11 @@ def integrations_webhooks():
   )
 
 
+_AUTOMATION_VIEW_ROLES = {"owner", "admin", "agent"}
+_AUTOMATION_MANAGE_ROLES = {"owner", "admin"}
+_AUTOMATION_DELETE_ROLES = {"admin"}
+
+
 @bp.route("/integrations/automation", methods=["GET", "POST"])
 @login_required_settings
 def integrations_automation():
@@ -882,15 +895,26 @@ def integrations_automation():
   from src.models import AutomationRule
 
   account_id = getattr(g, "current_account_id", None)
+  current_user = getattr(g, "current_user", None)
   api_allowed = account_allows_api(account_id) if account_id else False
 
   if not account_id:
     return redirect(url_for("settings.index"))
 
+  user_role = getattr(current_user, "role", "agent") if current_user else "agent"
+
+  # Viewer and billing roles cannot access Automation Studio at all
+  if user_role not in _AUTOMATION_VIEW_ROLES:
+    from flask import abort
+    abort(403)
+
   if request.method == "POST":
     action = (request.form.get("action") or "").strip()
 
     if action == "toggle_rule" and account_id:
+      if user_role not in _AUTOMATION_MANAGE_ROLES:
+        from flask import abort
+        abort(403)
       rule_id = request.form.get("rule_id", "").strip()
       if rule_id:
         rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
@@ -899,6 +923,9 @@ def integrations_automation():
           db.session.commit()
 
     elif action == "delete_rule" and account_id:
+      if user_role not in _AUTOMATION_DELETE_ROLES:
+        from flask import abort
+        abort(403)
       rule_id = request.form.get("rule_id", "").strip()
       if rule_id:
         rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
@@ -907,6 +934,9 @@ def integrations_automation():
           db.session.commit()
 
     elif action == "create_rule" and account_id:
+      if user_role not in _AUTOMATION_MANAGE_ROLES:
+        from flask import abort
+        abort(403)
       name = request.form.get("name", "").strip()
       description = request.form.get("description", "").strip()
 
