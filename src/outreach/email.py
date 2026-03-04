@@ -329,8 +329,22 @@ def process_campaign_outreach(campaign_id: str, max_emails: int = 10) -> Dict[st
         if campaign.max_recipients and campaign.total_sent >= campaign.max_recipients:
             break
 
-        # Skip leads without real emails
-        if not lead.email or lead.email.startswith('contact@'):
+        # Skip leads without real, personal emails
+        if not lead.email:
+            continue
+        email_lower = lead.email.lower()
+        _bad_domains = {
+            'linkedin.com', 'twitter.com', 'facebook.com', 'gmail.com',
+            'yahoo.com', 'hotmail.com', 'outlook.com', 'greenhouse.io',
+            'lever.co', 'indeed.com', 'glassdoor.com',
+        }
+        _bad_prefixes = (
+            'contact@', 'info@', 'support@', 'hello@', 'admin@',
+            'noreply@', 'no-reply@', 'team@', 'hr@', 'jobs@',
+            'careers@', 'press@', 'sales@', 'marketing@', 'billing@',
+        )
+        domain = email_lower.split('@')[1] if '@' in email_lower else ''
+        if domain in _bad_domains or any(email_lower.startswith(p) for p in _bad_prefixes):
             continue
 
         # Create outreach record

@@ -148,12 +148,51 @@ def enrich_lead_with_email(self, lead_id: str, domain: str) -> Dict[str, Any]:
             "from_cache": from_cache
         }
 
+    # Blocked domains — not real work email addresses
+    _BLOCKED_DOMAINS = {
+        "linkedin.com", "twitter.com", "facebook.com", "instagram.com",
+        "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
+        "indeed.com", "glassdoor.com", "greenhouse.io", "lever.co",
+        "workday.com", "jobs.com", "ziprecruiter.com",
+    }
+    # Role-based prefixes — not personal, unlikely to be read
+    _BLOCKED_PREFIXES = {
+        "info", "contact", "support", "hello", "admin", "noreply",
+        "no-reply", "team", "hr", "jobs", "careers", "press",
+        "sales", "marketing", "billing", "help", "mail",
+    }
+    _MIN_CONFIDENCE = 50  # Require at least 50% confidence from Hunter.io
+
+    def _is_quality_email(email_data: dict) -> bool:
+        email = (email_data.get("value") or "").lower()
+        if not email or "@" not in email:
+            return False
+        prefix, at_domain = email.split("@", 1)
+        if at_domain in _BLOCKED_DOMAINS:
+            return False
+        if prefix in _BLOCKED_PREFIXES:
+            return False
+        if (email_data.get("confidence") or 0) < _MIN_CONFIDENCE:
+            return False
+        return True
+
+    quality_emails = [e for e in emails if _is_quality_email(e)]
+
+    if not quality_emails:
+        return {
+            "success": False,
+            "error": f"No quality emails found for domain (filtered {len(emails)} low-quality results)",
+            "lead_id": lead_id,
+            "domain": domain,
+            "from_cache": from_cache
+        }
+
     # Try to match lead name to found emails
     lead_name = (lead.name or "").lower()
     best_match = None
     best_score = 0
 
-    for email_data in emails:
+    for email_data in quality_emails:
         email = email_data.get("value")
         first_name = (email_data.get("first_name") or "").lower()
         last_name = (email_data.get("last_name") or "").lower()
@@ -175,6 +214,10 @@ def enrich_lead_with_email(self, lead_id: str, domain: str) -> Dict[str, Any]:
         if score > best_score:
             best_score = score
             best_match = email_data
+
+    # Fallback: use highest-confidence quality email if no name match
+    if not best_match:
+        best_match = max(quality_emails, key=lambda e: e.get("confidence", 0))
 
     # Update lead with email
     if best_match:
@@ -199,28 +242,6 @@ def enrich_lead_with_email(self, lead_id: str, domain: str) -> Dict[str, Any]:
             "email": best_match.get("value"),
             "confidence": best_match.get("confidence"),
             "domain": domain,
-            "from_cache": from_cache
-        }
-    else:
-        # Use first email if no good match
-        first_email = emails[0].get("value")
-        lead.email = first_email
-
-        source = "Hunter.io cache" if from_cache else "Hunter.io"
-        if lead.notes:
-            lead.notes += f"\n\nEmail found via {source}: {first_email} (no name match)"
-        else:
-            lead.notes = f"Email found via {source}: {first_email} (no name match)"
-
-        db.session.commit()
-
-        return {
-            "success": True,
-            "lead_id": lead_id,
-            "email": first_email,
-            "confidence": emails[0].get("confidence", 0),
-            "domain": domain,
-            "note": "Used first available email (no name match)",
             "from_cache": from_cache
         }
 

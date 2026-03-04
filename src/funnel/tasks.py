@@ -515,12 +515,25 @@ def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results
         finally:
             loop.close()
 
+        _JOB_BOARD_DOMAINS = {
+            "linkedin.com", "greenhouse.io", "boards.greenhouse.io", "lever.co",
+            "jobs.lever.co", "indeed.com", "glassdoor.com", "ziprecruiter.com",
+            "workday.com", "jobs.com", "monster.com", "wellfound.com", "angel.co",
+        }
+
         # Process signals
         for signal in signal_results.get("signals", []):
             domain = signal.get("domain")
             company_name = signal.get("company_name")
 
             if not domain:
+                continue
+
+            # Skip job board domains — they are never the actual company domain
+            if domain in _JOB_BOARD_DOMAINS or any(
+                domain.endswith(f".{jb}") for jb in _JOB_BOARD_DOMAINS
+            ):
+                results["errors"].append(f"Skipped job board domain: {domain} ({company_name})")
                 continue
 
             results["signals_found"] += 1

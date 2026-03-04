@@ -21,6 +21,15 @@ from urllib.parse import urlparse, quote
 
 logger = logging.getLogger("ranger.lead_discovery")
 
+# Domains that are job boards / social platforms — never the actual company
+_JOB_BOARD_DOMAINS = {
+    "linkedin.com", "greenhouse.io", "boards.greenhouse.io", "lever.co",
+    "jobs.lever.co", "indeed.com", "glassdoor.com", "ziprecruiter.com",
+    "workday.com", "jobs.com", "monster.com", "careerbuilder.com",
+    "wellfound.com", "angel.co", "twitter.com", "facebook.com",
+    "youtube.com", "wikipedia.org",
+}
+
 
 def extract_domain(url: str) -> str:
     """Extract clean domain from URL."""
@@ -257,9 +266,15 @@ async def find_buying_signals(
         Dictionary with companies showing buying signals
     """
     try:
-        # Define search queries for different signal types
+        # Define search queries for different signal types.
+        # Hiring query deliberately avoids job boards — we want the company's own
+        # site or news coverage so we get the actual company domain.
         queries = {
-            "hiring": f'site:linkedin.com/jobs "{niche}" OR site:greenhouse.io "{niche}"',
+            "hiring": (
+                f'"{niche}" "is hiring" OR "we\'re hiring" OR "join our team"'
+                " -site:linkedin.com -site:greenhouse.io -site:indeed.com"
+                " -site:glassdoor.com -site:lever.co -site:ziprecruiter.com"
+            ),
             "funding": f'"{niche}" companies "raised funding" OR "series A" OR "series B" OR "seed round"',
             "expansion": f'"{niche}" companies "opening office" OR "expanding team" OR "new location"',
         }
@@ -281,6 +296,12 @@ async def find_buying_signals(
 
             url = result.get("url", "")
             domain = extract_domain(url)
+
+            # Skip job boards and social platforms — they are never the actual company
+            if domain in _JOB_BOARD_DOMAINS or any(
+                domain.endswith(f".{jb}") for jb in _JOB_BOARD_DOMAINS
+            ):
+                continue
 
             # Skip if we've already seen this domain
             if domain in seen_domains:
