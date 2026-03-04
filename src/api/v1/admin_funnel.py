@@ -407,9 +407,19 @@ def get_recent_leads():
     limit = request.args.get("limit", 50, type=int)
     source = request.args.get("source")
     stage = request.args.get("stage")
+    q = request.args.get("q", "").strip()
 
     query = db.session.query(Lead).order_by(Lead.created_at.desc())
 
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Lead.name.ilike(like),
+                Lead.email.ilike(like),
+                Lead.company_name.ilike(like),
+            )
+        )
     if source:
         query = query.filter(Lead.source == source)
     if stage:

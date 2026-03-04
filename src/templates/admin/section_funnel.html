@@ -29,8 +29,14 @@
                 <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                   <h2 class="text-lg font-semibold text-slate-100 mb-3">Qualify Lead</h2>
                   <p class="text-xs text-slate-400 mb-3">Test DSPy visitor qualification module</p>
+                  <div class="relative mb-2">
+                    <input type="text" placeholder="Search by name, email or company…"
+                           class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100"
+                           oninput="leadPickerSearch(this,'qualifyLeadId','qualifyDrop')" autocomplete="off" />
+                    <div id="qualifyDrop" class="lead-picker-drop hidden absolute z-20 left-0 right-0 mt-1 rounded-lg border border-slate-700 bg-slate-900 shadow-xl max-h-48 overflow-y-auto"></div>
+                  </div>
                   <div class="flex gap-2">
-                    <input id="qualifyLeadId" type="text" placeholder="Lead UUID" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                    <input id="qualifyLeadId" type="text" placeholder="Lead UUID" class="flex-1 rounded-lg border border-slate-600 bg-slate-950/70 px-3 py-2 text-sm text-slate-400 font-mono text-xs" readonly />
                     <button id="qualifyLeadBtn" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">
                       Qualify
                     </button>
@@ -41,8 +47,14 @@
                 <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                   <h2 class="text-lg font-semibold text-slate-100 mb-3">Update Interest Score</h2>
                   <p class="text-xs text-slate-400 mb-3">Test DSPy interest scoring module</p>
+                  <div class="relative mb-2">
+                    <input type="text" placeholder="Search by name, email or company…"
+                           class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100"
+                           oninput="leadPickerSearch(this,'interestLeadId','interestDrop')" autocomplete="off" />
+                    <div id="interestDrop" class="lead-picker-drop hidden absolute z-20 left-0 right-0 mt-1 rounded-lg border border-slate-700 bg-slate-900 shadow-xl max-h-48 overflow-y-auto"></div>
+                  </div>
                   <div class="flex gap-2">
-                    <input id="interestLeadId" type="text" placeholder="Lead UUID" class="flex-1 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                    <input id="interestLeadId" type="text" placeholder="Lead UUID" class="flex-1 rounded-lg border border-slate-600 bg-slate-950/70 px-3 py-2 text-sm text-slate-400 font-mono text-xs" readonly />
                     <button id="interestLeadBtn" class="rounded-lg bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-sm font-semibold text-white">
                       Update
                     </button>
@@ -53,8 +65,14 @@
                 <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 md:col-span-2">
                   <h2 class="text-lg font-semibold text-slate-100 mb-3">Move Lead to Stage</h2>
                   <p class="text-xs text-slate-400 mb-3">Manually move lead to different stage (testing only)</p>
+                  <div class="relative mb-2">
+                    <input type="text" placeholder="Search by name, email or company…"
+                           class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100"
+                           oninput="leadPickerSearch(this,'moveStageLeadId','moveStageDrop')" autocomplete="off" />
+                    <div id="moveStageDrop" class="lead-picker-drop hidden absolute z-20 left-0 right-0 mt-1 rounded-lg border border-slate-700 bg-slate-900 shadow-xl max-h-48 overflow-y-auto"></div>
+                  </div>
                   <div class="grid md:grid-cols-3 gap-2">
-                    <input id="moveStageLeadId" type="text" placeholder="Lead UUID" class="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
+                    <input id="moveStageLeadId" type="text" placeholder="Lead UUID (auto-filled)" class="rounded-lg border border-slate-600 bg-slate-950/70 px-3 py-2 text-sm text-slate-400 font-mono text-xs" readonly />
                     <select id="moveStageTarget" class="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100">
                       <option value="">Select stage...</option>
                       <option value="visits">Visits</option>

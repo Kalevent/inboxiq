@@ -544,6 +544,49 @@
       }
     }
 
+    // Lead picker — shared autocomplete for Qualify / Interest / Move Stage panels
+    let _leadPickerTimer = null;
+    async function leadPickerSearch(inputEl, targetId, dropId) {
+      clearTimeout(_leadPickerTimer);
+      const q = inputEl.value.trim();
+      const drop = document.getElementById(dropId);
+      if (!q || q.length < 2) { drop.classList.add('hidden'); return; }
+      _leadPickerTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/v1/admin/funnel/leads?q=${encodeURIComponent(q)}&limit=8`, { credentials: 'include' });
+          const data = await res.json();
+          const leads = data.leads || [];
+          if (!leads.length) {
+            drop.innerHTML = '<div class="px-3 py-2 text-xs text-slate-400">No leads found</div>';
+          } else {
+            drop.innerHTML = leads.map(l => {
+              const label = (l.company_name || l.name || 'Unknown').replace(/'/g, "\\'");
+              const sub = [l.email, l.current_funnel_stage].filter(Boolean).join(' · ');
+              return `<div class="px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 cursor-pointer border-b border-slate-800 last:border-0"
+                           onclick="leadPickerSelect('${l.id}','${label}','${targetId}','${dropId}',this)">
+                        <div class="font-medium">${l.company_name || l.name || 'Unknown'}</div>
+                        <div class="text-slate-400">${sub}</div>
+                      </div>`;
+            }).join('');
+          }
+          drop.classList.remove('hidden');
+        } catch(e) { drop.classList.add('hidden'); }
+      }, 250);
+    }
+    function leadPickerSelect(id, label, targetId, dropId, el) {
+      document.getElementById(targetId).value = id;
+      document.getElementById(dropId).classList.add('hidden');
+      const searchInput = document.getElementById(dropId).previousElementSibling;
+      if (searchInput) searchInput.value = label;
+    }
+    document.addEventListener('click', e => {
+      document.querySelectorAll('.lead-picker-drop').forEach(drop => {
+        if (!drop.contains(e.target) && drop.previousElementSibling && !drop.previousElementSibling.contains(e.target)) {
+          drop.classList.add('hidden');
+        }
+      });
+    });
+
     async function loadRecentLeads() {
       const container = document.getElementById('recentLeadsList');
       container.innerHTML = '<div class="text-slate-400 text-xs">Loading...</div>';
