@@ -288,7 +288,13 @@ _VALID_ROLES = {"owner", "admin", "agent", "viewer", "billing"}
 
 
 def _resolved_assignments(members):
-  """Read role assignments from DB, defaulting first member to owner."""
+  """Read role assignments from DB, defaulting first member to owner.
+
+  If no member has an explicit owner role (e.g. after the role column
+  migration that set server_default='agent' for all existing rows), the
+  first member is promoted to owner and the assignment is persisted so
+  all role checks work correctly on subsequent requests.
+  """
   assignments = {}
   for idx, member in enumerate(members):
     role = getattr(member, "role", None)
@@ -297,6 +303,8 @@ def _resolved_assignments(members):
     assignments[str(member.id)] = role
   if members and "owner" not in assignments.values():
     assignments[str(members[0].id)] = "owner"
+    # Persist the resolved owner so the DB reflects reality going forward.
+    _save_assignments(members[0].account_id, assignments)
   return assignments
 
 
