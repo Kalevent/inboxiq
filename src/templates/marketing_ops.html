@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>InboxIQ – Admin</title>
+  <title>InboxIQ – Marketing</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link
     rel="stylesheet"
@@ -60,16 +60,17 @@
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-50 antialiased">
+<body class="bg-slate-950 text-slate-50 antialiased" data-section="{{ active_section }}">
   <div class="min-h-screen flex flex-col">
-    <!-- Header (unchanged) -->
+
+    <!-- Header -->
     <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
       <div class="mx-auto px-6 py-4 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
           <div>
             <div class="font-semibold text-lg tracking-tight">Kalevent</div>
-            <div class="text-xs text-slate-400">InboxIQ – Admin</div>
+            <div class="text-xs text-slate-400">InboxIQ – Marketing</div>
           </div>
         </div>
         <nav class="flex items-center gap-3 text-sm text-slate-300">
@@ -97,7 +98,7 @@
                 {% if has_admin_access %}
                 <a href="/admin" class="dashboard-user-menu__item">Admin</a>
                 {% endif %}
-                <a href="/marketing" class="dashboard-user-menu__item">Marketing</a>
+                <a href="/marketing" class="dashboard-user-menu__item dashboard-user-menu__item--active">Marketing</a>
                 <a href="/dashboard" class="dashboard-user-menu__item">Dashboard</a>
                 <a href="/docs" class="dashboard-user-menu__item">Help</a>
                 <form id="logoutForm" action="/auth/logout" method="post">
@@ -115,33 +116,16 @@
       <!-- Left Sidebar Navigation -->
       <aside class="w-52 border-r border-slate-800 bg-slate-950/50 overflow-y-auto flex-shrink-0">
         <div class="p-3 space-y-0.5">
-          <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-3 px-3">Navigation</div>
-
-          <button class="sidebar-nav-item active w-full text-left" data-section="overview">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            <span>Overview</span>
-          </button>
+          <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-3 px-3">Marketing Ops</div>
 
           <button class="sidebar-nav-item w-full text-left" data-section="funnel">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
             <span>Funnel v2.0</span>
-            <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded font-medium">NEW</span>
           </button>
 
           <button class="sidebar-nav-item w-full text-left" data-section="content">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
             <span>Content</span>
-          </button>
-
-          <button class="sidebar-nav-item w-full text-left" data-section="trial">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-            <span>Trial Onboarding</span>
-            <span class="ml-auto text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded font-medium">NEW</span>
-          </button>
-
-          <button class="sidebar-nav-item w-full text-left" data-section="saas">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>SaaS Metrics</span>
           </button>
 
           <button class="sidebar-nav-item w-full text-left" data-section="marketing">
@@ -153,61 +137,22 @@
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
             <span>Email Outreach</span>
           </button>
-
-          <button class="sidebar-nav-item w-full text-left" data-section="ai">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-            <span>AI & Training</span>
-          </button>
-
-          <button class="sidebar-nav-item w-full text-left" data-section="developer">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-            <span>Developer</span>
-          </button>
-
-          <button class="sidebar-nav-item w-full text-left" data-section="system">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            <span>System</span>
-          </button>
         </div>
       </aside>
 
       <!-- Main Content Area -->
       <div class="flex-1 overflow-y-auto">
-        <!-- Overview Section -->
-        {% include 'admin/section_overview.html' %}
-
-        <!-- Funnel v2.0 Section (NEW) -->
         {% include 'admin/section_funnel.html' %}
-
-        <!-- Content & Publishing Section -->
         {% include 'admin/section_content.html' %}
-
-        <!-- Trial Onboarding Section -->
-        {% include 'admin/section_trial.html' %}
-
-        <!-- SaaS Metrics Section -->
-        {% include 'admin/section_saas.html' %}
-
-        <!-- Marketing Section -->
         {% include 'admin/section_marketing.html' %}
-
-        <!-- Email Campaigns Section -->
         {% include 'admin/section_campaigns.html' %}
-
-        <!-- AI & Training Section -->
-        {% include 'admin/section_ai.html' %}
-
-        <!-- System Section -->
-        {% include 'admin/section_developer.html' %}
-
-        {% include 'admin/section_system.html' %}
       </div>
     </main>
 
     <footer class="border-t border-slate-800 bg-slate-950/85">
       <div class="mx-auto px-6 py-4 flex items-center justify-between text-[11px] text-slate-500">
         <div>© 2025 Kalevent · InboxIQ</div>
-        <div class="text-slate-600">Admin Dashboard</div>
+        <div class="text-slate-600">Marketing Ops</div>
       </div>
       {% include 'partials/feedback_footer.html' %}
     </footer>
@@ -216,58 +161,47 @@
   <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
   <script>
-    // Sidebar navigation
+    // ── Sidebar navigation ────────────────────────────────────────────────
     document.querySelectorAll('.sidebar-nav-item').forEach(item => {
       item.addEventListener('click', () => {
-        // Remove active from all
         document.querySelectorAll('.sidebar-nav-item').forEach(i => i.classList.remove('active'));
         document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
 
-        // Add active to clicked
         item.classList.add('active');
         const section = item.getAttribute('data-section');
         document.getElementById(`section-${section}`).classList.add('active');
 
-        // Load section-specific data
-        if (section === 'trial') {
-          loadTrialMetrics();
-        } else if (section === 'funnel') {
+        if (section === 'funnel') {
           loadFunnelMetrics();
-        } else if (section === 'developer') {
-          loadDevRequests();
         } else if (section === 'marketing') {
           loadMarketingData();
         } else if (section === 'campaigns') {
           loadCampaignsData();
-        } else if (section === 'saas') {
-          loadSaasMetrics();
-          loadSpendEntries();
-        } else if (section === 'system') {
-          loadSystemData();
         }
       });
     });
 
-    // Publishing preview handlers
-    document.addEventListener("DOMContentLoaded", () => {
+    // ── DOMContentLoaded: bind all button handlers, activate initial section ──
+    document.addEventListener('DOMContentLoaded', () => {
+      // Publishing preview handlers (Content section)
       const bindOpen = (inputId, buttonId, baseUrl) => {
         const input = document.getElementById(inputId);
         const button = document.getElementById(buttonId);
         if (!input || !button) return;
-        button.addEventListener("click", (e) => {
+        button.addEventListener('click', (e) => {
           e.preventDefault();
-          const val = (input.value || "").trim();
+          const val = (input.value || '').trim();
           if (!val) return;
-          const href = baseUrl.replace("__ID__", encodeURIComponent(val));
-          const win = window.open(href, "_blank", "noopener");
+          const href = baseUrl.replace('__ID__', encodeURIComponent(val));
+          const win = window.open(href, '_blank', 'noopener');
           if (!win) window.location.href = href;
         });
       };
-      bindOpen("blogDraftId", "openBlogDraft", "/publishing/blog/draft/__ID__");
-      bindOpen("newsletterDraftId", "openNewsletterDraft", "/publishing/preview/__ID__");
-      bindOpen("whitepaperDraftId", "openWhitepaperDraft", "/publishing/whitepaper/download/__ID__");
+      bindOpen('blogDraftId', 'openBlogDraft', '/publishing/blog/draft/__ID__');
+      bindOpen('newsletterDraftId', 'openNewsletterDraft', '/publishing/preview/__ID__');
+      bindOpen('whitepaperDraftId', 'openWhitepaperDraft', '/publishing/whitepaper/download/__ID__');
 
-      // Funnel v2.0 handlers
+      // Funnel v2.0 button handlers
       if (document.getElementById('refreshFunnelMetrics')) {
         document.getElementById('refreshFunnelMetrics').addEventListener('click', () => loadFunnelMetrics());
         document.getElementById('qualifyLeadBtn').addEventListener('click', () => qualifyLead());
@@ -278,26 +212,31 @@
         document.getElementById('discoverLeadsBtn').addEventListener('click', () => discoverLeads());
         document.getElementById('refreshLeadsBtn').addEventListener('click', () => loadRecentLeads());
       }
+
+      // Marketing section refresh handlers
+      document.getElementById('refreshAbBtn')?.addEventListener('click', loadAbResults);
+      document.getElementById('refreshAttributionBtn')?.addEventListener('click', loadAttributionReport);
+
+      // Activate the section the server requested
+      const section = document.body.getAttribute('data-section') || 'funnel';
+      const btn = document.querySelector(`[data-section="${section}"]`);
+      if (btn) btn.click();
     });
 
-    // Helper function to get CSRF token from cookies
+    // ── CSRF helper ───────────────────────────────────────────────────────
     function getCsrfToken() {
       const name = 'csrf_access_token=';
       const decodedCookie = decodeURIComponent(document.cookie);
       const ca = decodedCookie.split(';');
       for (let i = 0; i < ca.length; i++) {
         let c = ca[i];
-        while (c.charAt(0) == ' ') {
-          c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-          return c.substring(name.length, c.length);
-        }
+        while (c.charAt(0) === ' ') { c = c.substring(1); }
+        if (c.indexOf(name) === 0) { return c.substring(name.length, c.length); }
       }
       return null;
     }
 
-    // Funnel v2.0 API Functions
+    // ── Funnel v2.0 ───────────────────────────────────────────────────────
     async function loadFunnelMetrics() {
       const container = document.getElementById('funnelMetrics');
       const ratesContainer = document.getElementById('funnelConversionRates');
@@ -306,13 +245,8 @@
       try {
         const response = await fetch('/api/v1/admin/funnel/metrics', { credentials: 'include' });
         const data = await response.json();
+        if (data.error) { container.innerHTML = `<div class="text-red-400 text-sm">${data.error}</div>`; return; }
 
-        if (data.error) {
-          container.innerHTML = `<div class="text-red-400 text-sm">${data.error}</div>`;
-          return;
-        }
-
-        // Stage distribution
         const stages = ['visits', 'discovery', 'consideration', 'conversion', 'retention'];
         container.innerHTML = stages.map(stage => `
           <div class="bg-slate-800/50 rounded-lg p-3 text-center">
@@ -321,7 +255,6 @@
           </div>
         `).join('');
 
-        // Conversion rates
         ratesContainer.innerHTML = `
           <div class="bg-slate-800/50 rounded-lg p-3">
             <div class="text-sm font-semibold text-slate-300">Visits → Discovery</div>
@@ -348,161 +281,89 @@
     async function qualifyLead() {
       const leadId = document.getElementById('qualifyLeadId').value.trim();
       const resultEl = document.getElementById('qualifyLeadResult');
-      if (!leadId) {
-        resultEl.innerHTML = '<span class="text-orange-400">Please enter a lead UUID</span>';
-        return;
-      }
+      if (!leadId) { resultEl.innerHTML = '<span class="text-orange-400">Please enter a lead UUID</span>'; return; }
       resultEl.innerHTML = '<span class="text-slate-400">Processing...</span>';
-
       try {
         const csrfToken = getCsrfToken();
         const headers = { 'Content-Type': 'application/json' };
-        if (csrfToken) {
-          headers['X-CSRF-TOKEN'] = csrfToken;
-        }
-
+        if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
         const response = await fetch('/api/v1/admin/funnel/qualify-lead', {
-          method: 'POST',
-          headers: headers,
-          credentials: 'include',
-          body: JSON.stringify({ lead_id: leadId })
+          method: 'POST', headers, credentials: 'include', body: JSON.stringify({ lead_id: leadId })
         });
         const data = await response.json();
-
-        if (data.success) {
-          resultEl.innerHTML = `<span class="text-green-400">✓ Queued: ${data.message} (Task: ${data.task_id})</span>`;
-        } else {
-          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
-        }
-      } catch (err) {
-        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
-      }
+        resultEl.innerHTML = data.success
+          ? `<span class="text-green-400">✓ Queued: ${data.message} (Task: ${data.task_id})</span>`
+          : `<span class="text-red-400">Error: ${data.error}</span>`;
+      } catch (err) { resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`; }
     }
 
     async function updateInterestScore() {
       const leadId = document.getElementById('interestLeadId').value.trim();
       const resultEl = document.getElementById('interestLeadResult');
-      if (!leadId) {
-        resultEl.innerHTML = '<span class="text-orange-400">Please enter a lead UUID</span>';
-        return;
-      }
+      if (!leadId) { resultEl.innerHTML = '<span class="text-orange-400">Please enter a lead UUID</span>'; return; }
       resultEl.innerHTML = '<span class="text-slate-400">Processing...</span>';
-
       try {
         const csrfToken = getCsrfToken();
         const headers = { 'Content-Type': 'application/json' };
-        if (csrfToken) {
-          headers['X-CSRF-TOKEN'] = csrfToken;
-        }
-
+        if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
         const response = await fetch('/api/v1/admin/funnel/update-interest', {
-          method: 'POST',
-          headers: headers,
-          credentials: 'include',
-          body: JSON.stringify({ lead_id: leadId })
+          method: 'POST', headers, credentials: 'include', body: JSON.stringify({ lead_id: leadId })
         });
         const data = await response.json();
-
-        if (data.success) {
-          resultEl.innerHTML = `<span class="text-green-400">✓ Queued: ${data.message} (Task: ${data.task_id})</span>`;
-        } else {
-          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
-        }
-      } catch (err) {
-        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
-      }
+        resultEl.innerHTML = data.success
+          ? `<span class="text-green-400">✓ Queued: ${data.message} (Task: ${data.task_id})</span>`
+          : `<span class="text-red-400">Error: ${data.error}</span>`;
+      } catch (err) { resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`; }
     }
 
     async function moveLeadStage() {
       const leadId = document.getElementById('moveStageLeadId').value.trim();
       const newStage = document.getElementById('moveStageTarget').value;
       const resultEl = document.getElementById('moveStageResult');
-
-      if (!leadId || !newStage) {
-        resultEl.innerHTML = '<span class="text-orange-400">Please enter lead UUID and select stage</span>';
-        return;
-      }
+      if (!leadId || !newStage) { resultEl.innerHTML = '<span class="text-orange-400">Please enter lead UUID and select stage</span>'; return; }
       resultEl.innerHTML = '<span class="text-slate-400">Processing...</span>';
-
       try {
         const csrfToken = getCsrfToken();
         const headers = { 'Content-Type': 'application/json' };
-        if (csrfToken) {
-          headers['X-CSRF-TOKEN'] = csrfToken;
-        }
-
+        if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
         const response = await fetch('/api/v1/admin/funnel/move-stage', {
-          method: 'POST',
-          headers: headers,
-          credentials: 'include',
-          body: JSON.stringify({ lead_id: leadId, new_stage: newStage })
+          method: 'POST', headers, credentials: 'include', body: JSON.stringify({ lead_id: leadId, new_stage: newStage })
         });
         const data = await response.json();
-
-        if (data.success) {
-          resultEl.innerHTML = `<span class="text-green-400">✓ ${data.message}</span>`;
-        } else {
-          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
-        }
-      } catch (err) {
-        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
-      }
+        resultEl.innerHTML = data.success
+          ? `<span class="text-green-400">✓ ${data.message}</span>`
+          : `<span class="text-red-400">Error: ${data.error}</span>`;
+      } catch (err) { resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`; }
     }
 
     async function runOrchestration() {
       const resultEl = document.getElementById('orchestrationResult');
       resultEl.innerHTML = '<span class="text-slate-400">Starting orchestration...</span>';
-
       try {
         const csrfToken = getCsrfToken();
         const headers = { 'Content-Type': 'application/json' };
-        if (csrfToken) {
-          headers['X-CSRF-TOKEN'] = csrfToken;
-        }
-
-        const response = await fetch('/api/v1/admin/funnel/orchestrate', {
-          method: 'POST',
-          headers: headers,
-          credentials: 'include'
-        });
+        if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+        const response = await fetch('/api/v1/admin/funnel/orchestrate', { method: 'POST', headers, credentials: 'include' });
         const data = await response.json();
-
-        if (data.success) {
-          resultEl.innerHTML = `<span class="text-green-400">✓ ${data.message} (Task: ${data.task_id})</span>`;
-        } else {
-          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
-        }
-      } catch (err) {
-        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
-      }
+        resultEl.innerHTML = data.success
+          ? `<span class="text-green-400">✓ ${data.message} (Task: ${data.task_id})</span>`
+          : `<span class="text-red-400">Error: ${data.error}</span>`;
+      } catch (err) { resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`; }
     }
 
     async function checkProgression() {
       const resultEl = document.getElementById('orchestrationResult');
       resultEl.innerHTML = '<span class="text-slate-400">Checking progression...</span>';
-
       try {
         const csrfToken = getCsrfToken();
         const headers = { 'Content-Type': 'application/json' };
-        if (csrfToken) {
-          headers['X-CSRF-TOKEN'] = csrfToken;
-        }
-
-        const response = await fetch('/api/v1/admin/funnel/check-progression', {
-          method: 'POST',
-          headers: headers,
-          credentials: 'include'
-        });
+        if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+        const response = await fetch('/api/v1/admin/funnel/check-progression', { method: 'POST', headers, credentials: 'include' });
         const data = await response.json();
-
-        if (data.success) {
-          resultEl.innerHTML = `<span class="text-green-400">✓ ${data.message} (Task: ${data.task_id})</span>`;
-        } else {
-          resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
-        }
-      } catch (err) {
-        resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`;
-      }
+        resultEl.innerHTML = data.success
+          ? `<span class="text-green-400">✓ ${data.message} (Task: ${data.task_id})</span>`
+          : `<span class="text-red-400">Error: ${data.error}</span>`;
+      } catch (err) { resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`; }
     }
 
     async function discoverLeads() {
@@ -519,21 +380,15 @@
       try {
         const csrfToken = getCsrfToken();
         const headers = { 'Content-Type': 'application/json' };
-        if (csrfToken) {
-          headers['X-CSRF-TOKEN'] = csrfToken;
-        }
-
+        if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
         const response = await fetch('/api/v1/admin/funnel/discover-leads', {
-          method: 'POST',
-          headers: headers,
-          credentials: 'include',
+          method: 'POST', headers, credentials: 'include',
           body: JSON.stringify({ niche, signal_type: signalType, max_results: maxResults })
         });
         const data = await response.json();
-
         if (data.success) {
           resultEl.innerHTML = `<span class="text-green-400">✓ ${data.message}<br>Task ID: ${data.task_id}<br>Estimated time: ${data.estimated_time}</span>`;
-          setTimeout(() => loadRecentLeads(), 180000); // Auto-refresh after 3 minutes
+          setTimeout(() => loadRecentLeads(), 180000);
         } else {
           resultEl.innerHTML = `<span class="text-red-400">Error: ${data.error}</span>`;
         }
@@ -545,7 +400,7 @@
       }
     }
 
-    // Lead picker — shared autocomplete for Qualify / Interest / Move Stage panels
+    // Lead picker — autocomplete for Qualify / Interest / Move Stage panels
     let _leadPickerTimer = null;
     async function leadPickerSearch(inputEl, targetId, dropId) {
       clearTimeout(_leadPickerTimer);
@@ -574,12 +429,14 @@
         } catch(e) { drop.classList.add('hidden'); }
       }, 250);
     }
+
     function leadPickerSelect(id, label, targetId, dropId, el) {
       document.getElementById(targetId).value = id;
       document.getElementById(dropId).classList.add('hidden');
       const searchInput = document.getElementById(dropId).previousElementSibling;
       if (searchInput) searchInput.value = label;
     }
+
     document.addEventListener('click', e => {
       document.querySelectorAll('.lead-picker-drop').forEach(drop => {
         if (!drop.contains(e.target) && drop.previousElementSibling && !drop.previousElementSibling.contains(e.target)) {
@@ -591,29 +448,17 @@
     async function loadRecentLeads() {
       const container = document.getElementById('recentLeadsList');
       container.innerHTML = '<div class="text-slate-400 text-xs">Loading...</div>';
-
       try {
-        const response = await fetch('/api/v1/admin/funnel/leads?limit=10&source=buying_signal_discovery', {
-          credentials: 'include'
-        });
+        const response = await fetch('/api/v1/admin/funnel/leads?limit=10&source=buying_signal_discovery', { credentials: 'include' });
         const data = await response.json();
-
-        if (data.error) {
-          container.innerHTML = `<div class="text-red-400 text-xs">${data.error}</div>`;
-          return;
-        }
-
+        if (data.error) { container.innerHTML = `<div class="text-red-400 text-xs">${data.error}</div>`; return; }
         if (data.leads.length === 0) {
           container.innerHTML = '<div class="text-slate-400 text-xs">No leads discovered yet. Click "Discover Leads Now" to start.</div>';
           return;
         }
-
         container.innerHTML = data.leads.map(lead => {
-          // Use URL from API response (safely extracted and validated on backend)
           const url = lead.url;
-          // Escape HTML entities for safe rendering
           const escapeHtml = (text) => text ? text.replace(/[<>&"']/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]) : '';
-
           return `
           <div class="bg-slate-800/50 rounded-lg p-2 text-xs hover:bg-slate-800/70 transition-colors ${url ? 'cursor-pointer' : ''}"
                ${url ? `onclick="window.open('${escapeHtml(url)}', '_blank')"` : ''}>
@@ -629,17 +474,13 @@
               <span>${new Date(lead.created_at).toLocaleString()} • ${lead.source}</span>
               ${url ? '<span class="text-indigo-400">→ Click to view</span>' : ''}
             </div>
-          </div>
-        `;
+          </div>`;
         }).join('');
-
         container.innerHTML += `<div class="text-slate-500 text-xs mt-2 text-center">Total in database: ${data.total_in_db} leads</div>`;
-      } catch (err) {
-        container.innerHTML = `<div class="text-red-400 text-xs">Error: ${err.message}</div>`;
-      }
+      } catch (err) { container.innerHTML = `<div class="text-red-400 text-xs">Error: ${err.message}</div>`; }
     }
 
-    // Marketing: load all marketing sub-sections
+    // ── Marketing ─────────────────────────────────────────────────────────
     async function loadMarketingData() {
       await Promise.all([
         loadNurtureStats(),
@@ -680,9 +521,7 @@
             </div>
           `).join('');
         }
-      } catch (err) {
-        console.error('Error loading nurture stats:', err);
-      }
+      } catch (err) { console.error('Error loading nurture stats:', err); }
     }
 
     async function loadAbResults() {
@@ -735,99 +574,6 @@
       }
     }
 
-    // Load trial onboarding metrics
-    async function loadTrialMetrics() {
-      try {
-        const response = await fetch('/api/v1/admin/trial/metrics', {
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        // Update summary stats
-        document.getElementById('totalActiveTrials').textContent = data.summary.total_active_trials || 0;
-        document.getElementById('convertedUsers').textContent = data.summary.converted || 0;
-        document.getElementById('conversionRate').textContent = data.summary.conversion_rate.toFixed(1) + '%';
-        document.getElementById('endingSoon').textContent = data.summary.ending_soon || 0;
-        document.getElementById('day7Eligible').textContent = data.summary.day_7_eligible || 0;
-
-        // Update email delivery counts
-        document.getElementById('day1Count').textContent = data.summary.day_1_eligible || 0;
-        document.getElementById('day3Count').textContent = data.summary.day_3_eligible || 0;
-        document.getElementById('day5Count').textContent = data.summary.day_5_eligible || 0;
-        document.getElementById('day7Count').textContent = data.summary.day_7_eligible || 0;
-
-        // Update distribution
-        const distributionContainer = document.getElementById('trialDistribution');
-        const order = ['0-2 days', '3-4 days', '5-7 days', '8+ days'];
-        distributionContainer.innerHTML = order.map(key => {
-          const count = data.distribution[key] || 0;
-          return `
-            <div class="text-center">
-              <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">${key}</div>
-              <div class="text-xl font-semibold text-indigo-400">${count} users</div>
-            </div>
-          `;
-        }).join('');
-
-        // Update users table
-        const tableBody = document.getElementById('trialUsersTable');
-        if (data.users.length === 0) {
-          tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400">No active trial users</td></tr>';
-        } else {
-          tableBody.innerHTML = data.users.map(user => {
-            const statusColor = user.trial_status === 'converted' ? 'text-emerald-400' :
-                               user.trial_status === 'ending_soon' ? 'text-amber-400' : 'text-indigo-400';
-            const statusText = user.trial_status === 'converted' ? 'Converted' :
-                              user.trial_status === 'ending_soon' ? 'Ending Soon' : 'Active';
-
-            return `
-              <tr class="hover:bg-slate-800/50 transition-colors">
-                <td class="p-2">
-                  <div class="text-slate-100">${user.email}</div>
-                  <div class="text-xs text-slate-500">${user.name}</div>
-                </td>
-                <td class="p-2 text-slate-300">${user.account_name}</td>
-                <td class="p-2">
-                  <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-indigo-500/20 text-indigo-300">
-                    ${user.days_since_signup} days
-                  </span>
-                </td>
-                <td class="p-2 text-slate-300">${user.trial_days_remaining} days</td>
-                <td class="p-2">
-                  <div class="flex gap-1">
-                    ${user.expected_emails.map(day => {
-                      const dayNum = day.replace('Day ', '');
-                      const colors = {
-                        '1': 'bg-blue-500/20 text-blue-300',
-                        '3': 'bg-cyan-500/20 text-cyan-300',
-                        '5': 'bg-indigo-500/20 text-indigo-300',
-                        '7': 'bg-purple-500/20 text-purple-300'
-                      };
-                      return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${colors[dayNum] || 'bg-slate-500/20 text-slate-300'}">D${dayNum}</span>`;
-                    }).join('')}
-                  </div>
-                </td>
-                <td class="p-2">
-                  <span class="${statusColor} font-medium text-sm">${statusText}</span>
-                </td>
-              </tr>
-            `;
-          }).join('');
-        }
-
-      } catch (error) {
-        console.error('Error loading trial metrics:', error);
-        document.getElementById('trialUsersTable').innerHTML =
-          `<tr><td colspan="6" class="text-center py-8 text-red-400">Error: ${error.message}</td></tr>`;
-      }
-    }
-
-    // Marketing helpers
     async function loadReferralStats() {
       try {
         const res = await fetch('/api/v1/admin/marketing/referral-stats', { credentials: 'include' });
@@ -865,9 +611,7 @@
             </tr>
           `).join('');
         }
-      } catch (err) {
-        console.error('Error loading referral stats:', err);
-      }
+      } catch (err) { console.error('Error loading referral stats:', err); }
     }
 
     async function loadAttributionReport() {
@@ -915,12 +659,8 @@
         const res = await fetch('/api/v1/admin/messages', { credentials: 'include' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-
         const msgs = data.messages || [];
-        if (msgs.length === 0) {
-          list.innerHTML = '<div class="text-slate-500 text-sm">No broadcast messages.</div>';
-          return;
-        }
+        if (msgs.length === 0) { list.innerHTML = '<div class="text-slate-500 text-sm">No broadcast messages.</div>'; return; }
         const typeColors = { info: 'border-blue-700/40 bg-blue-950/20', success: 'border-emerald-700/40 bg-emerald-950/20', warning: 'border-amber-700/40 bg-amber-950/20' };
         const typeBadge = { info: 'bg-blue-500/20 text-blue-300', success: 'bg-emerald-500/20 text-emerald-300', warning: 'bg-amber-500/20 text-amber-300' };
         list.innerHTML = msgs.map(m => `
@@ -940,9 +680,7 @@
             </div>
           </div>
         `).join('');
-      } catch (err) {
-        list.innerHTML = `<div class="text-red-400 text-sm">Error: ${err.message}</div>`;
-      }
+      } catch (err) { list.innerHTML = `<div class="text-red-400 text-sm">Error: ${err.message}</div>`; }
     }
 
     async function createBroadcast() {
@@ -950,19 +688,14 @@
       statusEl.className = 'text-xs mt-1';
       statusEl.classList.remove('hidden');
       statusEl.textContent = 'Saving...';
-
       const csrfToken = getCsrfToken();
       const headers = { 'Content-Type': 'application/json' };
       if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
-
       const pubAt = document.getElementById('msgPublishedAt').value;
       const expAt = document.getElementById('msgExpiresAt').value;
-
       try {
         const res = await fetch('/api/v1/admin/messages', {
-          method: 'POST',
-          headers,
-          credentials: 'include',
+          method: 'POST', headers, credentials: 'include',
           body: JSON.stringify({
             title: document.getElementById('msgTitle').value.trim(),
             body: document.getElementById('msgBody').value.trim(),
@@ -993,13 +726,10 @@
       try {
         await fetch(`/api/v1/admin/messages/${id}`, { method: 'DELETE', headers, credentials: 'include' });
         loadBroadcastMessages();
-      } catch (err) {
-        console.error('Error deleting message:', err);
-      }
+      } catch (err) { console.error('Error deleting message:', err); }
     }
 
-    // ── Landing Pages ──────────────────────────────────────────────────────
-
+    // ── Landing Pages ─────────────────────────────────────────────────────
     async function loadLandingPages() {
       const tbody = document.getElementById('lpTableBody');
       if (!tbody) return;
@@ -1023,9 +753,7 @@
             : `<button onclick="archiveLandingPage('${p.id}')" class="text-slate-400 hover:text-slate-300 text-xs underline">Archive</button>`;
           return `
             <tr class="border-b border-slate-800/60 hover:bg-slate-800/30">
-              <td class="py-2 pr-3 text-xs">
-                <a href="${url}" target="_blank" class="text-indigo-300 hover:text-indigo-200 underline font-mono">${p.slug}</a>
-              </td>
+              <td class="py-2 pr-3 text-xs"><a href="${url}" target="_blank" class="text-indigo-300 hover:text-indigo-200 underline font-mono">${p.slug}</a></td>
               <td class="py-2 pr-3 text-slate-200 text-sm truncate max-w-[200px]">${p.headline}</td>
               <td class="py-2 pr-3">${statusBadge}</td>
               <td class="py-2 pr-3 text-right text-slate-300 text-sm">${(p.view_count || 0).toLocaleString()}</td>
@@ -1113,7 +841,6 @@
     }
 
     // ── Enterprise Inquiries ──────────────────────────────────────────────
-
     function escHtml(str) {
       const d = document.createElement('div');
       d.textContent = String(str ?? '');
@@ -1160,7 +887,7 @@
                         class="text-indigo-400 hover:text-indigo-300 text-xs underline">Edit</button>
                 ${savingsBtn}
                 <button onclick="notifyEngineering('${i.id}')"
-                        class="text-emerald-400 hover:text-emerald-300 text-xs underline" title="Email engineering team the activation command">Notify</button>
+                        class="text-emerald-400 hover:text-emerald-300 text-xs underline">Notify</button>
               </td>
             </tr>`;
         }).join('');
@@ -1205,7 +932,7 @@
         const d = await r.json();
         if (!r.ok) { alert('Failed: ' + (d.error || r.status)); return; }
         alert('✅ Activation command emailed to: ' + d.to.join(', '));
-        loadEnterpriseInquiries(); // refresh to show status change to 'contacted'
+        loadEnterpriseInquiries();
       } catch (err) { alert('Error: ' + err.message); }
     }
 
@@ -1232,33 +959,16 @@
           <div class="rounded-xl border border-slate-700 bg-slate-900 p-4 space-y-3">
             <p class="text-sm font-semibold text-slate-100">${escHtml(d.account_name)} — ${months}-month ROI report</p>
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <div class="rounded-lg bg-slate-800 p-3 text-center">
-                <div class="text-lg font-bold text-sky-300">${signalsLabel}</div>
-                <div class="text-xs text-slate-400 mt-0.5">Avg Signals/mo</div>
-              </div>
-              <div class="rounded-lg bg-slate-800 p-3 text-center">
-                <div class="text-lg font-bold text-indigo-300">${(t.ai_decisions || 0).toLocaleString()}</div>
-                <div class="text-xs text-slate-400 mt-0.5">AI Decisions</div>
-              </div>
-              <div class="rounded-lg bg-slate-800 p-3 text-center">
-                <div class="text-lg font-bold text-indigo-300">${(t.hours_saved || 0).toLocaleString()}</div>
-                <div class="text-xs text-slate-400 mt-0.5">Hours Saved</div>
-              </div>
-              <div class="rounded-lg bg-slate-800 p-3 text-center">
-                <div class="text-lg font-bold text-emerald-300">${fmtGbp(t.cost_saved_gbp)}</div>
-                <div class="text-xs text-slate-400 mt-0.5">Cost Saved (${months}mo)</div>
-              </div>
-              <div class="rounded-lg bg-slate-800 p-3 text-center">
-                <div class="text-lg font-bold text-amber-300">${fmtGbp(roi.enterprise_price_estimate_monthly_gbp)}/mo</div>
-                <div class="text-xs text-slate-400 mt-0.5">Enterprise Est. (12%)</div>
-              </div>
+              <div class="rounded-lg bg-slate-800 p-3 text-center"><div class="text-lg font-bold text-sky-300">${signalsLabel}</div><div class="text-xs text-slate-400 mt-0.5">Avg Signals/mo</div></div>
+              <div class="rounded-lg bg-slate-800 p-3 text-center"><div class="text-lg font-bold text-indigo-300">${(t.ai_decisions || 0).toLocaleString()}</div><div class="text-xs text-slate-400 mt-0.5">AI Decisions</div></div>
+              <div class="rounded-lg bg-slate-800 p-3 text-center"><div class="text-lg font-bold text-indigo-300">${(t.hours_saved || 0).toLocaleString()}</div><div class="text-xs text-slate-400 mt-0.5">Hours Saved</div></div>
+              <div class="rounded-lg bg-slate-800 p-3 text-center"><div class="text-lg font-bold text-emerald-300">${fmtGbp(t.cost_saved_gbp)}</div><div class="text-xs text-slate-400 mt-0.5">Cost Saved (${months}mo)</div></div>
+              <div class="rounded-lg bg-slate-800 p-3 text-center"><div class="text-lg font-bold text-amber-300">${fmtGbp(roi.enterprise_price_estimate_monthly_gbp)}/mo</div><div class="text-xs text-slate-400 mt-0.5">Enterprise Est. (12%)</div></div>
             </div>
             <p class="text-xs text-slate-400">Projected annual saving: <span class="text-emerald-300 font-medium">${fmtGbp(roi.projected_annual_saving_gbp)}</span>
               · Avg monthly saving: <span class="text-emerald-300 font-medium">${fmtGbp(roi.avg_monthly_saving_gbp)}</span></p>
           </div>`;
-      } catch (err) {
-        resultEl.innerHTML = `<p class="text-xs text-red-400">Error: ${err.message}</p>`;
-      }
+      } catch (err) { resultEl.innerHTML = `<p class="text-xs text-red-400">Error: ${err.message}</p>`; }
     }
 
     function quickSavings(accountId) {
@@ -1266,268 +976,7 @@
       loadSavingsReport();
     }
 
-    // ── SaaS Metrics ──────────────────────────────────────────────────────
-
-    const fmt = (n, prefix = '£') => n == null ? '—' : `${prefix}${Number(n).toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    const fmtN = (n) => n == null ? '—' : Number(n).toLocaleString('en-GB');
-
-    async function loadSaasMetrics() {
-      try {
-        const d = await fetchJSON('/api/v1/admin/saas-metrics');
-
-        document.getElementById('saas-mrr').textContent = fmt(d.mrr);
-        const netSign = d.net_mrr > 0 ? '+' : '';
-        document.getElementById('saas-net-mrr').textContent = `${netSign}${fmt(d.net_mrr)}`;
-        document.getElementById('saas-net-mrr').className = `text-2xl font-bold mt-1 ${d.net_mrr >= 0 ? 'text-emerald-300' : 'text-rose-300'}`;
-        document.getElementById('saas-net-mrr-detail').textContent = `+${fmt(d.new_mrr)} new  −${fmt(d.churned_mrr)} churned`;
-
-        document.getElementById('saas-active').textContent = fmtN(d.active_customers);
-        document.getElementById('saas-trialing').textContent = `${fmtN(d.trialing_customers)} trialing`;
-
-        document.getElementById('saas-churn').textContent = d.monthly_churn_pct != null ? `${d.monthly_churn_pct}%` : '—';
-
-        document.getElementById('saas-arpu').textContent = fmt(d.arpu);
-        document.getElementById('saas-ltv').textContent = fmt(d.ltv_estimate);
-
-        document.getElementById('saas-cac').textContent = fmt(d.cac);
-        document.getElementById('saas-cac-detail').textContent = d.spend_this_month > 0
-          ? `${fmt(d.spend_this_month)} spend ÷ ${fmtN(d.new_customers_this_month)} new`
-          : 'Add spend below to calculate';
-
-        const ratio = d.ltv_cac_ratio;
-        const ratioEl = document.getElementById('saas-ratio');
-        const ratioNote = document.getElementById('saas-ratio-note');
-        if (ratio == null) {
-          ratioEl.textContent = '—';
-          ratioEl.className = 'text-2xl font-bold mt-1 text-slate-400';
-          ratioNote.textContent = 'Needs LTV and CAC data';
-        } else {
-          ratioEl.textContent = `${ratio}×`;
-          if (ratio >= 3) {
-            ratioEl.className = 'text-2xl font-bold mt-1 text-emerald-300';
-            ratioNote.textContent = `Healthy (≥ 3×)`;
-          } else if (ratio >= 1) {
-            ratioEl.className = 'text-2xl font-bold mt-1 text-amber-300';
-            ratioNote.textContent = `Below target (< 3×)`;
-          } else {
-            ratioEl.className = 'text-2xl font-bold mt-1 text-rose-400';
-            ratioNote.textContent = `Critical: LTV < CAC`;
-          }
-        }
-      } catch (err) {
-        console.error('loadSaasMetrics error:', err);
-      }
-    }
-
-    async function loadSpendEntries() {
-      const tbody = document.getElementById('spendTableBody');
-      if (!tbody) return;
-      try {
-        const d = await fetchJSON('/api/v1/admin/marketing-spend');
-        const entries = d.entries || [];
-        if (!entries.length) {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">No spend entries yet.</td></tr>';
-          return;
-        }
-        tbody.innerHTML = entries.map(e => `
-          <tr class="border-b border-slate-800/60 hover:bg-slate-800/30">
-            <td class="py-2 pr-3 text-slate-300 font-mono text-xs">${e.period}</td>
-            <td class="py-2 pr-3 text-slate-300 capitalize">${e.channel}</td>
-            <td class="py-2 pr-3 text-right text-emerald-300 font-medium">${fmt(e.amount_gbp)}</td>
-            <td class="py-2 pr-3 text-slate-400 text-xs">${e.notes || '—'}</td>
-            <td class="py-2"><button onclick="deleteSpendEntry('${e.id}')" class="text-rose-400 hover:text-rose-300 text-xs underline">Delete</button></td>
-          </tr>`).join('');
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-400">Error: ${err.message}</td></tr>`;
-      }
-    }
-
-    async function createSpendEntry() {
-      const statusEl = document.getElementById('spendCreateStatus');
-      statusEl.className = 'text-xs mt-2';
-      statusEl.classList.remove('hidden');
-      statusEl.textContent = 'Saving…';
-      const csrfToken = getCsrfToken();
-      const headers = { 'Content-Type': 'application/json' };
-      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
-      try {
-        const body = {
-          period: document.getElementById('spendPeriod').value.trim(),
-          channel: document.getElementById('spendChannel').value,
-          amount_gbp: parseFloat(document.getElementById('spendAmount').value),
-          notes: document.getElementById('spendNotes').value.trim(),
-        };
-        const r = await fetch('/api/v1/admin/marketing-spend', {
-          method: 'POST', headers, credentials: 'include', body: JSON.stringify(body),
-        });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error || 'Failed');
-        statusEl.textContent = '✓ Saved';
-        statusEl.classList.add('text-emerald-400');
-        document.getElementById('newSpendForm').classList.add('hidden');
-        loadSpendEntries();
-        loadSaasMetrics();
-      } catch (err) {
-        statusEl.textContent = `Error: ${err.message}`;
-        statusEl.classList.add('text-red-400');
-      }
-    }
-
-    async function deleteSpendEntry(id) {
-      if (!confirm('Delete this spend entry?')) return;
-      const csrfToken = getCsrfToken();
-      const headers = {};
-      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
-      try {
-        await fetch(`/api/v1/admin/marketing-spend/${id}`, { method: 'DELETE', headers, credentials: 'include' });
-        loadSpendEntries();
-        loadSaasMetrics();
-      } catch (err) { console.error('Delete spend failed:', err); }
-    }
-
-    // Add event listeners
-    document.getElementById('refreshTrialBtn')?.addEventListener('click', loadTrialMetrics);
-    document.getElementById('refreshAbBtn')?.addEventListener('click', loadAbResults);
-    document.getElementById('refreshAttributionBtn')?.addEventListener('click', loadAttributionReport);
-
-    // Load funnel metrics on page load if on funnel section
-    if (document.getElementById('section-funnel').classList.contains('active')) {
-      loadFunnelMetrics();
-    }
-
-    // Load trial metrics on page load if on trial section
-    if (document.getElementById('section-trial')?.classList.contains('active')) {
-      loadTrialMetrics();
-    }
-
-    // ── System: Billing + Security ─────────────────────────────────────────
-    async function loadSystemData() {
-      const csrfToken = getCsrfToken();
-      const [billingResp, securityResp] = await Promise.all([
-        fetch('/api/v1/admin/billing',  { credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': csrfToken } }),
-        fetch('/api/v1/admin/security', { credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': csrfToken } }),
-      ]);
-
-      // --- Billing ---
-      const billingEl = document.getElementById('billing');
-      try {
-        const b = await billingResp.json();
-        const rows = [];
-        if (b.arpu != null) rows.push(`<li class="flex justify-between"><span class="text-slate-400">ARPU (active)</span><span class="font-semibold">$${b.arpu.toFixed(2)}</span></li>`);
-        if (b.plan_mix && b.plan_mix.length) {
-          rows.push(`<li class="text-slate-500 text-xs uppercase tracking-wide pt-2">Plan mix</li>`);
-          b.plan_mix.forEach(p => rows.push(`<li class="flex justify-between"><span class="text-slate-400 capitalize">${p.plan}</span><span>${p.count} account${p.count !== 1 ? 's' : ''}</span></li>`));
-        }
-        if (b.trials_expiring && b.trials_expiring.length) {
-          rows.push(`<li class="text-slate-500 text-xs uppercase tracking-wide pt-2">Trials expiring (next 14 days)</li>`);
-          b.trials_expiring.forEach(t => rows.push(`<li class="flex justify-between"><span class="text-slate-400">Account ${t.account_id}</span><span>${t.trial_end ? t.trial_end.slice(0,10) : '—'}</span></li>`));
-        }
-        if (b.failed_payments && b.failed_payments.length) {
-          rows.push(`<li class="text-slate-500 text-xs uppercase tracking-wide pt-2">Failed payments (30d)</li>`);
-          b.failed_payments.forEach(f => rows.push(`<li class="flex justify-between text-red-300"><span>${f.provider}</span><span>${f.count} failed</span></li>`));
-        }
-        billingEl.innerHTML = rows.length ? rows.join('') : '<li class="text-slate-500">No billing data yet.</li>';
-      } catch(e) {
-        billingEl.innerHTML = '<li class="text-red-400">Failed to load billing data.</li>';
-      }
-
-      // --- Security ---
-      const securityEl = document.getElementById('security');
-      try {
-        const s = await securityResp.json();
-        securityEl.innerHTML = [
-          `<li class="flex justify-between"><span class="text-slate-400">Total users</span><span class="font-semibold">${s.users_total ?? '—'}</span></li>`,
-          `<li class="text-slate-500 text-xs uppercase tracking-wide pt-2">Last 30 days</li>`,
-          `<li class="flex justify-between"><span class="text-slate-400">Successful logins</span><span>${s.successful_logins ?? 0}</span></li>`,
-          `<li class="flex justify-between"><span class="text-slate-400">Failed logins</span><span class="${s.failed_logins > 10 ? 'text-red-300 font-semibold' : ''}">${s.failed_logins ?? 0}</span></li>`,
-          `<li class="flex justify-between"><span class="text-slate-400">Password reset requests</span><span>${s.password_reset_requests ?? 0}</span></li>`,
-          `<li class="flex justify-between"><span class="text-slate-400">Password resets completed</span><span>${s.password_resets ?? 0}</span></li>`,
-        ].join('');
-      } catch(e) {
-        securityEl.innerHTML = '<li class="text-red-400">Failed to load security data.</li>';
-      }
-    }
-
-    // ── Developer access helpers ───────────────────────────────────────────
-    async function enableDeveloperAccess() {
-      const accountId = document.getElementById('devAccessAccountId').value.trim();
-      if (!accountId) { showDevResult('Account ID is required.', false); return; }
-      try {
-        const resp = await fetch(`/api/v1/admin/developer/enable`, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
-          body: JSON.stringify({ account_id: parseInt(accountId) })
-        });
-        const data = await resp.json();
-        showDevResult(resp.ok ? `Developer access enabled for account ${accountId}.` : (data.error || 'Failed.'), resp.ok);
-      } catch(e) { showDevResult('Request failed.', false); }
-    }
-
-    function showDevResult(msg, ok) {
-      const el = document.getElementById('devAccessResult');
-      el.textContent = msg;
-      el.className = `mt-3 text-xs px-3 py-2 rounded-xl border ${ok ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200' : 'border-red-500/40 bg-red-500/10 text-red-200'}`;
-      el.classList.remove('hidden');
-    }
-
-    async function loadDevRequests() {
-      const el = document.getElementById('devRequestsList');
-      el.innerHTML = '<p class="text-sm text-slate-500">Loading...</p>';
-      try {
-        const resp = await fetch('/api/v1/admin/developer/requests', {
-          credentials: 'same-origin',
-          headers: { 'X-CSRF-TOKEN': getCsrfToken() }
-        });
-        const data = await resp.json();
-        const requests = data.requests || [];
-        if (!requests.length) {
-          el.innerHTML = '<p class="text-sm text-slate-500">No access requests yet.</p>';
-          return;
-        }
-        el.innerHTML = requests.map(r => `
-          <div class="border border-slate-700 rounded-xl p-4 mb-3">
-            <div class="flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <div class="text-sm font-medium text-slate-100">${r.full_name} · <span class="text-slate-400">${r.company}</span></div>
-                <div class="text-xs text-slate-400 mt-0.5">Account ID: ${r.account_id} · Requested: ${r.created_at}</div>
-                <div class="text-xs text-slate-300 mt-1">${r.use_case}</div>
-                <div class="flex gap-1 mt-2 flex-wrap">
-                  ${r.scopes.map(s => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">${s}</span>`).join('')}
-                </div>
-              </div>
-              <div class="flex-shrink-0">
-                ${r.status === 'pending' ? `
-                  <div class="flex gap-2">
-                    <button onclick="reviewDevRequest('${r.id}', 'approved')" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500">Approve</button>
-                    <button onclick="reviewDevRequest('${r.id}', 'rejected')" class="rounded-lg border border-red-500/40 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/10">Reject</button>
-                  </div>` : `<span class="text-xs px-2 py-0.5 rounded-full ${r.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-400'}">${r.status}</span>`}
-              </div>
-            </div>
-          </div>`).join('');
-      } catch(e) { el.innerHTML = '<p class="text-sm text-red-400">Failed to load requests.</p>'; }
-    }
-
-    async function reviewDevRequest(requestId, status) {
-      try {
-        const resp = await fetch(`/api/v1/admin/developer/requests/${requestId}/review`, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
-          body: JSON.stringify({ status })
-        });
-        if (resp.ok) loadDevRequests();
-      } catch(e) { alert('Failed to update request.'); }
-    }
-
-    function getToken() {
-      return document.cookie.split(';').map(c => c.trim())
-        .find(c => c.startsWith('access_token_cookie='))?.split('=')[1] || '';
-    }
-
-    // =========================================================
-    // Email Campaigns
-    // =========================================================
+    // ── Email Campaigns ───────────────────────────────────────────────────
     function _campHeaders() {
       const h = { 'Content-Type': 'application/json' };
       const csrf = getCsrfToken();
@@ -1543,7 +992,7 @@
       const map = {
         active: 'bg-emerald-500/20 text-emerald-300',
         paused: 'bg-amber-500/20 text-amber-300',
-        draft:  'bg-slate-700 text-slate-400',
+        draft: 'bg-slate-700 text-slate-400',
         completed: 'bg-slate-700 text-slate-400',
       };
       const cls = map[campaign.status] || 'bg-slate-700 text-slate-400';
@@ -1559,15 +1008,9 @@
         const remaining = c.max_recipients ? c.max_recipients - c.total_sent : '∞';
         return `<p class="text-xs text-emerald-400 mt-2">✓ Active — ${remaining} recipient slots remaining.</p>`;
       }
-      if (c.status === 'completed') {
-        return '<p class="text-xs text-slate-400 mt-2">Campaign completed. Extend the limit to resume sending.</p>';
-      }
-      if (c.status === 'paused') {
-        return '<p class="text-xs text-slate-400 mt-2">Campaign paused. Activate to resume sending to new leads.</p>';
-      }
-      if (c.status === 'draft') {
-        return '<p class="text-xs text-slate-400 mt-2">Draft — activate to start sending emails.</p>';
-      }
+      if (c.status === 'completed') { return '<p class="text-xs text-slate-400 mt-2">Campaign completed. Extend the limit to resume sending.</p>'; }
+      if (c.status === 'paused') { return '<p class="text-xs text-slate-400 mt-2">Campaign paused. Activate to resume sending to new leads.</p>'; }
+      if (c.status === 'draft') { return '<p class="text-xs text-slate-400 mt-2">Draft — activate to start sending emails.</p>'; }
       return '';
     }
 
@@ -1614,9 +1057,7 @@
                 </div>
                 <div class="text-xs text-slate-400 mt-0.5">From: ${c.from_email} · Started: ${c.started_at ? new Date(c.started_at).toLocaleDateString() : 'Not started'}</div>
               </div>
-              <div class="flex gap-2 flex-wrap">
-                ${_campActions(c)}
-              </div>
+              <div class="flex gap-2 flex-wrap">${_campActions(c)}</div>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
               <div class="rounded-xl bg-slate-800/50 p-3">
@@ -1643,9 +1084,7 @@
                 <div class="text-sm font-semibold ${c.status === 'active' ? 'text-emerald-300' : 'text-slate-400'}">${c.status}</div>
               </div>
             </div>
-            <div id="camp-msg-${c.id}">
-              ${_campNote(c)}
-            </div>
+            <div id="camp-msg-${c.id}">${_campNote(c)}</div>
             <div class="flex gap-4 mt-3 pt-3 border-t border-slate-800">
               <button onclick="toggleCampPanel('${c.id}','stats')" class="text-xs text-slate-400 hover:text-slate-200 transition-colors">↳ Stats breakdown</button>
               <button onclick="toggleCampPanel('${c.id}','emails')" class="text-xs text-slate-400 hover:text-slate-200 transition-colors">↳ View emails (${c.total_sent})</button>
@@ -1666,11 +1105,7 @@
         const url = action === 'send'
           ? `/api/v1/outreach/campaigns/${campaignId}/send`
           : `/api/v1/outreach/campaigns/${campaignId}/${action}`;
-        const resp = await fetch(url, {
-          method: 'POST',
-          headers: _campHeaders(),
-          credentials: 'include',
-        });
+        const resp = await fetch(url, { method: 'POST', headers: _campHeaders(), credentials: 'include' });
         const data = await resp.json();
         if (resp.ok && data.success) {
           await loadCampaignsData();
@@ -1704,15 +1139,12 @@
       statusEl.classList.remove('hidden');
       try {
         const resp = await fetch(`/api/v1/outreach/campaigns/${campaignId}`, {
-          method: 'PATCH',
-          headers: _campHeaders(),
-          credentials: 'include',
+          method: 'PATCH', headers: _campHeaders(), credentials: 'include',
           body: JSON.stringify({ max_recipients: newMax }),
         });
         const data = await resp.json();
         if (resp.ok && data.success) {
           document.getElementById('extendModal').classList.add('hidden');
-          // Trigger a send batch on the now-extended campaign
           await campaignAction('send', campaignId);
         } else {
           statusEl.textContent = `Error: ${data.error || 'Unknown error'}`;
@@ -1749,10 +1181,7 @@
           target_source: document.getElementById('campTargetSource').value.trim() || undefined,
         };
         const resp = await fetch('/api/v1/outreach/campaigns', {
-          method: 'POST',
-          headers: _campHeaders(),
-          credentials: 'include',
-          body: JSON.stringify(payload),
+          method: 'POST', headers: _campHeaders(), credentials: 'include', body: JSON.stringify(payload),
         });
         const data = await resp.json();
         if (!resp.ok || !data.success) {
@@ -1806,21 +1235,15 @@
             </div>
             ${rows ? `<table class="w-auto text-sm"><tbody>${rows}</tbody></table>` : '<p class="text-xs text-slate-500">No delivery data yet.</p>'}
           </div>`;
-      } catch (e) {
-        el.innerHTML = `<p class="text-xs text-red-400">Failed: ${e.message}</p>`;
-      }
+      } catch (e) { el.innerHTML = `<p class="text-xs text-red-400">Failed: ${e.message}</p>`; }
     }
 
     function _outreachStatusBadge(status) {
       const map = {
-        sent: 'bg-indigo-500/20 text-indigo-300',
-        delivered: 'bg-blue-500/20 text-blue-300',
-        opened: 'bg-emerald-500/20 text-emerald-300',
-        clicked: 'bg-emerald-500/20 text-emerald-300',
-        replied: 'bg-emerald-600/20 text-emerald-200',
-        failed: 'bg-red-500/20 text-red-300',
-        bounced: 'bg-red-500/20 text-red-300',
-        pending: 'bg-slate-700 text-slate-400',
+        sent: 'bg-indigo-500/20 text-indigo-300', delivered: 'bg-blue-500/20 text-blue-300',
+        opened: 'bg-emerald-500/20 text-emerald-300', clicked: 'bg-emerald-500/20 text-emerald-300',
+        replied: 'bg-emerald-600/20 text-emerald-200', failed: 'bg-red-500/20 text-red-300',
+        bounced: 'bg-red-500/20 text-red-300', pending: 'bg-slate-700 text-slate-400',
       };
       const cls = map[status] || 'bg-slate-700 text-slate-400';
       return `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium ${cls}">${status}</span>`;
@@ -1834,10 +1257,7 @@
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         const outreaches = data.outreaches || [];
-        if (!outreaches.length) {
-          el.innerHTML = '<p class="text-xs text-slate-500 mt-1">No emails sent yet.</p>';
-          return;
-        }
+        if (!outreaches.length) { el.innerHTML = '<p class="text-xs text-slate-500 mt-1">No emails sent yet.</p>'; return; }
         const rows = outreaches.map(o => `
           <tr class="border-b border-slate-800/60">
             <td class="py-2 pr-3 text-slate-200 text-xs">${o.recipient_email}</td>
@@ -1852,19 +1272,14 @@
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-left text-xs text-slate-500 border-b border-slate-800">
-                  <th class="pb-2 pr-3">Recipient</th>
-                  <th class="pb-2 pr-3">Subject</th>
-                  <th class="pb-2 pr-3">Status</th>
-                  <th class="pb-2 pr-3">Step</th>
-                  <th class="pb-2">Sent</th>
+                  <th class="pb-2 pr-3">Recipient</th><th class="pb-2 pr-3">Subject</th>
+                  <th class="pb-2 pr-3">Status</th><th class="pb-2 pr-3">Step</th><th class="pb-2">Sent</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
             </table>
           </div>`;
-      } catch (e) {
-        el.innerHTML = `<p class="text-xs text-red-400">Failed: ${e.message}</p>`;
-      }
+      } catch (e) { el.innerHTML = `<p class="text-xs text-red-400">Failed: ${e.message}</p>`; }
     }
   </script>
 </body>

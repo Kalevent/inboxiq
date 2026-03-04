@@ -433,7 +433,6 @@ def team_roles_page():
   members = User.query.filter_by(account_id=account_id).order_by(User.created_at.asc()).all()
   assignments = _resolved_assignments(account_id, members)
   member_payload = _serialize_members(members, assignments)
-  csrf_token_value = request.cookies.get("csrf_access_token") or request.cookies.get("csrf_refresh_token") or ""
   return render_template(
     "settings/index.html",
     active_tab="team",
@@ -443,7 +442,6 @@ def team_roles_page():
     integrations_view=None,
     roles=RBAC_DEFAULT_ROLES,
     members=member_payload,
-    csrf_token=csrf_token_value,
   )
 
 
