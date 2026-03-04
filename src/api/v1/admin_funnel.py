@@ -44,9 +44,7 @@ def qualify_lead():
     Returns:
         Qualification results
     """
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
-
+    admin = _require_admin()
     payload = _safe_json()
     lead_id = payload.get("lead_id")
 
@@ -57,6 +55,10 @@ def qualify_lead():
     lead = db.session.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         return jsonify({"error": f"Lead {lead_id} not found"}), 404
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user or lead.account_id != user.account_id:
+            return jsonify({"error": "forbidden"}), 403
 
     # Queue Celery task by name to avoid circular import issues
     from src.celery_inboxiq import celery
@@ -82,9 +84,7 @@ def update_interest():
     Returns:
         Interest scoring results
     """
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
-
+    admin = _require_admin()
     payload = _safe_json()
     lead_id = payload.get("lead_id")
 
@@ -94,6 +94,10 @@ def update_interest():
     lead = db.session.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         return jsonify({"error": f"Lead {lead_id} not found"}), 404
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user or lead.account_id != user.account_id:
+            return jsonify({"error": "forbidden"}), 403
 
     from src.celery_inboxiq import celery
     task = celery.send_task('funnel.update_interest_score', args=[lead_id])
@@ -120,9 +124,7 @@ def move_stage():
     Returns:
         Stage transition results
     """
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
-
+    admin = _require_admin()
     payload = _safe_json()
     lead_id = payload.get("lead_id")
     new_stage = payload.get("new_stage")
@@ -137,6 +139,10 @@ def move_stage():
     lead = db.session.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         return jsonify({"error": f"Lead {lead_id} not found"}), 404
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user or lead.account_id != user.account_id:
+            return jsonify({"error": "forbidden"}), 403
 
     try:
         # Import stage orchestration MCP tools (would use MCP server in production)
@@ -239,8 +245,14 @@ def get_metrics():
     Returns:
         Funnel metrics
     """
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
+    admin = _require_admin()
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user:
+            return jsonify({"error": "unauthorized"}), 401
+        account_id_filter = user.account_id
+    else:
+        account_id_filter = None
 
     from datetime import date, timedelta
 
@@ -252,7 +264,10 @@ def get_metrics():
     stage_query = db.session.query(
         Lead.current_funnel_stage,
         db.func.count(Lead.id).label('count')
-    ).group_by(Lead.current_funnel_stage).all()
+    )
+    if account_id_filter is not None:
+        stage_query = stage_query.filter(Lead.account_id == account_id_filter)
+    stage_query = stage_query.group_by(Lead.current_funnel_stage).all()
 
     stage_distribution = {row.current_funnel_stage: row.count for row in stage_query}
 
@@ -356,8 +371,11 @@ def discover_leads():
     Returns:
         Task ID and confirmation
     """
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
+    admin = _require_admin()
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user:
+            return jsonify({"error": "unauthorized"}), 401
 
     payload = _safe_json()
     niche = payload.get("niche", "B2B SaaS customer support")
@@ -401,8 +419,14 @@ def get_recent_leads():
     Returns:
         List of leads with details
     """
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
+    admin = _require_admin()
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user:
+            return jsonify({"error": "unauthorized"}), 401
+        account_id_filter = user.account_id
+    else:
+        account_id_filter = None
 
     limit = request.args.get("limit", 50, type=int)
     source = request.args.get("source")
@@ -410,6 +434,8 @@ def get_recent_leads():
     q = request.args.get("q", "").strip()
 
     query = db.session.query(Lead).order_by(Lead.created_at.desc())
+    if account_id_filter is not None:
+        query = query.filter(Lead.account_id == account_id_filter)
 
     if q:
         like = f"%{q}%"
@@ -468,5 +494,9 @@ def get_recent_leads():
             for lead in leads
         ],
         "count": len(leads),
-        "total_in_db": db.session.query(Lead).count()
+        "total_in_db": (
+            db.session.query(Lead).filter(Lead.account_id == account_id_filter).count()
+            if account_id_filter is not None
+            else db.session.query(Lead).count()
+        )
     }), 200

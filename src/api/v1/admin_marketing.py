@@ -205,6 +205,124 @@ def get_nurture_stats():
         return jsonify({"error": str(exc)}), 500
 
 
+# ── Per-tenant marketing endpoints (JWT, not admin-only) ──────────────────────
+
+@v1.route("/marketing/ab-results", methods=["GET"])
+@jwt_required()
+def get_tenant_ab_test_results():
+    """
+    A/B test results for authenticated account users (not admin-only).
+    Stats are global (cross-account) for statistical significance.
+    """
+    user = db.session.get(User, get_jwt_identity())
+    if not user:
+        return jsonify({"error": "unauthorized"}), 401
+
+    try:
+        lookback_days = int(request.args.get("lookback_days", 30))
+    except (ValueError, TypeError):
+        return jsonify({"error": "lookback_days must be an integer"}), 400
+
+    try:
+        from src.marketing.ab_testing import _evaluate_step
+
+        steps = [
+            ("discovery", 1), ("discovery", 3), ("discovery", 7),
+            ("discovery", 14), ("discovery", 21),
+            ("consideration", 1), ("consideration", 3),
+            ("consideration", 7), ("consideration", 14),
+        ]
+
+        results = []
+        for campaign_type, day in steps:
+            result = _evaluate_step(campaign_type, day, lookback_days)
+            result["key"] = f"{campaign_type}:day{day}"
+            results.append(result)
+
+        return jsonify({
+            "steps": results,
+            "lookback_days": lookback_days,
+            "evaluated_at": datetime.now(timezone.utc).isoformat(),
+        }), 200
+
+    except Exception as exc:
+        logger.exception("Failed to get A/B results: %s", exc)
+        return jsonify({"error": str(exc)}), 500
+
+
+@v1.route("/marketing/nurture-stats", methods=["GET"])
+@jwt_required()
+def get_tenant_nurture_stats():
+    """
+    Nurture send stats scoped to the authenticated user's account.
+    """
+    user = db.session.get(User, get_jwt_identity())
+    if not user:
+        return jsonify({"error": "unauthorized"}), 401
+
+    try:
+        from src.models.leads import Lead as _Lead
+
+        base = db.session.query(NurtureEmailSend).join(
+            _Lead, NurtureEmailSend.lead_id == _Lead.id
+        ).filter(
+            _Lead.account_id == user.account_id,
+            NurtureEmailSend.ab_variant.in_(["A", "B"]),
+        )
+
+        total = base.with_entities(
+            db.func.count().label("sends"),
+            db.func.sum(db.cast(NurtureEmailSend.opened, db.Integer)).label("opens"),
+        ).one()
+
+        total_sends = total.sends or 0
+        total_opens = int(total.opens or 0)
+
+        by_campaign_rows = base.with_entities(
+            NurtureEmailSend.campaign_type,
+            db.func.count().label("sends"),
+            db.func.sum(db.cast(NurtureEmailSend.opened, db.Integer)).label("opens"),
+        ).group_by(NurtureEmailSend.campaign_type).all()
+
+        by_campaign = {}
+        for row in by_campaign_rows:
+            sends = row.sends or 0
+            opens = int(row.opens or 0)
+            by_campaign[row.campaign_type] = {
+                "sends": sends,
+                "opens": opens,
+                "open_rate": round(opens / sends, 4) if sends else 0,
+            }
+
+        by_variant_rows = base.with_entities(
+            NurtureEmailSend.ab_variant,
+            db.func.count().label("sends"),
+            db.func.sum(db.cast(NurtureEmailSend.opened, db.Integer)).label("opens"),
+        ).group_by(NurtureEmailSend.ab_variant).all()
+
+        by_variant = {}
+        for row in by_variant_rows:
+            sends = row.sends or 0
+            opens = int(row.opens or 0)
+            by_variant[row.ab_variant] = {
+                "sends": sends,
+                "opens": opens,
+                "open_rate": round(opens / sends, 4) if sends else 0,
+            }
+
+        return jsonify({
+            "total_sends": total_sends,
+            "total_opens": total_opens,
+            "overall_open_rate": round(total_opens / total_sends, 4) if total_sends else 0,
+            "by_campaign": by_campaign,
+            "by_variant": by_variant,
+        }), 200
+
+    except Exception as exc:
+        logger.exception("Failed to get nurture stats: %s", exc)
+        return jsonify({"error": str(exc)}), 500
+
+
 # ── Referral Stats ─────────────────────────────────────────────────────────────
 
 @v1.route("/admin/marketing/referral-stats", methods=["GET"])

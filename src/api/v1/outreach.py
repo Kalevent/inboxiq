@@ -7,6 +7,7 @@ from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
 from src.extensions import db
 from src.models.campaigns import EmailCampaign, EmailOutreach
+from src.models.core import User
 from src.models.leads import Lead
 from src.outreach.tasks import send_campaign_emails, track_email_event
 from io import BytesIO
@@ -18,10 +19,16 @@ from datetime import datetime
 @jwt_required()
 def list_campaigns():
     """List all email campaigns."""
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
-
-    campaigns = db.session.query(EmailCampaign).order_by(EmailCampaign.created_at.desc()).all()
+    admin = _require_admin()
+    if admin:
+        campaigns = db.session.query(EmailCampaign).order_by(EmailCampaign.created_at.desc()).all()
+    else:
+        user = db.session.get(User, get_jwt_identity())
+        if not user:
+            return jsonify({"error": "unauthorized"}), 401
+        campaigns = db.session.query(EmailCampaign).filter(
+            EmailCampaign.account_id == user.account_id
+        ).order_by(EmailCampaign.created_at.desc()).all()
 
     return jsonify({
         "campaigns": [
@@ -62,10 +69,13 @@ def create_campaign():
         target_source: Filter leads by source (optional)
     """
     admin = _require_admin()
-    if not admin:
-        return jsonify({"error": "forbidden"}), 403
-
-    account_id = admin.account_id
+    if admin:
+        account_id = admin.account_id
+    else:
+        user = db.session.get(User, get_jwt_identity())
+        if not user:
+            return jsonify({"error": "unauthorized"}), 401
+        account_id = user.account_id
     data = request.json
 
     # Get default sender from database or fallback to config
@@ -118,12 +128,14 @@ def create_campaign():
 @jwt_required()
 def update_campaign(campaign_id):
     """Update campaign settings (max_recipients, name, status)."""
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
-
+    admin = _require_admin()
     campaign = db.session.query(EmailCampaign).filter(EmailCampaign.id == campaign_id).first()
     if not campaign:
         return jsonify({"error": "Campaign not found"}), 404
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user or campaign.account_id != user.account_id:
+            return jsonify({"error": "forbidden"}), 403
 
     data = request.json
 
@@ -148,12 +160,14 @@ def update_campaign(campaign_id):
 @jwt_required()
 def send_campaign_now(campaign_id):
     """Trigger an immediate send batch for an active campaign."""
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
-
+    admin = _require_admin()
     campaign = db.session.query(EmailCampaign).filter(EmailCampaign.id == campaign_id).first()
     if not campaign:
         return jsonify({"error": "Campaign not found"}), 404
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user or campaign.account_id != user.account_id:
+            return jsonify({"error": "forbidden"}), 403
 
     if campaign.status != "active":
         return jsonify({"error": "Campaign is not active. Activate it first."}), 400
@@ -166,12 +180,14 @@ def send_campaign_now(campaign_id):
 @jwt_required()
 def activate_campaign(campaign_id):
     """Activate a campaign and start sending emails."""
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
-
+    admin = _require_admin()
     campaign = db.session.query(EmailCampaign).filter(EmailCampaign.id == campaign_id).first()
     if not campaign:
         return jsonify({"error": "Campaign not found"}), 404
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user or campaign.account_id != user.account_id:
+            return jsonify({"error": "forbidden"}), 403
 
     campaign.status = "active"
     campaign.started_at = datetime.now()
@@ -191,12 +207,14 @@ def activate_campaign(campaign_id):
 @jwt_required()
 def pause_campaign(campaign_id):
     """Pause an active campaign."""
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
-
+    admin = _require_admin()
     campaign = db.session.query(EmailCampaign).filter(EmailCampaign.id == campaign_id).first()
     if not campaign:
         return jsonify({"error": "Campaign not found"}), 404
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user or campaign.account_id != user.account_id:
+            return jsonify({"error": "forbidden"}), 403
 
     campaign.status = "paused"
     db.session.commit()
@@ -208,8 +226,14 @@ def pause_campaign(campaign_id):
 @jwt_required()
 def list_outreaches(campaign_id):
     """List all outreach emails for a campaign."""
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
+    admin = _require_admin()
+    campaign = db.session.query(EmailCampaign).filter(EmailCampaign.id == campaign_id).first()
+    if not campaign:
+        return jsonify({"error": "Campaign not found"}), 404
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user or campaign.account_id != user.account_id:
+            return jsonify({"error": "forbidden"}), 403
 
     limit = request.args.get("limit", 50, type=int)
 
@@ -278,12 +302,14 @@ def track_click(outreach_id):
 @jwt_required()
 def campaign_stats(campaign_id):
     """Get detailed stats for a campaign."""
-    if not _require_admin():
-        return jsonify({"error": "forbidden"}), 403
-
+    admin = _require_admin()
     campaign = db.session.query(EmailCampaign).filter(EmailCampaign.id == campaign_id).first()
     if not campaign:
         return jsonify({"error": "Campaign not found"}), 404
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user or campaign.account_id != user.account_id:
+            return jsonify({"error": "forbidden"}), 403
 
     # Get status breakdown
     from sqlalchemy import func
