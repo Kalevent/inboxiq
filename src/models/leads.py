@@ -70,6 +70,8 @@ class Lead(db.Model):
     objections_json = db.Column("objections", db.JSON, nullable=True, comment="DSPy-detected objections")
     recommended_assets_json = db.Column("recommended_assets", db.JSON, nullable=True, comment="DSPy recommendations")
 
+    deleted = db.Column(db.Boolean, server_default="false", nullable=False, comment="Soft delete flag")
+
     created_at = db.Column(db.DateTime(timezone=True), nullable=True)
     updated_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
