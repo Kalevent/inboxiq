@@ -53,8 +53,8 @@ spec:
     spec:
       containers:
         - name: phoenix
-          image: arizephoenix/phoenix:latest
-          imagePullPolicy: Always
+          image: arizephoenix/phoenix:version-13.0.2
+          imagePullPolicy: IfNotPresent
 
           ports:
             # HTTP UI
@@ -133,7 +133,8 @@ spec:
 
       volumes:
         - name: phoenix-data
-          emptyDir: {}  # Temporary storage - traces reset on pod restart (no cost)
+          persistentVolumeClaim:
+            claimName: phoenix-pvc
 
 ---
 # PersistentVolumeClaim - Storage for Phoenix data (SQLite DB, logs)
