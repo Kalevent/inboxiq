@@ -219,8 +219,15 @@
 
       // Activate the section the server requested
       const section = document.body.getAttribute('data-section') || 'funnel';
-      const btn = document.querySelector(`[data-section="${section}"]`);
-      if (btn) btn.click();
+      document.querySelectorAll('.sidebar-nav-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+      const activeBtn = document.querySelector(`.sidebar-nav-item[data-section="${section}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+      const activeSection = document.getElementById(`section-${section}`);
+      if (activeSection) activeSection.classList.add('active');
+      if (section === 'funnel') loadFunnelMetrics();
+      else if (section === 'marketing') loadMarketingData();
+      else if (section === 'campaigns') loadCampaignsData();
     });
 
     // ── CSRF helper ───────────────────────────────────────────────────────
