@@ -8,12 +8,13 @@ on:
       - 'src/**'
       - '.github/workflows/inbox-ci.yml'
   pull_request:
-    types: [closed]
+    types: [opened, synchronize, reopened, closed]
     branches:
       - main
     paths:
       - 'src/**'
       - '.github/workflows/inbox-ci.yml'
+      - '.github/dependabot.yml'
   workflow_dispatch:
     inputs:
       run_migrations:
@@ -55,6 +56,24 @@ jobs:
 
       - name: Scan for secrets
         run: ./gitleaks detect --source . --redact --exit-code 1
+
+  validate-deps:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify lockfile resolves without conflicts
+        run: |
+          pip install --dry-run --no-deps -r src/requirements-inboxiq.lock.txt 2>&1 | grep -i "conflict\|error" && exit 1 || true
+          pip install --quiet -r src/requirements-inboxiq.lock.txt
+          echo "All dependencies resolved successfully"
 
   build-and-deploy:
     needs: [secret-scan]
