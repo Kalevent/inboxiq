@@ -13,8 +13,12 @@
 
     <!-- Nav -->
     <nav class="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
-      <a href="/" class="text-white font-semibold text-lg tracking-tight hover:text-indigo-300 transition-colors">
-        InboxIQ
+      <a href="/" class="flex items-center gap-2 hover:opacity-90 transition-opacity">
+        <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white flex-shrink-0">KI</div>
+        <div>
+          <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
+          <div class="text-xs text-slate-400">InboxIQ – AI Decision Engine</div>
+        </div>
       </a>
       <div class="flex items-center gap-4">
         <a href="/login" class="text-sm text-slate-300 hover:text-white transition-colors">Sign in</a>
@@ -130,7 +134,7 @@
       </div>
 
       <!-- Status strip -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-10">
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
           <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
           <span class="text-white text-sm font-medium">Encryption in Transit</span>
@@ -155,6 +159,26 @@
           <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
           <span class="text-white text-sm font-medium">Dependency Scanning</span>
           <span class="text-slate-400 text-xs">GitHub Dependabot</span>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
+          <span class="text-white text-sm font-medium">Secret Scanning</span>
+          <span class="text-slate-400 text-xs">Gitleaks — every commit</span>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
+          <span class="text-white text-sm font-medium">Code Analysis</span>
+          <span class="text-slate-400 text-xs">Semgrep OWASP Top 10</span>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
+          <span class="text-white text-sm font-medium">Container Scanning</span>
+          <span class="text-slate-400 text-xs">Trivy — every deploy</span>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
+          <span class="text-white text-sm font-medium">Audit Trail</span>
+          <span class="text-slate-400 text-xs">Activity Log — Settings</span>
         </div>
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
           <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
@@ -264,6 +288,14 @@
             </li>
             <li class="flex items-start gap-3">
               <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Argon2 password hashing</strong> — passwords are hashed with Argon2id, the winner of the Password Hashing Competition and current OWASP recommendation. Argon2 is intentionally slow and memory-hard, making offline brute-force attacks impractical even if the database were ever compromised.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Immutable activity log</strong> — every security-relevant action (sign-in, 2FA changes, inbox connections, role changes, AI provider updates) is written to an append-only audit log scoped to your account. View your full history anytime at <strong class="text-white">Settings → Activity Log</strong>, and export it as CSV for compliance or audit purposes.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
               <span><strong class="text-white">Right to erasure (GDPR Article 17)</strong> — account owners can permanently delete their account and all associated data directly from <strong class="text-white">Settings → Security → Delete account</strong>. Billing records are anonymised and retained for 7 years as required by law. All other data is hard-deleted immediately.</span>
             </li>
           </ul>
@@ -272,12 +304,28 @@
         <!-- Vulnerability management -->
         <section class="space-y-4">
           <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-indigo-400">&#9679;</span> Vulnerability Management
+            <span class="text-indigo-400">&#9679;</span> Vulnerability Management &amp; Secure Development
           </h2>
           <ul class="space-y-3 text-slate-300 text-sm sm:text-base">
             <li class="flex items-start gap-3">
               <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Automated dependency scanning</strong> — GitHub Dependabot scans all Python dependencies weekly and automatically opens pull requests to patch vulnerable packages before they can be exploited.</span>
+              <span><strong class="text-white">Static application security testing (Semgrep)</strong> — every pull request is automatically scanned with Semgrep using the OWASP Top 10, Flask security, and secrets detection rule sets. The pipeline is configured to block merges if any finding is reported — no defective code can reach production.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Secret scanning (Gitleaks)</strong> — every commit is scanned for accidentally committed API keys, tokens, private keys, and credentials. The check runs in CI before any code is merged, preventing secrets from ever entering the codebase history.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Container image scanning (Trivy)</strong> — the production Docker image is scanned for OS-level and library CVEs on every build before it is pushed to the container registry. High or critical vulnerabilities block the deploy pipeline.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Automated dependency scanning (Dependabot)</strong> — GitHub Dependabot scans all Python dependencies weekly and automatically opens pull requests to patch vulnerable packages before they can be exploited.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Branch protection &amp; required checks</strong> — the <code class="text-indigo-300 bg-slate-800 px-1 rounded text-xs">main</code> branch is protected. All three security scans (Semgrep, Gitleaks, Trivy) plus dependency validation must pass before any code merge is permitted. No one — including administrators — can bypass these gates.</span>
             </li>
             <li class="flex items-start gap-3">
               <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
