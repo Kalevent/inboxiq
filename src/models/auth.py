@@ -89,3 +89,35 @@ class TOTPDevice(db.Model):
         }
 
 
+class AuditLog(db.Model):
+    """
+    Immutable record of security-relevant actions within an account.
+    Write-only — never update or delete rows; use for compliance and incident investigation.
+    """
+    __tablename__ = "audit_logs"
+
+    id            = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id    = db.Column(db.Integer, db.ForeignKey("accounts.id", ondelete="SET NULL"), nullable=True, index=True)
+    user_id       = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    action        = db.Column(db.String(100), nullable=False, index=True)  # e.g. "user.role_changed"
+    resource_type = db.Column(db.String(50), nullable=True)               # e.g. "user", "inbox_connection"
+    resource_id   = db.Column(db.String(64), nullable=True)
+    ip_address    = db.Column(db.String(45), nullable=True)
+    user_agent    = db.Column(db.String(300), nullable=True)
+    metadata_json = db.Column("metadata", db.JSON, nullable=False, default=dict)
+    created_at    = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "user_id": self.user_id,
+            "action": self.action,
+            "resource_type": self.resource_type,
+            "resource_id": self.resource_id,
+            "ip_address": self.ip_address,
+            "metadata": self.metadata_json or {},
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+

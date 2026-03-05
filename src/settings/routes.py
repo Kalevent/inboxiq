@@ -515,11 +515,15 @@ def api_update_role():
   if caller_role not in {"owner", "admin"}:
     return jsonify({"error": "insufficient permissions"}), 403
 
+  old_role = assignments.get(str(target.id))
   assignments[str(target.id)] = role_key
   if "owner" not in assignments.values():
     return jsonify({"error": "at least one owner is required"}), 400
 
   _save_assignments(account_id, assignments)
+  from src.security import log_audit
+  log_audit("user.role_changed", resource_type="user", resource_id=str(target.id),
+            metadata={"old_role": old_role, "new_role": role_key, "changed_by": user.id})
   return jsonify(
     {
       "user_id": target.id,

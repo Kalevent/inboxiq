@@ -85,6 +85,15 @@ spec:
             # - name: PHOENIX_SQL_DATABASE_SCHEMA
             #   value: public
 
+            # Authentication — restrict Phoenix UI to authorised users only
+            - name: PHOENIX_ENABLE_AUTH
+              value: "true"
+            - name: PHOENIX_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: inboxiq-env
+                  key: PHOENIX_SECRET
+
             # Logging
             - name: PHOENIX_LOG_LEVEL
               value: info
