@@ -35,6 +35,7 @@ jobs:
             --config "p/flask" \
             --config "p/secrets" \
             --config "p/owasp-top-ten" \
+            --config ".semgrep/rules.yml" \
             --error \
             --quiet \
             src/

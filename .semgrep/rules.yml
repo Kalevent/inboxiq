@@ -1,0 +1,135 @@
+rules:
+  # -----------------------------------------------------------------------
+  # 1. SQL injection — raw execute() with string concat / f-strings / %
+  #    Matches found in: src/mcp/ (4 files)
+  # -----------------------------------------------------------------------
+  - id: inboxiq.sql-injection.execute-dynamic
+    message: >
+      Possible SQL injection: dynamic SQL passed to execute(). Use
+      parameterized queries with bound parameters instead.
+    severity: ERROR
+    languages: [python]
+    patterns:
+      - pattern-either:
+          - pattern: $CUR.execute(f"...$X...")
+          - pattern: $CUR.execute("..." + $X + "...")
+          - pattern: $CUR.execute("..." % $X)
+          - pattern: $CUR.execute($Q)
+    metadata:
+      category: security
+      owasp: "A03:2021-Injection"
+
+  # -----------------------------------------------------------------------
+  # 2. Command injection — subprocess with shell=True
+  #    Guard for AI agent / MCP tool execution paths
+  # -----------------------------------------------------------------------
+  - id: inboxiq.command-injection.shell-true
+    message: >
+      Command injection risk: subprocess called with shell=True. Avoid
+      shell=True or strictly validate/allowlist inputs before passing to shell.
+    severity: ERROR
+    languages: [python]
+    patterns:
+      - pattern-either:
+          - pattern: subprocess.run($CMD, shell=True, ...)
+          - pattern: subprocess.call($CMD, shell=True, ...)
+          - pattern: subprocess.Popen($CMD, shell=True, ...)
+    metadata:
+      category: security
+      owasp: "A03:2021-Injection"
+
+  # -----------------------------------------------------------------------
+  # 3. SSRF — outbound HTTP requests with a variable URL
+  #    Matches found in: src/mcp/, src/agents/, src/api/v1/, src/outreach/,
+  #                      src/inbox/, src/content/, src/leads/ (15 files)
+  # -----------------------------------------------------------------------
+  - id: inboxiq.ssrf.requests-user-url
+    message: >
+      Possible SSRF: requests.* called with a variable URL. Enforce an
+      allowlist of domains, block RFC1918/link-local/metadata IPs, and
+      always set a timeout.
+    severity: WARNING
+    languages: [python]
+    patterns:
+      - pattern-either:
+          - pattern: requests.get($URL, ...)
+          - pattern: requests.post($URL, ...)
+          - pattern: requests.put($URL, ...)
+          - pattern: requests.delete($URL, ...)
+      - pattern-not: requests.$M("https://...", ...)
+    metadata:
+      category: security
+      owasp: "A10:2021-SSRF"
+
+  # -----------------------------------------------------------------------
+  # 5. Missing auth on write endpoints (multi-tenant SaaS)
+  #    Flags POST/PUT/DELETE/PATCH routes where @jwt_required() or
+  #    @login_required_settings is absent between the @route decorator
+  #    and the function def — the exact pattern used in this codebase.
+  #    Routes with @jwt_required(optional=True) are intentionally public
+  #    (webhook ingest, etc.) and are excluded.
+  # -----------------------------------------------------------------------
+  - id: inboxiq.auth.unprotected-write-endpoint
+    message: >
+      Write endpoint (POST/PUT/DELETE/PATCH) is missing @jwt_required() or
+      @login_required_settings. Add the appropriate auth decorator or suppress
+      with # nosemgrep if the endpoint is intentionally public.
+    severity: ERROR
+    languages: [python]
+    patterns:
+      - pattern-either:
+          - pattern: |
+              @$BP.route($PATH, methods=["POST"])
+              def $FUNC(...):
+                  ...
+          - pattern: |
+              @$BP.route($PATH, methods=["PUT"])
+              def $FUNC(...):
+                  ...
+          - pattern: |
+              @$BP.route($PATH, methods=["DELETE"])
+              def $FUNC(...):
+                  ...
+          - pattern: |
+              @$BP.route($PATH, methods=["PATCH"])
+              def $FUNC(...):
+                  ...
+          - pattern: |
+              @$BP.route($PATH, methods=[..., "POST", ...])
+              def $FUNC(...):
+                  ...
+          - pattern: |
+              @$BP.route($PATH, methods=[..., "PUT", ...])
+              def $FUNC(...):
+                  ...
+          - pattern: |
+              @$BP.route($PATH, methods=[..., "DELETE", ...])
+              def $FUNC(...):
+                  ...
+          - pattern: |
+              @$BP.route($PATH, methods=[..., "PATCH", ...])
+              def $FUNC(...):
+                  ...
+    metadata:
+      category: security
+      owasp: "A01:2021-Broken Access Control"
+
+  # -----------------------------------------------------------------------
+  # 4. Path traversal — user-controlled filename in os.path.join / Path
+  #    Matches found in: src/docs/routes.py
+  # -----------------------------------------------------------------------
+  - id: inboxiq.file-upload.path-join-user-input
+    message: >
+      Possible path traversal: joining a user-controlled filename/path.
+      Use werkzeug's secure_filename() and store files by generated IDs
+      via src/uploads.py instead of local paths.
+    severity: ERROR
+    languages: [python]
+    patterns:
+      - pattern-either:
+          - pattern: open(os.path.join($DIR, $FILENAME), ...)
+          - pattern: $FILE.save(os.path.join($DIR, $FILENAME))
+          - pattern: Path($DIR) / $FILENAME
+    metadata:
+      category: security
+      owasp: "A01:2021-Broken Access Control"
