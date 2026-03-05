@@ -299,7 +299,13 @@ def create_app() -> Flask:
   @app.route("/contact")
   def contact():
     return render_template("contact.html")
-  
+
+  @app.route("/security")
+  def security():
+    from datetime import datetime, timezone
+    return render_template("security.html", current_year=datetime.now(timezone.utc).year)
+
+
   # Marketing endpoints
   @app.get("/email-triage")
   def email_triage():
@@ -422,6 +428,7 @@ def create_app() -> Flask:
       {"loc": "https://kalevent.com/", "priority": "1.0"},
       {"loc": "https://kalevent.com/login", "priority": "0.7"},
       {"loc": "https://kalevent.com/contact", "priority": "0.7"},
+      {"loc": "https://kalevent.com/security", "priority": "0.6"},
       {"loc": "https://kalevent.com/email-triage", "priority": "0.6"},
       {"loc": "https://kalevent.com/ai-email-triage", "priority": "0.6"},
       {"loc": "https://kalevent.com/shared-inbox", "priority": "0.6"},

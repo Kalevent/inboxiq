@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security &amp; Privacy · InboxIQ by Kalevent</title>
+  <meta name="description" content="How InboxIQ protects your email data: encryption, isolation, AI sub-processors, and our path to SOC 2 Type II." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950">
+
+    <!-- Nav back to homepage -->
+    <nav class="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
+      <a href="/" class="text-white font-semibold text-lg tracking-tight hover:text-indigo-300 transition-colors">
+        InboxIQ
+      </a>
+      <a href="/login" class="text-sm text-slate-300 hover:text-white transition-colors">
+        Sign in →
+      </a>
+    </nav>
+
+    <main class="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+
+      <!-- Header -->
+      <div class="mb-10">
+        <p class="text-xs uppercase tracking-[0.2em] text-indigo-300/80 mb-3">Security &amp; Privacy</p>
+        <h1 class="text-3xl sm:text-4xl font-semibold text-white tracking-tight">Your data is safe with us.</h1>
+        <p class="text-slate-300 mt-3 max-w-2xl text-sm sm:text-base">
+          InboxIQ handles your support team's email. We take that responsibility seriously.
+          Here is exactly how your data is protected, where it goes, and what we are doing to earn your trust long-term.
+        </p>
+        <p class="text-slate-500 mt-2 text-xs">Last updated: March 2026</p>
+      </div>
+
+      <!-- Status badges -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
+          <span class="text-white text-sm font-medium">Encryption in Transit</span>
+          <span class="text-slate-400 text-xs">TLS 1.2+ everywhere</span>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
+          <span class="text-white text-sm font-medium">Encryption at Rest</span>
+          <span class="text-slate-400 text-xs">AWS RDS AES-256</span>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
+          <span class="text-white text-sm font-medium">Data Isolation</span>
+          <span class="text-slate-400 text-xs">Per-account scoping</span>
+        </div>
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-yellow-400 text-xs font-semibold uppercase tracking-wide">In Progress</span>
+          <span class="text-white text-sm font-medium">SOC 2 Type II</span>
+          <span class="text-slate-400 text-xs">Pursuing 2026</span>
+        </div>
+      </div>
+
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/10 p-6 sm:p-8 space-y-8">
+
+        <!-- Summary statement -->
+        <section class="space-y-3">
+          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+            <span class="text-indigo-400">&#9679;</span> Summary
+          </h2>
+          <div class="bg-indigo-950/50 border border-indigo-800/40 rounded-xl p-5 text-slate-200 text-sm sm:text-base leading-relaxed">
+            Your email data is stored in AWS (us-west-2), encrypted at rest and in transit, and logically isolated —
+            no other customer can access your data. For AI features (triage, draft replies), email content is sent
+            to OpenAI's API under their Data Processing Agreement, which prohibits training on API inputs.
+            We are currently pursuing SOC 2 Type II. For customers with strict requirements,
+            AI processing can be disabled in account settings.
+          </div>
+        </section>
+
+        <!-- Infrastructure -->
+        <section class="space-y-4">
+          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+            <span class="text-indigo-400">&#9679;</span> Infrastructure &amp; Storage
+          </h2>
+          <ul class="space-y-3 text-slate-300 text-sm sm:text-base">
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Hosted on AWS (us-west-2)</strong> — all data stored within Amazon Web Services infrastructure. AWS maintains ISO 27001, SOC 2, and GDPR compliance at the infrastructure level.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Encryption at rest</strong> — PostgreSQL database uses AWS RDS with AES-256 encryption. File attachments are stored in S3 with server-side encryption.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Encryption in transit</strong> — all communication between your browser, our servers, and third-party APIs uses TLS 1.2 or higher.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">File attachment isolation</strong> — uploaded files are served from a dedicated isolated domain (<code class="text-indigo-300 bg-slate-800 px-1 rounded text-xs">files.kalevent.com</code>) with strict security headers, preventing cross-site data exposure.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Customer data isolation</strong> — every database query is scoped to your account. No customer can access another's tickets, leads, or email data — enforced at the application layer.</span>
+            </li>
+          </ul>
+        </section>
+
+        <!-- AI processing -->
+        <section class="space-y-4">
+          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+            <span class="text-indigo-400">&#9679;</span> AI Processing &amp; Sub-processors
+          </h2>
+          <p class="text-slate-300 text-sm sm:text-base">
+            InboxIQ uses large language models to power email triage, draft replies, and lead scoring.
+            When these features are enabled, email content (subject and body) is sent to our AI provider.
+          </p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm border-collapse">
+              <thead>
+                <tr class="border-b border-slate-700">
+                  <th class="text-left py-2 pr-4 text-slate-400 font-medium">Sub-processor</th>
+                  <th class="text-left py-2 pr-4 text-slate-400 font-medium">Purpose</th>
+                  <th class="text-left py-2 text-slate-400 font-medium">Data sent</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                <tr>
+                  <td class="py-3 pr-4 text-white font-medium">OpenAI (API)</td>
+                  <td class="py-3 pr-4 text-slate-300">Email triage, draft replies, lead scoring</td>
+                  <td class="py-3 text-slate-300">Email subject &amp; body text</td>
+                </tr>
+                <tr>
+                  <td class="py-3 pr-4 text-white font-medium">Amazon Web Services</td>
+                  <td class="py-3 pr-4 text-slate-300">Compute, database, file storage, email delivery (SES)</td>
+                  <td class="py-3 text-slate-300">All customer data (stored)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4 text-slate-300 text-sm">
+            <strong class="text-white">OpenAI API data policy:</strong> OpenAI's API Data Processing Agreement prohibits
+            using API inputs to train models. Your email content is processed to generate a response and is not retained
+            beyond the request. See <a href="https://openai.com/policies/api-data-usage-policies" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 underline">OpenAI's API data usage policy</a>.
+          </div>
+          <p class="text-slate-300 text-sm sm:text-base">
+            <strong class="text-white">Opt out:</strong> Customers with strict data policies can disable AI processing
+            in <strong class="text-white">Settings → Account → AI Processing</strong>. Tickets will still be received
+            and managed — only AI-powered automation is paused.
+          </p>
+        </section>
+
+        <!-- Access control -->
+        <section class="space-y-4">
+          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+            <span class="text-indigo-400">&#9679;</span> Access Control
+          </h2>
+          <ul class="space-y-3 text-slate-300 text-sm sm:text-base">
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Role-based access</strong> — team members are assigned roles (Owner, Admin, Agent, Viewer). Each role limits what data and settings a user can access or change.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">JWT authentication</strong> — sessions use short-lived signed tokens. No persistent session cookies that could be silently hijacked.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
+              <span><strong class="text-white">Passkey &amp; TOTP support</strong> — team members can secure accounts with hardware passkeys or authenticator app 2FA in addition to passwords.</span>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Observability -->
+        <section class="space-y-4">
+          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+            <span class="text-indigo-400">&#9679;</span> Observability &amp; Monitoring
+          </h2>
+          <p class="text-slate-300 text-sm sm:text-base">
+            All tracing and LLM observability runs on our own infrastructure (self-hosted
+            <a href="https://phoenix.arize.com" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 underline">Arize Phoenix</a>
+            inside our Kubernetes cluster). Traces — including LLM inputs and outputs — never leave our servers to a third-party analytics platform.
+          </p>
+        </section>
+
+        <!-- Compliance roadmap -->
+        <section class="space-y-4">
+          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+            <span class="text-indigo-400">&#9679;</span> Compliance Roadmap
+          </h2>
+          <ul class="space-y-3 text-slate-300 text-sm sm:text-base">
+            <li class="flex items-start gap-3">
+              <span class="text-yellow-400 mt-0.5 flex-shrink-0">&#9679;</span>
+              <span><strong class="text-white">SOC 2 Type II</strong> — in progress. We are building the controls and evidence program required for a SOC 2 Type II audit. We expect to complete our first audit in 2026.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-yellow-400 mt-0.5 flex-shrink-0">&#9679;</span>
+              <span><strong class="text-white">GDPR</strong> — we publish a Data Processing Agreement (DPA) for EU customers on request. Email <a href="mailto:privacy@kalevent.com" class="text-indigo-400 hover:text-indigo-300 underline">privacy@kalevent.com</a> to receive a signed DPA.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-slate-500 mt-0.5 flex-shrink-0">&#9679;</span>
+              <span><strong class="text-white">HIPAA</strong> — not yet supported. Do not use InboxIQ for processing Protected Health Information (PHI) until HIPAA controls are published.</span>
+            </li>
+          </ul>
+        </section>
+
+        <!-- Vulnerability disclosure -->
+        <section class="space-y-4">
+          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+            <span class="text-indigo-400">&#9679;</span> Vulnerability Disclosure
+          </h2>
+          <p class="text-slate-300 text-sm sm:text-base">
+            If you discover a security vulnerability in InboxIQ, please report it responsibly to
+            <a href="mailto:security@kalevent.com" class="text-indigo-400 hover:text-indigo-300 underline">security@kalevent.com</a>.
+            We will acknowledge your report within 48 hours and keep you updated as we investigate and remediate.
+            We ask that you give us reasonable time to fix the issue before public disclosure.
+          </p>
+        </section>
+
+        <!-- Contact -->
+        <section class="space-y-3 pt-2 border-t border-slate-800">
+          <h2 class="text-xl font-semibold text-white">Questions?</h2>
+          <p class="text-slate-300 text-sm sm:text-base">
+            For security and privacy questions, data deletion requests, or to request a signed DPA, contact us at
+            <a href="mailto:privacy@kalevent.com" class="text-indigo-400 hover:text-indigo-300 underline">privacy@kalevent.com</a>.
+          </p>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 border-t border-slate-800/50 mt-8">
+      <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-500">
+        <span>&copy; {{ current_year }} Kalevent Ltd. All rights reserved.</span>
+        <span class="hidden md:inline text-slate-700">•</span>
+        <a href="{{ url_for('privacy') }}" class="hover:text-white transition-colors">Privacy Policy</a>
+        <span class="hidden md:inline text-slate-700">•</span>
+        <a href="{{ url_for('terms') }}" class="hover:text-white transition-colors">Terms of Service</a>
+        <span class="hidden md:inline text-slate-700">•</span>
+        <a href="{{ url_for('contact') }}" class="hover:text-white transition-colors">Contact</a>
+      </div>
+    </footer>
+
+  </div>
+</body>
+</html>
