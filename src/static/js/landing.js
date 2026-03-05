@@ -268,6 +268,99 @@
   }
 })();
 
+// ── Free Trial Modal ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+  var tmModal    = document.getElementById('trialModal');
+  var tmForm     = document.getElementById('tmForm');
+  var tmStatus   = document.getElementById('tmStatus');
+  var tmButton   = document.getElementById('tmButton');
+  var tmEmail    = document.getElementById('tmEmail');
+  var tmAccount  = document.getElementById('tmAccountName');
+  var tmSeats    = document.getElementById('tmSeats');
+  var tmTrigger  = document.getElementById('trialModalTrigger');
+  var tmClose    = document.getElementById('tmClose');
+  var tmBackdrop = document.getElementById('tmBackdrop');
+
+  function openTrialModal() {
+    if (!tmModal) return;
+    tmModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (tmEmail) tmEmail.focus();
+  }
+
+  function closeTrialModal() {
+    if (!tmModal) return;
+    tmModal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function setTmStatus(type, message) {
+    if (!tmStatus) return;
+    var cls = type === 'success'
+      ? 'rounded-lg px-3 py-2 text-xs bg-emerald-900/60 border border-emerald-700 text-emerald-200'
+      : type === 'error'
+        ? 'rounded-lg px-3 py-2 text-xs bg-red-900/60 border border-red-700 text-red-200'
+        : 'rounded-lg px-3 py-2 text-xs bg-slate-800 border border-slate-600 text-slate-300';
+    tmStatus.className = cls;
+    tmStatus.textContent = message;
+    tmStatus.style.display = 'block';
+  }
+
+  async function handleTmSubmit(event) {
+    event.preventDefault();
+    if (!tmEmail || !tmButton) return;
+    var email       = (tmEmail.value || '').trim().toLowerCase();
+    var accountName = (tmAccount ? tmAccount.value || '' : '').trim();
+    var seatsRaw    = (tmSeats ? tmSeats.value || '' : '').trim();
+    var seats       = seatsRaw ? parseInt(seatsRaw, 10) : NaN;
+
+    if (!email)       { setTmStatus('error', 'Please provide your work email.'); return; }
+    if (!accountName) { setTmStatus('error', 'Please provide an account name.'); return; }
+    if (!seatsRaw || isNaN(seats) || seats < 1) { setTmStatus('error', 'Please enter at least 1 seat.'); return; }
+
+    tmButton.disabled = true;
+    tmButton.textContent = 'Creating...';
+    setTmStatus('info', 'Creating your workspace…');
+
+    try {
+      var response = await fetch('/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ email: email, account_name: accountName, seats: seats }),
+      });
+      var contentType = response.headers.get('content-type') || '';
+      var isJson = contentType.includes('application/json');
+      var data = isJson ? await response.json() : await response.text();
+      if (!response.ok) {
+        throw new Error((isJson && data && data.error) || data || ('Request failed (' + response.status + ')'));
+      }
+      if (isJson && data && data.account_id !== undefined) {
+        localStorage.setItem('inboxiqAccountId', data.account_id);
+      }
+      var activationLink = isJson ? (data && data.activation_link) : null;
+      if (activationLink) {
+        try { localStorage.setItem('inboxiqActivationLink', activationLink); } catch (e) {}
+      }
+      var msg = 'Workspace created! Check ' + email + ' for your activation link.';
+      if (activationLink) msg += ' Or open: ' + activationLink;
+      setTmStatus('success', msg);
+      tmButton.textContent = 'Done!';
+    } catch (error) {
+      setTmStatus('error', error.message || 'Unable to create workspace.');
+      tmButton.disabled = false;
+      tmButton.textContent = 'Start Free Trial →';
+    }
+  }
+
+  if (tmTrigger)  tmTrigger.addEventListener('click', openTrialModal);
+  if (tmClose)    tmClose.addEventListener('click', closeTrialModal);
+  if (tmBackdrop) tmBackdrop.addEventListener('click', closeTrialModal);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && tmModal && tmModal.style.display !== 'none') closeTrialModal();
+  });
+  if (tmForm) tmForm.addEventListener('submit', handleTmSubmit);
+});
+
 // ── Enterprise Inquiry Modal ───────────────────────────────────────────────
 // Wrapped in DOMContentLoaded: modal HTML sits after this script tag in index.html.
 document.addEventListener('DOMContentLoaded', function () {
