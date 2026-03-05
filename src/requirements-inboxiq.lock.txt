@@ -56,7 +56,7 @@ Flask-SQLAlchemy==3.0.3
 frozenlist==1.8.0
 fsspec==2026.2.0
 gepa==0.0.26
-google-api-core==2.29.0
+google-api-core==2.30.0
 google-api-python-client==2.189.0
 google-auth==2.48.0
 google-auth-httplib2==0.3.0
