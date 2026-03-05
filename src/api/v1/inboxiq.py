@@ -1578,3 +1578,151 @@ def test_llm_config():
         return jsonify({"message": f"Connection OK — model replied: {result['content'][:80]}"}), 200
     except Exception as exc:
         return jsonify({"message": f"Connection failed: {exc}"}), 400
+
+
+# ---------------------------------------------------------------------------
+# GDPR Article 17 — Right to Erasure
+# ---------------------------------------------------------------------------
+
+@v1.route("/account", methods=["DELETE"])
+@jwt_required()
+def delete_account():
+    """
+    Hard-delete all account data (GDPR Article 17).
+
+    Billing records are anonymised rather than deleted (7-year legal hold).
+    Requires owner role and confirmation phrase "DELETE MY ACCOUNT" in body.
+    """
+    from src.models.core import User, Account, AccountFeatureFlags
+    from src.models.auth import AuthEvent, Passkey, TOTPDevice
+    from src.models.tickets import Ticket, TicketEmbedding, TriageLabelConfig, TriageConfig, DraftReplyFeedback
+    from src.models.ai import DspyTrainingMetric
+    from src.models.leads import Lead, LeadFunnelStage, LeadEngagementEvent, LeadAttribution, FunnelMetricsDaily
+    from src.models.content import BlogPost, KBIntegration, KBArticle, KBArticleEmbedding, GeneratedContent, PitchedBlogTopic
+    from src.models.campaigns import CampaignSender, EmailCampaign, EmailOutreach, NurtureEmailSend
+    from src.models.automation import AutomationStudioWaitlist, AutomationRule, AutomationRuleExecution, WebhookProvider, AutomationSuggestion
+    from src.models.marketing import Referral, InAppMessage, InAppMessageDismissal, LandingPage, EnterpriseInquiry
+    from src.models.developer import DeveloperAccessRequest, RegisteredApp
+    from src.models.billing import CustomerBillingProfile, PaymentMethod, AccountUsageCounter
+    from src.models.misc import Testimonial, Feedback
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "not_found"}), 404
+
+    account_id = user.account_id
+
+    if user.role != "owner":
+        return jsonify({"error": "owner_required", "message": "Only the account owner can delete the account"}), 403
+
+    body = request.get_json(silent=True) or {}
+    if body.get("confirm") != "DELETE MY ACCOUNT":
+        return jsonify({"error": "confirmation_required", "message": 'Send {"confirm": "DELETE MY ACCOUNT"}'}), 422
+
+    current_app.logger.info({"event": "account.delete.initiated", "account_id": account_id, "user_id": user_id})
+
+    try:
+        # 1. Ticket leaf tables
+        ticket_ids = [r[0] for r in Ticket.query.filter_by(account_id=account_id).with_entities(Ticket.id).all()]
+        if ticket_ids:
+            TicketEmbedding.query.filter(TicketEmbedding.ticket_id.in_(ticket_ids)).delete(synchronize_session=False)
+            DraftReplyFeedback.query.filter(DraftReplyFeedback.ticket_id.in_(ticket_ids)).delete(synchronize_session=False)
+
+        # 2. Lead leaf tables
+        lead_ids = [r[0] for r in Lead.query.filter_by(account_id=account_id).with_entities(Lead.id).all()]
+        if lead_ids:
+            LeadFunnelStage.query.filter(LeadFunnelStage.lead_id.in_(lead_ids)).delete(synchronize_session=False)
+            LeadEngagementEvent.query.filter(LeadEngagementEvent.lead_id.in_(lead_ids)).delete(synchronize_session=False)
+            LeadAttribution.query.filter(LeadAttribution.lead_id.in_(lead_ids)).delete(synchronize_session=False)
+            NurtureEmailSend.query.filter(NurtureEmailSend.lead_id.in_(lead_ids)).delete(synchronize_session=False)
+
+        # 3. Campaign leaf tables
+        campaign_ids = [r[0] for r in EmailCampaign.query.filter_by(account_id=account_id).with_entities(EmailCampaign.id).all()]
+        if campaign_ids:
+            EmailOutreach.query.filter(EmailOutreach.campaign_id.in_(campaign_ids)).delete(synchronize_session=False)
+
+        # 4. KB leaf tables
+        kb_ids = [r[0] for r in KBArticle.query.filter_by(account_id=account_id).with_entities(KBArticle.id).all()]
+        if kb_ids:
+            KBArticleEmbedding.query.filter(KBArticleEmbedding.article_id.in_(kb_ids)).delete(synchronize_session=False)
+
+        # 5. Break automation circular FK: AutomationRule.suggestion_id → AutomationSuggestion
+        AutomationRule.query.filter_by(account_id=account_id).update({"suggestion_id": None}, synchronize_session=False)
+
+        # 6. Automation leaf tables then parents (AutomationRuleExecution has account_id directly)
+        AutomationRuleExecution.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        AutomationSuggestion.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        AutomationRule.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        AutomationStudioWaitlist.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        WebhookProvider.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+
+        # 7. Core data tables
+        Ticket.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        Lead.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        EmailCampaign.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        CampaignSender.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        KBArticle.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        KBIntegration.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        DspyTrainingMetric.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        TriageLabelConfig.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        TriageConfig.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        FunnelMetricsDaily.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        GeneratedContent.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        BlogPost.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        # PitchedBlogTopic: nullify reviewed_by (FK → User) before delete
+        PitchedBlogTopic.query.filter_by(account_id=account_id).update({"reviewed_by": None}, synchronize_session=False)
+        PitchedBlogTopic.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        Testimonial.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        Feedback.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+
+        # 8. Marketing (EnterpriseInquiry has ondelete=SET NULL — anonymise, keep for sales records)
+        Referral.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        LandingPage.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        EnterpriseInquiry.query.filter_by(account_id=account_id).update({"account_id": None}, synchronize_session=False)
+
+        # 9. Developer
+        DeveloperAccessRequest.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        RegisteredApp.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+
+        # 10. Billing: anonymise only (7-year legal hold — HMRC / GDPR recital 65)
+        billing_profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
+        if billing_profile:
+            PaymentMethod.query.filter_by(profile_id=billing_profile.id).update(
+                {"brand": "DELETED", "last4": "0000", "provider_payment_method_id": "DELETED"},
+                synchronize_session=False,
+            )
+            billing_profile.email = f"deleted-{account_id}@deleted.invalid"
+            billing_profile.billing_name = "DELETED"
+            billing_profile.address = {}
+            billing_profile.tax_id = None
+            db.session.add(billing_profile)
+        AccountUsageCounter.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+
+        # 11. Auth/user children
+        AuthEvent.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        user_ids = [r[0] for r in User.query.filter_by(account_id=account_id).with_entities(User.id).all()]
+        if user_ids:
+            InAppMessageDismissal.query.filter(InAppMessageDismissal.user_id.in_(user_ids)).delete(synchronize_session=False)
+            Passkey.query.filter(Passkey.user_id.in_(user_ids)).delete(synchronize_session=False)
+            TOTPDevice.query.filter(TOTPDevice.user_id.in_(user_ids)).delete(synchronize_session=False)
+        InAppMessage.query.filter_by(target_account_id=account_id).delete(synchronize_session=False)
+
+        # 12. Account-level config
+        InboxConnection.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        AccountFeatureFlags.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        AccountLLMConfig.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+
+        # 13. Users then Account (last)
+        User.query.filter_by(account_id=account_id).delete(synchronize_session=False)
+        Account.query.filter_by(id=account_id).delete(synchronize_session=False)
+
+        db.session.commit()
+
+        current_app.logger.info({"event": "account.delete.completed", "account_id": account_id})
+        return jsonify({"status": "deleted", "account_id": account_id}), 200
+
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception({"event": "account.delete.failed", "account_id": account_id, "error": str(exc)})
+        return jsonify({"error": "delete_failed", "message": "Account deletion failed. Contact support@kalevent.com"}), 500

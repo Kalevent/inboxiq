@@ -688,6 +688,74 @@
                     </a>
                   </div>
                 </div>
+
+                {# Danger Zone — owner only #}
+                <div class="mt-8 rounded-2xl border border-rose-900/60 bg-rose-950/20 p-5 lg:p-6">
+                  <div class="flex items-start gap-3">
+                    <svg width="20" height="20" style="flex-shrink:0;color:#fb7185;margin-top:2px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                    </svg>
+                    <div class="flex-1">
+                      <div class="text-sm font-semibold text-rose-300">Danger zone</div>
+                      <p class="mt-1 text-sm text-slate-300">Permanently delete this account and all its data. This action is irreversible.</p>
+                      <p class="mt-1 text-xs text-slate-400">Billing records are anonymised and retained for 7 years as required by law. All other data — tickets, leads, email campaigns, automations, integrations — is permanently deleted.</p>
+                      {% if current_user and current_user.role == 'owner' %}
+                        <button
+                          id="openDeleteAccountModal"
+                          class="mt-4 inline-flex items-center gap-2 rounded-xl border border-rose-700 bg-rose-900/30 px-4 py-2 text-sm font-semibold text-rose-300 hover:bg-rose-900/60 hover:text-rose-200 transition-colors">
+                          Delete account
+                        </button>
+                      {% else %}
+                        <p class="mt-3 text-xs text-slate-500">Only the account owner can delete the account.</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                {# Delete account confirmation modal #}
+                <div id="deleteAccountModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                  <div class="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-4">
+                    <div class="flex items-center gap-3">
+                      <svg width="20" height="20" style="flex-shrink:0;color:#fb7185" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                      </svg>
+                      <h3 class="text-base font-semibold text-rose-300">Delete account permanently</h3>
+                    </div>
+                    <p class="text-sm text-slate-300">This will immediately and permanently delete:</p>
+                    <ul class="text-sm text-slate-400 list-disc list-inside space-y-0.5">
+                      <li>All tickets, leads, email campaigns, and automations</li>
+                      <li>All integrations and AI provider configuration</li>
+                      <li>All users, passkeys, and 2FA devices</li>
+                      <li>All content, blog posts, and KB articles</li>
+                    </ul>
+                    <p class="text-xs text-slate-500">Billing records will be anonymised and retained for 7 years as required by law.</p>
+                    <div class="space-y-2">
+                      <label class="block text-xs font-medium text-slate-300">
+                        Type <span class="font-mono text-rose-300">DELETE MY ACCOUNT</span> to confirm
+                      </label>
+                      <input
+                        id="deleteAccountConfirmInput"
+                        type="text"
+                        placeholder="DELETE MY ACCOUNT"
+                        autocomplete="off"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none" />
+                    </div>
+                    <div id="deleteAccountError" class="hidden text-xs text-rose-400 rounded-lg border border-rose-900/50 bg-rose-950/30 px-3 py-2"></div>
+                    <div class="flex items-center gap-3 pt-1">
+                      <button
+                        id="confirmDeleteAccountBtn"
+                        disabled
+                        class="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-rose-500 transition-colors">
+                        Delete account permanently
+                      </button>
+                      <button
+                        id="cancelDeleteAccountModal"
+                        class="text-sm text-slate-400 hover:text-slate-200">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
               {% endif %}
 
             {% elif active_tab == 'integrations' %}
@@ -1839,6 +1907,73 @@ Content-Type: application/json
     {% endif %}
     {% if active_tab == 'security' %}
       <script src="{{ url_for('static', filename='settings/js/security.js') }}"></script>
+      <script>
+        (() => {
+          const openBtn = document.getElementById('openDeleteAccountModal');
+          const modal = document.getElementById('deleteAccountModal');
+          const cancelBtn = document.getElementById('cancelDeleteAccountModal');
+          const confirmInput = document.getElementById('deleteAccountConfirmInput');
+          const confirmBtn = document.getElementById('confirmDeleteAccountBtn');
+          const errorEl = document.getElementById('deleteAccountError');
+
+          if (!openBtn || !modal) return;
+
+          const PHRASE = 'DELETE MY ACCOUNT';
+
+          openBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            confirmInput.value = '';
+            confirmBtn.disabled = true;
+            errorEl.classList.add('hidden');
+          });
+
+          const closeModal = () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+          };
+
+          cancelBtn.addEventListener('click', closeModal);
+          modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+          confirmInput.addEventListener('input', () => {
+            confirmBtn.disabled = confirmInput.value !== PHRASE;
+          });
+
+          confirmBtn.addEventListener('click', async () => {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Deleting…';
+            errorEl.classList.add('hidden');
+
+            try {
+              const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+              const res = await fetch('/api/v1/account', {
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+                },
+                body: JSON.stringify({ confirm: PHRASE }),
+              });
+
+              if (res.ok) {
+                window.location.href = '/logout?reason=account_deleted';
+              } else {
+                const data = await res.json().catch(() => ({}));
+                errorEl.textContent = data.message || 'Deletion failed. Please contact support@kalevent.com.';
+                errorEl.classList.remove('hidden');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Delete account permanently';
+              }
+            } catch (err) {
+              errorEl.textContent = 'Network error. Please try again.';
+              errorEl.classList.remove('hidden');
+              confirmBtn.disabled = false;
+              confirmBtn.textContent = 'Delete account permanently';
+            }
+          });
+        })();
+      </script>
     {% endif %}
     {% if active_tab == 'features' %}
       <script>

@@ -3,6 +3,9 @@
 .env
 .env.*
 __pycache__/
+
+# Internal docs — do not publish
+docs/security/privacy_compliance_plan.md
 *.pyc
 .pytest_cache/
 .DS_Store

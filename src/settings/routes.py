@@ -142,11 +142,11 @@ def settings_page(tab):
         "sync_deals": meta.get("sync_deals", False),
       }
 
+  current_user = getattr(g, "current_user", None)
   if tab == "security":
-    user = getattr(g, "current_user", None)
-    if user:
-      passkeys = Passkey.query.filter_by(user_id=user.id).all()
-      totp_devices = TOTPDevice.query.filter_by(user_id=user.id).all()
+    if current_user:
+      passkeys = Passkey.query.filter_by(user_id=current_user.id).all()
+      totp_devices = TOTPDevice.query.filter_by(user_id=current_user.id).all()
 
   # Developer tab — only accessible if account has developer_access
   developer_access_request = None
@@ -189,6 +189,7 @@ def settings_page(tab):
     new_app=None,
     llm_config=llm_config,
     allowed_llm_providers=ALLOWED_LLM_PROVIDERS,
+    current_user=current_user,
   )
 
 

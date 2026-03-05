@@ -36,7 +36,26 @@ permissions:
   contents: read
 
 jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history for secret scan)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Gitleaks
+        run: |
+          GITLEAKS_VERSION="8.18.4"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          chmod +x gitleaks
+
+      - name: Scan for secrets
+        run: ./gitleaks detect --source . --redact --exit-code 1
+
   build-and-deploy:
+    needs: [secret-scan]
     if: github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'inboxiq')
     runs-on: ubuntu-latest
     steps:
@@ -101,6 +120,15 @@ jobs:
           # Optional additional tag for convenience
           docker buildx imagetools create -t "${ECR_REGISTRY}/${ECR_REPO}:inbox" "${IMAGE}"
           echo "TAG=${TAG}" >> "$GITHUB_ENV"
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: "${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ env.TAG }}"
+          format: table
+          exit-code: "1"
+          severity: CRITICAL
+          ignore-unfixed: true
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v4
