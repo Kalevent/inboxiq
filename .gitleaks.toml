@@ -1,0 +1,14 @@
+[allowlist]
+description = "False positives in documentation example files"
+
+# Placeholder tokens used as examples in developer/API docs
+regexes = [
+  '''sk_live_x+''',
+  '''ik_live_abc123''',
+]
+
+# Allowlist entire doc files that only contain example/placeholder values
+paths = [
+  '''src/docs/documentation/automation_studio_accounting\.md''',
+  '''src/mcp/docs/unified_intake_postman_guide\.md''',
+]
