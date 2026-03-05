@@ -8,7 +8,6 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "security"
     ignore:
       # Only auto-update patch versions for major frameworks — review minor/major manually
       - dependency-name: "flask"
@@ -16,6 +15,9 @@ updates:
       - dependency-name: "sqlalchemy"
         update-types: ["version-update:semver-major"]
       - dependency-name: "celery"
+        update-types: ["version-update:semver-major"]
+      # flask-limiter 3.x requires rich<14 — block major rich upgrades
+      - dependency-name: "rich"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
@@ -26,3 +28,7 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+    ignore:
+      # OIDC trust policy is tied to v4 — upgrading requires IAM role update first
+      - dependency-name: "aws-actions/configure-aws-credentials"
+        update-types: ["version-update:semver-major"]
