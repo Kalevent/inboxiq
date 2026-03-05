@@ -1503,6 +1503,9 @@ def save_llm_config():
         config.api_key_enc = encrypt_value(raw_key)
 
     db.session.commit()
+    from src.security import log_audit
+    log_audit("ai_provider.configured", resource_type="llm_config",
+              metadata={"provider": provider, "model": model})
     return jsonify({"message": "AI provider saved", "config": config.to_dict()}), 200
 
 
@@ -1521,6 +1524,9 @@ def delete_llm_config():
 
     config = AccountLLMConfig.query.filter_by(account_id=user.account_id).first()
     if config:
+        from src.security import log_audit
+        log_audit("ai_provider.removed", resource_type="llm_config",
+                  metadata={"provider": config.provider})
         db.session.delete(config)
         db.session.commit()
     return jsonify({"message": "Custom AI provider removed"}), 200
@@ -1621,6 +1627,9 @@ def delete_account():
         return jsonify({"error": "confirmation_required", "message": 'Send {"confirm": "DELETE MY ACCOUNT"}'}), 422
 
     current_app.logger.info({"event": "account.delete.initiated", "account_id": account_id, "user_id": user_id})
+    from src.security import log_audit
+    log_audit("account.deleted", resource_type="account", resource_id=str(account_id),
+              account_id=account_id, user_id=user_id)
 
     try:
         # 1. Ticket leaf tables
