@@ -8,7 +8,7 @@ from flask import current_app, flash, g, jsonify, redirect, render_template, req
 from src.extensions import db, limiter
 from src.models.auth import Passkey, TOTPDevice
 from src.models.automation import WebhookProvider
-from src.models.core import User, Account, InboxConnection
+from src.models.core import User, Account, InboxConnection, AccountLLMConfig, ALLOWED_LLM_PROVIDERS
 from src.models.developer import RegisteredApp, DeveloperAccessRequest
 from src.crypto import encrypt_value, decrypt_value
 from src.api.v1.access_control import account_allows_api
@@ -87,7 +87,7 @@ def settings_root():
 @bp.get("/settings/<tab>")
 @login_required_settings
 def settings_page(tab):
-  allowed = {"team", "profile", "billing", "security", "integrations", "features", "developer"}
+  allowed = {"team", "profile", "billing", "security", "integrations", "features", "ai_provider", "developer"}
   if tab not in allowed:
     tab = "team"
   passkeys = []
@@ -103,6 +103,11 @@ def settings_page(tab):
     from src.models.billing import CustomerBillingProfile
     profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
     plan_name = profile.plan_choice.capitalize() if profile and profile.plan_choice else None
+
+  # Get BYOL LLM config for ai_provider tab
+  llm_config = None
+  if tab == "ai_provider" and account_id:
+    llm_config = AccountLLMConfig.query.filter_by(account_id=account_id).first()
 
   # Get draft reply feature status for features tab
   draft_reply_enabled = False
@@ -182,6 +187,8 @@ def settings_page(tab):
     registered_apps=registered_apps,
     developer_error=None,
     new_app=None,
+    llm_config=llm_config,
+    allowed_llm_providers=ALLOWED_LLM_PROVIDERS,
   )
 
 

@@ -92,3 +92,70 @@ class AccountFeatureFlags(db.Model):
         }
 
 
+# Permitted provider/model combinations for BYOL (Bring Your Own LLM).
+# Customers supply a base_url and api_key — we restrict which models they can
+# select to avoid sending data to arbitrary unknown endpoints.
+ALLOWED_LLM_PROVIDERS = {
+    "openai": {
+        "label": "OpenAI (your own API key)",
+        "models": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+        "base_url": "https://api.openai.com/v1",
+        "base_url_editable": False,
+    },
+    "anthropic": {
+        "label": "Anthropic (your own API key)",
+        "models": ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5-20251001"],
+        "base_url": "https://api.anthropic.com",
+        "base_url_editable": False,
+    },
+    "ollama": {
+        "label": "Ollama (self-hosted)",
+        "models": ["llama3.2", "llama3.1", "mistral", "phi4", "qwen2.5"],
+        "base_url": None,  # Customer must provide
+        "base_url_editable": True,
+    },
+    "openai_compatible": {
+        "label": "OpenAI-compatible endpoint",
+        "models": [],  # Customer specifies model name
+        "base_url": None,  # Customer must provide
+        "base_url_editable": True,
+    },
+}
+
+
+class AccountLLMConfig(db.Model):
+    """
+    Per-account LLM provider configuration for BYOL (Bring Your Own LLM).
+
+    When set, all AI inference for the account is routed to the customer's
+    own endpoint instead of InboxIQ's default OpenAI key. This means:
+    - The customer's API key is used (cost is theirs)
+    - Email content goes to their chosen endpoint (data stays with them)
+    - InboxIQ's OpenAI key is NOT used for this account
+
+    api_key_enc is stored Fernet-encrypted via src/crypto.py.
+    """
+    __tablename__ = "account_llm_configs"
+
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), primary_key=True)
+    provider = db.Column(db.String(32), nullable=False, comment="openai | anthropic | ollama | openai_compatible")
+    base_url = db.Column(db.String(512), nullable=True, comment="Required for ollama/openai_compatible, fixed for openai/anthropic")
+    model = db.Column(db.String(128), nullable=False)
+    api_key_enc = db.Column(db.Text, nullable=True, comment="Fernet-encrypted API key; null for providers that don't need one (local ollama)")
+    enabled = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "account_id": self.account_id,
+            "provider": self.provider,
+            "base_url": self.base_url,
+            "model": self.model,
+            "has_api_key": bool(self.api_key_enc),
+            "enabled": self.enabled,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+

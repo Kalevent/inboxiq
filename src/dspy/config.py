@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import os
 import logging
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +78,16 @@ def get_current_model_id() -> Optional[str]:
     return f"{prefix}/{model}"
 
 
-def configure_dspy() -> tuple[str, str, Any]:
+def configure_dspy(
+    byol_config: Optional[Dict[str, Any]] = None,
+) -> tuple[str, str, Any]:
     """
     Configure DSPy with the appropriate LLM provider.
+
+    Args:
+        byol_config: Optional per-account BYOL config dict with keys
+                     provider, base_url, model, api_key.  When provided,
+                     overrides all env-var-based provider selection.
 
     The system is model-agnostic for training data:
     - Manual overrides (training examples) are stored in the database
@@ -99,6 +106,10 @@ def configure_dspy() -> tuple[str, str, Any]:
         raise RuntimeError(
             "DSPy is not installed. Install with `pip install dspy-ai` and set DSPY_ENABLED=1."
         ) from exc
+
+    # --- BYOL override: use account's own LLM endpoint ---
+    if byol_config:
+        return _configure_dspy_byol(dspy, byol_config)
 
     provider = os.getenv("DSPY_PROVIDER", "").strip().lower()
 
@@ -185,6 +196,44 @@ def configure_dspy() -> tuple[str, str, Any]:
 
     logger.info("DSPy configured with provider=%s model=%s", provider, model_id)
 
+    return model, model_id, dspy
+
+
+def _configure_dspy_byol(dspy: Any, byol_config: Dict[str, Any]) -> tuple[str, str, Any]:
+    """Configure DSPy using a customer's own LLM endpoint."""
+    from typing import Dict as _Dict, Any as _Any
+
+    provider = byol_config["provider"]
+    model = byol_config["model"]
+    base_url = (byol_config.get("base_url") or "").rstrip("/")
+    api_key = byol_config.get("api_key")
+
+    try:
+        if provider == "anthropic":
+            model_id = model if "/" in model else f"anthropic/{model}"
+            lm = dspy.LM(model=model_id, api_key=api_key, max_tokens=300, temperature=0.2)
+
+        elif provider == "openai":
+            model_id = model if "/" in model else f"openai/{model}"
+            lm = dspy.LM(model=model_id, api_key=api_key, max_tokens=300, temperature=0.2)
+
+        else:
+            # ollama or openai_compatible — OpenAI-compatible wire format
+            if not base_url:
+                raise ValueError(f"provider={provider} requires a base_url")
+            model_id = model if "/" in model else f"openai/{model}"
+            lm = dspy.LM(
+                model=model_id,
+                api_base=f"{base_url}/v1" if not base_url.endswith("/v1") else base_url,
+                api_key=api_key or "byol",
+                max_tokens=300,
+                temperature=0.2,
+            )
+    except Exception as exc:
+        raise RuntimeError(f"Failed to configure DSPy BYOL backend ({provider}): {exc}") from exc
+
+    dspy.settings.configure(lm=lm)
+    logger.info("DSPy configured with BYOL provider=%s model=%s", provider, model_id)
     return model, model_id, dspy
 
 

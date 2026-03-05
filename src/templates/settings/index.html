@@ -98,6 +98,13 @@
                 <span class="text-xs text-slate-400">{% if active_tab == 'features' %}Active{% endif %}</span>
               </a>
 
+              <a href="{{ url_for('settings.settings_page', tab='ai_provider') }}"
+                 class="flex items-center justify-between px-3 py-2 rounded-xl border
+                 {% if active_tab == 'ai_provider' %}border-indigo-400/40 bg-indigo-500/10 text-indigo-100{% else %}border-transparent hover:border-slate-700 hover:bg-slate-900/60 text-slate-200{% endif %}">
+                <span>AI Provider</span>
+                <span class="text-xs text-slate-400">{% if active_tab == 'ai_provider' %}Active{% endif %}</span>
+              </a>
+
               {% if account and account.developer_access %}
               <a href="{{ url_for('settings.settings_page', tab='developer') }}"
                  class="flex items-center justify-between px-3 py-2 rounded-xl border
@@ -1403,6 +1410,98 @@
                 </div>
               </div>
 
+            {% elif active_tab == 'ai_provider' %}
+              <div class="space-y-3">
+                <h2 class="text-xl font-semibold">AI Provider</h2>
+                <p class="text-sm text-slate-300">
+                  Connect your own LLM endpoint. When configured, InboxIQ routes all AI inference for your account
+                  to your endpoint using your API key — your email data never touches InboxIQ's OpenAI key.
+                </p>
+                <div class="rounded-xl border border-indigo-800/40 bg-indigo-950/40 px-4 py-3 text-xs text-indigo-200">
+                  By default InboxIQ uses its own OpenAI key (cost covered by your plan). Use this if you have
+                  stricter data residency requirements or want to control costs directly.
+                </div>
+              </div>
+
+              <div class="mt-6 space-y-4">
+                <form id="llmProviderForm" class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-5">
+
+                  <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5" for="llmProvider">Provider</label>
+                    <select id="llmProvider" name="provider"
+                      class="w-full rounded-xl border border-slate-700 bg-slate-800 text-sm text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      <option value="">— Use InboxIQ default (OpenAI) —</option>
+                      {% for key, p in allowed_llm_providers.items() %}
+                      <option value="{{ key }}" {% if llm_config and llm_config.provider == key %}selected{% endif %}>{{ p.label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div id="llmBaseUrlRow" class="hidden">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5" for="llmBaseUrl">
+                      Endpoint URL
+                      <span class="text-slate-500 font-normal ml-1">(e.g. https://your-server:11434/v1)</span>
+                    </label>
+                    <input id="llmBaseUrl" name="base_url" type="url"
+                      value="{{ llm_config.base_url if llm_config else '' }}"
+                      placeholder="https://your-ollama-server:11434/v1"
+                      class="w-full rounded-xl border border-slate-700 bg-slate-800 text-sm text-white px-3 py-2 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <p class="text-xs text-slate-500 mt-1">Must be publicly reachable from AWS (not localhost).</p>
+                  </div>
+
+                  <div id="llmModelRow">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5" for="llmModel">Model</label>
+                    <select id="llmModelSelect" name="model"
+                      class="w-full rounded-xl border border-slate-700 bg-slate-800 text-sm text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      <option value="">— select provider first —</option>
+                    </select>
+                    <input id="llmModelText" name="model_text" type="text"
+                      placeholder="e.g. mistral, phi4, your-custom-model"
+                      class="hidden w-full rounded-xl border border-slate-700 bg-slate-800 text-sm text-white px-3 py-2 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+
+                  <div id="llmApiKeyRow">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5" for="llmApiKey">
+                      API Key
+                      {% if llm_config and llm_config.has_api_key %}<span class="text-green-400 font-normal ml-1">&#10003; saved</span>{% endif %}
+                    </label>
+                    <input id="llmApiKey" name="api_key" type="password"
+                      placeholder="{% if llm_config and llm_config.has_api_key %}leave blank to keep existing key{% else %}sk-…{% endif %}"
+                      autocomplete="new-password"
+                      class="w-full rounded-xl border border-slate-700 bg-slate-800 text-sm text-white px-3 py-2 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+
+                  <div class="flex items-center gap-3 pt-1">
+                    <button type="button" id="llmTestBtn"
+                      class="px-4 py-2 rounded-xl border border-slate-600 text-sm text-slate-200 hover:bg-slate-800 transition-colors">
+                      Test connection
+                    </button>
+                    <button type="submit" id="llmSaveBtn"
+                      class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm text-white font-medium transition-colors">
+                      Save
+                    </button>
+                    {% if llm_config %}
+                    <button type="button" id="llmRemoveBtn"
+                      class="px-4 py-2 rounded-xl border border-red-800/50 text-sm text-red-400 hover:bg-red-900/20 transition-colors ml-auto">
+                      Remove &amp; use default
+                    </button>
+                    {% endif %}
+                  </div>
+
+                  <div id="llmStatus" class="hidden text-xs px-3 py-2 rounded-xl border"></div>
+                </form>
+
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 text-sm text-slate-300 space-y-3">
+                  <div class="font-medium text-slate-100">What this means for your data</div>
+                  <ul class="space-y-2">
+                    <li class="flex gap-2"><span class="text-indigo-300 flex-shrink-0">&#10003;</span><span>Your email content is sent to <strong class="text-white">your endpoint</strong>, not InboxIQ's OpenAI account.</span></li>
+                    <li class="flex gap-2"><span class="text-indigo-300 flex-shrink-0">&#10003;</span><span>You control the model, version, and data retention policy of your LLM provider.</span></li>
+                    <li class="flex gap-2"><span class="text-indigo-300 flex-shrink-0">&#10003;</span><span>API usage costs are charged to your account directly.</span></li>
+                    <li class="flex gap-2"><span class="text-amber-400 flex-shrink-0">&#9888;</span><span>The endpoint must be reachable from the internet — a local laptop running Ollama will not work.</span></li>
+                  </ul>
+                </div>
+              </div>
+
             {% elif active_tab == 'developer' %}
               <div class="space-y-3">
                 <h2 class="text-xl font-semibold">Developer</h2>
@@ -1815,6 +1914,146 @@ Content-Type: application/json
           toggle.addEventListener('change', handleToggle);
         })();
       </script>
+    {% endif %}
+
+    {% if active_tab == 'ai_provider' %}
+    <script>
+      (() => {
+        const PROVIDERS = {{ allowed_llm_providers | tojson }};
+
+        const providerSel = document.getElementById('llmProvider');
+        const baseUrlRow  = document.getElementById('llmBaseUrlRow');
+        const baseUrlInput= document.getElementById('llmBaseUrl');
+        const modelSelect = document.getElementById('llmModelSelect');
+        const modelText   = document.getElementById('llmModelText');
+        const apiKeyRow   = document.getElementById('llmApiKeyRow');
+        const statusEl    = document.getElementById('llmStatus');
+        const form        = document.getElementById('llmProviderForm');
+        const testBtn     = document.getElementById('llmTestBtn');
+        const removeBtn   = document.getElementById('llmRemoveBtn');
+
+        function getCsrfToken() {
+          for (const cookie of document.cookie.split(';')) {
+            const [name, value] = cookie.trim().split('=');
+            if (name.trim() === 'csrf_access_token') return decodeURIComponent(value);
+          }
+          return '';
+        }
+
+        function setStatus(type, msg) {
+          const map = {
+            success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+            error:   'border-rose-400/40 bg-rose-500/10 text-rose-100',
+            info:    'border-indigo-400/40 bg-indigo-500/10 text-indigo-100',
+          };
+          statusEl.className = `text-xs px-3 py-2 rounded-xl border ${map[type] || map.info}`;
+          statusEl.textContent = msg;
+          statusEl.classList.remove('hidden');
+        }
+
+        function updateForm() {
+          const key = providerSel.value;
+          const cfg = PROVIDERS[key];
+
+          if (!key || !cfg) {
+            baseUrlRow.classList.add('hidden');
+            modelSelect.classList.remove('hidden');
+            modelText.classList.add('hidden');
+            modelSelect.innerHTML = '<option value="">— select provider first —</option>';
+            return;
+          }
+
+          // Base URL row
+          if (cfg.base_url_editable) {
+            baseUrlRow.classList.remove('hidden');
+            if (cfg.base_url) baseUrlInput.placeholder = cfg.base_url;
+          } else {
+            baseUrlRow.classList.add('hidden');
+          }
+
+          // Model input
+          if (cfg.models && cfg.models.length > 0) {
+            modelSelect.classList.remove('hidden');
+            modelText.classList.add('hidden');
+            modelSelect.innerHTML = cfg.models
+              .map(m => `<option value="${m}">${m}</option>`)
+              .join('');
+            // Restore saved model if any
+            const saved = '{{ llm_config.model if llm_config else "" }}';
+            if (saved && cfg.models.includes(saved)) modelSelect.value = saved;
+          } else {
+            // openai_compatible — free-text model
+            modelSelect.classList.add('hidden');
+            modelText.classList.remove('hidden');
+            modelText.value = '{{ llm_config.model if llm_config else "" }}';
+          }
+        }
+
+        providerSel.addEventListener('change', updateForm);
+        updateForm(); // run on load
+
+        async function postLlmApi(path, body) {
+          const resp = await fetch(path, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
+            body: JSON.stringify(body),
+          });
+          const data = await resp.json().catch(() => ({}));
+          return { ok: resp.ok, status: resp.status, data };
+        }
+
+        function buildPayload() {
+          const provider = providerSel.value;
+          const cfg = PROVIDERS[provider] || {};
+          const model = cfg.models && cfg.models.length > 0
+            ? modelSelect.value
+            : modelText.value.trim();
+          return {
+            provider,
+            base_url: baseUrlInput.value.trim() || null,
+            model,
+            api_key: document.getElementById('llmApiKey').value || null,
+          };
+        }
+
+        if (testBtn) {
+          testBtn.addEventListener('click', async () => {
+            testBtn.disabled = true;
+            testBtn.textContent = 'Testing…';
+            setStatus('info', 'Sending test request…');
+            const { ok, data } = await postLlmApi('/api/v1/llm-config/test', buildPayload());
+            testBtn.disabled = false;
+            testBtn.textContent = 'Test connection';
+            ok ? setStatus('success', data.message || 'Connection OK') : setStatus('error', data.message || 'Test failed');
+          });
+        }
+
+        if (form) {
+          form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const { ok, data } = await postLlmApi('/api/v1/llm-config', buildPayload());
+            ok ? setStatus('success', data.message || 'Saved') : setStatus('error', data.message || 'Save failed');
+          });
+        }
+
+        if (removeBtn) {
+          removeBtn.addEventListener('click', async () => {
+            if (!confirm('Remove custom AI provider and revert to InboxIQ default?')) return;
+            const resp = await fetch('/api/v1/llm-config', {
+              method: 'DELETE',
+              credentials: 'same-origin',
+              headers: { 'X-CSRF-TOKEN': getCsrfToken() },
+            });
+            if (resp.ok) {
+              window.location.reload();
+            } else {
+              setStatus('error', 'Failed to remove config');
+            }
+          });
+        }
+      })();
+    </script>
     {% endif %}
 
     <!-- Footer -->

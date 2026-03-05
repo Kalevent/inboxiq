@@ -108,9 +108,17 @@
           <h2 class="text-xl font-semibold text-white flex items-center gap-2">
             <span class="text-indigo-400">&#9679;</span> AI Processing &amp; Sub-processors
           </h2>
+          <div class="bg-indigo-950/50 border border-indigo-800/40 rounded-xl p-5 text-slate-200 text-sm sm:text-base leading-relaxed">
+            <strong class="text-white">Bring Your Own LLM (BYOL):</strong> If you have strict data residency or cost requirements,
+            you can connect your own LLM endpoint in <strong class="text-white">Settings &rarr; AI Provider</strong>.
+            When configured, InboxIQ routes all AI inference for your account to your endpoint using your API key —
+            your email content never touches InboxIQ's OpenAI account.
+            Supported: OpenAI (your own key), Anthropic, Ollama (self-hosted), or any OpenAI-compatible endpoint.
+          </div>
           <p class="text-slate-300 text-sm sm:text-base">
             InboxIQ uses large language models to power email triage, draft replies, and lead scoring.
-            When these features are enabled, email content (subject and body) is sent to our AI provider.
+            By default, email content (subject and body) is sent to InboxIQ's AI provider on your behalf.
+            You can change the provider at any time in Settings.
           </p>
           <div class="overflow-x-auto">
             <table class="w-full text-sm border-collapse">
@@ -141,9 +149,9 @@
             beyond the request. See <a href="https://openai.com/policies/api-data-usage-policies" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 underline">OpenAI's API data usage policy</a>.
           </div>
           <p class="text-slate-300 text-sm sm:text-base">
-            <strong class="text-white">Opt out:</strong> Customers with strict data policies can disable AI processing
-            in <strong class="text-white">Settings → Account → AI Processing</strong>. Tickets will still be received
-            and managed — only AI-powered automation is paused.
+            <strong class="text-white">Use your own endpoint:</strong> Customers with strict data policies can point
+            InboxIQ at their own LLM in <strong class="text-white">Settings &rarr; AI Provider</strong>.
+            Your email data then goes to your endpoint, under your data agreement — not InboxIQ's.
           </p>
         </section>
 

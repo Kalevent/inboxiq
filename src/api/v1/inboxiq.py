@@ -9,7 +9,7 @@ from sqlalchemy import func, or_, case, desc
 from src.api.v1 import v1
 from src.extensions import db
 from src.models.ai import DspyTrainingMetric
-from src.models.core import InboxConnection
+from src.models.core import InboxConnection, AccountLLMConfig, ALLOWED_LLM_PROVIDERS
 from src.models.misc import Feedback
 from src.models.tickets import Ticket, DraftReplyFeedback
 from src.inbox.logic import normalize_email_payload, run_dspy_decision, sample_messages, compute_due_at
@@ -1431,3 +1431,150 @@ def training_status():
         "samples_needed": max(0, min_samples - total_samples),
         "latest_training": latest_metric.to_dict() if latest_metric else None,
     }), 200
+
+
+# ---------------------------------------------------------------------------
+# BYOL (Bring Your Own LLM) — per-account LLM provider config
+# ---------------------------------------------------------------------------
+
+@v1.route("/llm-config", methods=["GET"])
+@jwt_required()
+def get_llm_config():
+    """Return the current BYOL config for the account (no api_key in response)."""
+    from src.models.tickets import Ticket as _  # ensure app context
+    user_id = get_jwt_identity()
+    from src.models.core import User
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "Not found"}), 404
+    config = AccountLLMConfig.query.filter_by(account_id=user.account_id).first()
+    return jsonify({
+        "config": config.to_dict() if config else None,
+        "allowed_providers": ALLOWED_LLM_PROVIDERS,
+    }), 200
+
+
+@v1.route("/llm-config", methods=["POST"])
+@jwt_required()
+def save_llm_config():
+    """Save or update the BYOL LLM config for the account."""
+    from src.crypto import encrypt_value
+    from src.models.core import User
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "Not found"}), 404
+    if user.role not in ("owner", "admin"):
+        return jsonify({"message": "Owner or Admin role required"}), 403
+
+    data = request.get_json(silent=True) or {}
+    provider = (data.get("provider") or "").strip()
+    base_url = (data.get("base_url") or "").strip() or None
+    model = (data.get("model") or "").strip()
+    raw_key = (data.get("api_key") or "").strip() or None
+
+    if not provider:
+        return jsonify({"message": "provider is required"}), 400
+    if provider not in ALLOWED_LLM_PROVIDERS:
+        return jsonify({"message": f"Unsupported provider: {provider}"}), 400
+    if not model:
+        return jsonify({"message": "model is required"}), 400
+
+    provider_meta = ALLOWED_LLM_PROVIDERS[provider]
+    if provider_meta.get("base_url_editable") and not base_url:
+        return jsonify({"message": f"{provider} requires an endpoint URL"}), 400
+
+    # Validate model is in the allowlist (if provider has a fixed list)
+    allowed_models = provider_meta.get("models", [])
+    if allowed_models and model not in allowed_models:
+        return jsonify({"message": f"Model '{model}' is not in the permitted list for {provider}"}), 400
+
+    config = AccountLLMConfig.query.filter_by(account_id=user.account_id).first()
+    if config is None:
+        config = AccountLLMConfig(account_id=user.account_id)
+        db.session.add(config)
+
+    config.provider = provider
+    config.base_url = base_url or provider_meta.get("base_url")
+    config.model = model
+    config.enabled = True
+    if raw_key:
+        config.api_key_enc = encrypt_value(raw_key)
+
+    db.session.commit()
+    return jsonify({"message": "AI provider saved", "config": config.to_dict()}), 200
+
+
+@v1.route("/llm-config", methods=["DELETE"])
+@jwt_required()
+def delete_llm_config():
+    """Remove the BYOL config — account reverts to InboxIQ default."""
+    from src.models.core import User
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "Not found"}), 404
+    if user.role not in ("owner", "admin"):
+        return jsonify({"message": "Owner or Admin role required"}), 403
+
+    config = AccountLLMConfig.query.filter_by(account_id=user.account_id).first()
+    if config:
+        db.session.delete(config)
+        db.session.commit()
+    return jsonify({"message": "Custom AI provider removed"}), 200
+
+
+@v1.route("/llm-config/test", methods=["POST"])
+@jwt_required()
+def test_llm_config():
+    """
+    Fire a minimal test prompt against the supplied LLM config.
+    Does NOT require a saved config — tests the posted credentials directly.
+    """
+    from src.crypto import encrypt_value, decrypt_value
+    from src.models.core import User
+    from src.ai.client import call_byol
+
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "Not found"}), 404
+    if user.role not in ("owner", "admin"):
+        return jsonify({"message": "Owner or Admin role required"}), 403
+
+    data = request.get_json(silent=True) or {}
+    provider = (data.get("provider") or "").strip()
+    base_url = (data.get("base_url") or "").strip() or None
+    model = (data.get("model") or "").strip()
+    raw_key = (data.get("api_key") or "").strip() or None
+
+    if not provider or not model:
+        return jsonify({"message": "provider and model are required"}), 400
+    if provider not in ALLOWED_LLM_PROVIDERS:
+        return jsonify({"message": f"Unsupported provider: {provider}"}), 400
+
+    # If no key supplied in request, try to use the saved encrypted key
+    if not raw_key:
+        saved = AccountLLMConfig.query.filter_by(account_id=user.account_id).first()
+        if saved and saved.api_key_enc:
+            raw_key = decrypt_value(saved.api_key_enc)
+
+    provider_meta = ALLOWED_LLM_PROVIDERS[provider]
+    resolved_base_url = base_url or provider_meta.get("base_url")
+
+    try:
+        result = call_byol(
+            messages=[{"role": "user", "content": "Reply with one word: OK"}],
+            config={
+                "provider": provider,
+                "base_url": resolved_base_url,
+                "model": model,
+                "api_key": raw_key,
+            },
+            max_tokens=10,
+        )
+        return jsonify({"message": f"Connection OK — model replied: {result['content'][:80]}"}), 200
+    except Exception as exc:
+        return jsonify({"message": f"Connection failed: {exc}"}), 400

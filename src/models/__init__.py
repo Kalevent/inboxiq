@@ -4,7 +4,7 @@ SQLAlchemy models — organised by domain.
 All classes are re-exported here so callers can import from either
 `src.models.<domain>` (preferred) or `src.models` (backwards compat).
 """
-from src.models.core import Account, User, InboxConnection, AccountFeatureFlags
+from src.models.core import Account, User, InboxConnection, AccountFeatureFlags, AccountLLMConfig, ALLOWED_LLM_PROVIDERS
 from src.models.auth import AuthEvent, Passkey, TOTPDevice
 from src.models.tickets import Ticket, TicketEmbedding, TriageLabelConfig, DraftReplyFeedback, TriageConfig
 from src.models.ai import DspyTrainingMetric, AgentEvent, AgentModel, MCPServerCatalog
@@ -24,7 +24,7 @@ from src.models.publishing import NewsletterDraft, WhitepaperDraft
 
 __all__ = [
     # core
-    "Account", "User", "InboxConnection", "AccountFeatureFlags",
+    "Account", "User", "InboxConnection", "AccountFeatureFlags", "AccountLLMConfig", "ALLOWED_LLM_PROVIDERS",
     # auth
     "AuthEvent", "Passkey", "TOTPDevice",
     # tickets
