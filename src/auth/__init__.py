@@ -19,7 +19,7 @@ from flask_jwt_extended import (
 from src.extensions import cache, db, jwt, limiter
 from src.models.auth import AuthEvent, Passkey, TOTPDevice
 from src.models.core import User
-from src.security import hash_password, verify_password
+from src.security import hash_password, verify_password, log_audit
 from src.models.core import Account
 from src.notifications.emails import send_activation_email, send_password_reset_email
 import pyotp
@@ -110,6 +110,8 @@ def login():
     refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
     _whitelist_refresh(jwt_token=refresh_token)
     _log_login_attempt(outcome="success", email=email, account_id=user.account_id, user_id=user.id)
+    log_audit("auth.login_success", resource_type="user", resource_id=str(user.id),
+              account_id=user.account_id, user_id=user.id)
     response = jsonify(
         {
             "access_token": token,
@@ -271,6 +273,7 @@ def totp_verify():
     device.verified_at = datetime.now(timezone.utc)
     db.session.add(device)
     db.session.commit()
+    log_audit("auth.totp_enabled", resource_type="totp_device", resource_id=str(device.id))
     return jsonify({"status": "verified"}), 200
 
 
@@ -283,6 +286,7 @@ def totp_disable():
         return jsonify({"error": "unauthorized"}), 401
     TOTPDevice.query.filter_by(user_id=user.id).delete()
     db.session.commit()
+    log_audit("auth.totp_disabled", resource_type="user", resource_id=str(user.id))
     return jsonify({"status": "disabled"}), 200
 
 
@@ -366,6 +370,7 @@ def passkey_registration_verify():
     db.session.add(passkey)
     db.session.commit()
     cache.delete(f"passkey:reg:{user.id}")
+    log_audit("auth.passkey_registered", resource_type="passkey", resource_id=str(passkey.id))
     return jsonify({"status": "registered", "passkey": passkey.to_dict()}), 200
 
 
@@ -394,6 +399,7 @@ def passkey_delete():
         return jsonify({"error": "not found"}), 404
     db.session.delete(passkey)
     db.session.commit()
+    log_audit("auth.passkey_deleted", resource_type="passkey", resource_id=str(passkey_id))
     return jsonify({"status": "deleted"}), 200
 
 
@@ -448,6 +454,7 @@ def logout():
     """Revoke the current token (access or refresh) and clear cookies."""
     jwt_payload = get_jwt()
     _revoke_token(jwt_payload, reason="logout")
+    log_audit("auth.logout")
 
     response = jsonify({"status": "logged out"})
     unset_jwt_cookies(response)
@@ -649,6 +656,8 @@ def complete_password_reset():
     user.updated_at = datetime.now(timezone.utc)
     db.session.add(user)
     db.session.commit()
+    log_audit("auth.password_reset_completed", resource_type="user", resource_id=str(user.id),
+              account_id=user.account_id, user_id=user.id)
     try:
         evt = AuthEvent(
             user_id=user.id,

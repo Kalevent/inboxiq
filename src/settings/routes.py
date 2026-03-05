@@ -551,6 +551,13 @@ def _legacy_settings_redirect(tab="team"):
   return redirect(url_for("settings.settings_page", tab=tab or "team"))
 
 
+@bp.get("/settings/activity")
+@login_required_settings
+def activity_log_page():
+  account_id = getattr(g, "current_account_id", None)
+  return render_template("settings/activity_log.html", account_id=account_id)
+
+
 @bp.route("/integrations/social/disconnect", methods=["POST"])
 @login_required_settings
 def integrations_social_disconnect():
@@ -564,8 +571,13 @@ def integrations_social_disconnect():
     conn = InboxConnection.query.filter_by(account_id=account_id, provider=provider).first()
     if conn:
         from src.extensions import db
+        conn_id = str(conn.id)
+        conn_provider = conn.provider
         db.session.delete(conn)
         db.session.commit()
+        from src.security import log_audit
+        log_audit("inbox.disconnected", resource_type="inbox_connection", resource_id=conn_id,
+                  metadata={"provider": conn_provider})
 
     return redirect(url_for("settings.settings_page", tab="integrations"))
 

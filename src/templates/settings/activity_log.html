@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Activity Log</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Activity Log</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 text-sm text-slate-200">
+          <a href="{{ url_for('settings.settings_page', tab='security') }}" class="px-3 py-1.5 rounded-full border border-slate-700 hover:bg-slate-800">
+            ← Settings
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-10 lg:py-14">
+
+        <div class="mb-6 flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">
+              Security
+            </p>
+            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight mt-2">Activity Log</h1>
+            <p class="text-sm text-slate-300 mt-2 max-w-2xl">
+              A record of all security-relevant actions taken in your workspace. You can export this log as CSV for compliance or audit purposes.
+            </p>
+          </div>
+          <button onclick="exportCsv()" class="self-start px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-medium text-white">
+            Export CSV
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="mb-4 flex flex-wrap gap-3">
+          <select id="actionFilter" onchange="loadLogs(1)" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2">
+            <option value="">All actions</option>
+            <option value="auth.login_success">Sign in</option>
+            <option value="auth.logout">Sign out</option>
+            <option value="auth.totp_enabled">2FA enabled</option>
+            <option value="auth.totp_disabled">2FA disabled</option>
+            <option value="auth.passkey_registered">Passkey added</option>
+            <option value="auth.passkey_deleted">Passkey removed</option>
+            <option value="auth.password_reset_completed">Password changed</option>
+            <option value="inbox.connected">Inbox connected</option>
+            <option value="inbox.disconnected">Inbox disconnected</option>
+            <option value="user.role_changed">Role changed</option>
+            <option value="ai_provider.configured">AI provider configured</option>
+            <option value="ai_provider.removed">AI provider removed</option>
+            <option value="account.deleted">Account deleted</option>
+          </select>
+        </div>
+
+        <!-- Table -->
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 shadow-2xl shadow-indigo-500/10 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wide">
+                  <th class="px-5 py-3 text-left">Date &amp; Time</th>
+                  <th class="px-5 py-3 text-left">Event</th>
+                  <th class="px-5 py-3 text-left">User</th>
+                  <th class="px-5 py-3 text-left">Resource</th>
+                  <th class="px-5 py-3 text-left">IP Address</th>
+                </tr>
+              </thead>
+              <tbody id="logBody">
+                <tr>
+                  <td colspan="5" class="px-5 py-8 text-center text-slate-400">Loading…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div id="pagination" class="flex items-center justify-between px-5 py-3 border-t border-slate-800 text-sm text-slate-400">
+            <span id="pageInfo"></span>
+            <div class="flex gap-2">
+              <button id="prevBtn" onclick="loadLogs(currentPage - 1)" class="px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 disabled:opacity-40">Prev</button>
+              <button id="nextBtn" onclick="loadLogs(currentPage + 1)" class="px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 disabled:opacity-40">Next</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    let currentPage = 1;
+    let totalPages = 1;
+    const csrfToken = "{{ csrf_token_value }}";
+
+    const ACTION_LABELS = {
+      "auth.login_success": "Signed in",
+      "auth.logout": "Signed out",
+      "auth.totp_enabled": "2FA enabled",
+      "auth.totp_disabled": "2FA disabled",
+      "auth.passkey_registered": "Passkey added",
+      "auth.passkey_deleted": "Passkey removed",
+      "auth.password_reset_completed": "Password changed",
+      "inbox.connected": "Inbox connected",
+      "inbox.disconnected": "Inbox disconnected",
+      "user.role_changed": "Role changed",
+      "user.invited": "User invited",
+      "ai_provider.configured": "AI provider configured",
+      "ai_provider.removed": "AI provider removed",
+      "account.deleted": "Account deleted",
+    };
+
+    function fmt(iso) {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    }
+
+    async function loadLogs(page) {
+      if (page < 1 || page > totalPages) return;
+      currentPage = page;
+      const action = document.getElementById("actionFilter").value;
+      let url = `/api/v1/audit-logs?page=${page}&per_page=50`;
+      if (action) url += `&action=${encodeURIComponent(action)}`;
+
+      const tbody = document.getElementById("logBody");
+      tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400">Loading…</td></tr>';
+
+      try {
+        const res = await fetch(url, { credentials: "include" });
+        if (!res.ok) {
+          tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-red-400">Failed to load activity log.</td></tr>';
+          return;
+        }
+        const data = await res.json();
+        totalPages = data.pages || 1;
+        renderRows(data.items || []);
+        document.getElementById("pageInfo").textContent =
+          `Showing page ${data.page} of ${data.pages} (${data.total} total events)`;
+        document.getElementById("prevBtn").disabled = currentPage <= 1;
+        document.getElementById("nextBtn").disabled = currentPage >= totalPages;
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-red-400">Error loading log.</td></tr>';
+      }
+    }
+
+    function renderRows(items) {
+      const tbody = document.getElementById("logBody");
+      if (!items.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400">No activity found.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = items.map(row => `
+        <tr class="border-b border-slate-800/60 hover:bg-slate-800/30">
+          <td class="px-5 py-3 text-slate-300 whitespace-nowrap">${fmt(row.created_at)}</td>
+          <td class="px-5 py-3">
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-indigo-500/10 text-indigo-200 border border-indigo-400/20">
+              ${ACTION_LABELS[row.action] || row.action}
+            </span>
+          </td>
+          <td class="px-5 py-3 text-slate-300">${row.user_email || (row.user_id ? `User #${row.user_id}` : 'System')}</td>
+          <td class="px-5 py-3 text-slate-400 font-mono text-xs">${row.resource_type ? `${row.resource_type}` : '—'}</td>
+          <td class="px-5 py-3 text-slate-400 font-mono text-xs">${row.ip_address || '—'}</td>
+        </tr>
+      `).join("");
+    }
+
+    function exportCsv() {
+      const action = document.getElementById("actionFilter").value;
+      let url = `/api/v1/audit-logs?format=csv`;
+      if (action) url += `&action=${encodeURIComponent(action)}`;
+      window.location.href = url;
+    }
+
+    loadLogs(1);
+  </script>
+</body>
+</html>

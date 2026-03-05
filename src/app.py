@@ -26,6 +26,7 @@ from src.automation.studio import bp as automation_studio_bp
 from src.social_auth import bp as social_auth_bp
 from src.landing_pages.routes import bp as landing_pages_bp
 from src.marketing_ops.routes import marketing_bp
+from src.api.v1.audit import audit_bp
 from src.api.v1.access_control import account_allows_api
 
 from src.notifications.emails import send_test_email as send_test_email_util, send_onboarding_reminder
@@ -272,6 +273,7 @@ def create_app() -> Flask:
   app.register_blueprint(social_auth_bp)
   app.register_blueprint(landing_pages_bp, url_prefix="/lp")
   app.register_blueprint(marketing_bp)
+  app.register_blueprint(audit_bp)
 
   # Register SEO cleanup handlers for old URLs
   from src.marketing.seo_cleanup import register_seo_cleanup

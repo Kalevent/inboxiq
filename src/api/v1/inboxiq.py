@@ -845,6 +845,9 @@ def connect_inbox():
     meta.update({"last_poll_status": "never", "last_poll_error": None})
     conn.metadata_json = meta
     db.session.commit()
+    from src.security import log_audit
+    log_audit("inbox.connected", resource_type="inbox_connection", resource_id=str(conn.id),
+              metadata={"provider": provider, "email": email_address})
 
     return jsonify({"connection": conn.to_dict()})
 
@@ -1218,6 +1221,9 @@ def finish_connect():
     conn.status = "connected"
     conn.metadata_json = {"last_poll_status": "never"}
     db.session.commit()
+    from src.security import log_audit
+    log_audit("inbox.connected", resource_type="inbox_connection", resource_id=str(conn.id),
+              metadata={"provider": provider, "email": email_address})
 
     # Auto-poll to create first tickets
     try:
