@@ -8,7 +8,6 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
-      - "security"
     ignore:
       # Only auto-update patch versions for major frameworks — review minor/major manually
       - dependency-name: "flask"
