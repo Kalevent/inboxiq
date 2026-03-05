@@ -17,6 +17,9 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "celery"
         update-types: ["version-update:semver-major"]
+      # flask-limiter 3.x requires rich<14 — block major rich upgrades
+      - dependency-name: "rich"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
