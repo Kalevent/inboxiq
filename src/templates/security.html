@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Security &amp; Privacy · InboxIQ by Kalevent</title>
-  <meta name="description" content="How InboxIQ protects your email data: encryption, isolation, AI sub-processors, and our path to SOC 2 Type II." />
+  <meta name="description" content="InboxIQ gives you full control over where your data lives and which AI processes it — from managed cloud to fully air-gapped on your own infrastructure." />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 </head>
 <body class="bg-slate-950 text-slate-50 antialiased">
   <div class="min-h-screen flex flex-col bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950">
 
-    <!-- Nav back to homepage -->
+    <!-- Nav -->
     <nav class="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
       <a href="/" class="text-white font-semibold text-lg tracking-tight hover:text-indigo-300 transition-colors">
         InboxIQ
@@ -23,18 +23,112 @@
 
     <main class="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
 
-      <!-- Header -->
-      <div class="mb-10">
+      <!-- Hero -->
+      <div class="mb-12">
         <p class="text-xs uppercase tracking-[0.2em] text-indigo-300/80 mb-3">Security &amp; Privacy</p>
-        <h1 class="text-3xl sm:text-4xl font-semibold text-white tracking-tight">Your data is safe with us.</h1>
-        <p class="text-slate-300 mt-3 max-w-2xl text-sm sm:text-base">
-          InboxIQ handles your support team's email. We take that responsibility seriously.
-          Here is exactly how your data is protected, where it goes, and what we are doing to earn your trust long-term.
+        <h1 class="text-3xl sm:text-4xl font-semibold text-white tracking-tight mb-4">
+          You decide where your data lives<br class="hidden sm:block" /> and which AI touches it.
+        </h1>
+        <p class="text-slate-300 max-w-2xl text-sm sm:text-base">
+          Most AI tools give you one option: their cloud, their models, their rules.
+          InboxIQ is different — you can run it fully managed, bring your own LLM keys,
+          or deploy the entire stack on your own infrastructure.
+          Your support email is sensitive. You should control where it goes.
         </p>
-        <p class="text-slate-500 mt-2 text-xs">Last updated: March 2026</p>
+        <p class="text-slate-500 mt-3 text-xs">Last updated: March 2026</p>
       </div>
 
-      <!-- Status badges -->
+      <!-- Deployment tier cards — the centrepiece -->
+      <div class="mb-12">
+        <h2 class="text-lg font-semibold text-white mb-5">Choose your deployment model</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+          <!-- Cloud SaaS -->
+          <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wide text-green-400">Available now</span>
+              <span class="text-xl">☁️</span>
+            </div>
+            <div>
+              <p class="text-white font-semibold text-base">Cloud</p>
+              <p class="text-slate-400 text-xs mt-1">Fully managed by Kalevent</p>
+            </div>
+            <ul class="text-slate-300 text-xs space-y-1.5 flex-1">
+              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> Zero setup — works out of the box</li>
+              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> AWS us-west-2, AES-256 at rest</li>
+              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> AI via InboxIQ's OpenAI account</li>
+              <li class="flex items-start gap-2"><span class="text-slate-500 flex-shrink-0">→</span> <span class="text-slate-400">Data processed by OpenAI API (no training on inputs)</span></li>
+            </ul>
+            <p class="text-xs text-slate-500 pt-2 border-t border-slate-800">Default for all accounts</p>
+          </div>
+
+          <!-- BYOL -->
+          <div class="bg-indigo-950/60 border border-indigo-700/60 rounded-2xl p-5 flex flex-col gap-3 ring-1 ring-indigo-500/20">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wide text-indigo-300">Available now</span>
+              <span class="text-xl">🔑</span>
+            </div>
+            <div>
+              <p class="text-white font-semibold text-base">Bring Your Own LLM</p>
+              <p class="text-slate-400 text-xs mt-1">Your API key, your AI endpoint</p>
+            </div>
+            <ul class="text-slate-300 text-xs space-y-1.5 flex-1">
+              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> OpenAI, Anthropic, Ollama, or any OpenAI-compatible endpoint</li>
+              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> Your email content goes to <em>your</em> AI account, not InboxIQ's</li>
+              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> API key stored encrypted, never logged</li>
+              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> Switch or remove at any time</li>
+            </ul>
+            <a href="/settings?tab=ai_provider" class="mt-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors">
+              Configure in Settings →
+            </a>
+          </div>
+
+          <!-- Self-hosted -->
+          <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 flex flex-col gap-3 opacity-90">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wide text-yellow-400">Coming soon</span>
+              <span class="text-xl">🏢</span>
+            </div>
+            <div>
+              <p class="text-white font-semibold text-base">Self-hosted</p>
+              <p class="text-slate-400 text-xs mt-1">Your infrastructure, Kalevent license</p>
+            </div>
+            <ul class="text-slate-300 text-xs space-y-1.5 flex-1">
+              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Deploy InboxIQ on your own cloud or data centre</li>
+              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Your data never leaves your infrastructure</li>
+              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Helm chart + Docker Compose provided</li>
+              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Use your own LLM or self-hosted Ollama</li>
+            </ul>
+            <a href="mailto:support@kalevent.com?subject=Self-hosted%20InboxIQ%20%E2%80%94%20interested" class="mt-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors border border-slate-700">
+              Notify me when ready →
+            </a>
+          </div>
+
+          <!-- Air-gapped -->
+          <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 flex flex-col gap-3 opacity-90">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wide text-yellow-400">Coming soon</span>
+              <span class="text-xl">🔒</span>
+            </div>
+            <div>
+              <p class="text-white font-semibold text-base">Air-gapped</p>
+              <p class="text-slate-400 text-xs mt-1">Zero outbound. Fully offline.</p>
+            </div>
+            <ul class="text-slate-300 text-xs space-y-1.5 flex-1">
+              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> No external network calls — ever</li>
+              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> AI via local Ollama (runs on your hardware)</li>
+              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Meets the strictest government &amp; defence requirements</li>
+              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Offline license validation</li>
+            </ul>
+            <a href="mailto:support@kalevent.com?subject=Air-gapped%20InboxIQ%20%E2%80%94%20interested" class="mt-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors border border-slate-700">
+              Contact us →
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Status strip -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
           <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
@@ -48,8 +142,8 @@
         </div>
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
           <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Data Isolation</span>
-          <span class="text-slate-400 text-xs">Per-account scoping</span>
+          <span class="text-white text-sm font-medium">BYOL AI Routing</span>
+          <span class="text-slate-400 text-xs">Settings → AI Provider</span>
         </div>
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
           <span class="text-yellow-400 text-xs font-semibold uppercase tracking-wide">In Progress</span>
@@ -59,20 +153,6 @@
       </div>
 
       <div class="bg-slate-900/70 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/10 p-6 sm:p-8 space-y-8">
-
-        <!-- Summary statement -->
-        <section class="space-y-3">
-          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-indigo-400">&#9679;</span> Summary
-          </h2>
-          <div class="bg-indigo-950/50 border border-indigo-800/40 rounded-xl p-5 text-slate-200 text-sm sm:text-base leading-relaxed">
-            Your email data is stored in AWS (us-west-2), encrypted at rest and in transit, and logically isolated —
-            no other customer can access your data. For AI features (triage, draft replies), email content is sent
-            to OpenAI's API under their Data Processing Agreement, which prohibits training on API inputs.
-            We are currently pursuing SOC 2 Type II. For customers with strict requirements,
-            AI processing can be disabled in account settings.
-          </div>
-        </section>
 
         <!-- Infrastructure -->
         <section class="space-y-4">
@@ -98,27 +178,20 @@
             </li>
             <li class="flex items-start gap-3">
               <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Customer data isolation</strong> — every database query is scoped to your account. No customer can access another's tickets, leads, or email data — enforced at the application layer.</span>
+              <span><strong class="text-white">Customer data isolation</strong> — every database query is scoped to your account. No customer can access another's tickets, leads, or email data, enforced at the application layer.</span>
             </li>
           </ul>
         </section>
 
-        <!-- AI processing -->
+        <!-- AI sub-processors -->
         <section class="space-y-4">
           <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-indigo-400">&#9679;</span> AI Processing &amp; Sub-processors
+            <span class="text-indigo-400">&#9679;</span> AI Sub-processors
           </h2>
-          <div class="bg-indigo-950/50 border border-indigo-800/40 rounded-xl p-5 text-slate-200 text-sm sm:text-base leading-relaxed">
-            <strong class="text-white">Bring Your Own LLM (BYOL):</strong> If you have strict data residency or cost requirements,
-            you can connect your own LLM endpoint in <strong class="text-white">Settings &rarr; AI Provider</strong>.
-            When configured, InboxIQ routes all AI inference for your account to your endpoint using your API key —
-            your email content never touches InboxIQ's OpenAI account.
-            Supported: OpenAI (your own key), Anthropic, Ollama (self-hosted), or any OpenAI-compatible endpoint.
-          </div>
           <p class="text-slate-300 text-sm sm:text-base">
-            InboxIQ uses large language models to power email triage, draft replies, and lead scoring.
-            By default, email content (subject and body) is sent to InboxIQ's AI provider on your behalf.
-            You can change the provider at any time in Settings.
+            By default (Cloud tier), InboxIQ uses OpenAI's API to power email triage, draft replies, and lead scoring.
+            Switch to BYOL in <strong class="text-white">Settings &rarr; AI Provider</strong> and your email content
+            goes to your chosen endpoint instead — InboxIQ's OpenAI account is never used for that traffic.
           </p>
           <div class="overflow-x-auto">
             <table class="w-full text-sm border-collapse">
@@ -132,7 +205,7 @@
               <tbody class="divide-y divide-slate-800">
                 <tr>
                   <td class="py-3 pr-4 text-white font-medium">OpenAI (API)</td>
-                  <td class="py-3 pr-4 text-slate-300">Email triage, draft replies, lead scoring</td>
+                  <td class="py-3 pr-4 text-slate-300">Email triage, draft replies, lead scoring <span class="text-slate-500 text-xs">(Cloud tier only)</span></td>
                   <td class="py-3 text-slate-300">Email subject &amp; body text</td>
                 </tr>
                 <tr>
@@ -148,11 +221,6 @@
             using API inputs to train models. Your email content is processed to generate a response and is not retained
             beyond the request. See <a href="https://openai.com/policies/api-data-usage-policies" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 underline">OpenAI's API data usage policy</a>.
           </div>
-          <p class="text-slate-300 text-sm sm:text-base">
-            <strong class="text-white">Use your own endpoint:</strong> Customers with strict data policies can point
-            InboxIQ at their own LLM in <strong class="text-white">Settings &rarr; AI Provider</strong>.
-            Your email data then goes to your endpoint, under your data agreement — not InboxIQ's.
-          </p>
         </section>
 
         <!-- Access control -->
@@ -182,9 +250,9 @@
             <span class="text-indigo-400">&#9679;</span> Observability &amp; Monitoring
           </h2>
           <p class="text-slate-300 text-sm sm:text-base">
-            All tracing and LLM observability runs on our own infrastructure (self-hosted
+            All tracing and LLM observability runs on our own infrastructure — self-hosted
             <a href="https://phoenix.arize.com" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 underline">Arize Phoenix</a>
-            inside our Kubernetes cluster). Traces — including LLM inputs and outputs — never leave our servers to a third-party analytics platform.
+            inside our Kubernetes cluster. Traces, including LLM inputs and outputs, never leave our servers to a third-party analytics platform.
           </p>
         </section>
 
