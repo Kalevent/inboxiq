@@ -381,27 +381,31 @@ def twitter_callback():
 
     current_app.logger.info(f"Twitter connected: account={account_id} username=@{twitter_username}")
     display = f"@{twitter_username}" if twitter_username else "your account"
-    return _page(True, f"X (Twitter) connected as <strong>{display}</strong>.", "Twitter")
+    return _page(True, f"X (Twitter) connected as {display}.", "Twitter")
 
 
 # ── Minimal result page ───────────────────────────────────────────────────────
 
 def _page(success: bool, message: str, platform: str = "LinkedIn") -> str:
-    color = "#16a34a" if success else "#dc2626"
-    icon = "✅" if success else "❌"
-    return render_template_string(f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>{platform} OAuth</title>
+    return render_template_string(
+        """<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>{{ platform }} OAuth</title>
 <style>
-  body{{font-family:-apple-system,sans-serif;display:flex;justify-content:center;
-       align-items:center;min-height:100vh;margin:0;background:#f9fafb}}
-  .card{{background:#fff;border-radius:12px;padding:40px 48px;max-width:480px;
-         box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}}
-  h2{{color:{color};font-size:22px;margin-bottom:16px}}
-  p{{color:#374151;line-height:1.6}}
-  a.back{{display:inline-block;margin-top:24px;padding:10px 20px;background:#2563eb;
-          color:#fff;border-radius:6px;text-decoration:none;font-weight:600}}
+  body{font-family:-apple-system,sans-serif;display:flex;justify-content:center;
+       align-items:center;min-height:100vh;margin:0;background:#f9fafb}
+  .card{background:#fff;border-radius:12px;padding:40px 48px;max-width:480px;
+        box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}
+  h2{color:{{ color }};font-size:22px;margin-bottom:16px}
+  p{color:#374151;line-height:1.6}
+  a.back{display:inline-block;margin-top:24px;padding:10px 20px;background:#2563eb;
+         color:#fff;border-radius:6px;text-decoration:none;font-weight:600}
 </style></head>
 <body><div class="card">
-  <h2>{icon} {platform} OAuth</h2><p>{message}</p>
+  <h2>{{ icon }} {{ platform }} OAuth</h2><p>{{ message }}</p>
   <a class="back" href="/settings?tab=integrations">Back to Integrations</a>
-</div></body></html>""")
+</div></body></html>""",
+        color="#16a34a" if success else "#dc2626",
+        icon="✅" if success else "❌",
+        platform=platform,
+        message=message,
+    )
