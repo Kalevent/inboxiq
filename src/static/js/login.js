@@ -2,12 +2,9 @@
   const form = document.getElementById('loginForm');
   const button = document.getElementById('loginButton');
   const statusEl = document.getElementById('loginStatus');
-  const workspaceInput = document.getElementById('workspaceId');
-
   function clearFields() {
     if (form?.email) form.email.value = '';
     if (form?.password) form.password.value = '';
-    if (workspaceInput) workspaceInput.value = '';
   }
   // Nudge browsers to drop any stale autofill (e.g., removed accounts).
   clearFields();
@@ -30,17 +27,12 @@
 
     const email = (form.email?.value || '').trim().toLowerCase();
     const password = form.password?.value || '';
-    const workspaceId = (form.workspaceId?.value || '').trim();
-
     if (!email || !password) {
       setStatus('error', 'Email and password are required.');
       return;
     }
 
     const payload = { email, password };
-    if (workspaceId) {
-      payload.account_id = workspaceId;
-    }
 
     button.disabled = true;
     button.textContent = 'Signing in...';
@@ -69,8 +61,7 @@
         localStorage.setItem('inboxiqUserId', data.user_id);
       }
 
-      const workspaceLabel = data.account_id ? `workspace ${data.account_id}` : 'your workspace';
-      setStatus('success', `Signed in to ${workspaceLabel}. Redirecting to setup...`);
+      setStatus('success', 'Signed in. Redirecting...');
       // Send users straight into guided setup/dashboard after login.
       window.location.href = '/dashboard';
     } catch (error) {

@@ -3,14 +3,24 @@ from __future__ import annotations
 import base64
 import json
 import urllib.parse
+from datetime import datetime, timezone
 
 import requests
 from flask import Blueprint, current_app, jsonify, redirect, request, url_for
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    get_jwt_identity,
+    jwt_required,
+    set_access_cookies,
+    set_refresh_cookies,
+)
 
 from src.api.v1 import v1
-from src.models.core import InboxConnection, User
-from src.extensions import db
+from src.extensions import cache, db
+from src.models.core import Account, InboxConnection, User
+from src.security import log_audit
 
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -33,6 +43,60 @@ MS_SCOPES = [
     "https://graph.microsoft.com/User.Read",
     "https://graph.microsoft.com/Mail.ReadWrite",
 ]
+
+
+def _derive_account_name(email: str) -> str:
+    parts = email.split("@")
+    if len(parts) == 2:
+        domain = parts[1].split(".")[0]
+        return f"{domain.title()} Support"
+    return "My Account"
+
+
+def _whitelist_refresh(jwt_token: str) -> None:
+    try:
+        claims = decode_token(jwt_token)
+        jti = claims.get("jti")
+        exp = claims.get("exp")
+        if jti and exp:
+            ttl = max(1, int(exp - datetime.now(timezone.utc).timestamp()))
+            try:
+                cache.set(f"jwt_refresh_whitelist:{jti}", True, timeout=ttl)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+def _find_or_create_user(email: str, display_name: str | None) -> tuple[User, bool]:
+    """Find existing user by email or create account+user. Returns (user, is_new)."""
+    user = User.query.filter(User.email.ilike(email)).first()
+    if user:
+        return user, False
+    now = datetime.now(timezone.utc)
+    account_name = display_name or _derive_account_name(email)
+    account = Account(name=account_name, seats_limit=3, seats_used=0, created_at=now, updated_at=now)
+    db.session.add(account)
+    db.session.flush()
+    user = User(email=email, password_hash=None, account_id=account.id, created_at=now, updated_at=now)
+    db.session.add(user)
+    db.session.commit()
+    return user, True
+
+
+def _issue_social_session(user: User, is_new: bool):
+    """Set JWT cookies and redirect to onboarding (new) or dashboard (returning)."""
+    additional_claims = {"account_id": str(user.account_id)}
+    token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
+    refresh = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
+    _whitelist_refresh(refresh)
+    log_audit("auth.social_login", resource_type="user", resource_id=str(user.id),
+              account_id=user.account_id, user_id=user.id)
+    dest = url_for("onboarding_page") if is_new else url_for("dashboard_home")
+    response = redirect(dest)
+    set_access_cookies(response, token)
+    set_refresh_cookies(response, refresh)
+    return response
 
 
 def _decode_id_token_raw(id_token: str) -> dict:
@@ -132,11 +196,26 @@ def google_callback():
     if resp.status_code != 200:
         return jsonify({"error": "Failed to exchange code", "details": resp.text}), 502
     tok = resp.json()
-    id_token = tok.get("id_token", "")
-    email = _decode_id_token_raw(id_token).get("email") or request.args.get("email") or "unknown@gmail.com"
+    id_claims = _decode_id_token_raw(tok.get("id_token", ""))
+    email = (id_claims.get("email") or "").strip().lower() or "unknown@gmail.com"
     access_token = tok.get("access_token")
     refresh_token = tok.get("refresh_token")
     user_id = get_jwt_identity()
+
+    if not user_id:
+        # Unauthenticated visitor — sign up or log in via Google
+        try:
+            user, is_new = _find_or_create_user(email, id_claims.get("name"))
+        except Exception as exc:
+            current_app.logger.error("google_callback signup error: %s", exc)
+            return redirect(url_for("login_page") + "?error=account_error")
+        # Also store the inbox connection while we have the token
+        try:
+            _store_connection("gmail", email, access_token, refresh_token, user.id)
+        except Exception:
+            pass
+        return _issue_social_session(user, is_new)
+
     try:
         _store_connection("gmail", email, access_token, refresh_token, user_id)
     except RuntimeError:
@@ -186,11 +265,25 @@ def outlook_callback():
     if resp.status_code != 200:
         return jsonify({"error": "Failed to exchange code", "details": resp.text}), 502
     tok = resp.json()
-    id_token = tok.get("id_token", "")
-    email = _decode_id_token_raw(id_token).get("preferred_username") or request.args.get("email") or "unknown@outlook.com"
+    id_claims = _decode_id_token_raw(tok.get("id_token", ""))
+    email = (id_claims.get("preferred_username") or id_claims.get("email") or "").strip().lower() or "unknown@outlook.com"
     access_token = tok.get("access_token")
     refresh_token = tok.get("refresh_token")
     user_id = get_jwt_identity()
+
+    if not user_id:
+        # Unauthenticated visitor — sign up or log in via Microsoft
+        try:
+            user, is_new = _find_or_create_user(email, id_claims.get("name"))
+        except Exception as exc:
+            current_app.logger.error("outlook_callback signup error: %s", exc)
+            return redirect(url_for("login_page") + "?error=account_error")
+        try:
+            _store_connection("outlook", email, access_token, refresh_token, user.id)
+        except Exception:
+            pass
+        return _issue_social_session(user, is_new)
+
     try:
         _store_connection("outlook", email, access_token, refresh_token, user_id)
     except RuntimeError:
