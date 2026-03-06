@@ -110,6 +110,14 @@ rules:
               @$BP.route($PATH, methods=[..., "PATCH", ...])
               def $FUNC(...):
                   ...
+      - pattern-not: |
+          @jwt_required(...)
+          def $FUNC(...):
+              ...
+      - pattern-not: |
+          @login_required_settings
+          def $FUNC(...):
+              ...
     metadata:
       category: security
       owasp: "A01:2021-Broken Access Control"

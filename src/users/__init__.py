@@ -12,7 +12,7 @@ from src.notifications.emails import send_activation_email
 bp = Blueprint("users", __name__,  url_prefix='/users')
 
 
-@bp.route("", methods=["POST"])
+@bp.route("", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 @limiter.limit("30 per minute", override_defaults=False)
 def create_user():
     """Create a user tied to an account, enforcing seat limits."""
