@@ -26,6 +26,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
+from src.extensions import limiter
 from src.models.billing import AccountUsageCounter
 from src.extensions import db
 from src.funnel.stages import CONVERSION_STAGES
@@ -792,6 +793,7 @@ def _inquiry_to_dict(inq: EnterpriseInquiry) -> dict:
 
 
 @v1.route("/enterprise/inquiry", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+@limiter.limit("5 per hour", override_defaults=False)
 def submit_enterprise_inquiry():
     """
     Public endpoint — submit an Enterprise plan inquiry.

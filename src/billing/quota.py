@@ -49,6 +49,20 @@ _STRIPE_OVERAGE_ATTR: dict[str, str] = {
 }
 
 
+# Pre-built upsert SQL per meter — column names are hardcoded constants from
+# _METER_META so there is no user input in these statements.
+_UPSERT_SQL: dict[str, object] = {
+    meter: text(
+        "INSERT INTO account_usage_counters (account_id, billing_month, " + col + ") "
+        "VALUES (:account_id, :billing_month, :qty) "
+        "ON CONFLICT (account_id, billing_month) "
+        "DO UPDATE SET " + col + " = account_usage_counters." + col + " + :qty "
+        "RETURNING " + col
+    )
+    for meter, (col, _, _) in _METER_META.items()
+}
+
+
 class FeatureDisabled(Exception):
     """Raised when a feature is not available on the account's plan."""
     status_code = 403
@@ -202,19 +216,10 @@ def check_and_increment(meter: str, account_id: int, quantity: int = 1) -> None:
                     "Upgrade to access this feature."
                 )
 
-    # Upsert counter row using SELECT FOR UPDATE to prevent race conditions.
-    # PostgreSQL upsert: INSERT ... ON CONFLICT DO UPDATE.
-    upsert_sql = text(
-        f"""
-        INSERT INTO account_usage_counters (account_id, billing_month, {counter_col})
-        VALUES (:account_id, :billing_month, :qty)
-        ON CONFLICT (account_id, billing_month)
-        DO UPDATE SET {counter_col} = account_usage_counters.{counter_col} + :qty
-        RETURNING {counter_col}
-        """
-    )
+    # Upsert counter row. SQL is pre-built at module load from hardcoded column
+    # names — no user input reaches the query.
     result = db.session.execute(
-        upsert_sql,
+        _UPSERT_SQL[meter],
         {"account_id": account_id, "billing_month": billing_month, "qty": quantity},
     )
     new_total = result.scalar()

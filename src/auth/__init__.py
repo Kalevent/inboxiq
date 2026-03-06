@@ -185,6 +185,7 @@ def signup():
 
 
 @bp.route("/auth/resend-activation", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+@limiter.limit("5 per hour", override_defaults=False)
 def resend_activation():
     """Resend activation token for an existing, not-yet-activated user."""
     data = request.get_json(silent=True) or {}
@@ -462,6 +463,7 @@ def logout():
 
 
 @bp.route("/activate", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+@limiter.limit("10 per hour", override_defaults=False)
 def activate():
     """Complete activation by setting a password using the activation token."""
     data = request.get_json(silent=True) or {}
@@ -612,6 +614,7 @@ def request_password_reset():
 
 
 @bp.route("/reset/complete", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+@limiter.limit("10 per hour", override_defaults=False)
 def complete_password_reset():
     """Complete password reset using a reset token and new password."""
     data = request.get_json(silent=True) or {}

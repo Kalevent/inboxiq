@@ -9,7 +9,7 @@ from flask import jsonify, request
 from uuid import uuid4
 
 from src.api.v1 import v1
-from src.extensions import db
+from src.extensions import db, limiter
 from src.funnel.stages import VISITS
 from src.models.leads import LeadAttribution, Lead
 import logging
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 @v1.route("/attribution/track", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+@limiter.limit("60 per minute", override_defaults=False)
 def track_attribution():
     """
     Track a marketing touchpoint via webhook.

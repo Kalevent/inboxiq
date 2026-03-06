@@ -621,4 +621,4 @@ def execute_workflow_with_tool_calling_agent(
 
     # Create tool-calling agent
     agent = ToolCallingAutomationAgent(workflow, trigger_context)
-    return agent.execute(trigger_event)
+    return agent.execute(trigger_event)  # nosemgrep: inboxiq.sql-injection.execute-dynamic

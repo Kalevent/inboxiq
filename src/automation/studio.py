@@ -2,7 +2,7 @@
 Automation Studio waitlist and pre-launch endpoints.
 """
 from flask import Blueprint, jsonify, request, redirect, render_template, flash
-from src.extensions import db
+from src.extensions import db, limiter
 from src.models.automation import AutomationStudioWaitlist
 import logging
 
@@ -12,6 +12,7 @@ bp = Blueprint("automation_studio", __name__, url_prefix="/automation-studio")
 
 
 @bp.route("/waitlist", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+@limiter.limit("10 per hour", override_defaults=False)
 def join_waitlist():
     """Add email to Automation Studio waitlist."""
     # Get email from form or JSON
