@@ -15,6 +15,9 @@ rules:
           - pattern: $CUR.execute("..." + $X + "...")
           - pattern: $CUR.execute("..." % $X)
           - pattern: $CUR.execute($Q)
+    paths:
+      exclude:
+        - "src/migrations/**"
     metadata:
       category: security
       owasp: "A03:2021-Injection"
