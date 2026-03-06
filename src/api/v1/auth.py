@@ -25,13 +25,22 @@ from src.security import log_audit
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-GOOGLE_SCOPES = [
+
+# Sign-in only — no restricted scopes, no Google verification required
+GOOGLE_SIGNIN_SCOPES = ["openid", "email", "profile"]
+
+# Gmail inbox connection — restricted scopes, requires Google verification for production
+# Only requested after the user has signed in and explicitly connects their inbox
+GOOGLE_GMAIL_SCOPES = [
     "openid",
     "email",
     "profile",
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.modify",
 ]
+
+# Backward-compat alias (kept so nothing else breaks)
+GOOGLE_SCOPES = GOOGLE_SIGNIN_SCOPES
 
 MS_AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
 MS_TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
@@ -156,6 +165,7 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
 @v1.route("/auth/google/start", methods=["GET"])
 @jwt_required(optional=True)
 def google_start():
+    """Sign-in / sign-up with Google. Uses only openid/email/profile — no Gmail scopes."""
     client_id = current_app.config.get("GOOGLE_CLIENT_ID")
     redirect_uri = current_app.config.get("GOOGLE_REDIRECT_URI") or url_for(".google_callback", _external=True)
     if not client_id or not redirect_uri:
@@ -165,10 +175,31 @@ def google_start():
         "response_type": "code",
         "client_id": client_id,
         "redirect_uri": redirect_uri,
-        "scope": " ".join(GOOGLE_SCOPES),
+        "scope": " ".join(GOOGLE_SIGNIN_SCOPES),
+        "access_type": "offline",
+        "state": "signin",
+    }
+    return redirect(f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}")
+
+
+@v1.route("/auth/google/inbox/start", methods=["GET"])
+@jwt_required()
+def google_inbox_start():
+    """Connect Gmail inbox for an already-authenticated user. Requests Gmail scopes."""
+    client_id = current_app.config.get("GOOGLE_CLIENT_ID")
+    redirect_uri = current_app.config.get("GOOGLE_REDIRECT_URI") or url_for(".google_callback", _external=True)
+    if not client_id or not redirect_uri:
+        return jsonify({"error": "Google OAuth not configured"}), 500
+
+    params = {
+        "response_type": "code",
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "scope": " ".join(GOOGLE_GMAIL_SCOPES),
         "access_type": "offline",
         "include_granted_scopes": "true",
         "prompt": "consent",
+        "state": "connect_inbox",
     }
     return redirect(f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}")
 
@@ -196,30 +227,33 @@ def google_callback():
     if resp.status_code != 200:
         return jsonify({"error": "Failed to exchange code", "details": resp.text}), 502
     tok = resp.json()
+    state = request.args.get("state", "signin")
     id_claims = _decode_id_token_raw(tok.get("id_token", ""))
     email = (id_claims.get("email") or "").strip().lower() or "unknown@gmail.com"
     access_token = tok.get("access_token")
     refresh_token = tok.get("refresh_token")
     user_id = get_jwt_identity()
 
+    if state == "connect_inbox":
+        # Authenticated user connecting their Gmail inbox — store connection and redirect
+        if not user_id:
+            return redirect(url_for("login_page") + "?error=login_required")
+        try:
+            _store_connection("gmail", email, access_token, refresh_token, user_id)
+        except RuntimeError:
+            pass
+        return redirect(url_for("dashboard_home"))
+
+    # state == "signin" (default): sign-up or log-in flow — no Gmail scopes requested
     if not user_id:
-        # Unauthenticated visitor — sign up or log in via Google
         try:
             user, is_new = _find_or_create_user(email, id_claims.get("name"))
         except Exception as exc:
             current_app.logger.error("google_callback signup error: %s", exc)
             return redirect(url_for("login_page") + "?error=account_error")
-        # Also store the inbox connection while we have the token
-        try:
-            _store_connection("gmail", email, access_token, refresh_token, user.id)
-        except Exception:
-            pass
         return _issue_social_session(user, is_new)
 
-    try:
-        _store_connection("gmail", email, access_token, refresh_token, user_id)
-    except RuntimeError:
-        return redirect(url_for("login_page", next=url_for("dashboard_home")))
+    # Already logged in and hit /auth/google/start again — just redirect home
     return redirect(url_for("dashboard_home"))
 
 
