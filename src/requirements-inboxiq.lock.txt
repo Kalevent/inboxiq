@@ -136,7 +136,7 @@ pyasn1_modules==0.4.2
 pycparser==3.0
 pydantic==2.12.5
 pydantic-settings==2.12.0
-pydantic_core==2.41.5
+pydantic_core==2.42.0
 Pygments==2.19.2
 PyJWT==2.10.1
 pyOpenSSL==25.3.0
