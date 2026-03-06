@@ -6,19 +6,13 @@ from src.admin import bp
 from src.extensions import db
 from src.models.content import PitchedBlogTopic
 from src.content.tasks import generate_blog_from_pitched_topic
-
-
-def _require_admin():
-    """Check if user is admin. For simplicity, allow all authenticated users for now."""
-    # TODO: Add proper authentication check
-    return True
+from src.settings import login_required_settings
 
 
 @bp.route("/pitched-topics", methods=["GET"])
+@login_required_settings
 def pitched_topics():
     """Display pitched blog topics management page."""
-    if not _require_admin():
-        return "Forbidden", 403
 
     # Get filter parameters
     status = request.args.get("status", "pending")
@@ -67,10 +61,9 @@ def pitched_topics():
 
 
 @bp.route("/pitched-topics/submit", methods=["POST"])
+@login_required_settings
 def submit_pitched_topic():
     """Handle pitched topic submission."""
-    if not _require_admin():
-        return "Forbidden", 403
 
     title = request.form.get("title", "").strip()
     if not title:
@@ -106,10 +99,8 @@ def submit_pitched_topic():
 
 
 @bp.route("/pitched-topics/<topic_id>/approve", methods=["POST"])
+@login_required_settings
 def approve_pitched_topic(topic_id):
-    """Approve a pitched topic."""
-    if not _require_admin():
-        return "Forbidden", 403
 
     topic = db.session.query(PitchedBlogTopic).filter(
         PitchedBlogTopic.id == topic_id
@@ -135,10 +126,8 @@ def approve_pitched_topic(topic_id):
 
 
 @bp.route("/pitched-topics/<topic_id>/reject", methods=["POST"])
+@login_required_settings
 def reject_pitched_topic(topic_id):
-    """Reject a pitched topic."""
-    if not _require_admin():
-        return "Forbidden", 403
 
     topic = db.session.query(PitchedBlogTopic).filter(
         PitchedBlogTopic.id == topic_id
@@ -164,10 +153,9 @@ def reject_pitched_topic(topic_id):
 
 
 @bp.route("/pitched-topics/<topic_id>/generate", methods=["POST"])
+@login_required_settings
 def generate_from_pitched_topic(topic_id):
     """Queue content generation from pitched topic."""
-    if not _require_admin():
-        return "Forbidden", 403
 
     topic = db.session.query(PitchedBlogTopic).filter(
         PitchedBlogTopic.id == topic_id
@@ -194,10 +182,9 @@ def generate_from_pitched_topic(topic_id):
 
 
 @bp.route("/pitched-topics/<topic_id>/delete", methods=["POST"])
+@login_required_settings
 def delete_pitched_topic(topic_id):
     """Delete a pitched topic."""
-    if not _require_admin():
-        return "Forbidden", 403
 
     topic = db.session.query(PitchedBlogTopic).filter(
         PitchedBlogTopic.id == topic_id
