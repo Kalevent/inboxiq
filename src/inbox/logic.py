@@ -42,6 +42,10 @@ class TriageDecision:
     is_automated: bool = False
     reply_text: str | None = None
     reply_confidence: float | None = None
+    llm_model: str | None = None
+    llm_tokens_in: int = 0
+    llm_tokens_out: int = 0
+    llm_cost_usd: float = 0.0
 
     def to_dict(self) -> dict:
         return {
@@ -288,6 +292,10 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
             is_automated=is_automated,
             reply_text=reply_text,
             reply_confidence=reply_confidence,
+            llm_model=dspy_result.get("model_id") or dspy_result.get("model"),
+            llm_tokens_in=int(dspy_result.get("llm_tokens_in") or 0),
+            llm_tokens_out=int(dspy_result.get("llm_tokens_out") or 0),
+            llm_cost_usd=float(dspy_result.get("llm_cost_usd") or 0.0),
         )
     except Exception as exc:
         logging.getLogger(__name__).warning("dspy triage failed: %s", exc)

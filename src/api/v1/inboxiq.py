@@ -187,6 +187,10 @@ def triage():
                 assigned_to=decision.assigned_to,
                 owner=decision.owner,
                 due_at=compute_due_at(decision.priority, account_id),
+                llm_model=decision.llm_model,
+                llm_tokens_in=decision.llm_tokens_in,
+                llm_tokens_out=decision.llm_tokens_out,
+                llm_cost_usd=decision.llm_cost_usd,
             )
             db.session.add(ticket_record)
             try:
@@ -256,6 +260,136 @@ def tickets():
             "pagination": {"page": page, "page_size": page_size, "total": total},
         }
     )
+
+
+@v1.route("/inboxiq/cost-summary", methods=["GET"])
+@jwt_required()
+def cost_summary():
+    """
+    Return LLM cost and token totals for this account.
+
+    Query params:
+      - since  (ISO8601 datetime, default: start of current month)
+      - until  (ISO8601 datetime, default: now)
+      - group_by  "day" | "model" (default: neither — single aggregate)
+    """
+    from sqlalchemy import func as sqlfunc, cast, Date as SQLDate
+    user_id = get_jwt_identity()
+    account_id = _get_account_id(user_id)
+
+    now = datetime.now(timezone.utc)
+    default_since = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    try:
+        since = datetime.fromisoformat(request.args["since"]) if request.args.get("since") else default_since
+    except ValueError:
+        return jsonify({"error": "invalid since (use ISO8601)"}), 400
+    try:
+        until = datetime.fromisoformat(request.args["until"]) if request.args.get("until") else now
+    except ValueError:
+        return jsonify({"error": "invalid until (use ISO8601)"}), 400
+
+    group_by = request.args.get("group_by", "").lower()
+
+    base = Ticket.query.filter(
+        Ticket.account_id == account_id,
+        Ticket.created_at >= since,
+        Ticket.created_at <= until,
+        Ticket.llm_tokens_in > 0,
+    )
+
+    if group_by == "day":
+        rows = (
+            db.session.query(
+                cast(Ticket.created_at, SQLDate).label("day"),
+                sqlfunc.count(Ticket.id).label("emails"),
+                sqlfunc.sum(Ticket.llm_tokens_in).label("tokens_in"),
+                sqlfunc.sum(Ticket.llm_tokens_out).label("tokens_out"),
+                sqlfunc.sum(Ticket.llm_cost_usd).label("cost_usd"),
+            )
+            .filter(
+                Ticket.account_id == account_id,
+                Ticket.created_at >= since,
+                Ticket.created_at <= until,
+                Ticket.llm_tokens_in > 0,
+            )
+            .group_by(cast(Ticket.created_at, SQLDate))
+            .order_by(cast(Ticket.created_at, SQLDate))
+            .all()
+        )
+        return jsonify({
+            "since": since.isoformat(),
+            "until": until.isoformat(),
+            "group_by": "day",
+            "rows": [
+                {
+                    "day": str(r.day),
+                    "emails": r.emails,
+                    "tokens_in": r.tokens_in or 0,
+                    "tokens_out": r.tokens_out or 0,
+                    "cost_usd": float(r.cost_usd or 0),
+                }
+                for r in rows
+            ],
+        })
+
+    if group_by == "model":
+        rows = (
+            db.session.query(
+                Ticket.llm_model,
+                sqlfunc.count(Ticket.id).label("emails"),
+                sqlfunc.sum(Ticket.llm_tokens_in).label("tokens_in"),
+                sqlfunc.sum(Ticket.llm_tokens_out).label("tokens_out"),
+                sqlfunc.sum(Ticket.llm_cost_usd).label("cost_usd"),
+            )
+            .filter(
+                Ticket.account_id == account_id,
+                Ticket.created_at >= since,
+                Ticket.created_at <= until,
+                Ticket.llm_tokens_in > 0,
+            )
+            .group_by(Ticket.llm_model)
+            .all()
+        )
+        return jsonify({
+            "since": since.isoformat(),
+            "until": until.isoformat(),
+            "group_by": "model",
+            "rows": [
+                {
+                    "model": r.llm_model or "unknown",
+                    "emails": r.emails,
+                    "tokens_in": r.tokens_in or 0,
+                    "tokens_out": r.tokens_out or 0,
+                    "cost_usd": float(r.cost_usd or 0),
+                }
+                for r in rows
+            ],
+        })
+
+    # Single aggregate
+    totals = base.with_entities(
+        sqlfunc.count(Ticket.id),
+        sqlfunc.sum(Ticket.llm_tokens_in),
+        sqlfunc.sum(Ticket.llm_tokens_out),
+        sqlfunc.sum(Ticket.llm_cost_usd),
+    ).one()
+    emails, tokens_in, tokens_out, cost_usd = totals
+    emails = emails or 0
+    tokens_in = tokens_in or 0
+    tokens_out = tokens_out or 0
+    cost_usd = float(cost_usd or 0)
+
+    return jsonify({
+        "since": since.isoformat(),
+        "until": until.isoformat(),
+        "emails_processed": emails,
+        "tokens_in": tokens_in,
+        "tokens_out": tokens_out,
+        "total_tokens": tokens_in + tokens_out,
+        "cost_usd": cost_usd,
+        "cost_per_email_usd": round(cost_usd / emails, 8) if emails else 0,
+    })
 
 
 def _priority_order():

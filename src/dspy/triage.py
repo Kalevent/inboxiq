@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from src.dspy.config import configure_dspy
 from src.dspy.cache import _load_compiled_module
@@ -31,6 +31,75 @@ from src.monitoring.sanitizer import safe_span_attribute
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer(__name__)
+
+# Cost per 1M tokens (input_usd, output_usd) — update as pricing changes
+_COST_PER_1M: Dict[str, Tuple[float, float]] = {
+    # OpenAI
+    "gpt-4o-mini": (0.15, 0.60),
+    "gpt-4o": (2.50, 10.00),
+    "gpt-4-turbo": (10.00, 30.00),
+    "gpt-4": (30.00, 60.00),
+    "gpt-3.5-turbo": (0.50, 1.50),
+    # Anthropic
+    "claude-3-haiku-20240307": (0.25, 1.25),
+    "claude-3-5-haiku-20241022": (0.80, 4.00),
+    "claude-3-5-sonnet-20241022": (3.00, 15.00),
+    "claude-3-opus-20240229": (15.00, 75.00),
+    "claude-sonnet-4-6": (3.00, 15.00),
+    # Google
+    "gemini-1.5-flash": (0.075, 0.30),
+    "gemini-1.5-pro": (1.25, 5.00),
+    "gemini-2.0-flash": (0.10, 0.40),
+}
+
+
+def _compute_cost_usd(model_id: str, tokens_in: int, tokens_out: int) -> float:
+    """Return estimated USD cost given model and token counts."""
+    # model_id may be prefixed: "openai/gpt-4o-mini" → strip prefix
+    bare = model_id.split("/")[-1] if "/" in model_id else model_id
+    price = _COST_PER_1M.get(bare)
+    if not price:
+        # Unknown model — default to gpt-4o-mini pricing as a conservative estimate
+        price = (0.15, 0.60)
+    in_cost = tokens_in * price[0] / 1_000_000
+    out_cost = tokens_out * price[1] / 1_000_000
+    return round(in_cost + out_cost, 8)
+
+
+def _collect_lm_usage(lm: Any, history_start: int) -> Tuple[int, int]:
+    """
+    Sum prompt/completion tokens from dspy lm.history entries added since history_start.
+
+    DSPy appends one entry per LM call. Each entry may expose usage via:
+    - entry["usage"] dict  (newer DSPy versions)
+    - entry["response"].usage  (OpenAI ChatCompletion object)
+    - entry["response"]["usage"]  (dict response)
+    """
+    try:
+        history = list(getattr(lm, "history", []))
+    except Exception:
+        return 0, 0
+
+    tokens_in, tokens_out = 0, 0
+    for entry in history[history_start:]:
+        try:
+            usage = entry.get("usage") if isinstance(entry, dict) else None
+            if not usage:
+                response = entry.get("response") if isinstance(entry, dict) else None
+                if response is not None:
+                    if hasattr(response, "usage"):
+                        usage = response.usage
+                    elif isinstance(response, dict):
+                        usage = response.get("usage") or {}
+            if not usage:
+                continue
+            # Usage may be a pydantic object or plain dict
+            get = usage.get if isinstance(usage, dict) else lambda k, d=0: getattr(usage, k, d)
+            tokens_in += int(get("prompt_tokens", 0) or get("input_tokens", 0))
+            tokens_out += int(get("completion_tokens", 0) or get("output_tokens", 0))
+        except Exception:
+            continue
+    return tokens_in, tokens_out
 
 
 def run_dspy_triage(
@@ -87,6 +156,10 @@ def _run_dspy_triage_impl(
     # Record model information
     safe_span_attribute(span, "dspy.model", model)
     safe_span_attribute(span, "dspy.model_id", model_id)
+
+    # Snapshot history length so we can diff after the run
+    _lm = getattr(dspy.settings, "lm", None)
+    _history_start = len(list(getattr(_lm, "history", []))) if _lm else 0
 
     # Format payload for DSPy prompt
     prompt_payload = format_payload(payload, context)
@@ -324,6 +397,14 @@ def _run_dspy_triage_impl(
         safe_span_attribute(span, "triage.reply_confidence", reply_confidence)
         span.set_attribute("triage.reply_requires_review", reply_confidence < 0.7 if reply_confidence else True)
 
+    # Collect LLM token usage from history entries added during this run
+    llm_tokens_in, llm_tokens_out = _collect_lm_usage(_lm, _history_start)
+    llm_cost_usd = _compute_cost_usd(model_id, llm_tokens_in, llm_tokens_out)
+
+    safe_span_attribute(span, "llm.tokens_in", llm_tokens_in)
+    safe_span_attribute(span, "llm.tokens_out", llm_tokens_out)
+    safe_span_attribute(span, "llm.cost_usd", llm_cost_usd)
+
     # Add span event for audit trail
     span.add_event("triage_completed", {
         "category": content["category"],
@@ -335,6 +416,10 @@ def _run_dspy_triage_impl(
     return {
         "provider": "dspy",
         "model": model,
+        "model_id": model_id,
+        "llm_tokens_in": llm_tokens_in,
+        "llm_tokens_out": llm_tokens_out,
+        "llm_cost_usd": llm_cost_usd,
         "content": content,
         **content,
     }
