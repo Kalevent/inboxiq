@@ -8,6 +8,8 @@
   const captureLeads = config.captureLeads !== false;
   const requireEmail = config.requireEmail !== false;
   const primaryColor = config.primaryColor || '#6366f1';
+  const logoUrl = (typeof config.logoUrl === 'string' && config.logoUrl.length > 0)
+    ? config.logoUrl : null;
   // Optional custom chatbot webhook. Must be https:// to be used.
   const webhookUrl = (typeof config.webhookUrl === 'string' && config.webhookUrl.startsWith('https://'))
     ? config.webhookUrl : null;
@@ -30,18 +32,23 @@
           right: 80px;
           width: 60px;
           height: 60px;
-          border-radius: 50%;
-          background: ${primaryColor};
-          color: white;
+          border-radius: 16px;
+          background: transparent;
           border: none;
           cursor: pointer;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.25);
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 24px;
+          padding: 0;
           z-index: 999999;
           transition: transform 0.2s;
+          overflow: hidden;
+        }
+        #inboxiq-chat-bubble img {
+          width: 60px;
+          height: 60px;
+          display: block;
         }
         #inboxiq-chat-bubble:hover {
           transform: scale(1.05);
@@ -74,11 +81,25 @@
         #inboxiq-chat-header {
           background: ${primaryColor};
           color: white;
-          padding: 16px;
+          padding: 12px 16px;
           font-weight: 600;
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          gap: 10px;
+        }
+        #inboxiq-chat-header-title {
+          flex: 1;
+          font-size: 15px;
+        }
+        #inboxiq-chat-logo {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          object-fit: contain;
+          background: white;
+          padding: 5px;
+          flex-shrink: 0;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.25);
         }
         #inboxiq-chat-close {
           background: none;
@@ -158,12 +179,13 @@
       </style>
 
       <button id="inboxiq-chat-bubble" aria-label="Open chat">
-        💬
+        ${logoUrl ? `<img src="${logoUrl}" alt="Open chat">` : '💬'}
       </button>
 
       <div id="inboxiq-chat-window">
         <div id="inboxiq-chat-header">
-          <span>Chat with us</span>
+          ${logoUrl ? `<img id="inboxiq-chat-logo" src="${logoUrl}" alt="Logo">` : ''}
+          <span id="inboxiq-chat-header-title">InboxIQ Agent</span>
           <button id="inboxiq-chat-close" aria-label="Close chat">×</button>
         </div>
 
@@ -339,6 +361,9 @@
     document.getElementById('inboxiq-chat-bubble').addEventListener('click', toggleChat);
     document.getElementById('inboxiq-chat-close').addEventListener('click', toggleChat);
     document.getElementById('inboxiq-chat-form').addEventListener('submit', handleSubmit);
+
+    // Auto-open for visitors after a short delay
+    setTimeout(toggleChat, 2500);
 
     console.log('InboxIQ chat widget loaded for account:', account);
   }
