@@ -107,7 +107,7 @@ opentelemetry-exporter-otlp-proto-common==1.23.0
 opentelemetry-exporter-otlp-proto-grpc==1.23.0
 opentelemetry-exporter-otlp-proto-http==1.23.0
 opentelemetry-instrumentation==0.44b0
-opentelemetry-instrumentation-celery==0.44b0
+opentelemetry-instrumentation-celery==0.61b0
 opentelemetry-instrumentation-flask==0.44b0
 opentelemetry-instrumentation-redis==0.44b0
 opentelemetry-instrumentation-requests==0.44b0
