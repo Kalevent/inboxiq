@@ -983,6 +983,18 @@ def notify_engineering_for_inquiry(inquiry_id: str):
 # Adjust via query params if needed.
 _DEFAULT_MINS_PER_DECISION = 3
 _DEFAULT_HOURLY_RATE_GBP = 30
+_NAN_STRINGS = frozenset({"nan", "inf", "-inf", "infinity", "-infinity"})
+
+
+def _parse_hourly_rate(raw: str) -> float:
+    """Parse hourly_rate query param, rejecting NaN/Inf strings before float()."""
+    if not raw or raw.strip().lower() in _NAN_STRINGS:
+        return _DEFAULT_HOURLY_RATE_GBP
+    try:
+        val = float(raw)
+    except (ValueError, TypeError):
+        return _DEFAULT_HOURLY_RATE_GBP
+    return val if math.isfinite(val) and val > 0 else _DEFAULT_HOURLY_RATE_GBP
 
 
 def _build_savings_report(account_id: int, months: int, mins_per_decision: int, hourly_rate: float, override_signals_per_month: int = 0) -> dict:
@@ -1105,11 +1117,11 @@ def admin_savings_report():
 
     months = min(int(request.args.get("months", 3)), 24)
     mins_per_decision = int(request.args.get("mins_per_decision", _DEFAULT_MINS_PER_DECISION))
-    _hr = float(request.args.get("hourly_rate", _DEFAULT_HOURLY_RATE_GBP))
-    hourly_rate = _hr if math.isfinite(_hr) and _hr > 0 else _DEFAULT_HOURLY_RATE_GBP
+    _hr_raw = request.args.get("hourly_rate", "")
+    _hr = _parse_hourly_rate(_hr_raw)
     override_signals = int(request.args.get("override_signals", 0))
 
-    report = _build_savings_report(account_id, months, mins_per_decision, hourly_rate, override_signals)
+    report = _build_savings_report(account_id, months, mins_per_decision, _hr, override_signals)
     report["account_name"] = account.name
     return jsonify(report), 200
 
@@ -1136,9 +1148,9 @@ def my_savings_report():
 
     months = min(int(request.args.get("months", 3)), 24)
     mins_per_decision = int(request.args.get("mins_per_decision", _DEFAULT_MINS_PER_DECISION))
-    _hr = float(request.args.get("hourly_rate", _DEFAULT_HOURLY_RATE_GBP))
-    hourly_rate = _hr if math.isfinite(_hr) and _hr > 0 else _DEFAULT_HOURLY_RATE_GBP
+    _hr_raw = request.args.get("hourly_rate", "")
+    _hr = _parse_hourly_rate(_hr_raw)
 
-    report = _build_savings_report(user.account_id, months, mins_per_decision, hourly_rate)
+    report = _build_savings_report(user.account_id, months, mins_per_decision, _hr)
     report["account_name"] = account.name
     return jsonify(report), 200
