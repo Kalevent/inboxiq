@@ -10,6 +10,8 @@
   const primaryColor = config.primaryColor || '#6366f1';
   const logoUrl = (typeof config.logoUrl === 'string' && config.logoUrl.length > 0)
     ? config.logoUrl : null;
+  const headerTitle = (typeof config.headerTitle === 'string' && config.headerTitle.trim().length > 0)
+    ? config.headerTitle.trim() : 'Chat with us';
   // Optional custom chatbot webhook. Must be https:// to be used.
   const webhookUrl = (typeof config.webhookUrl === 'string' && config.webhookUrl.startsWith('https://'))
     ? config.webhookUrl : null;
@@ -185,7 +187,7 @@
       <div id="inboxiq-chat-window">
         <div id="inboxiq-chat-header">
           ${logoUrl ? `<img id="inboxiq-chat-logo" src="${logoUrl}" alt="Logo">` : ''}
-          <span id="inboxiq-chat-header-title">InboxIQ Agent</span>
+          <span id="inboxiq-chat-header-title">${headerTitle}</span>
           <button id="inboxiq-chat-close" aria-label="Close chat">×</button>
         </div>
 

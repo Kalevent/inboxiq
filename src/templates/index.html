@@ -461,8 +461,29 @@
             </p>
           </div>
 
-          <!-- Currently Integrated Apps -->
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          <!-- Currently Integrated Apps — anticlockwise auto-scroll ticker -->
+          <style>
+            #int-ticker{overflow:hidden;position:relative}
+            #int-ticker::before,#int-ticker::after{content:'';position:absolute;top:0;bottom:0;width:100px;z-index:2;pointer-events:none}
+            #int-ticker::before{left:0;background:linear-gradient(to right,#020617 20%,transparent)}
+            #int-ticker::after{right:0;background:linear-gradient(to left,#020617 20%,transparent)}
+            .int-row{display:flex;gap:10px;width:max-content;margin-bottom:10px}
+            .int-row:last-child{margin-bottom:0}
+            .int-row>div{flex-shrink:0;padding:10px 12px!important;min-width:108px!important;max-width:108px!important}
+            .int-row .h-16.w-16{height:40px!important;width:40px!important}
+            .int-row .w-14{width:32px!important;height:32px!important}
+            .int-row .h-14{height:32px!important;width:32px!important}
+            .int-row .w-8.h-8{width:22px!important;height:22px!important}
+            .int-row .gap-3{gap:6px!important}
+            .int-row .mb-1{margin-bottom:2px!important}
+            .int-row-l{animation:int-l 35s linear infinite}
+            .int-row-r{animation:int-r 35s linear infinite}
+            .int-row:hover{animation-play-state:paused}
+            @keyframes int-l{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+            @keyframes int-r{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+          </style>
+          <div id="int-ticker">
+          <div class="int-row int-row-l" id="int-row-1">
 
             <!-- Gmail -->
             <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
@@ -702,6 +723,9 @@
               </div>
             </div>
 
+          </div>
+          <div class="int-row int-row-r" id="int-row-2">
+
             <!-- Pipedrive -->
             <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
               <div class="flex flex-col items-center gap-3">
@@ -933,6 +957,8 @@
             </div>
 
           </div>
+          </div>
+          <script>(function(){['int-row-1','int-row-2'].forEach(function(id){var r=document.getElementById(id);if(r)r.innerHTML+=r.innerHTML;});})()</script>
 
           <!-- Integration features -->
           <div class="mt-12 max-w-3xl mx-auto">
