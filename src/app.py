@@ -789,6 +789,7 @@ def create_app() -> Flask:
     return render_template("admin.html")
 
   @app.route("/api/test-email", methods=["POST"])
+  @login_required_page
   def send_test_email():
     data = request.get_json(silent=True) or {}
     to_email = (data.get("to_email") or "").strip()
@@ -818,6 +819,7 @@ def create_app() -> Flask:
     return jsonify({"message": f"Test email sent to {to_email}", "triage": triage_samples}), 200
 
   @app.route("/api/reminder-email", methods=["POST"])
+  @login_required_page
   def send_reminder_email():
     data = request.get_json(silent=True) or {}
     to_email = (data.get("to_email") or "").strip()

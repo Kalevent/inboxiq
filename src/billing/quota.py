@@ -22,7 +22,7 @@ import os
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import text
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from src.extensions import db
 from src.models.billing import AccountUsageCounter, CustomerBillingProfile, Plan
@@ -48,19 +48,6 @@ _STRIPE_OVERAGE_ATTR: dict[str, str] = {
     "nurture_emails":     "stripe_nurture_overage_price_id",
 }
 
-
-# Pre-built upsert SQL per meter — column names are hardcoded constants from
-# _METER_META so there is no user input in these statements.
-_UPSERT_SQL: dict[str, object] = {
-    meter: text(  # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text
-        "INSERT INTO account_usage_counters (account_id, billing_month, " + col + ") "
-        "VALUES (:account_id, :billing_month, :qty) "
-        "ON CONFLICT (account_id, billing_month) "
-        "DO UPDATE SET " + col + " = account_usage_counters." + col + " + :qty "
-        "RETURNING " + col
-    )
-    for meter, (col, _, _) in _METER_META.items()
-}
 
 
 class FeatureDisabled(Exception):
@@ -169,17 +156,17 @@ def increment_signals(account_id: int, quantity: int = 1) -> None:
     Best-effort: errors are swallowed so intake is never blocked.
     """
     billing_month = _current_billing_month()
+    tbl = AccountUsageCounter.__table__
     try:
-        db.session.execute(
-            text(  # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text
-                """
-                INSERT INTO account_usage_counters (account_id, billing_month, incoming_signals)
-                VALUES (:account_id, :billing_month, :qty)
-                ON CONFLICT (account_id, billing_month)
-                DO UPDATE SET incoming_signals = account_usage_counters.incoming_signals + :qty
-            """),
-            {"account_id": account_id, "billing_month": billing_month, "qty": quantity},
+        stmt = (
+            pg_insert(AccountUsageCounter)
+            .values(account_id=account_id, billing_month=billing_month, incoming_signals=quantity)
+            .on_conflict_do_update(
+                index_elements=["account_id", "billing_month"],
+                set_={"incoming_signals": tbl.c.incoming_signals + quantity},
+            )
         )
+        db.session.execute(stmt)
         db.session.commit()
     except Exception as exc:
         logger.warning("increment_signals failed account=%d: %s", account_id, exc)
@@ -217,12 +204,19 @@ def check_and_increment(meter: str, account_id: int, quantity: int = 1) -> None:
                     "Upgrade to access this feature."
                 )
 
-    # Upsert counter row. SQL is pre-built at module load from hardcoded column
-    # names — no user input reaches the query.
-    result = db.session.execute(
-        _UPSERT_SQL[meter],
-        {"account_id": account_id, "billing_month": billing_month, "qty": quantity},
+    # Upsert the counter row using PostgreSQL INSERT ... ON CONFLICT DO UPDATE.
+    tbl = AccountUsageCounter.__table__
+    col_obj = tbl.c[counter_col]
+    stmt = (
+        pg_insert(AccountUsageCounter)
+        .values(account_id=account_id, billing_month=billing_month, **{counter_col: quantity})
+        .on_conflict_do_update(
+            index_elements=["account_id", "billing_month"],
+            set_={counter_col: col_obj + quantity},
+        )
+        .returning(col_obj)
     )
+    result = db.session.execute(stmt)
     new_total = result.scalar()
 
     # Check overage
