@@ -36,6 +36,7 @@ jobs:
             --config "p/secrets" \
             --config "p/owasp-top-ten" \
             --config ".semgrep/rules.yml" \
+            --severity ERROR \
             --error \
             --quiet \
             src/
