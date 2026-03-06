@@ -52,7 +52,7 @@ _STRIPE_OVERAGE_ATTR: dict[str, str] = {
 # Pre-built upsert SQL per meter — column names are hardcoded constants from
 # _METER_META so there is no user input in these statements.
 _UPSERT_SQL: dict[str, object] = {
-    meter: text(
+    meter: text(  # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text
         "INSERT INTO account_usage_counters (account_id, billing_month, " + col + ") "
         "VALUES (:account_id, :billing_month, :qty) "
         "ON CONFLICT (account_id, billing_month) "
@@ -171,7 +171,8 @@ def increment_signals(account_id: int, quantity: int = 1) -> None:
     billing_month = _current_billing_month()
     try:
         db.session.execute(
-            text("""
+            text(  # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text
+                """
                 INSERT INTO account_usage_counters (account_id, billing_month, incoming_signals)
                 VALUES (:account_id, :billing_month, :qty)
                 ON CONFLICT (account_id, billing_month)

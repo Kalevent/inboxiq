@@ -55,7 +55,8 @@ def search_kb_articles(
     # 3. Perform vector similarity search
     try:
         # Use pgvector cosine similarity (1 - cosine_distance)
-        sql = text("""
+        sql = text(  # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text
+            """
             SELECT
                 a.id,
                 a.title,

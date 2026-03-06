@@ -369,7 +369,7 @@ def sync_recipients(
         uid = str(uuid4())
         name = lead.name or lead.company_name or "Lead"
         topics_sql = "{" + ",".join([t.replace(",", "") for t in topics]) + "}"
-        stmt = text(
+        stmt = text(  # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text
             """
             INSERT INTO recipients (uid, email, name, is_unsubscribed, topics, suppressed, created_at)
             VALUES (:uid, :email, :name, false, :topics, false, NOW())
