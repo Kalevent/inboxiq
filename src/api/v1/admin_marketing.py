@@ -36,6 +36,7 @@ from src.models.leads import Lead, LeadAttribution
 from src.models.marketing import EnterpriseInquiry, InAppMessage, InAppMessageDismissal, LandingPage, Referral
 from src.sanitize import sanitize_html
 import logging
+import math
 
 logger = logging.getLogger(__name__)
 
@@ -1104,7 +1105,8 @@ def admin_savings_report():
 
     months = min(int(request.args.get("months", 3)), 24)
     mins_per_decision = int(request.args.get("mins_per_decision", _DEFAULT_MINS_PER_DECISION))
-    hourly_rate = float(request.args.get("hourly_rate", _DEFAULT_HOURLY_RATE_GBP))
+    _hr = float(request.args.get("hourly_rate", _DEFAULT_HOURLY_RATE_GBP))
+    hourly_rate = _hr if math.isfinite(_hr) and _hr > 0 else _DEFAULT_HOURLY_RATE_GBP
     override_signals = int(request.args.get("override_signals", 0))
 
     report = _build_savings_report(account_id, months, mins_per_decision, hourly_rate, override_signals)
@@ -1134,7 +1136,8 @@ def my_savings_report():
 
     months = min(int(request.args.get("months", 3)), 24)
     mins_per_decision = int(request.args.get("mins_per_decision", _DEFAULT_MINS_PER_DECISION))
-    hourly_rate = float(request.args.get("hourly_rate", _DEFAULT_HOURLY_RATE_GBP))
+    _hr = float(request.args.get("hourly_rate", _DEFAULT_HOURLY_RATE_GBP))
+    hourly_rate = _hr if math.isfinite(_hr) and _hr > 0 else _DEFAULT_HOURLY_RATE_GBP
 
     report = _build_savings_report(user.account_id, months, mins_per_decision, hourly_rate)
     report["account_name"] = account.name

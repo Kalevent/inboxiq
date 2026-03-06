@@ -1,10 +1,12 @@
 from http import HTTPStatus
 from flask import jsonify, request
+from flask_jwt_extended import jwt_required
 
 from src.api.v1 import v1
 
 
 @v1.route("/blog/posts", methods=["POST"])
+@jwt_required()
 def create_blog_post():
   """
   Placeholder endpoint for agent-authored blog submissions.
