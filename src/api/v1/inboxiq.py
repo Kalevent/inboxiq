@@ -656,6 +656,7 @@ def override(ticket_id: str):
 
 
 @v1.route("/inboxiq/tickets/<ticket_id>/feedback", methods=["POST"])
+@jwt_required()
 def ticket_feedback(ticket_id: str):
     """
     Collect quick feedback on triage correctness; optionally override category/priority.

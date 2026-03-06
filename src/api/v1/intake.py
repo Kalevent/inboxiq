@@ -224,8 +224,8 @@ def intake_shim():
     Compatibility adapter: accept simple form or JSON and forward to /intake.
     If your source can already send JSON with Basic Auth, call /intake directly.
     """
-    if not _SHIM_INTAKE_TOKEN:
-        return jsonify({"error": "config_error", "message": "INTAKE_TOKEN not configured for shim"}), 500
+    if not _SHIM_INTAKE_TOKEN or not _SHIM_TARGET_URL:
+        return jsonify({"error": "config_error", "message": "INTAKE_TOKEN and INTAKE_URL must be configured"}), 500
 
     incoming = request.get_json(silent=True) or request.form.to_dict(flat=True)
     payload = {
@@ -248,7 +248,7 @@ def intake_shim():
         digestmod=hashlib.sha256,
     ).hexdigest()
 
-    target_url = _SHIM_TARGET_URL or request.url_root.rstrip("/") + "/api/v1/intake"
+    target_url = _SHIM_TARGET_URL
     headers = {
         "Content-Type": "application/json",
         "X-Intake-Token": _SHIM_INTAKE_TOKEN,
