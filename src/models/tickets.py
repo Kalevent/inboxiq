@@ -40,9 +40,9 @@ class Ticket(db.Model):
     assigned_to = db.Column(db.String(128), nullable=True)
     search_vec = db.Column(TSVECTOR, nullable=True)
     llm_model = db.Column(db.String(100), nullable=True)
-    llm_tokens_in = db.Column(db.Integer, nullable=False, default=0)
-    llm_tokens_out = db.Column(db.Integer, nullable=False, default=0)
-    llm_cost_usd = db.Column(db.Numeric(12, 8), nullable=False, default=0)
+    llm_tokens_in = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    llm_tokens_out = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    llm_cost_usd = db.Column(db.Numeric(12, 8), nullable=False, default=0, server_default='0')
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
