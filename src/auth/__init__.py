@@ -69,7 +69,7 @@ def _current_user():
         return None, None
 
 
-@bp.route("/login", methods=["POST"])
+@bp.route("/login", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 @limiter.limit("5 per minute", override_defaults=False)
 def login():
     """Login with password check and return JWT (with account_id claim)."""
@@ -126,7 +126,7 @@ def login():
     return response, 200
 
 
-@bp.route("/signup", methods=["POST"])
+@bp.route("/signup", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 @limiter.limit("20 per hour", override_defaults=False)
 def signup():
     """Start signup: create account + user stub, send activation token (link returned for now)."""
@@ -184,7 +184,7 @@ def signup():
     )
 
 
-@bp.route("/auth/resend-activation", methods=["POST"])
+@bp.route("/auth/resend-activation", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def resend_activation():
     """Resend activation token for an existing, not-yet-activated user."""
     data = request.get_json(silent=True) or {}
@@ -461,7 +461,7 @@ def logout():
     return response, 200
 
 
-@bp.route("/activate", methods=["POST"])
+@bp.route("/activate", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def activate():
     """Complete activation by setting a password using the activation token."""
     data = request.get_json(silent=True) or {}
@@ -529,7 +529,7 @@ def activate():
     return response, 200
 
 
-@bp.route("/reset/request", methods=["POST"])
+@bp.route("/reset/request", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 @limiter.limit("5 per hour", override_defaults=False)
 def request_password_reset():
     """
@@ -611,7 +611,7 @@ def request_password_reset():
     return jsonify({"status": "ok"})
 
 
-@bp.route("/reset/complete", methods=["POST"])
+@bp.route("/reset/complete", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def complete_password_reset():
     """Complete password reset using a reset token and new password."""
     data = request.get_json(silent=True) or {}

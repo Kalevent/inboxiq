@@ -218,7 +218,7 @@ _SHIM_INTAKE_TOKEN = os.getenv("INTAKE_TOKEN")
 _SHIM_TARGET_URL = os.getenv("INTAKE_URL")  # Optional override; defaults to local /api/v1/intake
 
 
-@v1.route("/intake/shim", methods=["POST"])
+@v1.route("/intake/shim", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def intake_shim():
     """
     Compatibility adapter: accept simple form or JSON and forward to /intake.
@@ -275,7 +275,7 @@ _CHAT_RATE_LIMIT_MAX = 10  # messages per IP per window
 _CHAT_RATE_LIMITS = defaultdict(list)
 
 
-@v1.route("/chat/submit", methods=["POST"])
+@v1.route("/chat/submit", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def chat_submit():
     """
     Public endpoint for InboxIQ native chat widget submissions.

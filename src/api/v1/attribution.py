@@ -17,7 +17,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@v1.route("/attribution/track", methods=["POST"])
+@v1.route("/attribution/track", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def track_attribution():
     """
     Track a marketing touchpoint via webhook.

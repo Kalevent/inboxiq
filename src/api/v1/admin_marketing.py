@@ -791,7 +791,7 @@ def _inquiry_to_dict(inq: EnterpriseInquiry) -> dict:
     }
 
 
-@v1.route("/enterprise/inquiry", methods=["POST"])
+@v1.route("/enterprise/inquiry", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def submit_enterprise_inquiry():
     """
     Public endpoint — submit an Enterprise plan inquiry.

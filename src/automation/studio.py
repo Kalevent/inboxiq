@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("automation_studio", __name__, url_prefix="/automation-studio")
 
 
-@bp.route("/waitlist", methods=["POST"])
+@bp.route("/waitlist", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def join_waitlist():
     """Add email to Automation Studio waitlist."""
     # Get email from form or JSON

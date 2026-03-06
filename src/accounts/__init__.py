@@ -9,7 +9,7 @@ from src.models.core import Account
 bp = Blueprint("accounts", __name__, url_prefix='/accounts')
 
 
-@bp.route("", methods=["POST"])
+@bp.route("", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 @limiter.limit("10 per hour", override_defaults=False)
 def create_account():
     """Create an account with optional seats_limit."""

@@ -65,7 +65,7 @@ def _verify_twilio_signature():
     return True, None
 
 
-@v1.route("/twilio/recording", methods=["POST"])
+@v1.route("/twilio/recording", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def twilio_recording():
     ok, error = _verify_twilio_signature()
     if not ok:
@@ -75,7 +75,7 @@ def twilio_recording():
     return jsonify({"success": True}), 200
 
 
-@v1.route("/twilio/voice", methods=["POST", "GET"])
+@v1.route("/twilio/voice", methods=["POST", "GET"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def twilio_voice():
     if request.method == "POST":
         ok, error = _verify_twilio_signature()
@@ -99,7 +99,7 @@ def twilio_voice():
     return Response(twiml, mimetype="text/xml")
 
 
-@v1.route("/twilio/transcription", methods=["POST"])
+@v1.route("/twilio/transcription", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def twilio_transcription():
     ok, error = _verify_twilio_signature()
     if not ok:

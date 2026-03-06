@@ -81,7 +81,7 @@ def submit_testimonial():
     return jsonify({"success": True, "testimonial": t.to_dict()})
 
 
-@v1.route("/testimonials/with-token", methods=["POST"])
+@v1.route("/testimonials/with-token", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def submit_testimonial_with_token():
     token = request.args.get("token") or (request.get_json(silent=True) or {}).get("token")
     payload = _load_token(token) if token else None

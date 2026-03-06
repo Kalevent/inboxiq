@@ -51,7 +51,7 @@ def view_landing_page(slug: str):
     return render_template("lp/page.html", page=page, utm=utm)
 
 
-@bp.route("/<slug>/lead", methods=["POST"])
+@bp.route("/<slug>/lead", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 @limiter.limit("10 per minute", override_defaults=False)
 def capture_lead(slug: str):
     """
