@@ -27,6 +27,8 @@ class Ticket(db.Model):
     message_id = db.Column(db.String(255), nullable=False)
     provider = db.Column(db.String(32), nullable=True)
     provider_thread_url = db.Column(db.String(512), nullable=True)
+    provider_message_id = db.Column(db.String(255), nullable=True)
+    provider_thread_id = db.Column(db.String(255), nullable=True)
     decision = db.Column(db.JSON, nullable=False, default=dict)
     manual_override = db.Column(db.Boolean, default=False, nullable=False)
     override_metadata = db.Column(db.JSON, nullable=False, default=dict)

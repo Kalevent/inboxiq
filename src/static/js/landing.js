@@ -359,6 +359,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.key === 'Escape' && tmModal && tmModal.style.display !== 'none') closeTrialModal();
   });
   if (tmForm) tmForm.addEventListener('submit', handleTmSubmit);
+
+  // Auto-open when redirected from login page with ?open_trial=1
+  if (new URLSearchParams(window.location.search).get('open_trial') === '1') {
+    openTrialModal();
+  }
 });
 
 // ── Enterprise Inquiry Modal ───────────────────────────────────────────────

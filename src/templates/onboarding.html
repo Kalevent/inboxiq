@@ -2,12 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>InboxIQ – Guided Setup</title>
+  <title>InboxIQ – See it in action</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
-  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
 </head>
 <body class="bg-slate-950 text-slate-50 antialiased">
@@ -15,320 +12,159 @@
     <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
       <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         <a href="/onboarding" class="flex items-center gap-2 hover:opacity-90">
-          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">
-            IQ
-          </div>
-          <div>
-            <div class="font-semibold text-lg tracking-tight">InboxIQ</div>
-          </div>
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">IQ</div>
+          <div class="font-semibold text-lg tracking-tight">InboxIQ</div>
         </a>
         <div class="flex items-center gap-4 text-sm text-slate-300">
-          <a href="/dashboard" class="hover:text-white">Dashboard</a>
-          <a href="/" class="hover:text-white">← Back to site</a>
+          <a href="/dashboard" class="hover:text-white">Skip to dashboard →</a>
         </div>
       </div>
     </header>
 
     <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
-      <div class="max-w-6xl mx-auto px-4 py-10 lg:py-14">
-        <div class="mb-6">
-          <p class="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full border border-indigo-400/40 bg-indigo-500/10 text-indigo-200">
-            Quick setup · 3 steps
+      <div class="max-w-3xl mx-auto px-4 py-10 lg:py-14">
+
+        <!-- Hero -->
+        <div class="mb-8 text-center">
+          <h1 class="text-3xl font-semibold">Your support inbox, sorted in seconds</h1>
+          <p class="text-slate-400 text-sm mt-3 max-w-xl mx-auto">
+            Here's InboxIQ triaging 3 real support emails — priority, category, sentiment, and a draft reply, automatically.
           </p>
-          <h1 class="text-3xl font-semibold mt-3">See the AI handle your support emails</h1>
-          <p class="text-sm text-slate-300 mt-2 max-w-2xl">
-            Connect your inbox to get started — or try with sample emails first, no setup required.
-          </p>
         </div>
 
-        <div class="grid gap-4">
-          <div id="step1Card" class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="text-xs text-indigo-200 font-semibold mb-1">Step 1</p>
-                <h2 class="text-lg font-semibold text-slate-50">Connect your inbox</h2>
-                <p class="text-sm text-slate-300 mt-1">Connect Gmail or Outlook with one click. We only read — we never send without your approval.</p>
-                <p id="step1Status" class="text-xs text-emerald-300 mt-2 hidden">Inbox connected. You can move on to categories.</p>
-
-                <!-- Draft Reply Feature Toggle -->
-                <div id="draftReplySection" class="mt-4 hidden">
-                  <div class="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4">
-                    <label class="flex items-start gap-3 cursor-pointer">
-                      <input type="checkbox" id="enableDraftReply" class="mt-0.5 h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-500" />
-                      <div class="flex-1">
-                        <div class="text-sm font-semibold text-slate-100">Enable AI Draft Replies</div>
-                        <p class="text-xs text-slate-300 mt-1">
-                          Automatically generate suggested replies using your knowledge base and conversation history.
-                          <span id="draftReplyPlanNote" class="text-indigo-200 font-medium hidden">Available during trial and with Business plan.</span>
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
+        <!-- Demo results — visible immediately, no setup required -->
+        <div class="space-y-3 mb-8">
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-xs text-slate-500 mb-1">From: sarah@acmecorp.com</p>
+                <p class="text-sm text-slate-100">"Hi, I think I was charged twice this month. Can you check my account? I've been a customer for 2 years."</p>
               </div>
-              <div class="flex items-center gap-2 flex-wrap justify-end">
-                <span id="step1Badge" class="hidden text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-200 border border-emerald-400/30">Connected</span>
-                <button id="trySamplesBtn" type="button" class="px-4 py-2 rounded-xl border border-indigo-400/40 text-sm font-semibold text-indigo-200 hover:bg-indigo-500/10 transition">
-                  Try with sample emails →
-                </button>
-                <button id="connectInboxBtn" type="button" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">
-                  Connect inbox
-                </button>
-              </div>
+              <span class="shrink-0 text-[11px] px-2.5 py-1 rounded-full bg-red-500/15 text-red-300 border border-red-400/30 font-medium">High priority</span>
+            </div>
+            <div class="flex flex-wrap gap-2 text-[11px]">
+              <span class="px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-400/30">Billing</span>
+              <span class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">Frustrated</span>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-400/30">Draft reply ready</span>
             </div>
           </div>
 
-          <div id="step2Card" class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="text-xs text-slate-400 font-semibold mb-1">Step 2</p>
-                <h2 class="text-lg font-semibold text-slate-200">Choose your categories</h2>
-                <p class="text-sm text-slate-400 mt-1">Billing, Bugs, Onboarding, General — we’ll suggest defaults after inbox connect.</p>
-                <p id="step2Status" class="text-xs text-emerald-300 mt-2 hidden">Categories saved. Ready to preview AI triage.</p>
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-xs text-slate-500 mb-1">From: james@startup.io</p>
+                <p class="text-sm text-slate-100">"How do I invite a colleague to my account? I've been looking through settings but can't find the option anywhere."</p>
               </div>
-              <div class="flex items-center gap-2">
-                <span id="step2Badge" class="hidden text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-200 border border-emerald-400/30">Saved</span>
-                <button id="saveCategoriesBtn" type="button" class="px-4 py-2 rounded-xl border border-slate-700 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition">
-                  Save categories
-                </button>
-              </div>
+              <span class="shrink-0 text-[11px] px-2.5 py-1 rounded-full bg-slate-700 text-slate-300 border border-slate-600 font-medium">Normal</span>
+            </div>
+            <div class="flex flex-wrap gap-2 text-[11px]">
+              <span class="px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-400/30">Onboarding</span>
+              <span class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">Neutral</span>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-400/30">Draft reply ready</span>
             </div>
           </div>
 
-          <div id="step3Card" class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="text-xs text-slate-500 font-semibold mb-1">Step 3</p>
-                <h2 class="text-lg font-semibold text-slate-300">Preview your first AI triage</h2>
-                <p class="text-sm text-slate-500 mt-1">Upload sample emails or fetch the last 5 messages to test triage.</p>
-                <p id="step3Status" class="text-xs text-emerald-300 mt-2 hidden">Triage complete. Go to dashboard →</p>
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-xs text-slate-500 mb-1">From: priya@devteam.co</p>
+                <p class="text-sm text-slate-100">"The CSV export keeps timing out on large date ranges. This has been broken since last week's update."</p>
               </div>
-              <div class="flex items-center gap-2">
-                <span id="step3Badge" class="hidden text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-200 border border-emerald-400/30">Completed</span>
-                <button id="runTriageBtn" type="button" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">
-                  Run first triage
-                </button>
-              </div>
+              <span class="shrink-0 text-[11px] px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30 font-medium">Medium</span>
+            </div>
+            <div class="flex flex-wrap gap-2 text-[11px]">
+              <span class="px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-400/30">Bug</span>
+              <span class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">Frustrated</span>
+              <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-400/30">Needs engineer</span>
             </div>
           </div>
         </div>
 
-        <div class="mt-6">
-          <a
-            id="goDashboardBtn"
-            href="/dashboard"
-            role="button"
-            tabindex="0"
-            class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-sm font-semibold text-white transition cursor-pointer"
-          >
-            Go to dashboard →
-          </a>
+        <!-- Primary CTA -->
+        <div class="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-6 text-center mb-6">
+          <h2 class="text-base font-semibold text-slate-50 mb-1">Run this on your real inbox</h2>
+          <p class="text-sm text-slate-400 mb-5">Connect Gmail or Outlook. We only read — we never send without your approval.</p>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="/api/v1/auth/google/start" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-sm font-semibold transition">
+              <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              Connect Gmail
+            </a>
+            <a href="/api/v1/auth/outlook/start" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-semibold border border-slate-700 transition">
+              <svg class="h-4 w-4 shrink-0" viewBox="0 0 23 23"><path fill="#f3f3f3" d="M0 0h11v11H0z"/><path fill="#f35325" d="M0 0h5v5H0z"/><path fill="#81bc06" d="M6 0h5v5H6z"/><path fill="#05a6f0" d="M0 6h5v5H0z"/><path fill="#ffba08" d="M6 6h5v5H6z"/><rect x="12" y="0" width="11" height="11" fill="#0078d4"/><rect x="12" y="12" width="11" height="11" fill="#0078d4"/></svg>
+              Connect Outlook
+            </a>
+          </div>
+          <p class="text-xs text-slate-500 mt-4">Already connected via Google or Microsoft? <a href="/dashboard" class="text-indigo-300 hover:text-indigo-200 underline underline-offset-2">Go to your dashboard →</a></p>
         </div>
+
+        <!-- Secondary: custom inbox option -->
+        <div class="text-center">
+          <button id="showImapBtn" type="button" class="text-xs text-slate-500 hover:text-slate-300 underline underline-offset-2 transition">
+            Using a different email provider? Connect via IMAP
+          </button>
+        </div>
+
       </div>
     </main>
   </div>
 
-  <!-- Connect inbox modal -->
+  <!-- IMAP connect modal (secondary path) -->
   <div id="connectModal" class="fixed inset-0 z-40 items-center justify-center modal-hidden">
     <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
-    <div class="relative z-10 max-w-2xl mx-auto mt-16 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/20">
+    <div class="relative z-10 max-w-lg mx-auto mt-20 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
-        <div>
-          <p class="text-xs text-indigo-200 font-semibold">Step 1 · Connect inbox</p>
-          <h3 class="text-lg font-semibold text-slate-50">Choose how to connect</h3>
-        </div>
+        <h3 class="text-base font-semibold text-slate-50">Connect via IMAP</h3>
         <button id="closeModalBtn" class="text-slate-400 hover:text-white text-lg">✕</button>
       </div>
       <form id="connectForm" class="p-5 space-y-4">
-        <div class="grid sm:grid-cols-3 gap-3">
-          <label class="block rounded-xl border border-slate-800 bg-slate-900/70 p-3 cursor-pointer hover:border-indigo-400/60">
-            <input type="radio" name="provider" value="gmail" class="sr-only" checked />
-            <div class="text-sm font-semibold text-slate-50">Gmail</div>
-            <p class="text-xs text-slate-400 mt-1">OAuth sign-in for Google Workspace.</p>
-          </label>
-          <label class="block rounded-xl border border-slate-800 bg-slate-900/70 p-3 cursor-pointer hover:border-indigo-400/60">
-            <input type="radio" name="provider" value="outlook" class="sr-only" />
-            <div class="text-sm font-semibold text-slate-50">Outlook / 365</div>
-            <p class="text-xs text-slate-400 mt-1">OAuth sign-in for Microsoft.</p>
-          </label>
-          <label class="block rounded-xl border border-slate-800 bg-slate-900/70 p-3 cursor-pointer hover:border-indigo-400/60">
-            <input type="radio" name="provider" value="imap" class="sr-only" />
-            <div class="text-sm font-semibold text-slate-50">Custom IMAP</div>
-            <p class="text-xs text-slate-400 mt-1">Bring any IMAP inbox.</p>
-          </label>
-        </div>
-
-        <div id="imapFields" class="space-y-3 hidden">
-          <div class="grid sm:grid-cols-2 gap-3">
-            <div>
-              <label class="text-sm text-slate-200">IMAP host</label>
-              <input type="text" id="imapHost" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="imap.example.com" />
-            </div>
-            <div>
-              <label class="text-sm text-slate-200">Port</label>
-              <input type="number" id="imapPort" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="993" />
-            </div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400">IMAP host</label>
+            <input type="text" id="imapHost" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="imap.example.com" />
           </div>
-          <div class="grid sm:grid-cols-2 gap-3">
-            <div>
-              <label class="text-sm text-slate-200">Username</label>
-              <input type="text" id="imapUser" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="you@company.com" />
-            </div>
-            <div>
-              <label class="text-sm text-slate-200">Password</label>
-              <input type="password" id="imapPass" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="••••••••" />
-            </div>
+          <div>
+            <label class="text-xs text-slate-400">Port</label>
+            <input type="number" id="imapPort" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="993" />
           </div>
         </div>
-
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400">Username</label>
+            <input type="text" id="imapUser" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="you@company.com" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-400">Password</label>
+            <input type="password" id="imapPass" class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100" placeholder="••••••••" />
+          </div>
+        </div>
         <div id="connectStatus" class="text-sm text-slate-300 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 hidden"></div>
-
         <div class="flex items-center justify-end gap-3 pt-2">
-          <button type="button" id="cancelConnect" class="px-4 py-2 rounded-xl border border-slate-700 text-sm font-semibold text-slate-200 hover:bg-slate-800">
-            Cancel
-          </button>
-          <button type="submit" id="submitConnect" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">
-            Connect inbox
-          </button>
+          <button type="button" id="cancelConnect" class="px-4 py-2 rounded-xl border border-slate-700 text-sm font-semibold text-slate-200 hover:bg-slate-800">Cancel</button>
+          <button type="submit" id="submitConnect" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">Connect inbox</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Categories modal -->
-  <div id="categoriesModal" class="fixed inset-0 z-40 items-center justify-center modal-hidden">
-    <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
-    <div class="relative z-10 max-w-2xl mx-auto mt-16 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/20">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
-        <div>
-          <p class="text-xs text-indigo-200 font-semibold">Step 2 · Categories</p>
-          <h3 class="text-lg font-semibold text-slate-50">What type of messages do you get?</h3>
-          <p class="text-xs text-slate-400 mt-1">Based on similar accounts, we recommend Billing, Refunds, Technical, Complaints.</p>
-        </div>
-        <button id="closeCategories" class="text-slate-400 hover:text-white text-lg">✕</button>
-      </div>
-      <form id="categoriesForm" class="p-5 space-y-4">
-        <div class="grid sm:grid-cols-2 gap-3" id="defaultCategories">
-          {% set default_cats = ['Billing','Bugs','Refunds','Feature Requests','Sales Leads','Customer Complaints'] %}
-          {% for cat in default_cats %}
-          <label class="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 cursor-pointer hover:border-indigo-400/60">
-            <input type="checkbox" name="categories" value="{{ cat }}" class="h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-500" {% if cat in ['Billing','Refunds','Customer Complaints'] %}checked{% endif %}/>
-            <span class="text-sm text-slate-100">{{ cat }}</span>
-          </label>
-          {% endfor %}
-        </div>
-        <div id="customCategoriesContainer" class="grid sm:grid-cols-2 gap-3"></div>
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="flex-1 min-w-[220px]">
-            <label class="text-xs text-slate-400">Add custom category</label>
-            <input
-              id="customCategoryInput"
-              type="text"
-              maxlength="40"
-              class="w-full mt-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
-              placeholder="e.g. Vendor Requests"
-            />
-          </div>
-          <button
-            id="customCategoryAdd"
-            type="button"
-            class="mt-5 px-4 py-2 rounded-xl border border-slate-700 text-sm font-semibold text-slate-200 hover:bg-slate-800"
-          >
-            Add category
-          </button>
-        </div>
-        <div id="categoriesStatus" class="text-sm text-slate-300 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 hidden"></div>
-        <div class="flex items-center justify-end gap-3 pt-2">
-          <button type="button" id="cancelCategories" class="px-4 py-2 rounded-xl border border-slate-700 text-sm font-semibold text-slate-200 hover:bg-slate-800">Cancel</button>
-          <button type="submit" id="submitCategories" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">Save & continue</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Triage modal -->
-  <div id="triageModal" class="fixed inset-0 z-40 items-center justify-center modal-hidden">
-    <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
-    <div class="relative z-10 max-w-3xl mx-auto mt-16 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/20">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
-        <div>
-          <p class="text-xs text-indigo-200 font-semibold">Step 3 · AI triage</p>
-          <h3 class="text-lg font-semibold text-slate-50">See your AI agent in action</h3>
-          <p class="text-xs text-slate-400 mt-1">Use last 3 emails or sample emails to preview ticketing.</p>
-        </div>
-        <button id="closeTriage" class="text-slate-400 hover:text-white text-lg">✕</button>
-      </div>
-      <div class="p-5 space-y-4">
-        <p class="text-xs text-slate-400" id="triageSourceNote">Using 3 sample support emails — connect your inbox to run on your real messages.</p>
-
-        <div class="space-y-3 text-sm" id="triageSampleResults">
-          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <p class="text-xs text-slate-400 italic">"Hi, I think I was charged twice this month. Can you check my account?"</p>
-              <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 border border-red-400/30">High</span>
-            </div>
-            <div class="flex flex-wrap gap-2 text-[11px]">
-              <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">Billing</span>
-              <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">Frustrated</span>
-              <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-400/30">Draft reply ready</span>
-            </div>
-          </div>
-          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <p class="text-xs text-slate-400 italic">"How do I invite a colleague to my account? I can't find the option."</p>
-              <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 border border-slate-600">Normal</span>
-            </div>
-            <div class="flex flex-wrap gap-2 text-[11px]">
-              <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">Onboarding</span>
-              <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">Neutral</span>
-              <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-400/30">Draft reply ready</span>
-            </div>
-          </div>
-          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <p class="text-xs text-slate-400 italic">"The CSV export keeps timing out. This has been broken since last week."</p>
-              <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-400/30">Medium</span>
-            </div>
-            <div class="flex flex-wrap gap-2 text-[11px]">
-              <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">Bug</span>
-              <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">Frustrated</span>
-              <span class="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-400/30">Needs engineer</span>
-            </div>
-          </div>
-        </div>
-
-        <div id="triageStatus" class="text-sm text-emerald-200 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-3 py-2 hidden">
-          Triage complete! Redirecting to dashboard…
-        </div>
-
-        <div class="flex items-center justify-end gap-3">
-          <button id="runTriageConfirm" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white transition">
-            Run triage & finish
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 
   <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
   <script>
-    document.getElementById('trySamplesBtn').addEventListener('click', function () {
-      // Mark step 1 as using samples
-      document.getElementById('step1Badge').textContent = 'Using samples';
-      document.getElementById('step1Badge').classList.remove('hidden');
-      document.getElementById('step1Status').textContent = 'Running on sample emails. Connect your inbox any time to use real messages.';
-      document.getElementById('step1Status').classList.remove('hidden');
-      // Open triage modal directly
-      const triageModal = document.getElementById('triageModal');
-      triageModal.classList.remove('modal-hidden');
-      triageModal.classList.add('flex');
-    });
+    var showImapBtn  = document.getElementById('showImapBtn');
+    var connectModal = document.getElementById('connectModal');
+    var closeModalBtn = document.getElementById('closeModalBtn');
+    var cancelConnect = document.getElementById('cancelConnect');
 
-    document.getElementById('runTriageBtn').addEventListener('click', function () {
-      const triageModal = document.getElementById('triageModal');
-      triageModal.classList.remove('modal-hidden');
-      triageModal.classList.add('flex');
-    });
+    function openConnectModal() {
+      connectModal.classList.remove('modal-hidden');
+      connectModal.classList.add('flex');
+    }
+    function closeConnectModal() {
+      connectModal.classList.add('modal-hidden');
+      connectModal.classList.remove('flex');
+    }
+
+    if (showImapBtn)   showImapBtn.addEventListener('click', openConnectModal);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeConnectModal);
+    if (cancelConnect) cancelConnect.addEventListener('click', closeConnectModal);
   </script>
 </body>
 </html>

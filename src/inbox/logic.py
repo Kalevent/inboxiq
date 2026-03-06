@@ -40,6 +40,8 @@ class TriageDecision:
     ai_reason: str | None = None
     email_type: str | None = None  # spam | marketing | newsletter | support_request | etc.
     is_automated: bool = False
+    reply_text: str | None = None
+    reply_confidence: float | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -58,6 +60,8 @@ class TriageDecision:
             "team": self.team,
             "assigned_to": self.assigned_to,
             "similar_feedback": self.similar_feedback,
+            "reply_text": self.reply_text,
+            "reply_confidence": self.reply_confidence,
             "action_required": self.action_required,
             "ai_reason": self.ai_reason,
             "email_type": self.email_type,
@@ -159,6 +163,8 @@ def normalize_email_payload(data: Dict[str, Any]) -> Dict[str, Any]:
         "from_email": from_email,
         "body": body,
         "message_id": message_id,
+        "provider_message_id": data.get("provider_message_id"),
+        "provider_thread_id": data.get("provider_thread_id"),
         "provider": provider,
         "source": source,
         "channel": data.get("channel") or source,
@@ -257,6 +263,9 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
         # Only needs review if action_required is True or "optional"
         needs_review = action_required is True or action_required == "optional"
 
+        reply_text = (dspy_result.get("reply_text") or "").strip() or None
+        reply_confidence = dspy_result.get("reply_confidence") or None
+
         return TriageDecision(
             category=category,
             priority=priority,
@@ -277,6 +286,8 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
             ai_reason=ai_reason or _reason_text(action_required, "dspy", account_id),
             email_type=email_type,
             is_automated=is_automated,
+            reply_text=reply_text,
+            reply_confidence=reply_confidence,
         )
     except Exception as exc:
         logging.getLogger(__name__).warning("dspy triage failed: %s", exc)

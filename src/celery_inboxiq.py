@@ -22,6 +22,80 @@ import logging
 # Default body preview limit (can be overridden per-account via TriageConfig)
 DEFAULT_BODY_PREVIEW_LIMIT = 240
 
+_log = logging.getLogger(__name__)
+
+
+def _writeback_to_provider(
+    provider: str | None,
+    provider_message_id: str | None,
+    provider_thread_id: str | None,
+    account_id: int | None,
+    category: str,
+    priority: str,
+    action_required,
+    reply_text: str | None,
+    from_email: str,
+    subject: str,
+) -> None:
+    """
+    Write triage results back into the user's inbox so the value is visible
+    without opening the InboxIQ dashboard:
+      - Gmail: applies a label (e.g. "InboxIQ · Billing · P1") to the original message
+               and, if a draft reply exists, creates it collapsed in the thread
+      - Outlook: applies a category and creates a draft reply via Graph API
+
+    This is intentionally best-effort — failures are logged and swallowed so
+    they never block ticket creation.
+    """
+    if not provider or provider not in ("gmail", "outlook") or not provider_message_id:
+        return
+
+    from src.models.core import InboxConnection
+    from src.inbox.poll import (
+        apply_label_gmail, ensure_gmail_label,
+        create_gmail_draft_reply,
+        apply_label_outlook, create_outlook_draft_reply,
+    )
+
+    conn = InboxConnection.query.filter_by(
+        account_id=account_id, provider=provider, status="connected"
+    ).first()
+    if not conn or not conn.access_token:
+        return
+
+    token = conn.access_token
+    label_name = f"InboxIQ · {category.title()} · {priority}"
+
+    try:
+        if provider == "gmail":
+            # Ensure the label exists (creates it on first use, idempotent after)
+            meta = conn.metadata_json or {}
+            label_id = meta.get("label_ids", {}).get(label_name)
+            if not label_id:
+                label_id = ensure_gmail_label(token, label_name)
+                meta.setdefault("label_ids", {})[label_name] = label_id
+                conn.metadata_json = meta
+                db.session.commit()
+
+            apply_label_gmail(token, provider_message_id, label_id)
+
+            if reply_text and action_required is True and provider_thread_id:
+                create_gmail_draft_reply(
+                    token, provider_thread_id, from_email, subject, reply_text
+                )
+
+        elif provider == "outlook":
+            apply_label_outlook(token, provider_message_id, label_name)
+
+            if reply_text and action_required is True:
+                create_outlook_draft_reply(token, provider_message_id, reply_text)
+
+    except Exception as exc:
+        _log.warning(
+            "inbox write-back failed: provider=%s account=%s error=%s",
+            provider, account_id, exc,
+        )
+
 
 def make_celery(app) -> Celery:
     broker_url = app.config.get("CELERY_BROKER_URL") or os.getenv("CELERY_BROKER_URL")
@@ -475,6 +549,8 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         message_id=normalized.get("message_id"),
         provider=normalized.get("provider"),
         provider_thread_url=normalized.get("provider_thread_url"),
+        provider_message_id=normalized.get("provider_message_id"),
+        provider_thread_id=normalized.get("provider_thread_id"),
         decision=decision_record,
         team=merged.get("team") or decision.team,
         assigned_to=merged.get("assigned_to") or decision.assigned_to,
@@ -492,6 +568,22 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     logging.getLogger(__name__).info(
         "ticket created: id=%s status=%s action_required=%s email_type=%s",
         ticket.id, status, action_required, email_type
+    )
+
+    # Write triage results back into the provider inbox (Gmail labels / Outlook categories + draft replies).
+    # This is the core "InboxIQ on top of your inbox" experience — Oliver stays in Gmail/Outlook
+    # and sees labels and draft replies there without opening a separate dashboard.
+    _writeback_to_provider(
+        provider=normalized.get("provider"),
+        provider_message_id=normalized.get("provider_message_id"),
+        provider_thread_id=normalized.get("provider_thread_id"),
+        account_id=account_id,
+        category=category,
+        priority=priority,
+        action_required=action_required,
+        reply_text=decision.reply_text,
+        from_email=normalized.get("from_email"),
+        subject=normalized.get("subject", ""),
     )
 
     # Trigger automation rules using intelligent agent (tool-calling like Claude Code!)

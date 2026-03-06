@@ -157,6 +157,8 @@ def fetch_messages_gmail(
                 "from_email": from_email,
                 "body": body,
                 "message_id": message_id.strip("<>"),
+                "provider_message_id": mid,
+                "provider_thread_id": thread_id,
                 "provider": "gmail",
                 "provider_thread_url": f"https://mail.google.com/mail/u/0/#inbox/{thread_id}" if thread_id else None,
             }
@@ -200,6 +202,93 @@ def apply_label_outlook(access_token: str, message_id: str, category: str, mark_
     if resp.status_code >= 300:
         raise ValueError(f"Outlook label failed: {resp.status_code} {resp.text}")
     return True
+
+
+def ensure_gmail_label(access_token: str, label_name: str) -> str:
+    """
+    Return the Gmail label ID for label_name, creating it if it doesn't exist.
+    Caches nothing — callers should store label IDs in InboxConnection.metadata_json.
+    """
+    resp = requests.get(
+        "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=8,
+    )
+    if resp.status_code == 200:
+        for lbl in resp.json().get("labels", []):
+            if lbl.get("name", "").lower() == label_name.lower():
+                return lbl["id"]
+    # Label doesn't exist — create it
+    create_resp = requests.post(
+        "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+        headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+        json={"name": label_name, "labelListVisibility": "labelShow", "messageListVisibility": "show"},
+        timeout=8,
+    )
+    if create_resp.status_code not in (200, 201):
+        raise ValueError(f"Gmail label create failed: {create_resp.status_code} {create_resp.text}")
+    return create_resp.json()["id"]
+
+
+def create_gmail_draft_reply(
+    access_token: str,
+    thread_id: str,
+    to_email: str,
+    subject: str,
+    body: str,
+) -> str:
+    """
+    Create a draft reply in the Gmail thread. Returns the new draft ID.
+    The draft appears collapsed under the thread — Oliver clicks to expand, review, and send.
+    """
+    import email as email_lib
+    from email.mime.text import MIMEText
+
+    msg = MIMEText(body, "plain", "utf-8")
+    msg["To"] = to_email
+    msg["Subject"] = subject if subject.lower().startswith("re:") else f"Re: {subject}"
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
+
+    resp = requests.post(
+        "https://gmail.googleapis.com/gmail/v1/users/me/drafts",
+        headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+        json={"message": {"threadId": thread_id, "raw": raw}},
+        timeout=10,
+    )
+    if resp.status_code not in (200, 201):
+        raise ValueError(f"Gmail draft create failed: {resp.status_code} {resp.text}")
+    return resp.json()["id"]
+
+
+def create_outlook_draft_reply(
+    access_token: str,
+    message_id: str,
+    body: str,
+) -> str:
+    """
+    Create a draft reply to an Outlook message via Microsoft Graph.
+    Returns the new draft message ID.
+    """
+    resp = requests.post(
+        f"https://graph.microsoft.com/v1.0/me/messages/{message_id}/createReply",
+        headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+        json={},
+        timeout=10,
+    )
+    if resp.status_code not in (200, 201):
+        raise ValueError(f"Outlook createReply failed: {resp.status_code} {resp.text}")
+    draft_id = resp.json().get("id")
+
+    # Update the draft body
+    patch_resp = requests.patch(
+        f"https://graph.microsoft.com/v1.0/me/messages/{draft_id}",
+        headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+        json={"body": {"contentType": "Text", "content": body}},
+        timeout=10,
+    )
+    if patch_resp.status_code >= 300:
+        raise ValueError(f"Outlook draft update failed: {patch_resp.status_code} {patch_resp.text}")
+    return draft_id
 
 
 def _ms_refresh_access_token(refresh_token: str, client_id: str, client_secret: str, tenant_id: str | None) -> str:
@@ -279,6 +368,8 @@ def fetch_messages_outlook(
                 "from_email": from_email,
                 "body": body_content,
                 "message_id": message_id,
+                "provider_message_id": m.get("id"),
+                "provider_thread_id": conv_id,
                 "provider": "outlook",
                 "provider_thread_url": f"https://outlook.office.com/mail/inbox/id/{conv_id}" if conv_id else None,
             }
