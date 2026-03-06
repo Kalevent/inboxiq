@@ -19,8 +19,8 @@ _TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 
 
 def _post_to_intake(payload):
-    if not _INTAKE_TOKEN:
-        return None, (jsonify({"error": "config_error", "message": "INTAKE_TOKEN not configured"}), 500)
+    if not _INTAKE_TOKEN or not _INTAKE_URL:
+        return None, (jsonify({"error": "config_error", "message": "INTAKE_TOKEN and INTAKE_URL must be configured"}), 500)
 
     body_str = json.dumps(payload, separators=(",", ":"))
     ts_val = str(int(time.time()))
@@ -30,7 +30,7 @@ def _post_to_intake(payload):
         digestmod=hashlib.sha256,
     ).hexdigest()
 
-    target_url = _INTAKE_URL or request.url_root.rstrip("/") + "/api/v1/intake"
+    target_url = _INTAKE_URL
     headers = {
         "Content-Type": "application/json",
         "X-Intake-Token": _INTAKE_TOKEN,

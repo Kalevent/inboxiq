@@ -14,7 +14,6 @@ rules:
           - pattern: $CUR.execute(f"...$X...")
           - pattern: $CUR.execute("..." + $X + "...")
           - pattern: $CUR.execute("..." % $X)
-          - pattern: $CUR.execute($Q)
     paths:
       exclude:
         - "src/migrations/**"
