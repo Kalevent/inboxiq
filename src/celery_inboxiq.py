@@ -79,7 +79,7 @@ def _writeback_to_provider(
 
             apply_label_gmail(token, provider_message_id, label_id)
 
-            if reply_text and action_required is True and provider_thread_id:
+            if reply_text and action_required in (True, "optional") and provider_thread_id:
                 create_gmail_draft_reply(
                     token, provider_thread_id, from_email, subject, reply_text
                 )
@@ -87,7 +87,7 @@ def _writeback_to_provider(
         elif provider == "outlook":
             apply_label_outlook(token, provider_message_id, label_name)
 
-            if reply_text and action_required is True:
+            if reply_text and action_required in (True, "optional"):
                 create_outlook_draft_reply(token, provider_message_id, reply_text)
 
     except Exception as exc:

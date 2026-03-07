@@ -242,7 +242,7 @@ def google_callback():
             _store_connection("gmail", email, access_token, refresh_token, user_id)
         except RuntimeError:
             pass
-        return redirect(url_for("dashboard_home"))
+        return redirect("https://mail.google.com")
 
     # state == "signin" (default): sign-up or log-in flow — no Gmail scopes requested
     if not user_id:
@@ -322,4 +322,4 @@ def outlook_callback():
         _store_connection("outlook", email, access_token, refresh_token, user_id)
     except RuntimeError:
         return redirect(url_for("login_page", next=url_for("dashboard_home")))
-    return redirect(url_for("dashboard_home"))
+    return redirect("https://outlook.office.com/mail")

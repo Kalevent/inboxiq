@@ -1,7 +1,7 @@
 # Value Proposition
 
 > Status: Draft — for discussion at next innovation meeting
-> Last updated: 6 Mar 2026
+> Last updated: 7 Mar 2026
 
 Anchored to the primary ICP: founder or head of ops at a B2B SaaS company, 10–50 employees.
 See [ICP.md](ICP.md) first.
@@ -12,7 +12,7 @@ See [ICP.md](ICP.md) first.
 
 **InboxIQ handles the repetitive support emails your team keeps answering manually, so you stop losing hours to your inbox every day.**
 
-No enterprise setup. No AI hallucinations sent to customers. Works with your existing email.
+No enterprise setup. No AI hallucinations sent to customers. Works inside your existing Gmail or Outlook.
 
 ---
 
@@ -24,19 +24,25 @@ These must be felt, not hypothetical. Oliver has to say "yes, that is exactly my
 
 Every SaaS company has a set of questions that arrive constantly: "How do I reset my password?", "I was charged twice", "Can you explain how feature X works?", "We want to add a user." These take 3–5 minutes each to reply to. At 30 per day across a small team, that is 1.5–2.5 hours per day — every day — on questions that have already been answered hundreds of times.
 
-**What InboxIQ does**: Classifies incoming emails, matches them to known query types, drafts replies using your existing knowledge base and past answers. The team reviews or approves; they do not compose from scratch.
+**What InboxIQ does**: Classifies incoming emails, matches them to known query types, drafts replies using your existing knowledge base and past answers. Oliver opens Gmail, sees a draft already in the thread, reviews it, and sends. He does not compose from scratch.
 
 ### 2. Customers waiting hours (or days) for a reply
 
 Oliver's team works business hours. Customers email at 9pm. They see a reply the next morning, or after the weekend. In a world where competitors offer live chat, slow responses lose customers and deals.
 
-**What InboxIQ does**: Can draft and optionally send responses immediately for high-confidence, low-risk query types. Human stays in control of the confidence threshold.
+**What InboxIQ does**: Drafts a reply the moment an email arrives — including at 11pm on a Friday. The draft appears in the Gmail thread waiting for Oliver when he opens his inbox in the morning. High-confidence, low-risk emails can be configured to send automatically; everything else goes through Oliver first.
 
 ### 3. Support volume outgrowing the team faster than revenue justifies a hire
 
 Growing from 200 to 500 customers doubles the support load. Hiring a support person costs £35K–£50K per year plus management overhead. The maths does not work until you hit a certain revenue threshold.
 
 **What InboxIQ does**: Handles the volume growth without headcount growth. Priced at a fraction of a hire.
+
+### 4. Context lost in long email threads
+
+A customer emails on Monday with a problem. Oliver asks for their account number on Tuesday. The customer replies on Thursday. By then the context is buried and Oliver has to re-read the thread before he can respond.
+
+**What InboxIQ does**: Reads the full prior conversation — not just the latest message — before drafting a reply. It knows this is a follow-up, what was already asked, and what the customer said before. The draft reply references the thread context rather than treating every incoming message as a new conversation.
 
 ---
 
@@ -51,31 +57,35 @@ This is the most common and most legitimate objection. Oliver has seen AI halluc
 **Our answer**:
 - InboxIQ does not send anything without a confidence threshold you set
 - Low-confidence drafts go to a human review queue — the AI writes, the human approves
-- You can start in draft-only mode: AI drafts everything, your team sends it. You see the quality before you trust it to send autonomously
-- The AI is trained on your own knowledge base and past replies — it is not making things up from the internet
+- Default mode is draft-only: AI drafts everything, Oliver sends it. He sees the quality before trusting it to send autonomously
+- The AI is trained on his own knowledge base and past replies — it is not making things up from the internet
+- Every correction he makes trains the model to do better next time
 
-**What this requires from the product**: The confidence/approval workflow must be prominent in onboarding. Oliver needs to see "draft mode" as the default on day one, not buried in settings.
+**What this requires from the product**: Draft mode must be the visible default on day one. The confidence threshold must be adjustable from the main settings screen, not buried.
 
 ### Objection 2: "We already have a system for this"
 
-Most companies Oliver's size are using Gmail or Outlook, maybe with a shared inbox tool (Front, Superhuman, Help Scout). Some have Zendesk but are only using 20% of it.
+Most companies Oliver's size are using Gmail or Outlook, maybe with a shared inbox tool (Front, Superhuman, Help Scout with AI Assist). Some have Zendesk (with AI features) or Freshdesk (Freddy AI) but are only using 20% of what those platforms offer. A few have tried Intercom (Fin AI) and found it priced for a company twice their size.
 
 **Our answer**:
-- InboxIQ connects to your existing inbox — it does not replace it
-- If you use Gmail, you still use Gmail. InboxIQ sits on top
-- You do not have to migrate anything or retrain your team
-- If you decide it is not for you, you disconnect it and nothing changes
 
-**What this requires from the product**: The Gmail/Outlook OAuth connection must be frictionless. The value must be visible inside the user's existing workflow, not in a separate dashboard they have to remember to open.
+- InboxIQ connects to your existing Gmail or Outlook — it does not replace it
+- Oliver stays in Gmail. After connecting, every email gets a label applied automatically (e.g. "InboxIQ · Billing · P1") and a draft reply appears collapsed in the thread
+- He never has to open a separate dashboard to get value day-to-day
+- If he decides it is not for him, he disconnects and his inbox goes back to normal — nothing migrated, nothing lost
+
+**What this requires from the product**: The write-back to Gmail must be reliable. The label and draft have to appear in the right thread, correctly formatted, every time. This is the core "proof of value" moment — Oliver sees it working in his own Gmail within minutes of connecting.
 
 ### Objection 3: "It will not understand my specific product or business"
 
 Generic AI gives generic answers. Oliver's customers ask about his specific features, his pricing, his processes. A general-purpose chatbot will fail.
 
 **Our answer**:
-- InboxIQ ingests your existing knowledge base, help centre, and past email replies
-- It learns what your team actually says to customers, not a generic script
-- You can review and correct its answers — every correction makes the next response better
+
+- InboxIQ reads the full email thread before drafting — it knows what has already been said and by whom
+- It ingests his existing knowledge base, help centre, and past email replies
+- It learns what his team actually says to customers, not a generic script
+- Every correction he makes improves the next response
 
 **What this requires from the product**: Onboarding must include a knowledge base setup step that feels immediate. Oliver should be able to paste in 5 past email replies and see the AI use them within 10 minutes of signing up.
 
@@ -101,6 +111,10 @@ A support hire at £35,000/year = £2,917/month. InboxIQ handles the volume incr
 
 **How to use this**: On the pricing page and in any sales conversation, lead with "handles the volume of a full-time support hire at 3% of the cost" — not "saves you hours".
 
+### Our cost to deliver
+
+Actual LLM cost per email processed is approximately **$0.001** (4 AI calls per email on gpt-4o-mini, measured from production telemetry). At 300 emails/week (Oliver's upper volume), that is ~$1.20/month in AI costs per customer. Margin at £99/month is healthy even accounting for infrastructure. This is confirmed by live instrumentation — not an estimate.
+
 ---
 
 ## Behaviour change required
@@ -108,25 +122,28 @@ A support hire at £35,000/year = £2,917/month. InboxIQ handles the volume incr
 Be honest about what Oliver has to do differently. Hiding this creates churn.
 
 | What changes | Effort level |
-|---|---|
-| Connect Gmail or Outlook (OAuth, 2 minutes) | Low |
+| --- | --- |
+| Sign up with Google (2 minutes, no IT involvement) | Very low — now works without any approval blocker |
+| Connect Gmail or Outlook (OAuth, 2 minutes, after sign-up) | Low |
 | Upload or link knowledge base articles | Medium — needs 1–2 hours first time |
 | Review and approve AI drafts for first 2 weeks | Low — replaces composing from scratch |
-| Adjust confidence thresholds based on results | Low — occasional |
-| Retrain support team on new queue workflow | Medium — depends on team size |
+| Adjust confidence thresholds based on results | Low — occasional, from Settings |
+| Retrain support team on new queue workflow | Low to medium — team still works in Gmail, labels change |
 
-The honest message: setup takes about 2–3 hours. After that, day-to-day use is lighter than what they do now.
+The honest message: setup takes about 2 hours. After that, the daily workflow is lighter than what they do now, and it happens inside Gmail rather than in a new tool.
 
 ---
 
 ## What systems InboxIQ replaces or reduces
 
 | Current tool | What changes |
-|---|---|
-| Shared Gmail / Outlook inbox | Stays — InboxIQ layers on top |
-| Help Scout / Front / Superhuman | May replace for teams that only use basic shared inbox features |
-| Zendesk (basic tier) | May replace for teams using Zendesk as a shared inbox without ticketing workflows |
-| Copy-paste reply templates | Replaced — AI generates contextual drafts instead |
+| --- | --- |
+| Shared Gmail / Outlook inbox | Stays — InboxIQ layers on top, adds labels and drafts |
+| Help Scout (AI Assist) / Front / Superhuman | May replace for teams that only use basic shared inbox features |
+| Zendesk (AI features, basic tier) | May replace for teams using Zendesk as a shared inbox without ticketing workflows |
+| Freshdesk (Freddy AI) | May replace for teams who adopted Freshdesk for simplicity but don't use its full suite |
+| Intercom (Fin AI) | Not a direct replacement — Intercom is chat-first and priced for larger teams |
+| Copy-paste reply templates | Replaced — AI generates contextual drafts using full thread history |
 | Junior support hire (planned) | Deferred — handle the same volume with existing team |
 
 InboxIQ is not trying to replace Zendesk for a company with a 10-person support team. It is the tool for the company that is not there yet.
@@ -135,12 +152,13 @@ InboxIQ is not trying to replace Zendesk for a company with a 10-person support 
 
 ## One-paragraph narrative for the innovation manager
 
-> Small SaaS companies spend a disproportionate amount of time on support emails that have been answered dozens of times before. They cannot afford enterprise support tools, cannot justify a support hire yet, and cannot afford to have the founder or a senior person buried in the inbox all day. InboxIQ connects to their existing email, reads every incoming message, classifies it, and drafts a reply using their own knowledge base and previous answers. The team approves or edits — they stop composing from scratch. Response times drop from hours to minutes. Volume grows without headcount growing. The product is designed so a founder can set it up in an afternoon without involving IT, and can see the AI working on their own emails within 20 minutes of signing up.
+> Small SaaS companies spend a disproportionate amount of time on support emails that have been answered dozens of times before. They cannot afford enterprise support tools, cannot justify a support hire yet, and cannot afford to have the founder or a senior person buried in the inbox all day. InboxIQ connects to their existing Gmail or Outlook, reads every incoming email in full thread context, classifies it, and places a draft reply directly in the Gmail thread — ready for Oliver to review and send without composing from scratch. He never opens a separate dashboard. Response times drop from hours to minutes. Volume grows without headcount growing. The product is designed so a founder can sign up in under 2 minutes without involving IT, connect their inbox in another 2 minutes, and see draft replies appearing in their own Gmail threads within 20 minutes of signing up.
 
 ---
 
 ## What to do before the next meeting
 
-1. Test the free trial signup as if you are Oliver — can you get to a working demo in under 20 minutes without connecting a real inbox?
+1. Test the full flow as Oliver: sign up → connect Gmail → receive a test email → confirm a label and draft appear in Gmail
 2. Identify 3 people in your network who match the Oliver persona
 3. Draft a one-page version of this document that can be shared with the innovation manager without all the commentary
+4. Decide: is the beta user free or paying? Free removes price friction but may reduce commitment signal

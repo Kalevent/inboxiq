@@ -1,7 +1,7 @@
 # Ideal Customer Profile (ICP)
 
 > Status: Draft — for discussion at next innovation meeting
-> Last updated: 6 Mar 2026
+> Last updated: 7 Mar 2026
 
 ---
 
@@ -23,7 +23,7 @@ More specifically:
 - They have a small customer support function — 1 to 3 people handling email support, or the founder is still doing it themselves
 - They are receiving between 50 and 300 support emails per week
 - The majority of those emails are repetitive: billing questions, password resets, onboarding help, "how do I do X" questions
-- They have evaluated Intercom or Zendesk and found them too expensive or too complex for where they are now
+- They have evaluated Intercom (Fin AI) or Zendesk (AI features) and found them too expensive or too complex for where they are now
 - They make their own buying decisions — no procurement process, no IT manager sign-off needed
 - They care about customer experience but cannot afford to staff it properly
 
@@ -56,7 +56,9 @@ This is a composite of the buyer we are targeting.
 
 ### A day in Oliver's life
 
-Oliver starts the day with 47 unread support emails. He knows at least 30 of them are variations of questions he has answered before. He spends 2–3 hours per day in his inbox. His team is growing, customer queries are growing faster, and hiring another support person costs £35,000–£50,000 a year. He has looked at Zendesk — it is built for a 20-person support team, not a 2-person startup. He has tried help centre articles. Customers still email.
+Oliver starts the day with 47 unread support emails. He knows at least 30 of them are variations of questions he has answered before. He spends 2–3 hours per day in his inbox. His team is growing, customer queries are growing faster, and hiring another support person costs £35,000–£50,000 a year. He has looked at Zendesk (AI features) and Intercom (Fin AI) — both are built for a 20-person support team, not a 2-person startup. He has tried Freshdesk (Freddy AI) and found the AI too generic. He has tried help centre articles. Customers still email.
+
+Critically: **Oliver does not want to log into a new dashboard.** He lives in Gmail. Any tool that requires him to open a separate app is a tool he will forget to use. The value has to appear where he already is.
 
 ### What Oliver wants
 
@@ -64,6 +66,7 @@ Oliver starts the day with 47 unread support emails. He knows at least 30 of the
 - Fast, consistent replies — even at 11pm on a Friday
 - Not to have to hire his way out of the problem
 - Something he can set up himself in an afternoon, not a 3-month implementation project
+- Drafts waiting for him in the same Gmail thread, ready to review and send
 
 ### What Oliver is afraid of
 
@@ -71,6 +74,7 @@ Oliver starts the day with 47 unread support emails. He knows at least 30 of the
 - The tool "going rogue" without him knowing
 - Paying for something that requires ongoing maintenance
 - Locking himself into something he cannot get out of
+- Having to learn a new interface or retrain his team
 
 ### How Oliver buys
 
@@ -81,24 +85,44 @@ Oliver starts the day with 47 unread support emails. He knows at least 30 of the
 
 ---
 
-## Signup barrier (critical product issue)
+## Signup barrier (resolved 7 Mar 2026)
 
-The innovation manager tried to create an account and got the impression she needed her IT manager and Ops manager to approve it first.
+The innovation manager tried to create an account and got the impression she needed her IT manager and Ops manager to approve it first. This was caused by Google blocking the sign-in because the app was requesting Gmail access scopes at the point of signup — before Oliver had even created an account.
 
-**This is a blocker for the primary ICP.**
+**This has been fixed.**
 
-Oliver will not create a ticket with his IT team to try a new tool. He signs up, plays with it, and either gets value in 20 minutes or he leaves.
+Google sign-in now uses only `openid email profile` (no Gmail scopes). Oliver signs up instantly without any Google verification blocker. Gmail inbox access is requested separately, only after he is inside the product and explicitly clicks "Connect Gmail". The two steps are now decoupled:
 
-### What needs to change
+1. **Sign up** → Google sign-in with email/profile only. No block. No IT approval language.
+2. **Connect inbox** → Gmail scopes requested separately when Oliver chooses to connect, from the onboarding screen or Settings.
 
-The free trial must work completely independently, with no integrations required to see value:
+This matches exactly what Oliver expects: sign up in 30 seconds, decide later whether to give inbox access.
 
-1. Sign up with just an email address — no company details, no admin approval language
-2. The first screen after signup should show something useful immediately (demo data, a test inbox, or a sample triage run)
-3. Remove any UI language that implies multi-person approval or enterprise setup
-4. Connecting a real inbox should be optional in the trial — let Oliver see the AI working on sample emails before he commits to giving access
+### Remaining items from the original list
 
-This is not a marketing problem. It is a product problem. Fixing it increases trial conversion directly.
+The following were identified as needed alongside the signup fix. Status below:
+
+| Item | Status |
+| --- | --- |
+| Sign up with just an email address — no admin approval language | Done — Google sign-in no longer blocked |
+| First screen after signup shows something useful immediately (demo data) | Done — onboarding screen shows 3 live triage examples |
+| Remove UI language implying multi-person approval or enterprise setup | To review — check all onboarding copy |
+| Connecting a real inbox optional in trial | Done — inbox connect is a separate step after account creation |
+
+---
+
+## How InboxIQ works inside Oliver's existing Gmail workflow
+
+Oliver never has to open the InboxIQ dashboard to get value day-to-day. After connecting his inbox, every email that arrives is processed automatically:
+
+1. InboxIQ reads the email and the full prior thread (not just the latest message)
+2. It classifies the email: category, priority, sentiment, whether it needs a reply
+3. It applies a Gmail label directly to the message (e.g. "InboxIQ · Billing · P1")
+4. If a reply is warranted, it creates a draft reply collapsed in the Gmail thread — Oliver opens the email, sees the draft, edits if needed, and sends
+
+Oliver's workflow does not change. His inbox just has less noise and pre-written replies waiting for him.
+
+The InboxIQ dashboard exists for configuration (knowledge base, label rules, confidence thresholds) and reporting (volume trends, response times, LLM cost per email). It is not the primary surface for daily work.
 
 ---
 
@@ -112,4 +136,5 @@ E-commerce operations manager at a D2C brand, 20–100 employees, using Shopify.
 
 1. Do we have anyone in our network who matches Oliver's profile?
 2. What does "getting one customer" look like — free beta user or paying customer?
-3. Is the free trial signup flow fixable before the next meeting?
+3. Can Oliver see a draft reply in his Gmail thread within 20 minutes of signing up?
+4. What does the onboarding screen look like after the Google sign-in fix — does it feel like a tool he controls or a system he has been enrolled in?

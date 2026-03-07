@@ -24,6 +24,8 @@ When ready, analyse these:
 - Zendesk (AI features)
 - Freshdesk (Freddy AI)
 - Help Scout (AI Assist)
+- Front, 
+- Superhuman
 
 ### Adjacent (workflow automation)
 - Microsoft Power Automate — enterprise workflow tool, not AI-first, complex setup, targets large IT-managed organisations. Different buyer (IT admin vs founder). Not a direct threat at SMB level but worth understanding because some buyers will compare.

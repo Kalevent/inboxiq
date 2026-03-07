@@ -131,25 +131,17 @@ def fetch_messages_gmail(
         message_id = _extract_header(headers, "Message-ID") or mid
         snippet = payload.get("snippet") or ""
         thread_id = payload.get("threadId")
-        body = ""
+        body = _walk_parts_plain(payload.get("payload", {})) or snippet
 
-        # Try to extract plain text body from parts
-        def _walk_parts(part):
-            ctype = part.get("mimeType")
-            if ctype == "text/plain" and part.get("body", {}).get("data"):
-                import base64
-
-                try:
-                    return base64.urlsafe_b64decode(part["body"]["data"]).decode("utf-8", errors="ignore")
-                except Exception:
-                    return ""
-            for p in part.get("parts") or []:
-                val = _walk_parts(p)
-                if val:
-                    return val
-            return ""
-
-        body = _walk_parts(payload.get("payload", {})) or snippet
+        # Fetch prior messages in the thread for full conversation context
+        thread_history = []
+        if thread_id:
+            try:
+                thread_history = fetch_thread_history_gmail(
+                    new_token or access_token, thread_id, mid
+                )
+            except Exception:
+                pass
 
         messages.append(
             {
@@ -161,10 +153,130 @@ def fetch_messages_gmail(
                 "provider_thread_id": thread_id,
                 "provider": "gmail",
                 "provider_thread_url": f"https://mail.google.com/mail/u/0/#inbox/{thread_id}" if thread_id else None,
+                "history": thread_history,
             }
         )
 
     return messages, new_token
+
+
+def fetch_thread_history_gmail(
+    access_token: str,
+    thread_id: str,
+    current_message_id: str,
+    max_messages: int = 6,
+) -> List[Dict[str, Any]]:
+    """
+    Fetch the prior messages in a Gmail thread, excluding the current message.
+
+    Returns a list (oldest-first) of dicts:
+      { from_email, body, received_at, is_outbound }
+
+    is_outbound=True means Oliver sent it (it has label SENT).
+    Capped at max_messages to keep token counts manageable.
+    """
+    try:
+        resp = requests.get(
+            f"https://gmail.googleapis.com/gmail/v1/users/me/threads/{thread_id}",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"format": "full"},
+            timeout=10,
+        )
+        if resp.status_code != 200:
+            return []
+        thread_data = resp.json()
+    except Exception:
+        return []
+
+    history = []
+    for msg in thread_data.get("messages", []):
+        mid = msg.get("id") or ""
+        if mid == current_message_id:
+            continue
+        headers = msg.get("payload", {}).get("headers", [])
+        from_email = _extract_header(headers, "From")
+        date_str = _extract_header(headers, "Date")
+        label_ids = msg.get("labelIds") or []
+        is_outbound = "SENT" in label_ids
+
+        body = _walk_parts_plain(msg.get("payload", {})) or msg.get("snippet", "")
+        history.append({
+            "from_email": from_email,
+            "body": body[:300],  # Keep brief to limit token count
+            "received_at": date_str,
+            "is_outbound": is_outbound,
+        })
+
+    # Return oldest-first, capped at max_messages
+    return history[-max_messages:]
+
+
+def fetch_thread_history_outlook(
+    access_token: str,
+    conversation_id: str,
+    current_message_id: str,
+    max_messages: int = 6,
+) -> List[Dict[str, Any]]:
+    """
+    Fetch prior messages in an Outlook conversation, excluding the current message.
+
+    Returns a list (oldest-first) of dicts:
+      { from_email, body, received_at, is_outbound }
+    """
+    try:
+        resp = requests.get(
+            "https://graph.microsoft.com/v1.0/me/messages",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={
+                "$filter": f"conversationId eq '{conversation_id}'",
+                "$select": "id,from,body,receivedDateTime,isDraft",
+                "$orderby": "receivedDateTime asc",
+                "$top": max_messages + 1,
+            },
+            timeout=10,
+        )
+        if resp.status_code != 200:
+            return []
+        data = resp.json()
+    except Exception:
+        return []
+
+    history = []
+    for msg in data.get("value", []):
+        if msg.get("id") == current_message_id or msg.get("isDraft"):
+            continue
+        from_addr = (msg.get("from") or {}).get("emailAddress") or {}
+        from_email = from_addr.get("address") or from_addr.get("name") or ""
+        body_content = (msg.get("body") or {}).get("content") or ""
+        # Strip HTML tags crudely — full HTML is too noisy for the LLM
+        import re as _re
+        body_text = _re.sub(r"<[^>]+>", " ", body_content).strip()
+        received_at = msg.get("receivedDateTime") or ""
+        history.append({
+            "from_email": from_email,
+            "body": body_text[:300],
+            "received_at": received_at,
+            "is_outbound": False,  # Graph doesn't cleanly flag sent in this query
+        })
+
+    return history[-max_messages:]
+
+
+def _walk_parts_plain(payload: dict) -> str:
+    """Recursively extract plain text body from a Gmail message payload."""
+    ctype = payload.get("mimeType", "")
+    if ctype == "text/plain":
+        data = (payload.get("body") or {}).get("data")
+        if data:
+            try:
+                return base64.urlsafe_b64decode(data).decode("utf-8", errors="ignore")
+            except Exception:
+                return ""
+    for part in payload.get("parts") or []:
+        result = _walk_parts_plain(part)
+        if result:
+            return result
+    return ""
 
 
 def apply_label_gmail(access_token: str, message_id: str, label: str, mark_read: bool = False):
@@ -362,6 +474,16 @@ def fetch_messages_outlook(
         body_content = (m.get("body") or {}).get("content") or snippet
         conv_id = m.get("conversationId")
 
+        # Fetch prior messages in the conversation for full context
+        thread_history = []
+        if conv_id:
+            try:
+                thread_history = fetch_thread_history_outlook(
+                    new_token or access_token, conv_id, m.get("id", "")
+                )
+            except Exception:
+                pass
+
         messages.append(
             {
                 "subject": subject,
@@ -372,6 +494,7 @@ def fetch_messages_outlook(
                 "provider_thread_id": conv_id,
                 "provider": "outlook",
                 "provider_thread_url": f"https://outlook.office.com/mail/inbox/id/{conv_id}" if conv_id else None,
+                "history": thread_history,
             }
         )
 
