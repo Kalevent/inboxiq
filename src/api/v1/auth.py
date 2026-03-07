@@ -44,14 +44,23 @@ GOOGLE_SCOPES = GOOGLE_SIGNIN_SCOPES
 
 MS_AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
 MS_TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
-MS_SCOPES = [
+
+# Sign-in only — no mail scopes, no admin consent required
+MS_SIGNIN_SCOPES = [
     "openid",
     "offline_access",
     "email",
     "profile",
     "https://graph.microsoft.com/User.Read",
+]
+
+# Inbox connection — mail scopes requested after sign-in
+MS_MAIL_SCOPES = MS_SIGNIN_SCOPES + [
     "https://graph.microsoft.com/Mail.ReadWrite",
 ]
+
+# Backward-compat alias
+MS_SCOPES = MS_SIGNIN_SCOPES
 
 
 def _derive_account_name(email: str) -> str:
@@ -258,8 +267,8 @@ def google_callback():
 
 
 @v1.route("/auth/outlook/start", methods=["GET"])
-@jwt_required(optional=True)
 def outlook_start():
+    """Sign-in / sign-up with Microsoft. Uses only openid/profile/User.Read — no mail scopes."""
     client_id = current_app.config.get("MICROSOFT_CLIENT_ID")
     redirect_uri = current_app.config.get("MICROSOFT_REDIRECT_URI") or url_for(".outlook_callback", _external=True)
     if not client_id or not redirect_uri:
@@ -269,8 +278,30 @@ def outlook_start():
         "client_id": client_id,
         "response_type": "code",
         "redirect_uri": redirect_uri,
-        "scope": " ".join(MS_SCOPES),
+        "scope": " ".join(MS_SIGNIN_SCOPES),
         "response_mode": "query",
+        "state": "signin",
+    }
+    return redirect(f"{MS_AUTH_URL}?{urllib.parse.urlencode(params)}")
+
+
+@v1.route("/auth/outlook/inbox/start", methods=["GET"])
+@jwt_required()
+def outlook_inbox_start():
+    """Connect Outlook inbox for an already-authenticated user. Requests mail scopes."""
+    client_id = current_app.config.get("MICROSOFT_CLIENT_ID")
+    redirect_uri = current_app.config.get("MICROSOFT_REDIRECT_URI") or url_for(".outlook_callback", _external=True)
+    if not client_id or not redirect_uri:
+        return jsonify({"error": "Microsoft OAuth not configured"}), 500
+
+    params = {
+        "client_id": client_id,
+        "response_type": "code",
+        "redirect_uri": redirect_uri,
+        "scope": " ".join(MS_MAIL_SCOPES),
+        "response_mode": "query",
+        "state": "connect_inbox",
+        "prompt": "consent",
     }
     return redirect(f"{MS_AUTH_URL}?{urllib.parse.urlencode(params)}")
 
@@ -287,13 +318,16 @@ def outlook_callback():
     if not client_id or not client_secret:
         return jsonify({"error": "Microsoft OAuth not configured"}), 500
 
+    state = request.args.get("state", "signin")
+    scopes = MS_MAIL_SCOPES if state == "connect_inbox" else MS_SIGNIN_SCOPES
+
     token_data = {
         "client_id": client_id,
         "client_secret": client_secret,
         "code": code,
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code",
-        "scope": " ".join(MS_SCOPES),
+        "scope": " ".join(scopes),
     }
     resp = requests.post(MS_TOKEN_URL, data=token_data, timeout=15)
     if resp.status_code != 200:
@@ -305,21 +339,24 @@ def outlook_callback():
     refresh_token = tok.get("refresh_token")
     user_id = get_jwt_identity()
 
+    if state == "connect_inbox":
+        # Authenticated user connecting their Outlook inbox
+        if not user_id:
+            return redirect(url_for("login_page") + "?error=login_required")
+        try:
+            _store_connection("outlook", email, access_token, refresh_token, user_id)
+        except RuntimeError:
+            pass
+        return redirect("https://outlook.office.com/mail")
+
+    # state == "signin": sign-up or log-in flow — no mail scopes requested
     if not user_id:
-        # Unauthenticated visitor — sign up or log in via Microsoft
         try:
             user, is_new = _find_or_create_user(email, id_claims.get("name"))
         except Exception as exc:
             current_app.logger.error("outlook_callback signup error: %s", exc)
             return redirect(url_for("login_page") + "?error=account_error")
-        try:
-            _store_connection("outlook", email, access_token, refresh_token, user.id)
-        except Exception:
-            pass
         return _issue_social_session(user, is_new)
 
-    try:
-        _store_connection("outlook", email, access_token, refresh_token, user_id)
-    except RuntimeError:
-        return redirect(url_for("login_page", next=url_for("dashboard_home")))
-    return redirect("https://outlook.office.com/mail")
+    # Already logged in — send to onboarding
+    return redirect(url_for("onboarding_page"))

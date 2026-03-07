@@ -1139,7 +1139,7 @@
   refreshTickets();
 
   async function startConnect(provider) {
-    const url = provider === 'gmail' ? '/api/v1/auth/google/inbox/start' : '/api/v1/auth/outlook/start';
+    const url = provider === 'gmail' ? '/api/v1/auth/google/inbox/start' : '/api/v1/auth/outlook/inbox/start';
     connectStatus.textContent = `Connecting to ${provider}...`;
     window.location = url;
   }

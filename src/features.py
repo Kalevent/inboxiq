@@ -38,14 +38,8 @@ def check_draft_reply_access(account_id: int, context: Optional[dict] = None) ->
     """
     Check if an account has access to the draft reply feature.
 
-    Access is granted if:
-    1. Global feature flag DSPY_DRAFT_REPLY_ENABLED is true, AND
-    2. One of the following:
-       - Account has Business or Enterprise plan
-       - Account has active trial
-
-    Note: This checks ELIGIBILITY only, not whether the feature is currently enabled.
-    The AccountFeatureFlags.draft_reply_enabled field stores the user's preference.
+    Draft reply is a core product promise — available to all users.
+    Only the global kill switch (DSPY_DRAFT_REPLY_ENABLED=false) can disable it.
 
     Args:
         account_id: The account ID to check
@@ -66,22 +60,8 @@ def check_draft_reply_access(account_id: int, context: Optional[dict] = None) ->
             if draft_reply_setting is not None:
                 return bool(draft_reply_setting)
 
-    # Check billing plan
-    plan = get_account_plan(account_id)
-    if plan and plan.lower() in {"business", "enterprise"}:
-        return True
-
-    # Check if account is in active trial
-    profile = (
-        CustomerBillingProfile.query
-        .filter_by(account_id=account_id)
-        .first()
-    )
-    if profile and profile.trial_status == "active":
-        return True
-
-    # Default: no access
-    return False
+    # Draft reply is available to all users — no plan gate
+    return True
 
 
 def feature_enabled(feature: str, account_id: int) -> bool:
