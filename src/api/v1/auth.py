@@ -101,7 +101,7 @@ def _issue_social_session(user: User, is_new: bool):
     _whitelist_refresh(refresh)
     log_audit("auth.social_login", resource_type="user", resource_id=str(user.id),
               account_id=user.account_id, user_id=user.id)
-    dest = url_for("onboarding_page") if is_new else url_for("dashboard_home")
+    dest = url_for("onboarding_page")
     response = redirect(dest)
     set_access_cookies(response, token)
     set_refresh_cookies(response, refresh)
@@ -253,8 +253,8 @@ def google_callback():
             return redirect(url_for("login_page") + "?error=account_error")
         return _issue_social_session(user, is_new)
 
-    # Already logged in and hit /auth/google/start again — just redirect home
-    return redirect(url_for("dashboard_home"))
+    # Already logged in and hit /auth/google/start again — send to onboarding
+    return redirect(url_for("onboarding_page"))
 
 
 @v1.route("/auth/outlook/start", methods=["GET"])

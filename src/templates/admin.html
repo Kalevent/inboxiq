@@ -371,6 +371,68 @@
       } catch (err) { console.error('Delete spend failed:', err); }
     }
 
+    // ── Trial Onboarding Metrics ────────────────────────────────────────────
+    async function loadTrialMetrics() {
+      try {
+        const data = await fetchJSON('/api/v1/admin/trial/metrics');
+        const s = data.summary || {};
+
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+        set('totalActiveTrials', s.total_active_trials ?? '--');
+        set('convertedUsers', s.converted ?? '--');
+        set('conversionRate', (s.conversion_rate != null ? s.conversion_rate + '%' : '--%'));
+        set('endingSoon', s.ending_soon ?? '--');
+        set('day7Eligible', s.day_7_eligible ?? '--');
+        set('day1Count', s.day_1_eligible ?? '--');
+        set('day3Count', s.day_3_eligible ?? '--');
+        set('day5Count', s.day_5_eligible ?? '--');
+        set('day7Count', s.day_7_eligible ?? '--');
+
+        // Distribution
+        const distEl = document.getElementById('trialDistribution');
+        if (distEl) {
+          const dist = data.distribution || {};
+          const buckets = ['0-2 days', '3-4 days', '5-7 days', '8+ days'];
+          if (Object.keys(dist).length === 0) {
+            distEl.innerHTML = '<div class="col-span-4 text-center text-slate-400 text-sm">No active trial users</div>';
+          } else {
+            distEl.innerHTML = buckets.map(b => `
+              <div class="text-center">
+                <div class="text-xs text-slate-400 uppercase tracking-wide mb-1">${b}</div>
+                <div class="text-xl font-semibold text-indigo-400">${dist[b] ?? 0}</div>
+              </div>`).join('');
+          }
+        }
+
+        // Users table
+        const tbody = document.getElementById('trialUsersTable');
+        if (tbody) {
+          const users = data.users || [];
+          if (!users.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400">No active trial users</td></tr>';
+          } else {
+            const statusBadge = s => s === 'ending_soon'
+              ? '<span class="px-2 py-0.5 rounded-full text-xs bg-amber-500/15 text-amber-300 border border-amber-400/30">Ending soon</span>'
+              : '<span class="px-2 py-0.5 rounded-full text-xs bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">Active</span>';
+            tbody.innerHTML = users.map(u => `
+              <tr class="border-b border-slate-800/60 hover:bg-slate-800/30">
+                <td class="py-2 px-2 text-slate-300 text-xs">${u.email}</td>
+                <td class="py-2 px-2 text-slate-400 text-xs">${u.account_name}</td>
+                <td class="py-2 px-2 text-slate-300 text-center">${u.days_since_signup}</td>
+                <td class="py-2 px-2 text-slate-300 text-center">${u.trial_days_remaining}</td>
+                <td class="py-2 px-2 text-slate-400 text-xs">${(u.expected_emails || []).join(', ') || '—'}</td>
+                <td class="py-2 px-2">${statusBadge(u.trial_status)}</td>
+              </tr>`).join('');
+          }
+        }
+      } catch (err) {
+        console.error('loadTrialMetrics error:', err);
+        const tbody = document.getElementById('trialUsersTable');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-400">Failed to load: ${err.message}</td></tr>`;
+      }
+    }
+
     // Add event listeners
     document.getElementById('refreshTrialBtn')?.addEventListener('click', loadTrialMetrics);
 
