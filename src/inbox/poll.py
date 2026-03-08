@@ -318,6 +318,148 @@ def apply_label_outlook(access_token: str, message_id: str, category: str, mark_
     return True
 
 
+def fetch_gmail_labels(access_token: str) -> list[dict]:
+    """
+    Return all user-created Gmail labels as a list of {id, name} dicts.
+    System labels (INBOX, SENT, TRASH, SPAM, CATEGORY_*, IMPORTANT, etc.)
+    are excluded — we only want labels Oliver created himself.
+    """
+    resp = requests.get(
+        "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=8,
+    )
+    if resp.status_code != 200:
+        return []
+    return [
+        {"id": lbl["id"], "name": lbl["name"]}
+        for lbl in resp.json().get("labels", [])
+        if lbl.get("type") == "user"
+    ]
+
+
+# Canonical InboxIQ labels — created in every user's inbox on first connection.
+# These are the labels Oliver sees immediately in his Gmail sidebar / Outlook category list,
+# confirming InboxIQ is active. Per the pipeline doc, these are system-managed and fixed;
+# users can remap display names via MailboxSyncPreference but cannot remove them.
+INBOXIQ_CANONICAL_LABELS: list[str] = [
+    "InboxIQ · Support",
+    "InboxIQ · Billing · P1",
+    "InboxIQ · Transactions",
+    "InboxIQ · Updates",
+    "InboxIQ · Promotions",
+]
+
+# Outlook colour presets aligned to each canonical label (Graph API colour names)
+_OUTLOOK_LABEL_COLOURS: dict[str, str] = {
+    "InboxIQ · Support":       "red",
+    "InboxIQ · Billing · P1":  "orange",
+    "InboxIQ · Transactions":  "green",
+    "InboxIQ · Updates":       "blue",
+    "InboxIQ · Promotions":    "purple",
+}
+
+
+def bootstrap_inboxiq_labels_gmail(access_token: str) -> dict[str, str]:
+    """
+    Ensure all InboxIQ canonical labels exist in Gmail.
+    Creates any that are missing; skips ones that already exist.
+    Returns {label_name: label_id} for all canonical labels.
+    """
+    # Fetch the full label list once — avoid one API call per label
+    resp = requests.get(
+        "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=8,
+    )
+    existing: dict[str, str] = {}
+    if resp.status_code == 200:
+        existing = {
+            lbl["name"].lower(): lbl["id"]
+            for lbl in resp.json().get("labels", [])
+        }
+
+    result: dict[str, str] = {}
+    for label_name in INBOXIQ_CANONICAL_LABELS:
+        key = label_name.lower()
+        if key in existing:
+            result[label_name] = existing[key]
+        else:
+            try:
+                cr = requests.post(
+                    "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+                    headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+                    json={"name": label_name, "labelListVisibility": "labelShow", "messageListVisibility": "show"},
+                    timeout=8,
+                )
+                if cr.status_code in (200, 201):
+                    result[label_name] = cr.json()["id"]
+            except Exception:
+                pass  # Best-effort; missing labels get created at writeback time
+
+    return result
+
+
+def bootstrap_inboxiq_labels_outlook(access_token: str) -> dict[str, str]:
+    """
+    Ensure all InboxIQ canonical categories exist in Outlook.
+    Creates any that are missing; skips ones that already exist.
+    Returns {label_name: category_id} for all canonical categories.
+    """
+    resp = requests.get(
+        "https://graph.microsoft.com/v1.0/me/outlook/masterCategories",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=8,
+    )
+    existing: dict[str, str] = {}
+    if resp.status_code == 200:
+        existing = {
+            cat["displayName"].lower(): cat["id"]
+            for cat in resp.json().get("value", [])
+        }
+
+    result: dict[str, str] = {}
+    for label_name in INBOXIQ_CANONICAL_LABELS:
+        key = label_name.lower()
+        if key in existing:
+            result[label_name] = existing[key]
+        else:
+            try:
+                colour = _OUTLOOK_LABEL_COLOURS.get(label_name, "none")
+                cr = requests.post(
+                    "https://graph.microsoft.com/v1.0/me/outlook/masterCategories",
+                    headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+                    json={"displayName": label_name, "color": colour},
+                    timeout=8,
+                )
+                if cr.status_code in (200, 201):
+                    result[label_name] = cr.json()["id"]
+            except Exception:
+                pass
+
+    return result
+
+
+def fetch_outlook_categories(access_token: str) -> list[dict]:
+    """
+    Return all user-created Outlook categories as a list of {id, name} dicts.
+    Uses the Graph API masterCategories endpoint — these are the categories
+    the user has defined in Outlook, equivalent to Gmail labels.
+    """
+    resp = requests.get(
+        "https://graph.microsoft.com/v1.0/me/outlook/masterCategories",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=8,
+    )
+    if resp.status_code != 200:
+        return []
+    return [
+        {"id": cat["id"], "name": cat["displayName"]}
+        for cat in resp.json().get("value", [])
+        if cat.get("displayName")
+    ]
+
+
 def ensure_gmail_label(access_token: str, label_name: str) -> str:
     """
     Return the Gmail label ID for label_name, creating it if it doesn't exist.

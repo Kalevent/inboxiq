@@ -13,7 +13,11 @@ from src.models.core import InboxConnection, AccountLLMConfig, ALLOWED_LLM_PROVI
 from src.models.misc import Feedback
 from src.models.tickets import Ticket, DraftReplyFeedback
 from src.inbox.logic import normalize_email_payload, run_dspy_decision, sample_messages, compute_due_at
-from src.inbox.poll import fetch_messages_gmail, fetch_messages_outlook
+from src.inbox.poll import (
+    fetch_messages_gmail, fetch_messages_outlook,
+    fetch_gmail_labels, fetch_outlook_categories,
+    bootstrap_inboxiq_labels_gmail, bootstrap_inboxiq_labels_outlook,
+)
 
 BODY_PREVIEW_LIMIT = 240
 
@@ -1114,6 +1118,36 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             )
             if new_token:
                 conn.access_token = new_token
+
+            # Label bootstrap + sync — best-effort, never blocks the poll.
+            # On first poll (no labels_synced_at): create InboxIQ canonical labels AND sync user labels.
+            # On subsequent polls (hourly): sync user labels only.
+            try:
+                meta = conn.metadata_json or {}
+                last_sync = meta.get("labels_synced_at")
+                _one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+                if not last_sync or last_sync < _one_hour_ago:
+                    from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
+
+                    # First poll: bootstrap InboxIQ canonical labels so Oliver sees them immediately
+                    if not last_sync:
+                        canonical_ids = bootstrap_inboxiq_labels_gmail(conn.access_token)
+                        meta["label_ids"] = {**meta.get("label_ids", {}), **canonical_ids}
+
+                    # Every sync: merge user-created labels into triage categories
+                    gmail_labels = fetch_gmail_labels(conn.access_token)
+                    if gmail_labels:
+                        _sync_labels(conn.account_id, gmail_labels)
+                        meta["label_ids"] = {
+                            **meta.get("label_ids", {}),
+                            **{lbl["name"]: lbl["id"] for lbl in gmail_labels},
+                        }
+
+                    meta["labels_synced_at"] = datetime.now(timezone.utc).isoformat()
+                    conn.metadata_json = meta
+                    db.session.commit()
+            except Exception as _lbl_exc:
+                current_app.logger.warning("gmail label sync failed: %s", _lbl_exc)
         elif conn.provider == "outlook" and conn.access_token:
             messages, new_token = fetch_messages_outlook(
                 access_token=conn.access_token,
@@ -1125,6 +1159,32 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             )
             if new_token:
                 conn.access_token = new_token
+
+            # Label bootstrap + sync — same pattern as Gmail.
+            try:
+                meta = conn.metadata_json or {}
+                last_sync = meta.get("labels_synced_at")
+                _one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+                if not last_sync or last_sync < _one_hour_ago:
+                    from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
+
+                    if not last_sync:
+                        canonical_ids = bootstrap_inboxiq_labels_outlook(conn.access_token)
+                        meta["label_ids"] = {**meta.get("label_ids", {}), **canonical_ids}
+
+                    outlook_cats = fetch_outlook_categories(conn.access_token)
+                    if outlook_cats:
+                        _sync_labels(conn.account_id, outlook_cats)
+                        meta["label_ids"] = {
+                            **meta.get("label_ids", {}),
+                            **{cat["name"]: cat["id"] for cat in outlook_cats},
+                        }
+
+                    meta["labels_synced_at"] = datetime.now(timezone.utc).isoformat()
+                    conn.metadata_json = meta
+                        db.session.commit()
+            except Exception as _lbl_exc:
+                current_app.logger.warning("outlook category sync failed: %s", _lbl_exc)
         else:
             messages = _fetch_messages_stub(conn)
     except Exception as exc:

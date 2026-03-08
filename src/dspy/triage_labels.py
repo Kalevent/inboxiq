@@ -96,6 +96,49 @@ def get_triage_labels(account_id: int | None) -> Dict[str, Any]:
     return _load_env_labels()
 
 
+def sync_labels_from_gmail(account_id: int, gmail_labels: list[dict]) -> None:
+    """
+    Merge the user's own Gmail labels into their InboxIQ triage categories.
+
+    Called after each poll so that any label Oliver creates in Gmail automatically
+    becomes available as a triage category — no settings UI needed.
+
+    Normalisation: "My Label" → "my_label" for DSPy; the original name is stored
+    in InboxConnection.metadata_json["synced_label_names"] so writeback can apply
+    the exact Gmail label.
+
+    Skips if there are no user-created labels or fewer than 2 (avoids noise from
+    accounts that only have Gmail's built-in system labels).
+    """
+    if not account_id or not gmail_labels:
+        return
+
+    # Normalise to DSPy-safe category names (lowercase, spaces → underscores)
+    def _normalise(name: str) -> str:
+        return name.strip().lower().replace(" ", "_").replace("-", "_")
+
+    new_categories = [_normalise(lbl["name"]) for lbl in gmail_labels if lbl.get("name")]
+
+    if len(new_categories) < 2:
+        return
+
+    current = get_triage_labels(account_id)
+    existing_categories = list(current.get("categories") or [])
+
+    # Merge: add any new ones, preserve existing order and defaults
+    merged = list(existing_categories)
+    for cat in new_categories:
+        if cat not in merged:
+            merged.append(cat)
+
+    if merged == existing_categories:
+        return  # Nothing changed — skip the write
+
+    updated = dict(current)
+    updated["categories"] = merged
+    save_triage_labels(account_id, updated)
+
+
 def save_triage_labels(account_id: int | None, labels: Dict[str, Any], name: str = "default") -> Dict[str, Any]:
     # Validate that all labels are single words (no spaces) to avoid confusion
     for key, values in labels.items():
