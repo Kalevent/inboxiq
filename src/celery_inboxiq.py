@@ -30,6 +30,7 @@ _log = logging.getLogger(__name__)
 _NON_ACTIONABLE_EMAIL_TYPES = {
     "spam", "marketing", "newsletter", "transactional",
     "auto_reply", "out_of_office", "promotional", "notification",
+    "updates", "promotions", "social", "forums",
 }
 
 
@@ -564,6 +565,16 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         merged["ai_reason"] = f"Auto-handled: {pre_filter_reason}"
         merged["decision_trace"] = merged.get("decision_trace", []) + [f"pre_filter:{pre_filter_type}"]
         merged["decision_outcome"] = "auto_handled"
+        # Map pre_filter_type → InboxIQ category so the writeback applies the right label
+        _PRE_FILTER_CATEGORY_MAP = {
+            "social":        "social",
+            "forums":        "forums",
+            "updates":       "updates",
+            "promotions":    "promotions",
+            "transactional": "transactions",
+        }
+        if pre_filter_type in _PRE_FILTER_CATEGORY_MAP:
+            merged["category"] = _PRE_FILTER_CATEGORY_MAP[pre_filter_type]
 
     # Extract final values from merged decision
     category = merged.get("category") or decision.category

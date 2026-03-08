@@ -125,13 +125,13 @@ def should_skip_triage(payload: Dict[str, Any]) -> tuple[bool, str | None, str |
     #
     # Labels that mean "skip triage, auto-handle":
     _GMAIL_SKIP_CATEGORIES = {
-        "CATEGORY_UPDATES":    ("newsletter",     "Gmail categorised as Updates"),
-        "CATEGORY_PROMOTIONS": ("marketing",      "Gmail categorised as Promotions"),
-        "CATEGORY_SOCIAL":     ("notification",   "Gmail categorised as Social"),
-        "CATEGORY_FORUMS":     ("newsletter",     "Gmail categorised as Forums"),
-        # CATEGORY_PURCHASES = Gmail confirmed this is an order/receipt/shipping email.
-        # Map to 'transactional' — no draft reply needed, auto-handle.
-        "CATEGORY_PURCHASES":  ("transactional",  "Gmail categorised as Purchases/Transactions"),
+        # pre_filter_type matches the InboxIQ category so _writeback_to_provider
+        # applies the right canonical label (e.g. "social" → InboxIQ/Social).
+        "CATEGORY_UPDATES":    ("updates",       "Gmail categorised as Updates"),
+        "CATEGORY_PROMOTIONS": ("promotions",    "Gmail categorised as Promotions"),
+        "CATEGORY_SOCIAL":     ("social",        "Gmail categorised as Social"),
+        "CATEGORY_FORUMS":     ("forums",        "Gmail categorised as Forums"),
+        "CATEGORY_PURCHASES":  ("transactional", "Gmail categorised as Purchases/Transactions"),
     }
     provider_label_ids: list = payload.get("provider_label_ids") or []
     for label_id, (email_type, reason) in _GMAIL_SKIP_CATEGORIES.items():

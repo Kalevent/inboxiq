@@ -347,6 +347,8 @@ INBOXIQ_CANONICAL_LABELS: list[str] = [
     "InboxIQ/Transactions",
     "InboxIQ/Updates",
     "InboxIQ/Promotions",
+    "InboxIQ/Social",
+    "InboxIQ/Forums",
 ]
 
 # Explicitly deprecated label names — always deleted during bootstrap regardless of version.
@@ -368,6 +370,8 @@ _GMAIL_LABEL_COLOURS: dict[str, dict] = {
     "InboxIQ/Transactions": {"backgroundColor": "#16a766", "textColor": "#ffffff"},  # green
     "InboxIQ/Updates":      {"backgroundColor": "#ffad47", "textColor": "#ffffff"},  # amber
     "InboxIQ/Promotions":   {"backgroundColor": "#a479e2", "textColor": "#ffffff"},  # purple
+    "InboxIQ/Social":       {"backgroundColor": "#6d9eeb", "textColor": "#ffffff"},  # light blue — mirrors Gmail's Social tab
+    "InboxIQ/Forums":       {"backgroundColor": "#f691b3", "textColor": "#ffffff"},  # pink — mirrors Gmail's Forums tab
 }
 
 # Outlook colour presets (Graph API colour names)
@@ -377,6 +381,8 @@ _OUTLOOK_LABEL_COLOURS: dict[str, str] = {
     "InboxIQ/Transactions": "green",
     "InboxIQ/Updates":      "orange",
     "InboxIQ/Promotions":   "purple",
+    "InboxIQ/Social":       "teal",
+    "InboxIQ/Forums":       "cranberry",
 }
 
 
