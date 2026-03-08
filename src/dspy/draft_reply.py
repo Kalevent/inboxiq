@@ -25,7 +25,8 @@ def draft_reply_enabled(context: Dict[str, Any] | None, account_id: int | None =
     """
     Check if draft reply generation is enabled for this request.
 
-    Uses centralized features.check_draft_reply_access for consistency.
+    Draft reply is a core promise — on for all accounts from day one.
+    Only the global kill switch (DSPY_DRAFT_REPLY_ENABLED=false) can disable it.
 
     Args:
         context: Request context dict with features/plan info
@@ -34,29 +35,15 @@ def draft_reply_enabled(context: Dict[str, Any] | None, account_id: int | None =
     Returns:
         True if draft reply should be generated
     """
-    if not _env_bool("DSPY_DRAFT_REPLY_ENABLED", False):
-        return False
+    if account_id:
+        try:
+            from src.features import check_draft_reply_access
+            return check_draft_reply_access(account_id, context)
+        except Exception as exc:
+            logger.warning("Failed to check draft_reply access: %s", exc)
 
-    if not account_id:
-        # Fallback to legacy context-based check if no account_id
-        if not context:
-            return False
-        features = context.get("features") if isinstance(context, dict) else None
-        if isinstance(features, dict):
-            if features.get("draft_reply") is True:
-                return True
-            if features.get("draft_reply") is False:
-                return False
-        plan = str(context.get("plan") or "").lower() if isinstance(context, dict) else ""
-        return plan in {"business", "enterprise"}
-
-    # Use centralized feature access control
-    try:
-        from src.features import check_draft_reply_access
-        return check_draft_reply_access(account_id, context)
-    except Exception as exc:
-        logger.warning("Failed to check draft_reply access: %s", exc)
-        return False
+    # No account_id — check kill switch only, default enabled
+    return _env_bool("DSPY_DRAFT_REPLY_ENABLED", True)
 
 
 def fetch_kb_context(

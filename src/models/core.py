@@ -159,3 +159,44 @@ class AccountLLMConfig(db.Model):
         }
 
 
+class MailboxSyncPreference(db.Model):
+    """
+    Per-account mapping from InboxIQ canonical categories to the label/folder
+    names the user wants to see in Gmail or Outlook.  Defaults are applied
+    automatically; Oliver can rename them from Settings → Categories.
+
+    Example: canonical_category="Transactions", provider="gmail",
+             provider_label="Receipts"  → Gmail label becomes "InboxIQ · Receipts"
+    """
+    __tablename__ = "mailbox_sync_preferences"
+    __table_args__ = (
+        db.UniqueConstraint(
+            "account_id", "provider", "canonical_category",
+            name="uq_mailbox_sync_pref",
+        ),
+        db.Index("ix_mailbox_sync_pref_account", "account_id"),
+    )
+
+    id                 = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    account_id         = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    provider           = db.Column(db.String(32), nullable=False)   # gmail | outlook
+    canonical_category = db.Column(db.String(64), nullable=False)
+    provider_label     = db.Column(db.String(128), nullable=False)
+    enabled            = db.Column(db.Boolean, nullable=False, default=True)
+    created_at         = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at         = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "provider": self.provider,
+            "canonical_category": self.canonical_category,
+            "provider_label": self.provider_label,
+            "enabled": self.enabled,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+

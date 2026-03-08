@@ -78,6 +78,11 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
     class ExtractEntitiesSig(dspy.Signature):
         """Extract entities and classify email type. Identify spam, marketing, newsletters, and auto-replies for auto-handling."""
         case_json = dspy.InputField(desc="JSON of normalized case payload.")
+        sender_hint = dspy.InputField(
+            desc="Optional prior classification for this sender's domain, e.g. "
+                 "'Transactions (confidence: 0.72, sample_size: 8)'. "
+                 "Use as a starting point — confirm or override based on the actual email content."
+        )
         entities_json = dspy.OutputField(
             desc=f"JSON with: intent, sentiment, urgency, identifiers, missing_info, "
                  f"email_type ({label_desc(label_config, 'email_types', 'type of email')}), "
@@ -124,8 +129,8 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
             self.escalate = dspy.Predict(EscalationDecisionSig)
             self.draft = dspy.ChainOfThought(DraftReplySig)
 
-        def forward(self, case_json: str, draft_enabled: bool = False, kb_context: str = "[]") -> Any:
-            entities_json = self.extract(case_json=case_json).entities_json
+        def forward(self, case_json: str, draft_enabled: bool = False, kb_context: str = "[]", sender_hint: str = "") -> Any:
+            entities_json = self.extract(case_json=case_json, sender_hint=sender_hint).entities_json
             route_json = self.route(case_json=case_json, entities_json=entities_json).route_json
             workflow_json = self.select(
                 case_json=case_json, entities_json=entities_json, route_json=route_json

@@ -1002,6 +1002,93 @@ def _fetch_messages_stub(conn: InboxConnection, limit: int = 5):
     return out
 
 
+def _detect_label_correction(ticket, raw_email: dict, account_id: int | None) -> None:
+    """
+    Phase 2 — passive feedback loop.
+
+    When Oliver moves an email to a different Gmail label (e.g. from
+    "InboxIQ · Support · P2" to "InboxIQ · Transactions · P3"), the next
+    poll detects the mismatch and records a ClassificationCorrection.  This
+    feeds SenderProfile confidence updates so future emails from the same
+    domain are classified correctly without DSPy.
+
+    Only fires for Gmail (labelIds are included in the fetch payload).
+    Outlook correction detection is a future enhancement.
+    """
+    if not account_id:
+        return
+
+    # We only have label IDs for Gmail
+    provider_label_ids: list = raw_email.get("provider_label_ids") or []
+    if not provider_label_ids:
+        return
+
+    # Reconstruct the InboxIQ label name we applied to this ticket
+    inboxiq_applied_category = (ticket.category or "").strip().lower()
+    if not inboxiq_applied_category:
+        return
+
+    # Look up label_id→name mapping stored in conn.metadata_json
+    from src.models.core import InboxConnection
+    conn = InboxConnection.query.filter_by(
+        account_id=account_id, provider="gmail", status="connected"
+    ).first()
+    if not conn:
+        return
+
+    label_id_to_name: dict = {}
+    meta = conn.metadata_json or {}
+    for name, lid in (meta.get("label_ids") or {}).items():
+        label_id_to_name[lid] = name
+
+    # Find which InboxIQ labels are currently on the message
+    current_inboxiq_categories: list[str] = []
+    for lid in provider_label_ids:
+        name = label_id_to_name.get(lid, "")
+        if name.lower().startswith("inboxiq ·"):
+            # Format: "InboxIQ · Category · Priority"  or "InboxIQ · Category"
+            parts = [p.strip() for p in name.split("·")]
+            if len(parts) >= 2:
+                current_inboxiq_categories.append(parts[1].lower())
+
+    if not current_inboxiq_categories:
+        return  # No InboxIQ label on message — nothing to compare
+
+    # If none of the current InboxIQ labels match the applied category, it's a correction
+    if inboxiq_applied_category not in current_inboxiq_categories:
+        corrected_category = current_inboxiq_categories[0]
+        try:
+            from src.models.tickets import ClassificationCorrection
+            from src.inbox.sender_profile import upsert_sender_profile, _extract_domain
+            from src.extensions import db
+
+            correction = ClassificationCorrection(
+                account_id=account_id,
+                ticket_id=ticket.id,
+                sender_domain=_extract_domain(ticket.from_email) or ticket.from_email,
+                original_category=inboxiq_applied_category,
+                corrected_category=corrected_category,
+                signal_source="label_move",
+            )
+            db.session.add(correction)
+
+            # Upsert SenderProfile with the corrected category (user_verified=True
+            # because this is an explicit inbox action from Oliver)
+            upsert_sender_profile(
+                from_email=ticket.from_email,
+                category=corrected_category,
+                account_id=account_id,
+                user_verified=True,
+            )
+            db.session.commit()
+
+        except Exception as exc:
+            db.session.rollback()
+            current_app.logger.warning(
+                "ClassificationCorrection failed: ticket=%s error=%s", ticket.id, exc
+            )
+
+
 def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
     """
     Core poll logic that can be called from a Flask route, Celery task,
@@ -1099,6 +1186,9 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
         ).first()
         if existing:
             duplicates += 1
+            # Phase 2 — ClassificationCorrection: detect if Oliver moved the email
+            # to a label that differs from what InboxIQ applied.
+            _detect_label_correction(existing, raw_email, conn.account_id)
             continue
         try:
             task = _celery_client().send_task(

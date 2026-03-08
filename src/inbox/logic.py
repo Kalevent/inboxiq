@@ -210,7 +210,8 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
         if extra_context:
             dspy_context["payload_context"] = extra_context
 
-        dspy_result = run_dspy_triage(normalized, context=dspy_context or None, labels=label_config, account_id=account_id)
+        sender_hint = normalized.get("sender_hint") or ""
+        dspy_result = run_dspy_triage(normalized, context=dspy_context or None, labels=label_config, account_id=account_id, sender_hint=sender_hint)
 
         category = _normalize_choice(dspy_result.get("category"), categories, (categories[0] if categories else "general"))
         priority = _normalize_priority(dspy_result.get("priority"), priorities)

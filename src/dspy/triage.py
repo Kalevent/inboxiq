@@ -107,6 +107,7 @@ def run_dspy_triage(
     context: Dict[str, Any] | None = None,
     labels: Dict[str, Any] | None = None,
     account_id: int | None = None,
+    sender_hint: str = "",
 ) -> Dict[str, Any]:
     """
     Run DSPy triage with multi-layered decision logic.
@@ -139,7 +140,7 @@ def run_dspy_triage(
         safe_span_attribute(span, "payload.subject_length", len(payload.get("subject", "")))
         safe_span_attribute(span, "payload.body_length", len(payload.get("body", "")))
 
-        return _run_dspy_triage_impl(span, payload, context, labels, account_id)
+        return _run_dspy_triage_impl(span, payload, context, labels, account_id, sender_hint)
 
 
 def _run_dspy_triage_impl(
@@ -148,6 +149,7 @@ def _run_dspy_triage_impl(
     context: Dict[str, Any] | None,
     labels: Dict[str, Any] | None,
     account_id: int | None,
+    sender_hint: str = "",
 ) -> Dict[str, Any]:
     """Internal implementation of run_dspy_triage with span context."""
     model, model_id, dspy = configure_dspy()
@@ -198,7 +200,7 @@ def _run_dspy_triage_impl(
 
     # Run DSPy decision program
     try:
-        result = module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json)
+        result = module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json, sender_hint=sender_hint)
     except Exception as exc:
         logger.warning("DSPy decision program failed, falling back to compiled triage: %s", exc)
         # Use compiled TriageModule if available (takes content= not case_json=),

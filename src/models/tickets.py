@@ -323,5 +323,90 @@ class TriageConfig(db.Model):
         }
 
 
+# ── Native Inbox Intelligence ────────────────────────────────────────────────
+
+class SenderProfile(db.Model):
+    """
+    Domain-level classification cache that improves over time from the account's
+    own inbox behaviour.  account_id=NULL means a global/shared profile that all
+    new accounts inherit on day one, giving instant warmup with no prior emails.
+
+    Confidence thresholds (see native_inbox_intelligence_pipeline.md):
+      ≥ 0.85  → bypass DSPy entirely, apply category instantly
+      0.5–0.85 → run DSPy with sender_hint input field
+      < 0.5 / unknown → full DSPy pipeline, no prior
+    """
+    __tablename__ = "sender_profiles"
+    __table_args__ = (
+        db.UniqueConstraint("account_id", "domain", name="uq_sender_profile_account_domain"),
+        db.Index("ix_sender_profiles_domain", "domain"),
+    )
+
+    id            = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    account_id    = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=True)  # NULL = global
+    domain        = db.Column(db.String(255), nullable=False)
+    category      = db.Column(db.String(64), nullable=False)
+    confidence    = db.Column(db.Float, nullable=False, default=0.5)
+    sample_size   = db.Column(db.Integer, nullable=False, default=0)
+    user_verified = db.Column(db.Boolean, nullable=False, default=False)  # True on explicit user correction
+    last_seen_at  = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at    = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at    = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "domain": self.domain,
+            "category": self.category,
+            "confidence": self.confidence,
+            "sample_size": self.sample_size,
+            "user_verified": self.user_verified,
+            "last_seen_at": self.last_seen_at.isoformat() if self.last_seen_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class ClassificationCorrection(db.Model):
+    """
+    Passive feedback captured when Oliver moves an email between labels in Gmail
+    or Outlook — no action required from him beyond normal inbox behaviour.
+
+    On each poll we compare the current provider label set against InboxIQ's
+    last-applied label. A mismatch creates a ClassificationCorrection and
+    upserts the SenderProfile so future emails from the same domain are
+    classified correctly.
+
+    signal_source values: label_move | manual_edit | draft_deleted | spam_flag
+    """
+    __tablename__ = "classification_corrections"
+    __table_args__ = (
+        db.Index("ix_classification_corrections_account", "account_id"),
+        db.Index("ix_classification_corrections_domain", "sender_domain"),
+    )
+
+    id                 = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
+    account_id         = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    ticket_id          = db.Column(db.String(64), db.ForeignKey("inboxiq_tickets.id"), nullable=True)
+    sender_domain      = db.Column(db.String(255), nullable=False)
+    original_category  = db.Column(db.String(64), nullable=True)
+    corrected_category = db.Column(db.String(64), nullable=False)
+    signal_source      = db.Column(db.String(32), nullable=False)
+    created_at         = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "ticket_id": self.ticket_id,
+            "sender_domain": self.sender_domain,
+            "original_category": self.original_category,
+            "corrected_category": self.corrected_category,
+            "signal_source": self.signal_source,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 # Funnel v2.0 Models
 

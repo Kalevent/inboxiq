@@ -154,6 +154,8 @@ def fetch_messages_gmail(
                 "provider": "gmail",
                 "provider_thread_url": f"https://mail.google.com/mail/u/0/#inbox/{thread_id}" if thread_id else None,
                 "history": thread_history,
+                # Label IDs currently on the message — used for ClassificationCorrection detection
+                "provider_label_ids": payload.get("labelIds") or [],
             }
         )
 

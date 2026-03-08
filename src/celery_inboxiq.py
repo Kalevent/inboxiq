@@ -25,6 +25,32 @@ DEFAULT_BODY_PREVIEW_LIMIT = 240
 _log = logging.getLogger(__name__)
 
 
+# Email types that are non-actionable — no draft reply should ever be created for these.
+# These are senders that don't expect a reply (newsletters, noreply, spam, auto-replies).
+_NON_ACTIONABLE_EMAIL_TYPES = {
+    "spam", "marketing", "newsletter", "transactional",
+    "auto_reply", "out_of_office", "promotional", "notification",
+}
+
+
+def _should_draft(
+    reply_text: str | None,
+    email_type: str | None,
+    is_automated: bool,
+) -> bool:
+    """
+    Return True only when a draft reply makes sense — i.e. the email is a real
+    human message that deserves a response, not a newsletter, noreply, or spam.
+    """
+    if not reply_text:
+        return False
+    if is_automated:
+        return False
+    if (email_type or "").lower() in _NON_ACTIONABLE_EMAIL_TYPES:
+        return False
+    return True
+
+
 def _writeback_to_provider(
     provider: str | None,
     provider_message_id: str | None,
@@ -36,6 +62,8 @@ def _writeback_to_provider(
     reply_text: str | None,
     from_email: str,
     subject: str,
+    email_type: str | None = None,
+    is_automated: bool = False,
 ) -> None:
     """
     Write triage results back into the user's inbox so the value is visible
@@ -43,6 +71,9 @@ def _writeback_to_provider(
       - Gmail: applies a label (e.g. "InboxIQ · Billing · P1") to the original message
                and, if a draft reply exists, creates it collapsed in the thread
       - Outlook: applies a category and creates a draft reply via Graph API
+
+    Draft replies are only created for real human emails (Primary inbox).
+    Newsletters, noreply, spam, auto-replies, and promotional emails never get a draft.
 
     This is intentionally best-effort — failures are logged and swallowed so
     they never block ticket creation.
@@ -65,6 +96,7 @@ def _writeback_to_provider(
 
     token = conn.access_token
     label_name = f"InboxIQ · {category.title()} · {priority}"
+    draft_needed = _should_draft(reply_text, email_type, is_automated)
 
     try:
         if provider == "gmail":
@@ -79,7 +111,7 @@ def _writeback_to_provider(
 
             apply_label_gmail(token, provider_message_id, label_id)
 
-            if reply_text and action_required in (True, "optional") and provider_thread_id:
+            if draft_needed and provider_thread_id:
                 create_gmail_draft_reply(
                     token, provider_thread_id, from_email, subject, reply_text
                 )
@@ -87,7 +119,7 @@ def _writeback_to_provider(
         elif provider == "outlook":
             apply_label_outlook(token, provider_message_id, label_name)
 
-            if reply_text and action_required in (True, "optional"):
+            if draft_needed:
                 create_outlook_draft_reply(token, provider_message_id, reply_text)
 
     except Exception as exc:
@@ -467,11 +499,22 @@ def process_incoming_email_task(self, payload: dict) -> dict:
             safe_span_attribute(span, "email.pre_filter_type", pre_filter_type)
             safe_span_attribute(span, "email.pre_filter_reason", pre_filter_reason)
 
+        # Layer 2 — SenderProfile lookup (confidence-gradient routing)
+        # Inject sender_hint or bypass DSPy entirely if domain is well-known.
+        from src.inbox.sender_profile import get_sender_hint
+        _sender_hint, _sender_confidence, _bypass_dspy = get_sender_hint(
+            normalized.get("from_email", ""), account_id
+        )
+        if _sender_hint:
+            normalized["sender_hint"] = _sender_hint
+        span.set_attribute("sender_profile.confidence", _sender_confidence)
+        span.set_attribute("sender_profile.bypass", _bypass_dspy)
+
     agent_result = None
     agent_decision = None
 
-    # Only run agent pipeline if not skipping triage
-    if not skip_triage:
+    # Only run agent pipeline if not skipping triage and not bypassing via SenderProfile
+    if not skip_triage and not _bypass_dspy:
         try:
             agent_result = process_email_with_agents(normalized)
             if agent_result:
@@ -485,8 +528,23 @@ def process_incoming_email_task(self, payload: dict) -> dict:
             logging.getLogger(__name__).warning("agent pipeline failed; continuing without agents: %s", exc)
             agent_result = None
 
-    # Run DSPy triage (will also apply heuristics internally)
-    decision = run_dspy_decision(normalized, account_id=account_id)
+    # Run DSPy triage (will also apply heuristics internally).
+    # Skipped entirely when SenderProfile confidence >= 0.85 (bypass path).
+    if _bypass_dspy:
+        # High-confidence domain — synthesise a minimal decision from the profile
+        # so the rest of the pipeline (ticket creation, writeback) works unchanged.
+        from src.inbox.logic import TriageDecision
+        decision = TriageDecision(
+            category=_sender_hint,  # _sender_hint == category string on bypass
+            priority="P3",
+            sentiment="neutral",
+            entities={},
+            confidence={"category": _sender_confidence},
+            action_required=False,
+            decision_trace=[f"sender_profile:bypass:confidence={_sender_confidence:.2f}"],
+        )
+    else:
+        decision = run_dspy_decision(normalized, account_id=account_id)
 
     # Merge agent decision with DSPy decision
     dspy_dict = decision.to_dict()
@@ -509,7 +567,9 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     email_type = merged.get("email_type")
     is_automated = merged.get("is_automated", False)
 
-    # Build comprehensive decision record
+    # Build comprehensive decision record.
+    # reply_text and reply_confidence are surfaced at the top level so the API,
+    # Ticket.to_dict(), and dashboard all find them with a simple dict.get().
     decision_record = {
         "agent": agent_decision,
         "llm": dspy_dict,
@@ -518,6 +578,8 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         "action_required": action_required,
         "email_type": email_type,
         "is_automated": is_automated,
+        "reply_text": decision.reply_text,
+        "reply_confidence": decision.reply_confidence,
         "pre_filter": {
             "skipped": skip_triage,
             "type": pre_filter_type,
@@ -570,6 +632,18 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         ticket.id, status, action_required, email_type
     )
 
+    # Layer 4 — upsert SenderProfile so the domain confidence grows with each email.
+    # Best-effort: never block ticket creation if this fails.
+    try:
+        from src.inbox.sender_profile import upsert_sender_profile
+        upsert_sender_profile(
+            from_email=normalized.get("from_email", ""),
+            category=category,
+            account_id=account_id,
+        )
+    except Exception as _sp_exc:
+        logging.getLogger(__name__).warning("SenderProfile upsert failed: %s", _sp_exc)
+
     # Write triage results back into the provider inbox (Gmail labels / Outlook categories + draft replies).
     # This is the core "InboxIQ on top of your inbox" experience — Oliver stays in Gmail/Outlook
     # and sees labels and draft replies there without opening a separate dashboard.
@@ -584,6 +658,8 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         reply_text=decision.reply_text,
         from_email=normalized.get("from_email"),
         subject=normalized.get("subject", ""),
+        email_type=email_type,
+        is_automated=is_automated,
     )
 
     # Trigger automation rules using intelligent agent (tool-calling like Claude Code!)
