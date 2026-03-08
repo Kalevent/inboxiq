@@ -143,13 +143,17 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
             ).escalation_json
             reply_text = None
             if draft_enabled:
-                reply_text = self.draft(
-                    case_json=case_json,
-                    entities_json=entities_json,
-                    workflow_json=workflow_json,
-                    escalation_json=escalation_json,
-                    kb_context=kb_context,
-                ).reply_text
+                try:
+                    reply_text = self.draft(
+                        case_json=case_json,
+                        entities_json=entities_json,
+                        workflow_json=workflow_json,
+                        escalation_json=escalation_json,
+                        kb_context=kb_context,
+                    ).reply_text
+                except Exception as _draft_exc:
+                    import logging as _log
+                    _log.getLogger(__name__).warning("DraftReplySig failed (non-fatal): %s", _draft_exc)
             return dspy.Prediction(
                 entities_json=entities_json,
                 route_json=route_json,

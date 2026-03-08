@@ -669,6 +669,7 @@ def create_app() -> Flask:
         "sla": _sla_display(priority),
         "url": url_for("ticket_detail", ticket_id=t.id),
         "provider_url": t.provider_thread_url or decision.get("url"),
+        "draft_reply": bool(decision.get("reply_text") or decision.get("draft_reply")),
       }
 
       if action_required is True:
