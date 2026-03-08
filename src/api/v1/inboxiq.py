@@ -1120,24 +1120,27 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                 conn.access_token = new_token
 
             # Label bootstrap + sync — best-effort, never blocks the poll.
-            # On first poll (no labels_synced_at): create InboxIQ canonical labels AND sync user labels.
-            # On subsequent polls (hourly): sync user labels only.
+            # Bootstrap (canonical InboxIQ labels + colours) runs on EVERY poll until
+            # labels_version == "v2" is confirmed — this ensures a version upgrade
+            # fires immediately regardless of the hourly rate-limit on user-label sync.
             try:
+                from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
                 meta = conn.metadata_json or {}
+                _LABEL_VERSION = "v2"
                 last_sync = meta.get("labels_synced_at")
                 _one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
-                if not last_sync or last_sync < _one_hour_ago:
-                    from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
 
-                    # Bootstrap InboxIQ canonical labels on first poll OR when label format version changes.
-                    # v2 = nested InboxIQ/* format with colours.
-                    _LABEL_VERSION = "v2"
-                    if not last_sync or meta.get("labels_version") != _LABEL_VERSION:
-                        canonical_ids = bootstrap_inboxiq_labels_gmail(conn.access_token)
-                        meta["label_ids"] = {**meta.get("label_ids", {}), **canonical_ids}
-                        meta["labels_version"] = _LABEL_VERSION
+                # Always bootstrap until version is confirmed
+                if meta.get("labels_version") != _LABEL_VERSION:
+                    canonical_ids = bootstrap_inboxiq_labels_gmail(conn.access_token)
+                    meta["label_ids"] = {**meta.get("label_ids", {}), **canonical_ids}
+                    meta["labels_version"] = _LABEL_VERSION
+                    meta["labels_synced_at"] = datetime.now(timezone.utc).isoformat()
+                    conn.metadata_json = meta
+                    db.session.commit()
 
-                    # Every sync: merge user-created labels into triage categories
+                # Hourly: merge user-created Gmail labels into triage categories
+                elif not last_sync or last_sync < _one_hour_ago:
                     gmail_labels = fetch_gmail_labels(conn.access_token)
                     if gmail_labels:
                         _sync_labels(conn.account_id, gmail_labels)
@@ -1145,7 +1148,6 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                             **meta.get("label_ids", {}),
                             **{lbl["name"]: lbl["id"] for lbl in gmail_labels},
                         }
-
                     meta["labels_synced_at"] = datetime.now(timezone.utc).isoformat()
                     conn.metadata_json = meta
                     db.session.commit()
@@ -1165,18 +1167,21 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
 
             # Label bootstrap + sync — same pattern as Gmail.
             try:
+                from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
                 meta = conn.metadata_json or {}
+                _LABEL_VERSION = "v2"
                 last_sync = meta.get("labels_synced_at")
                 _one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
-                if not last_sync or last_sync < _one_hour_ago:
-                    from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
 
-                    _LABEL_VERSION = "v2"
-                    if not last_sync or meta.get("labels_version") != _LABEL_VERSION:
-                        canonical_ids = bootstrap_inboxiq_labels_outlook(conn.access_token)
-                        meta["label_ids"] = {**meta.get("label_ids", {}), **canonical_ids}
-                        meta["labels_version"] = _LABEL_VERSION
+                if meta.get("labels_version") != _LABEL_VERSION:
+                    canonical_ids = bootstrap_inboxiq_labels_outlook(conn.access_token)
+                    meta["label_ids"] = {**meta.get("label_ids", {}), **canonical_ids}
+                    meta["labels_version"] = _LABEL_VERSION
+                    meta["labels_synced_at"] = datetime.now(timezone.utc).isoformat()
+                    conn.metadata_json = meta
+                    db.session.commit()
 
+                elif not last_sync or last_sync < _one_hour_ago:
                     outlook_cats = fetch_outlook_categories(conn.access_token)
                     if outlook_cats:
                         _sync_labels(conn.account_id, outlook_cats)
@@ -1184,10 +1189,9 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                             **meta.get("label_ids", {}),
                             **{cat["name"]: cat["id"] for cat in outlook_cats},
                         }
-
                     meta["labels_synced_at"] = datetime.now(timezone.utc).isoformat()
                     conn.metadata_json = meta
-                        db.session.commit()
+                    db.session.commit()
             except Exception as _lbl_exc:
                 current_app.logger.warning("outlook category sync failed: %s", _lbl_exc)
         else:
