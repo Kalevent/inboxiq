@@ -17,6 +17,7 @@ from src.inbox.poll import (
     fetch_messages_gmail, fetch_messages_outlook,
     fetch_gmail_labels, fetch_outlook_categories,
     bootstrap_inboxiq_labels_gmail, bootstrap_inboxiq_labels_outlook,
+    bootstrap_gmail_filters,
 )
 
 BODY_PREVIEW_LIMIT = 240
@@ -1126,7 +1127,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             try:
                 from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
                 meta = conn.metadata_json or {}
-                _LABEL_VERSION = "v3"
+                _LABEL_VERSION = "v5"
                 last_sync = meta.get("labels_synced_at")
                 _one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
 
@@ -1138,6 +1139,12 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                     meta["labels_synced_at"] = datetime.now(timezone.utc).isoformat()
                     conn.metadata_json = meta
                     db.session.commit()
+                    # Create Gmail filters so category-tab emails are labelled instantly on arrival.
+                    # Best-effort — filter creation failures never block the poll.
+                    try:
+                        bootstrap_gmail_filters(conn.access_token, canonical_ids)
+                    except Exception as _flt_exc:
+                        current_app.logger.warning("gmail filter bootstrap failed: %s", _flt_exc)
 
                 # Hourly: merge user-created Gmail labels into triage categories
                 elif not last_sync or last_sync < _one_hour_ago:
@@ -1169,7 +1176,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             try:
                 from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
                 meta = conn.metadata_json or {}
-                _LABEL_VERSION = "v3"
+                _LABEL_VERSION = "v5"
                 last_sync = meta.get("labels_synced_at")
                 _one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
 

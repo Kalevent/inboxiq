@@ -468,6 +468,67 @@ def bootstrap_inboxiq_labels_gmail(access_token: str) -> dict[str, str]:
     return result
 
 
+# Gmail filter queries that map Gmail's native ML category tabs to InboxIQ labels.
+# These filters fire on new mail arrival — independent of InboxIQ polling — so the
+# label appears in the Gmail sidebar even before InboxIQ's next poll cycle.
+_GMAIL_CATEGORY_FILTERS: list[tuple[str, str]] = [
+    ("category:promotions", "InboxIQ/Promotions"),
+    ("category:social",     "InboxIQ/Social"),
+    ("category:updates",    "InboxIQ/Updates"),
+    ("category:forums",     "InboxIQ/Forums"),
+    ("category:purchases",  "InboxIQ/Transactions"),
+]
+
+
+def bootstrap_gmail_filters(access_token: str, label_ids: dict[str, str]) -> None:
+    """
+    Create Gmail filters that automatically apply InboxIQ labels based on
+    Gmail's native ML category tabs (Social, Promotions, Updates, Forums, Purchases).
+
+    Idempotent — fetches existing filters first and skips any that are already
+    configured for a given InboxIQ label so re-runs don't create duplicates.
+
+    Args:
+        access_token: Valid Gmail OAuth access token
+        label_ids: {label_name: gmail_label_id} from bootstrap_inboxiq_labels_gmail
+    """
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
+
+    # Fetch existing filters to avoid duplicates
+    existing_resp = requests.get(
+        "https://gmail.googleapis.com/gmail/v1/users/me/settings/filters",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=8,
+    )
+    existing_label_ids: set[str] = set()
+    if existing_resp.status_code == 200:
+        for f in existing_resp.json().get("filter", []):
+            for lid in (f.get("action", {}).get("addLabelIds") or []):
+                existing_label_ids.add(lid)
+
+    for query, label_name in _GMAIL_CATEGORY_FILTERS:
+        label_id = label_ids.get(label_name)
+        if not label_id:
+            continue
+        if label_id in existing_label_ids:
+            continue  # Filter already exists for this label
+        try:
+            resp = requests.post(
+                "https://gmail.googleapis.com/gmail/v1/users/me/settings/filters",
+                headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+                json={
+                    "criteria": {"query": query},
+                    "action": {"addLabelIds": [label_id]},
+                },
+                timeout=8,
+            )
+            if resp.status_code not in (200, 201):
+                _log.warning("gmail filter create failed: query=%s label=%s status=%s", query, label_name, resp.status_code)
+        except Exception as exc:
+            _log.warning("gmail filter create error: query=%s error=%s", query, exc)
+
+
 def bootstrap_inboxiq_labels_outlook(access_token: str) -> dict[str, str]:
     """
     Ensure all InboxIQ canonical categories exist in Outlook.
