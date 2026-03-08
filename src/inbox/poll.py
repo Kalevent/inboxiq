@@ -382,12 +382,27 @@ def bootstrap_inboxiq_labels_gmail(access_token: str) -> dict[str, str]:
         timeout=8,
     )
     existing: dict[str, str] = {}
-    existing_ids: dict[str, str] = {}  # label_name_lower → id, for colour patching
     if resp.status_code == 200:
         for lbl in resp.json().get("labels", []):
             key = lbl["name"].lower()
             existing[key] = lbl["id"]
-            existing_ids[key] = lbl["id"]
+
+    # Delete stale InboxIQ labels from previous versions (e.g. "InboxIQ/Billing-P1" → "InboxIQ/Billing").
+    # Only removes top-level InboxIQ/* labels (one slash); dynamic sub-labels like
+    # "InboxIQ/Billing/Urgent" are left alone as they are created on-demand.
+    canonical_lower = {n.lower() for n in INBOXIQ_CANONICAL_LABELS}
+    for name_lower, label_id in list(existing.items()):
+        if (name_lower.startswith("inboxiq/")
+                and name_lower.count("/") == 1
+                and name_lower not in canonical_lower):
+            try:
+                requests.delete(
+                    f"https://gmail.googleapis.com/gmail/v1/users/me/labels/{label_id}",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    timeout=5,
+                )
+            except Exception:
+                pass
 
     result: dict[str, str] = {}
     for label_name in INBOXIQ_CANONICAL_LABELS:

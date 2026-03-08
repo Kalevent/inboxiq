@@ -780,7 +780,9 @@ def poll_connections_task(self):
     Periodically poll all connected inboxes (gmail/outlook).
     Uses the existing poll_inbox view logic inside a test request context.
     """
-    from src.api.v1.inboxiq import poll_inbox  # local import to avoid circulars
+    # Use poll_inbox_service — the service-layer call that works without a fake
+    # HTTP request context. ContextTask already provides app_context().
+    from src.api.v1.inboxiq import poll_inbox_service
 
     conns = (
         InboxConnection.query.filter(
@@ -793,7 +795,7 @@ def poll_connections_task(self):
     for conn in conns:
         try:
             with app.test_request_context(f"/api/v1/inboxiq/poll/{conn.id}", method="POST"):
-                poll_inbox(conn.id)
+                poll_inbox_service(conn.id)
             polled += 1
         except Exception as exc:
             errors += 1
