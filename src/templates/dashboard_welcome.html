@@ -163,12 +163,23 @@
             <!-- Status: inbox connected -->
             {% if connection_email %}
             <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 flex items-center gap-3">
-              <div class="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse"></div>
+              <div class="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse" id="poll-status-dot"></div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-slate-100">Connected · {{ connection_email }}</p>
-                <p class="text-xs text-slate-400 mt-0.5">InboxIQ is monitoring your inbox via {{ connection_provider | capitalize if connection_provider else "email" }}</p>
+                <p class="text-xs text-slate-400 mt-0.5" id="poll-status-text">InboxIQ is monitoring your inbox via {{ connection_provider | capitalize if connection_provider else "email" }}</p>
               </div>
-              <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="text-xs text-slate-400 hover:text-slate-200 flex-shrink-0">Manage →</a>
+              <div class="flex items-center gap-3 flex-shrink-0">
+                {% if connection_id %}
+                <button
+                  id="poll-btn"
+                  onclick="triggerPoll('{{ connection_id }}')"
+                  class="text-xs text-indigo-400 hover:text-indigo-200 font-medium border border-indigo-500/40 hover:border-indigo-400 rounded-lg px-3 py-1.5 transition-colors"
+                >
+                  Check inbox
+                </button>
+                {% endif %}
+                <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="text-xs text-slate-400 hover:text-slate-200">Manage →</a>
+              </div>
             </div>
             {% endif %}
 
@@ -322,6 +333,43 @@
 
       document.addEventListener('DOMContentLoaded', loadBanners);
     })();
+  </script>
+  <script>
+    async function triggerPoll(connectionId) {
+      const btn = document.getElementById('poll-btn');
+      const dot = document.getElementById('poll-status-dot');
+      const txt = document.getElementById('poll-status-text');
+      if (!btn) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Checking…';
+      dot.classList.remove('bg-emerald-400');
+      dot.classList.add('bg-indigo-400');
+
+      try {
+        const res = await fetch(`/api/v1/inboxiq/poll/${connectionId}`, {
+          method: 'POST', credentials: 'include'
+        });
+        const data = await res.json().catch(() => ({}));
+        const created = data.created ?? 0;
+        const dupes = data.duplicates ?? 0;
+        txt.textContent = created > 0
+          ? `${created} new email${created !== 1 ? 's' : ''} processed · ${dupes} already seen`
+          : 'Inbox is up to date';
+        dot.classList.remove('bg-indigo-400');
+        dot.classList.add('bg-emerald-400');
+        btn.textContent = 'Check inbox';
+        // Reload metrics after a short delay so counts update
+        setTimeout(() => location.reload(), 1800);
+      } catch (e) {
+        txt.textContent = 'Poll failed — check connection';
+        dot.classList.remove('bg-indigo-400');
+        dot.classList.add('bg-red-400');
+        btn.textContent = 'Check inbox';
+      } finally {
+        btn.disabled = false;
+      }
+    }
   </script>
 </body>
 </html>

@@ -263,6 +263,13 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
                 action_required = "optional"
                 decision_trace.append("fallback:p2_optional")
 
+        # CATEGORY_PERSONAL: Gmail ML confirmed this is a human Primary email.
+        # Override action_required to True — this email definitely needs a reply.
+        if email.get("_gmail_primary") and action_required is not True:
+            action_required = True
+            is_automated = False
+            decision_trace.append("gmail_native:category_personal")
+
         risk_flag = priority == "P1" or sentiment == "negative"
         entities = _safe_json(dspy_result.get("entities_json")) or {}
 

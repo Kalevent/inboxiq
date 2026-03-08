@@ -120,18 +120,28 @@ def should_skip_triage(payload: Dict[str, Any]) -> tuple[bool, str | None, str |
         Tuple of (should_skip, email_type, reason)
     """
     # ── Layer 0: Gmail native category labels ──────────────────────────────────
-    # Gmail already runs ML classification and surfaces it as system label IDs.
-    # Trust their signal — it's free and avoids an unnecessary LLM call.
+    # Gmail runs its own ML classification and surfaces results as system label IDs.
+    # We trust these signals — they are free, accurate, and avoid unnecessary LLM calls.
+    #
+    # Labels that mean "skip triage, auto-handle":
     _GMAIL_SKIP_CATEGORIES = {
         "CATEGORY_UPDATES":    ("newsletter",     "Gmail categorised as Updates"),
         "CATEGORY_PROMOTIONS": ("marketing",      "Gmail categorised as Promotions"),
         "CATEGORY_SOCIAL":     ("notification",   "Gmail categorised as Social"),
         "CATEGORY_FORUMS":     ("newsletter",     "Gmail categorised as Forums"),
+        # CATEGORY_PURCHASES = Gmail confirmed this is an order/receipt/shipping email.
+        # Map to 'transactional' — no draft reply needed, auto-handle.
+        "CATEGORY_PURCHASES":  ("transactional",  "Gmail categorised as Purchases/Transactions"),
     }
     provider_label_ids: list = payload.get("provider_label_ids") or []
     for label_id, (email_type, reason) in _GMAIL_SKIP_CATEGORIES.items():
         if label_id in provider_label_ids:
             return True, email_type, reason
+
+    # CATEGORY_PERSONAL = Gmail confirmed this is a human email in the Primary tab.
+    # Do NOT skip triage — but surface the signal so DSPy and draft reply can trust it.
+    if "CATEGORY_PERSONAL" in provider_label_ids:
+        payload["_gmail_primary"] = True  # picked up by run_dspy_decision as a hint
 
     subject = (payload.get("subject") or "").lower()
     from_email = (payload.get("from_email") or payload.get("from") or "").lower()
