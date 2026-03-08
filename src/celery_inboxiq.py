@@ -95,11 +95,13 @@ def _writeback_to_provider(
         return
 
     token = conn.access_token
-    # Build the Gmail/Outlook label using `/` nesting so all InboxIQ labels appear
-    # grouped under a collapsible "InboxIQ" section in the inbox sidebar.
-    # P1 emails get a dedicated sub-label so urgent items stand out visually.
+    # Build the Gmail/Outlook label using `/` nesting.
+    # Gmail supports unlimited nesting depth — so P1 emails get a sub-label:
+    #   InboxIQ/Billing        → normal billing email
+    #   InboxIQ/Billing/Urgent → P1 billing email (shows as child under Billing)
+    # This keeps the canonical top-level labels clean while surfacing urgency naturally.
     _cat = category.title()
-    label_name = f"InboxIQ/{_cat}-P1" if priority == "P1" else f"InboxIQ/{_cat}"
+    label_name = f"InboxIQ/{_cat}/Urgent" if priority == "P1" else f"InboxIQ/{_cat}"
     draft_needed = _should_draft(reply_text, email_type, is_automated)
 
     try:

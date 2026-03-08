@@ -1126,7 +1126,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             try:
                 from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
                 meta = conn.metadata_json or {}
-                _LABEL_VERSION = "v2"
+                _LABEL_VERSION = "v3"
                 last_sync = meta.get("labels_synced_at")
                 _one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
 
@@ -1169,7 +1169,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             try:
                 from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
                 meta = conn.metadata_json or {}
-                _LABEL_VERSION = "v2"
+                _LABEL_VERSION = "v3"
                 last_sync = meta.get("labels_synced_at")
                 _one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
 

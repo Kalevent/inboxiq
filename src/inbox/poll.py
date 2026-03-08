@@ -343,7 +343,7 @@ def fetch_gmail_labels(access_token: str) -> list[dict]:
 # "InboxIQ" section in the Gmail sidebar, making InboxIQ's presence immediately visible.
 INBOXIQ_CANONICAL_LABELS: list[str] = [
     "InboxIQ/Support",
-    "InboxIQ/Billing-P1",
+    "InboxIQ/Billing",
     "InboxIQ/Transactions",
     "InboxIQ/Updates",
     "InboxIQ/Promotions",
@@ -353,7 +353,7 @@ INBOXIQ_CANONICAL_LABELS: list[str] = [
 # backgroundColor is the chip color; textColor is the label text.
 _GMAIL_LABEL_COLOURS: dict[str, dict] = {
     "InboxIQ/Support":      {"backgroundColor": "#4a86e8", "textColor": "#ffffff"},  # blue
-    "InboxIQ/Billing-P1":  {"backgroundColor": "#fb4c2f", "textColor": "#ffffff"},  # red
+    "InboxIQ/Billing":      {"backgroundColor": "#fb4c2f", "textColor": "#ffffff"},  # red
     "InboxIQ/Transactions": {"backgroundColor": "#16a766", "textColor": "#ffffff"},  # green
     "InboxIQ/Updates":      {"backgroundColor": "#ffad47", "textColor": "#ffffff"},  # amber
     "InboxIQ/Promotions":   {"backgroundColor": "#a479e2", "textColor": "#ffffff"},  # purple
@@ -362,7 +362,7 @@ _GMAIL_LABEL_COLOURS: dict[str, dict] = {
 # Outlook colour presets (Graph API colour names)
 _OUTLOOK_LABEL_COLOURS: dict[str, str] = {
     "InboxIQ/Support":      "blue",
-    "InboxIQ/Billing-P1":  "red",
+    "InboxIQ/Billing":      "red",
     "InboxIQ/Transactions": "green",
     "InboxIQ/Updates":      "orange",
     "InboxIQ/Promotions":   "purple",
