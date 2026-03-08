@@ -349,6 +349,17 @@ INBOXIQ_CANONICAL_LABELS: list[str] = [
     "InboxIQ/Promotions",
 ]
 
+# Explicitly deprecated label names — always deleted during bootstrap regardless of version.
+# Add old names here whenever a canonical label is renamed.
+_INBOXIQ_DEPRECATED_LABELS: list[str] = [
+    "InboxIQ/Billing-P1",       # renamed to InboxIQ/Billing in v3
+    "InboxIQ · Support",        # old dot-separator format from before nested labels
+    "InboxIQ · Billing · P1",
+    "InboxIQ · Transactions",
+    "InboxIQ · Updates",
+    "InboxIQ · Promotions",
+]
+
 # Gmail label colors — must use Gmail's predefined hex palette.
 # backgroundColor is the chip color; textColor is the label text.
 _GMAIL_LABEL_COLOURS: dict[str, dict] = {
@@ -387,22 +398,34 @@ def bootstrap_inboxiq_labels_gmail(access_token: str) -> dict[str, str]:
             key = lbl["name"].lower()
             existing[key] = lbl["id"]
 
-    # Delete stale InboxIQ labels from previous versions (e.g. "InboxIQ/Billing-P1" → "InboxIQ/Billing").
-    # Only removes top-level InboxIQ/* labels (one slash); dynamic sub-labels like
-    # "InboxIQ/Billing/Urgent" are left alone as they are created on-demand.
+    # Step 1: Delete explicitly deprecated labels by name — these are known old names.
+    deprecated_lower = {n.lower(): n for n in _INBOXIQ_DEPRECATED_LABELS}
+    for dep_lower, dep_original in deprecated_lower.items():
+        label_id = existing.get(dep_lower)
+        if label_id:
+            dr = requests.delete(
+                f"https://gmail.googleapis.com/gmail/v1/users/me/labels/{label_id}",
+                headers={"Authorization": f"Bearer {access_token}"},
+                timeout=5,
+            )
+            if dr.status_code not in (200, 204, 404):
+                import logging as _logging
+                _logging.getLogger(__name__).warning(
+                    "gmail label delete failed: label=%s status=%s", dep_original, dr.status_code
+                )
+
+    # Step 2: Delete any other stale top-level InboxIQ/* labels not in the canonical set.
     canonical_lower = {n.lower() for n in INBOXIQ_CANONICAL_LABELS}
     for name_lower, label_id in list(existing.items()):
         if (name_lower.startswith("inboxiq/")
                 and name_lower.count("/") == 1
-                and name_lower not in canonical_lower):
-            try:
-                requests.delete(
-                    f"https://gmail.googleapis.com/gmail/v1/users/me/labels/{label_id}",
-                    headers={"Authorization": f"Bearer {access_token}"},
-                    timeout=5,
-                )
-            except Exception:
-                pass
+                and name_lower not in canonical_lower
+                and name_lower not in deprecated_lower):  # already handled above
+            requests.delete(
+                f"https://gmail.googleapis.com/gmail/v1/users/me/labels/{label_id}",
+                headers={"Authorization": f"Bearer {access_token}"},
+                timeout=5,
+            )
 
     result: dict[str, str] = {}
     for label_name in INBOXIQ_CANONICAL_LABELS:
