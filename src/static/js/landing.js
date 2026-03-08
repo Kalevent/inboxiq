@@ -9,8 +9,6 @@
   const ctaStatus = document.getElementById('ctaStatus');
   const ctaEmail = document.getElementById('ctaEmail');
   const ctaAccountName = document.getElementById('ctaAccountName');
-  const ctaSeats = document.getElementById('ctaSeats');
-  const activationLinkStorageKey = 'inboxiqActivationLink';
 
   // Dropdowns (e.g., Solutions menu)
   const dropdowns = Array.from(document.querySelectorAll('[data-dropdown]'))
@@ -188,30 +186,19 @@
     event.preventDefault();
     if (!ctaEmail || !ctaButton) return;
     const email = (ctaEmail.value || '').trim().toLowerCase();
-    const accountName = (ctaAccountName?.value || '').trim();
-    const seatsRaw = (ctaSeats?.value || '').trim();
-    const seats = seatsRaw ? parseInt(seatsRaw, 10) : Number.NaN;
+    const company = (ctaAccountName?.value || '').trim();
 
     if (!email) {
       setCtaStatus('error', 'Please provide your work email.');
       return;
     }
-    if (!accountName) {
-      setCtaStatus('error', 'Please provide an account name.');
-      return;
-    }
-    if (!seatsRaw || Number.isNaN(seats) || seats < 1) {
-      setCtaStatus('error', 'Please enter how many seats you need (at least 1).');
-      return;
-    }
 
     ctaButton.disabled = true;
-    ctaButton.textContent = 'Creating...';
-    setCtaStatus('info', 'Creating your workspace and sending activation email...');
+    ctaButton.textContent = 'Sending...';
 
     try {
-      const payload = { email, account_name: accountName, seats };
-      const response = await fetch('/auth/signup', {
+      const payload = { name: email, email, company, source: 'homepage_cta' };
+      const response = await fetch('/api/v1/enterprise/inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(payload),
@@ -223,44 +210,13 @@
         const message = (isJson && data?.error) || data || `Request failed (${response.status})`;
         throw new Error(message);
       }
-      if (isJson && data?.account_id !== undefined) {
-        localStorage.setItem('inboxiqAccountId', data.account_id);
-      }
-      const activationInfo =
-        isJson && data?.activation_link
-          ? `Use the activation link sent to ${email} (or copy this for testing: ${data.activation_link}).`
-          : `Check your email at ${email} for the activation link.`;
-      const activationLink = isJson ? data?.activation_link : null;
-      const baseMessage =
-        isJson && data?.account_id !== undefined
-          ? `Workspace created! ID ${data.account_id}.`
-          : 'Workspace created!';
-      setCtaStatus('success', `${baseMessage} ${activationInfo}`, {
-        activationLink,
-        helper: activationLink
-          ? 'Link saved locally in case email delivery fails.'
-          : 'If email delivery is slow, you can restart and we will generate a new link.',
-        persistLink: !!activationLink,
-      });
+      setCtaStatus('success', `Thanks — we'll be in touch at ${email} to arrange a demo.`);
     } catch (error) {
-      setCtaStatus('error', error.message || 'Unable to create workspace.');
+      setCtaStatus('error', error.message || 'Something went wrong. Please try again.');
     } finally {
       ctaButton.disabled = false;
-      ctaButton.textContent = 'Start Free Trial →';
+      ctaButton.textContent = 'Talk to sales →';
     }
-  }
-
-  // Show any saved activation link so users can recover without email.
-  try {
-    const savedLink = localStorage.getItem(activationLinkStorageKey);
-    if (savedLink) {
-      setCtaStatus('info', 'Resume your activation with your saved link.', {
-        activationLink: savedLink,
-        helper: 'This stays on your device only. Start a new signup to refresh it.',
-      });
-    }
-  } catch (err) {
-    // ignore storage issues
   }
 
   if (ctaForm) {

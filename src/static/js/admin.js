@@ -403,3 +403,220 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+// ── Inbox Tools: DSPy Training Metrics ───────────────────────────────────────
+(function () {
+  const getCookie = (name) =>
+    document.cookie.split(';').map((s) => s.trim()).find((c) => c.startsWith(name + '='))?.split('=')[1];
+
+  const runTrainingBtn     = document.getElementById('runTrainingBtn');
+  const runTrainingBtnText = document.getElementById('runTrainingBtnText');
+  const runTrainingSpinner = document.getElementById('runTrainingSpinner');
+  const trainingReadiness  = document.getElementById('trainingReadiness');
+  const trainingStatus     = document.getElementById('trainingStatus');
+  const trainingLastRun    = document.getElementById('trainingLastRun');
+  const trainingProvider   = document.getElementById('trainingProvider');
+  const trainingModel      = document.getElementById('trainingModel');
+  const trainingSamples    = document.getElementById('trainingSamples');
+  const trainingTrainAcc   = document.getElementById('trainingTrainAcc');
+  const trainingEvalAcc    = document.getElementById('trainingEvalAcc');
+  const trainingTable      = document.getElementById('trainingTable');
+  let trainingLoaded = false;
+
+  function setTrainingStatus(kind, msg) {
+    if (!trainingStatus) return;
+    const map = {
+      success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+      error:   'border-rose-400/40 bg-rose-500/10 text-rose-100',
+      info:    'border-indigo-400/40 bg-indigo-500/10 text-indigo-100',
+    };
+    trainingStatus.className = `text-xs rounded-xl px-3 py-2 border ${map[kind] || map.info}`;
+    trainingStatus.textContent = msg;
+    trainingStatus.classList.remove('hidden');
+  }
+
+  function renderTrainingTable(rows = []) {
+    if (!trainingTable) return;
+    if (!rows.length) {
+      trainingTable.innerHTML = '<div class="px-4 py-3 text-slate-400">No training runs yet.</div>';
+      return;
+    }
+    trainingTable.innerHTML = rows.map((row) => {
+      const created  = row.created_at ? new Date(row.created_at).toLocaleString() : '—';
+      const trainAcc = row.train_accuracy != null ? `${Math.round(row.train_accuracy * 100)}%` : '—';
+      const evalAcc  = row.eval_accuracy  != null ? `${Math.round(row.eval_accuracy  * 100)}%` : '—';
+      return `<div class="px-4 py-3 grid grid-cols-1 md:grid-cols-6 gap-2">
+        <div class="text-slate-200">${created}</div>
+        <div>Provider: <span class="text-slate-200">${row.provider || '—'}</span></div>
+        <div>Model: <span class="text-slate-200">${row.model_id || '—'}</span></div>
+        <div>Samples: <span class="text-slate-200">${row.sample_count ?? 0}</span></div>
+        <div>Train: <span class="text-slate-200">${trainAcc}</span></div>
+        <div>Eval: <span class="text-slate-200">${evalAcc}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  window.loadTrainingMetrics = async function () {
+    if (trainingLoaded || !trainingTable) return;
+    try {
+      const resp = await fetch('/api/v1/inboxiq/training-metrics', { credentials: 'include' });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Unable to load training metrics');
+      const latest = data.latest || {};
+      if (trainingLastRun)  trainingLastRun.textContent  = latest.created_at ? new Date(latest.created_at).toLocaleString() : '—';
+      if (trainingProvider) trainingProvider.textContent = latest.provider  || '—';
+      if (trainingModel)    trainingModel.textContent    = latest.model_id  || '—';
+      if (trainingSamples)  trainingSamples.textContent  = latest.sample_count ?? '—';
+      if (trainingTrainAcc) trainingTrainAcc.textContent = latest.train_accuracy != null ? `${Math.round(latest.train_accuracy * 100)}%` : '—';
+      if (trainingEvalAcc)  trainingEvalAcc.textContent  = latest.eval_accuracy  != null ? `${Math.round(latest.eval_accuracy  * 100)}%` : '—';
+      renderTrainingTable(data.metrics || []);
+      trainingLoaded = true;
+    } catch (err) {
+      setTrainingStatus('error', err.message || 'Failed to load training metrics.');
+    }
+  };
+
+  window.loadTrainingStatus = async function () {
+    if (!runTrainingBtn) return;
+    try {
+      const resp = await fetch('/api/v1/inboxiq/training/status', { credentials: 'include' });
+      const data = await resp.json();
+      if (!resp.ok) {
+        runTrainingBtn.disabled = true;
+        if (trainingReadiness) trainingReadiness.textContent = 'Unable to check status';
+        return;
+      }
+      if (data.can_train) {
+        runTrainingBtn.disabled = false;
+        if (trainingReadiness) {
+          trainingReadiness.textContent = `${data.override_count} overrides + ${data.seed_count} seeds ready`;
+          trainingReadiness.className = 'text-xs text-emerald-400';
+        }
+      } else {
+        runTrainingBtn.disabled = true;
+        if (trainingReadiness) {
+          trainingReadiness.textContent = `Need ${data.samples_needed} more samples (${data.override_count}/${data.min_samples})`;
+          trainingReadiness.className = 'text-xs text-amber-400';
+        }
+      }
+    } catch (err) {
+      if (runTrainingBtn) runTrainingBtn.disabled = true;
+      if (trainingReadiness) trainingReadiness.textContent = 'Status unavailable';
+    }
+  };
+
+  async function triggerTraining() {
+    if (!runTrainingBtn) return;
+    runTrainingBtn.disabled = true;
+    if (runTrainingBtnText) runTrainingBtnText.textContent = 'Queuing...';
+    if (runTrainingSpinner) runTrainingSpinner.classList.remove('hidden');
+    try {
+      const csrf = getCookie('csrf_access_token');
+      const resp = await fetch('/api/v1/inboxiq/training/trigger', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf ? decodeURIComponent(csrf) : '' },
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setTrainingStatus('success', data.message || 'Training queued successfully');
+        if (runTrainingBtnText) runTrainingBtnText.textContent = 'Queued!';
+        setTimeout(() => {
+          if (runTrainingBtnText) runTrainingBtnText.textContent = 'Run Training';
+          window.loadTrainingStatus();
+        }, 3000);
+      } else {
+        setTrainingStatus('error', data.message || 'Failed to queue training');
+        if (runTrainingBtnText) runTrainingBtnText.textContent = 'Run Training';
+        runTrainingBtn.disabled = false;
+      }
+    } catch (err) {
+      setTrainingStatus('error', 'Network error. Please try again.');
+      if (runTrainingBtnText) runTrainingBtnText.textContent = 'Run Training';
+      if (runTrainingBtn) runTrainingBtn.disabled = false;
+    } finally {
+      if (runTrainingSpinner) runTrainingSpinner.classList.add('hidden');
+    }
+  }
+
+  if (runTrainingBtn) runTrainingBtn.addEventListener('click', triggerTraining);
+})();
+
+// ── Inbox Tools: Decision Search ──────────────────────────────────────────────
+(function () {
+  const searchForm   = document.getElementById('ticketSearchForm');
+  const qInput       = document.getElementById('ticketSearchQuery');
+  const statusInput  = document.getElementById('ticketStatus');
+  const categoryInput= document.getElementById('ticketCategory');
+  const priorityInput= document.getElementById('ticketPriority');
+  const afterInput   = document.getElementById('ticketAfter');
+  const beforeInput  = document.getElementById('ticketBefore');
+  const ticketResults= document.getElementById('ticketResults');
+  const ticketStatus = document.getElementById('ticketSearchStatus');
+
+  if (!searchForm) return;
+
+  function setTicketStatus(kind, msg) {
+    if (!ticketStatus) return;
+    const map = {
+      success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+      error:   'border-rose-400/40 bg-rose-500/10 text-rose-100',
+      info:    'border-indigo-400/40 bg-indigo-500/10 text-indigo-100',
+    };
+    ticketStatus.className = `text-xs rounded-xl px-3 py-2 border ${map[kind] || map.info}`;
+    ticketStatus.textContent = msg;
+    ticketStatus.classList.remove('hidden');
+  }
+
+  function renderTicketCards(items) {
+    if (!ticketResults) return;
+    ticketResults.innerHTML = '';
+    if (!items || !items.length) {
+      ticketResults.innerHTML = '<div class="rounded-xl border border-slate-800 bg-slate-900/70 p-3 text-xs text-slate-300">No decisions found.</div>';
+      return;
+    }
+    items.forEach((t) => {
+      const created = t.created_at ? new Date(t.created_at).toLocaleString() : '';
+      const card = document.createElement('div');
+      card.className = 'rounded-xl border border-slate-800 bg-slate-900/70 p-3 text-xs text-slate-200';
+      card.innerHTML = `
+        <div class="flex items-center justify-between mb-1">
+          <span class="font-semibold text-slate-100">${t.subject || 'Decision'}</span>
+          <span class="text-[11px] text-slate-400">${created}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-[11px]">
+          <div><span class="text-slate-400">Category:</span> ${t.category || '—'}</div>
+          <div><span class="text-slate-400">Priority:</span> ${t.priority || '—'}</div>
+          <div><span class="text-slate-400">Status:</span> ${t.status || '—'}</div>
+          <div><span class="text-slate-400">Channel:</span> ${t.channel || 'email'}</div>
+        </div>
+        ${t.ai_reason ? `<div class="text-[11px] text-slate-400 mt-1">Why: ${t.ai_reason}</div>` : ''}
+        ${t.provider_thread_url ? `<a class="text-indigo-300 hover:text-indigo-200 text-[11px] mt-1 inline-block" href="${t.provider_thread_url}" target="_blank" rel="noreferrer">Open source →</a>` : ''}
+      `;
+      ticketResults.appendChild(card);
+    });
+  }
+
+  async function performTicketSearch(event) {
+    if (event) event.preventDefault();
+    const params = new URLSearchParams();
+    params.set('page_size', '20');
+    if (qInput?.value)        params.set('q',             qInput.value.trim());
+    if (statusInput?.value)   params.set('status',        statusInput.value);
+    if (categoryInput?.value) params.set('category',      categoryInput.value);
+    if (priorityInput?.value) params.set('priority',      priorityInput.value);
+    if (afterInput?.value)    params.set('created_after', afterInput.value);
+    if (beforeInput?.value)   params.set('created_before',beforeInput.value);
+    setTicketStatus('info', 'Searching…');
+    try {
+      const resp = await fetch(`/api/v1/inboxiq/tickets?${params.toString()}`, { credentials: 'include' });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to load decisions');
+      renderTicketCards(data.tickets || []);
+      setTicketStatus('success', `${data.tickets ? data.tickets.length : 0} result(s)`);
+    } catch (err) {
+      setTicketStatus('error', err.message || 'Search failed');
+    }
+  }
+
+  searchForm.addEventListener('submit', performTicketSearch);
+})();

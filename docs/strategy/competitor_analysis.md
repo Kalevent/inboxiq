@@ -1,9 +1,21 @@
 # Competitor Analysis
 
-> Status: Placeholder — complete after ICP is locked
-> Last updated: 6 Mar 2026
+> Last updated: 7 Mar 2026
 
-Per the innovation manager's advice: do not start competitor analysis until the ICP and value proposition are agreed.
+## 1. Strategic Comparison
+
+| Feature               | Superhuman   | Shortwave    | Missive      | Front        | InboxIQ |
+| --------------------- | ------------ | ------------ | ------------ | ------------ | ------- |
+| Native Gmail/Outlook  | ✗ new client | ✗ new client | ✗ new client | ✗ platform   | ✅      |
+| Works inside thread   | ⚠ partial    | ⚠ partial    | ✗            | ✗            | ✅      |
+| Full thread context   | ⚠ limited    | ⚠ limited    | ✗            | ✗            | ✅      |
+| AI triage             | ⚠ basic      | ⚠ basic      | ✗            | ⚠            | ✅      |
+| Support focus         | ✗            | ✗            | ⚠            | ✅           | ✅      |
+| Setup complexity      | Medium       | Medium       | High         | High         | Low     |
+
+**Most tools replace email. InboxIQ augments email. That is a huge UX difference.**
+
+---
 
 ---
 
@@ -24,8 +36,10 @@ When ready, analyse these:
 - Zendesk (AI features)
 - Freshdesk (Freddy AI)
 - Help Scout (AI Assist)
-- Front, 
-- Superhuman
+- Front AI
+- Superhuman AI
+- Shortwave
+- Missive
 
 ### Adjacent (workflow automation)
 - Microsoft Power Automate — enterprise workflow tool, not AI-first, complex setup, targets large IT-managed organisations. Different buyer (IT admin vs founder). Not a direct threat at SMB level but worth understanding because some buyers will compare.

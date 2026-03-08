@@ -144,6 +144,11 @@
             <span>AI & Training</span>
           </button>
 
+          <button class="sidebar-nav-item w-full text-left" data-section="inbox-tools">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            <span>Inbox Tools</span>
+          </button>
+
           <button class="sidebar-nav-item w-full text-left" data-section="developer">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
             <span>Developer</span>
@@ -169,6 +174,9 @@
 
         <!-- AI & Training Section -->
         {% include 'admin/section_ai.html' %}
+
+        <!-- Inbox Tools: Training Metrics + Decision Search -->
+        {% include 'admin/section_inbox_tools.html' %}
 
         <!-- System Section -->
         {% include 'admin/section_developer.html' %}
@@ -211,6 +219,9 @@
           loadSpendEntries();
         } else if (section === 'system') {
           loadSystemData();
+        } else if (section === 'inbox-tools') {
+          loadTrainingStatus();
+          loadTrainingMetrics();
         }
       });
     });

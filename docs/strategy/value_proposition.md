@@ -38,7 +38,23 @@ Growing from 200 to 500 customers doubles the support load. Hiring a support per
 
 **What InboxIQ does**: Handles the volume growth without headcount growth. Priced at a fraction of a hire.
 
-### 4. Context lost in long email threads
+### 4. No visibility into what customers are actually asking about
+
+Oliver handles support reactively — he replies to emails one by one but has no view of the patterns. He does not know that 40% of his support volume this month is about the same onboarding step, or that billing questions have doubled since the pricing change. Without that visibility, he cannot fix the root cause and keeps answering the same questions forever.
+
+**What InboxIQ does**: Surfaces the top topics customers are contacting him about — this week, this month, trending up or down. Oliver sees "onboarding — 38 emails this month, up 60% from last month" and immediately knows there is a documentation gap or a product bug to fix. And if he wants InboxIQ to handle that topic automatically, he flips a toggle on the same screen — Automation Studio opens pre-filled with the topic as the trigger, no context-switching required. The dashboard turns reactive inbox management into proactive product intelligence, with action one click away.
+
+---
+
+### 5. No way to measure what the inbox is actually costing the business
+
+Oliver knows support emails take time but cannot quantify it. He has no number to show a co-founder, investor, or himself when justifying the cost of a tool or a hire. He also cannot tell if response times are improving or getting worse without manually tracking it.
+
+**What InboxIQ does**: Calculates hours saved per month, equivalent headcount ("InboxIQ handled the workload of 0.4 of a hire this month"), average first response time, and KB coverage gaps — all derived automatically from pipeline data. Oliver opens the dashboard and immediately has the business case for why InboxIQ is worth it, and what to fix to make it work even better.
+
+---
+
+### 6. Context lost in long email threads
 
 A customer emails on Monday with a problem. Oliver asks for their account number on Tuesday. The customer replies on Thursday. By then the context is buried and Oliver has to re-read the thread before he can respond.
 
@@ -55,6 +71,7 @@ These are the objections Oliver will have. We need an answer for each one before
 This is the most common and most legitimate objection. Oliver has seen AI hallucinate. He cannot afford to have the AI tell a customer something wrong.
 
 **Our answer**:
+
 - InboxIQ does not send anything without a confidence threshold you set
 - Low-confidence drafts go to a human review queue — the AI writes, the human approves
 - Default mode is draft-only: AI drafts everything, Oliver sends it. He sees the quality before trusting it to send autonomously

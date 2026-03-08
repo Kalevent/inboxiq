@@ -845,6 +845,36 @@ def submit_enterprise_inquiry():
         status="new",
     )
     db.session.add(inq)
+    db.session.flush()  # get inq.id before commit
+
+    # Upsert lead into marketing funnel (VISITS stage)
+    try:
+        from uuid import uuid4
+        from datetime import datetime, timezone
+        from src.funnel.stages import VISITS
+        from src.models.leads import Lead, LeadFunnelStage
+        existing_lead = db.session.query(Lead).filter_by(email=email).first()
+        if not existing_lead:
+            lead = Lead(
+                id=str(uuid4()),
+                email=email,
+                name=company or email.split("@")[0],
+                source="homepage_cta",
+                status="New Lead",
+                current_funnel_stage=VISITS,
+                stage_entered_at=datetime.now(timezone.utc),
+            )
+            db.session.add(lead)
+            db.session.flush()
+            db.session.add(LeadFunnelStage(
+                lead_id=lead.id,
+                stage=VISITS,
+                entered_at=datetime.now(timezone.utc),
+                notes="Homepage CTA — Talk to sales form",
+            ))
+    except Exception as exc:
+        logger.warning("Lead funnel upsert failed for inquiry %s: %s", inq.id, exc)
+
     db.session.commit()
 
     # Notify admins

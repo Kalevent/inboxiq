@@ -1,0 +1,116 @@
+        <section id="section-inbox-tools" class="admin-section">
+          <div class="content-container space-y-6">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">Inbox Tools</h1>
+              <p class="text-sm text-slate-300 mt-1">DSPy inbox pipeline training (not LLM model training — see AI &amp; Training for that), run controls, and decision search. Admin and app owners only.</p>
+            </div>
+
+            <!-- Training Metrics -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Training metrics</h2>
+                  <p class="text-xs text-slate-400 mt-1">System-wide DSPy inbox pipeline — triage, draft reply, sender learning. Runs across all accounts. Separate from LLM model fine-tuning.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div id="trainingReadiness" class="text-xs text-slate-400"></div>
+                  <button
+                    id="runTrainingBtn"
+                    class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 text-sm font-semibold text-white transition"
+                    disabled
+                  >
+                    <span id="runTrainingBtnText">Run Training</span>
+                    <span id="runTrainingSpinner" class="hidden animate-spin">⟳</span>
+                  </button>
+                </div>
+              </div>
+
+              <div id="trainingStatus" class="hidden text-xs rounded-xl border px-3 py-2"></div>
+
+              <div class="dashboard-metrics">
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                  <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">LAST RUN</p>
+                  <p id="trainingLastRun" class="text-2xl font-semibold text-slate-50">—</p>
+                  <p class="text-[11px] text-slate-400">Most recent training</p>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                  <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">PROVIDER</p>
+                  <p id="trainingProvider" class="text-2xl font-semibold text-slate-50">—</p>
+                  <p class="text-[11px] text-slate-400">Model provider</p>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                  <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">MODEL</p>
+                  <p id="trainingModel" class="text-2xl font-semibold text-slate-50">—</p>
+                  <p class="text-[11px] text-slate-400">Compiled model</p>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                  <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">SAMPLES</p>
+                  <p id="trainingSamples" class="text-2xl font-semibold text-slate-50">—</p>
+                  <p class="text-[11px] text-slate-400">Training examples</p>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                  <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">TRAIN ACC</p>
+                  <p id="trainingTrainAcc" class="text-2xl font-semibold text-slate-50">—</p>
+                  <p class="text-[11px] text-slate-400">Training accuracy</p>
+                </div>
+                <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                  <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">EVAL ACC</p>
+                  <p id="trainingEvalAcc" class="text-2xl font-semibold text-slate-50">—</p>
+                  <p class="text-[11px] text-slate-400">Holdout accuracy</p>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-800 text-xs text-slate-300 font-semibold">Recent runs</div>
+                <div id="trainingTable" class="divide-y divide-slate-800 text-xs text-slate-300">
+                  <div class="px-4 py-3 text-slate-400">No training runs yet.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Decision Search -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
+              <div>
+                <h2 class="text-lg font-semibold text-slate-100">Decision search</h2>
+                <p class="text-xs text-slate-400 mt-1">Search across all triage decisions. Full history, all queues.</p>
+              </div>
+
+              <form id="ticketSearchForm" class="flex flex-wrap gap-2 text-xs">
+                <input id="ticketSearchQuery" type="text" placeholder="Search decisions" class="w-40 rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                <select id="ticketStatus" class="rounded-lg border border-slate-800 bg-slate-950/70 px-2 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                  <option value="">Status</option>
+                  <option value="new">New</option>
+                  <option value="needs_review">Needs review</option>
+                  <option value="closed">Closed</option>
+                </select>
+                <select id="ticketCategory" class="rounded-lg border border-slate-800 bg-slate-950/70 px-2 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                  <option value="">Category</option>
+                  <option value="billing">Billing</option>
+                  <option value="bug">Bug</option>
+                  <option value="refund">Refund</option>
+                  <option value="general">General</option>
+                </select>
+                <select id="ticketPriority" class="rounded-lg border border-slate-800 bg-slate-950/70 px-2 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30">
+                  <option value="">Priority</option>
+                  <option value="P1">P1 (Urgent)</option>
+                  <option value="P2">P2 (High)</option>
+                  <option value="P3">P3 (Normal)</option>
+                  <option value="P4">P4 (Low)</option>
+                </select>
+                <input id="ticketAfter" type="date" class="rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                <input id="ticketBefore" type="date" class="rounded-lg border border-slate-800 bg-slate-950/70 px-3 py-2 text-slate-100 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30" />
+                <button type="submit" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white px-3 py-2 text-xs font-semibold">
+                  Search
+                </button>
+              </form>
+
+              <div id="ticketSearchStatus" class="hidden text-xs rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-200"></div>
+
+              <div id="ticketResults" class="space-y-2">
+                <div class="rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-4 text-sm text-slate-400">
+                  Use the filters above to search all triage decisions.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
