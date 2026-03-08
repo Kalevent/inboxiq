@@ -95,7 +95,11 @@ def _writeback_to_provider(
         return
 
     token = conn.access_token
-    label_name = f"InboxIQ · {category.title()} · {priority}"
+    # Build the Gmail/Outlook label using `/` nesting so all InboxIQ labels appear
+    # grouped under a collapsible "InboxIQ" section in the inbox sidebar.
+    # P1 emails get a dedicated sub-label so urgent items stand out visually.
+    _cat = category.title()
+    label_name = f"InboxIQ/{_cat}-P1" if priority == "P1" else f"InboxIQ/{_cat}"
     draft_needed = _should_draft(reply_text, email_type, is_automated)
 
     try:

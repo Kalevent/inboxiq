@@ -1129,10 +1129,13 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                 if not last_sync or last_sync < _one_hour_ago:
                     from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
 
-                    # First poll: bootstrap InboxIQ canonical labels so Oliver sees them immediately
-                    if not last_sync:
+                    # Bootstrap InboxIQ canonical labels on first poll OR when label format version changes.
+                    # v2 = nested InboxIQ/* format with colours.
+                    _LABEL_VERSION = "v2"
+                    if not last_sync or meta.get("labels_version") != _LABEL_VERSION:
                         canonical_ids = bootstrap_inboxiq_labels_gmail(conn.access_token)
                         meta["label_ids"] = {**meta.get("label_ids", {}), **canonical_ids}
+                        meta["labels_version"] = _LABEL_VERSION
 
                     # Every sync: merge user-created labels into triage categories
                     gmail_labels = fetch_gmail_labels(conn.access_token)
@@ -1168,9 +1171,11 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                 if not last_sync or last_sync < _one_hour_ago:
                     from src.dspy.triage_labels import sync_labels_from_gmail as _sync_labels
 
-                    if not last_sync:
+                    _LABEL_VERSION = "v2"
+                    if not last_sync or meta.get("labels_version") != _LABEL_VERSION:
                         canonical_ids = bootstrap_inboxiq_labels_outlook(conn.access_token)
                         meta["label_ids"] = {**meta.get("label_ids", {}), **canonical_ids}
+                        meta["labels_version"] = _LABEL_VERSION
 
                     outlook_cats = fetch_outlook_categories(conn.access_token)
                     if outlook_cats:

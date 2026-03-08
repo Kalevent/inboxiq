@@ -339,63 +339,93 @@ def fetch_gmail_labels(access_token: str) -> list[dict]:
 
 
 # Canonical InboxIQ labels — created in every user's inbox on first connection.
-# These are the labels Oliver sees immediately in his Gmail sidebar / Outlook category list,
-# confirming InboxIQ is active. Per the pipeline doc, these are system-managed and fixed;
-# users can remap display names via MailboxSyncPreference but cannot remove them.
+# Uses Gmail's `/` nesting syntax so all labels appear grouped under a collapsible
+# "InboxIQ" section in the Gmail sidebar, making InboxIQ's presence immediately visible.
 INBOXIQ_CANONICAL_LABELS: list[str] = [
-    "InboxIQ · Support",
-    "InboxIQ · Billing · P1",
-    "InboxIQ · Transactions",
-    "InboxIQ · Updates",
-    "InboxIQ · Promotions",
+    "InboxIQ/Support",
+    "InboxIQ/Billing-P1",
+    "InboxIQ/Transactions",
+    "InboxIQ/Updates",
+    "InboxIQ/Promotions",
 ]
 
-# Outlook colour presets aligned to each canonical label (Graph API colour names)
+# Gmail label colors — must use Gmail's predefined hex palette.
+# backgroundColor is the chip color; textColor is the label text.
+_GMAIL_LABEL_COLOURS: dict[str, dict] = {
+    "InboxIQ/Support":      {"backgroundColor": "#4a86e8", "textColor": "#ffffff"},  # blue
+    "InboxIQ/Billing-P1":  {"backgroundColor": "#fb4c2f", "textColor": "#ffffff"},  # red
+    "InboxIQ/Transactions": {"backgroundColor": "#16a766", "textColor": "#ffffff"},  # green
+    "InboxIQ/Updates":      {"backgroundColor": "#ffad47", "textColor": "#ffffff"},  # amber
+    "InboxIQ/Promotions":   {"backgroundColor": "#a479e2", "textColor": "#ffffff"},  # purple
+}
+
+# Outlook colour presets (Graph API colour names)
 _OUTLOOK_LABEL_COLOURS: dict[str, str] = {
-    "InboxIQ · Support":       "red",
-    "InboxIQ · Billing · P1":  "orange",
-    "InboxIQ · Transactions":  "green",
-    "InboxIQ · Updates":       "blue",
-    "InboxIQ · Promotions":    "purple",
+    "InboxIQ/Support":      "blue",
+    "InboxIQ/Billing-P1":  "red",
+    "InboxIQ/Transactions": "green",
+    "InboxIQ/Updates":      "orange",
+    "InboxIQ/Promotions":   "purple",
 }
 
 
 def bootstrap_inboxiq_labels_gmail(access_token: str) -> dict[str, str]:
     """
-    Ensure all InboxIQ canonical labels exist in Gmail.
-    Creates any that are missing; skips ones that already exist.
+    Ensure all InboxIQ canonical labels exist in Gmail with colours applied.
+    Labels are nested under 'InboxIQ/' so Gmail groups them as a collapsible
+    section in the sidebar — immediately visible and identifiable.
     Returns {label_name: label_id} for all canonical labels.
     """
-    # Fetch the full label list once — avoid one API call per label
     resp = requests.get(
         "https://gmail.googleapis.com/gmail/v1/users/me/labels",
         headers={"Authorization": f"Bearer {access_token}"},
         timeout=8,
     )
     existing: dict[str, str] = {}
+    existing_ids: dict[str, str] = {}  # label_name_lower → id, for colour patching
     if resp.status_code == 200:
-        existing = {
-            lbl["name"].lower(): lbl["id"]
-            for lbl in resp.json().get("labels", [])
-        }
+        for lbl in resp.json().get("labels", []):
+            key = lbl["name"].lower()
+            existing[key] = lbl["id"]
+            existing_ids[key] = lbl["id"]
 
     result: dict[str, str] = {}
     for label_name in INBOXIQ_CANONICAL_LABELS:
         key = label_name.lower()
+        colour = _GMAIL_LABEL_COLOURS.get(label_name)
         if key in existing:
-            result[label_name] = existing[key]
+            label_id = existing[key]
+            result[label_name] = label_id
+            # Patch colour if we have a preset (idempotent — Gmail ignores unchanged values)
+            if colour:
+                try:
+                    requests.patch(
+                        f"https://gmail.googleapis.com/gmail/v1/users/me/labels/{label_id}",
+                        headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+                        json={"color": colour},
+                        timeout=5,
+                    )
+                except Exception:
+                    pass
         else:
             try:
+                body: dict = {
+                    "name": label_name,
+                    "labelListVisibility": "labelShow",
+                    "messageListVisibility": "show",
+                }
+                if colour:
+                    body["color"] = colour
                 cr = requests.post(
                     "https://gmail.googleapis.com/gmail/v1/users/me/labels",
                     headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
-                    json={"name": label_name, "labelListVisibility": "labelShow", "messageListVisibility": "show"},
+                    json=body,
                     timeout=8,
                 )
                 if cr.status_code in (200, 201):
                     result[label_name] = cr.json()["id"]
             except Exception:
-                pass  # Best-effort; missing labels get created at writeback time
+                pass
 
     return result
 
