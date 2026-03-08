@@ -344,6 +344,15 @@ def ensure_gmail_label(access_token: str, label_name: str) -> str:
     return create_resp.json()["id"]
 
 
+_INBOXIQ_FOOTER_HTML = (
+    '<br><hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">'
+    '<p style="color:#9ca3af;font-size:11px;margin:0;font-family:sans-serif">'
+    '&#9889; Drafted by <strong>InboxIQ</strong> &middot; Review before sending'
+    '</p>'
+)
+_INBOXIQ_FOOTER_TEXT = "\n\n--\nDrafted by InboxIQ · Review before sending"
+
+
 def create_gmail_draft_reply(
     access_token: str,
     thread_id: str,
@@ -354,13 +363,30 @@ def create_gmail_draft_reply(
     """
     Create a draft reply in the Gmail thread. Returns the new draft ID.
     The draft appears collapsed under the thread — Oliver clicks to expand, review, and send.
+    Sent as multipart/alternative (plain + HTML) so the InboxIQ attribution footer
+    is visible but unobtrusive, confirming to Oliver that this draft is AI-generated.
     """
-    import email as email_lib
+    from email.mime.multipart import MIMEMultipart
     from email.mime.text import MIMEText
 
-    msg = MIMEText(body, "plain", "utf-8")
+    subject_header = subject if subject.lower().startswith("re:") else f"Re: {subject}"
+
+    msg = MIMEMultipart("alternative")
     msg["To"] = to_email
-    msg["Subject"] = subject if subject.lower().startswith("re:") else f"Re: {subject}"
+    msg["Subject"] = subject_header
+
+    # Plain-text part — always included for non-HTML clients
+    plain_body = body + _INBOXIQ_FOOTER_TEXT
+    msg.attach(MIMEText(plain_body, "plain", "utf-8"))
+
+    # HTML part — preferred by Gmail; body lines → <p> blocks, attribution footer appended
+    html_paragraphs = "".join(
+        f"<p>{line}</p>" if line.strip() else "<br>"
+        for line in body.splitlines()
+    )
+    html_body = f"<div style=\"font-family:sans-serif;font-size:14px;line-height:1.6\">{html_paragraphs}{_INBOXIQ_FOOTER_HTML}</div>"
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
 
     resp = requests.post(
@@ -393,11 +419,19 @@ def create_outlook_draft_reply(
         raise ValueError(f"Outlook createReply failed: {resp.status_code} {resp.text}")
     draft_id = resp.json().get("id")
 
-    # Update the draft body
+    # Update the draft body — use HTML so the attribution footer renders correctly
+    html_paragraphs = "".join(
+        f"<p>{line}</p>" if line.strip() else "<br>"
+        for line in body.splitlines()
+    )
+    html_body = (
+        f"<div style=\"font-family:sans-serif;font-size:14px;line-height:1.6\">"
+        f"{html_paragraphs}{_INBOXIQ_FOOTER_HTML}</div>"
+    )
     patch_resp = requests.patch(
         f"https://graph.microsoft.com/v1.0/me/messages/{draft_id}",
         headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
-        json={"body": {"contentType": "Text", "content": body}},
+        json={"body": {"contentType": "HTML", "content": html_body}},
         timeout=10,
     )
     if patch_resp.status_code >= 300:

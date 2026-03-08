@@ -107,7 +107,11 @@ def merge_decisions(
 def should_skip_triage(payload: Dict[str, Any]) -> tuple[bool, str | None, str | None]:
     """
     Quick pre-check to determine if full triage can be skipped.
-    Uses heuristics to detect obvious spam, marketing, and auto-replies.
+
+    Checks (in order):
+    1. Gmail/Outlook native category labels — CATEGORY_UPDATES etc. are free and accurate
+    2. Sender pattern heuristics (noreply@, newsletter@, ...)
+    3. Subject/body content patterns (spam, auto-reply, marketing)
 
     Args:
         payload: Normalized email payload
@@ -115,6 +119,20 @@ def should_skip_triage(payload: Dict[str, Any]) -> tuple[bool, str | None, str |
     Returns:
         Tuple of (should_skip, email_type, reason)
     """
+    # ── Layer 0: Gmail native category labels ──────────────────────────────────
+    # Gmail already runs ML classification and surfaces it as system label IDs.
+    # Trust their signal — it's free and avoids an unnecessary LLM call.
+    _GMAIL_SKIP_CATEGORIES = {
+        "CATEGORY_UPDATES":    ("newsletter",     "Gmail categorised as Updates"),
+        "CATEGORY_PROMOTIONS": ("marketing",      "Gmail categorised as Promotions"),
+        "CATEGORY_SOCIAL":     ("notification",   "Gmail categorised as Social"),
+        "CATEGORY_FORUMS":     ("newsletter",     "Gmail categorised as Forums"),
+    }
+    provider_label_ids: list = payload.get("provider_label_ids") or []
+    for label_id, (email_type, reason) in _GMAIL_SKIP_CATEGORIES.items():
+        if label_id in provider_label_ids:
+            return True, email_type, reason
+
     subject = (payload.get("subject") or "").lower()
     from_email = (payload.get("from_email") or payload.get("from") or "").lower()
     body = (payload.get("body") or "").lower()

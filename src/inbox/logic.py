@@ -176,6 +176,8 @@ def normalize_email_payload(data: Dict[str, Any]) -> Dict[str, Any]:
         "context": data.get("context"),
         "provider_thread_url": provider_thread_url,
         "received_at": data.get("received_at"),
+        # Gmail/Outlook system label IDs on the message — used for native category detection
+        "provider_label_ids": data.get("provider_label_ids") or [],
     }
 
 
