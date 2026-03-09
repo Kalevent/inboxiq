@@ -539,7 +539,9 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     agent_decision = None
 
     # Only run agent pipeline if not skipping triage and not bypassing via SenderProfile
-    if not skip_triage and not _bypass_dspy:
+    _ACTIONABLE_CATEGORIES = {"support", "billing"}
+    _effective_bypass = _bypass_dspy and _sender_hint not in _ACTIONABLE_CATEGORIES
+    if not skip_triage and not _effective_bypass:
         try:
             agent_result = process_email_with_agents(normalized)
             if agent_result:
@@ -554,9 +556,9 @@ def process_incoming_email_task(self, payload: dict) -> dict:
             agent_result = None
 
     # Run DSPy triage (will also apply heuristics internally).
-    # Skipped entirely when SenderProfile confidence >= 0.85 (bypass path).
-    if _bypass_dspy:
-        # High-confidence domain — synthesise a minimal decision from the profile
+    # _effective_bypass is already computed above — bypass only for non-actionable categories.
+    if _effective_bypass:
+        # High-confidence non-actionable domain — synthesise a minimal decision
         # so the rest of the pipeline (ticket creation, writeback) works unchanged.
         from src.inbox.logic import TriageDecision
         decision = TriageDecision(
