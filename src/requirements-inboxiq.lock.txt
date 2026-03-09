@@ -111,7 +111,7 @@ opentelemetry-instrumentation-celery==0.44b0
 opentelemetry-instrumentation-flask==0.44b0
 opentelemetry-instrumentation-redis==0.44b0
 opentelemetry-instrumentation-requests==0.44b0
-opentelemetry-instrumentation-sqlalchemy==0.44b0
+opentelemetry-instrumentation-sqlalchemy==0.61b0
 opentelemetry-instrumentation-wsgi==0.44b0
 opentelemetry-proto==1.23.0
 opentelemetry-sdk==1.23.0

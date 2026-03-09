@@ -37,7 +37,7 @@ opentelemetry-exporter-otlp==1.23.0
 
 # OpenTelemetry Auto-instrumentation
 opentelemetry-instrumentation-flask==0.44b0
-opentelemetry-instrumentation-sqlalchemy==0.44b0
+opentelemetry-instrumentation-sqlalchemy==0.61b0
 opentelemetry-instrumentation-celery==0.44b0
 opentelemetry-instrumentation-redis==0.44b0
 opentelemetry-instrumentation-requests==0.44b0
