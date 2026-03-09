@@ -92,7 +92,10 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
     class RouteCaseSig(dspy.Signature):
         case_json = dspy.InputField()
         entities_json = dspy.InputField()
-        route_json = dspy.OutputField(desc="JSON with queue, priority, sla_minutes, tags, rationale.")
+        route_json = dspy.OutputField(
+            desc=f"JSON with queue ({label_desc(label_config, 'categories', 'support/billing/transactions/updates/promotions/social/forums')}), "
+                 f"priority ({label_desc(label_config, 'priorities', 'P1/P2/P3/P4')}), sla_minutes, tags, rationale."
+        )
 
     class SelectWorkflowSig(dspy.Signature):
         case_json = dspy.InputField()

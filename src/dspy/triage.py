@@ -377,8 +377,29 @@ def _run_dspy_triage_impl(
         else:
             ai_reason = triage_cfg.get_fallback_message("action_required")
 
+    # Snap the raw queue value to a canonical InboxIQ category.
+    # DSPy may return free-form strings ("general", "bug", "technical") — map these
+    # to the nearest canonical label so Gmail writeback uses a proper InboxIQ/* label.
+    _CANONICAL_CATEGORIES = {
+        "support", "billing", "transactions", "updates", "promotions", "social", "forums",
+    }
+    _CATEGORY_MAP = {
+        # DSPy default label set → canonical
+        "sales": "support", "technical": "support", "feedback": "support",
+        "bug_report": "support", "bug": "support", "general": "support",
+        "other": "support",
+        "marketing": "promotions", "newsletter": "updates",
+        "spam": "updates", "auto_reply": "updates", "notification": "updates",
+        "informational": "updates",
+    }
+    _raw_cat = (route.get("queue") or entities.get("intent") or email_type or triage_cfg.default_category or "").lower().strip()
+    if _raw_cat in _CANONICAL_CATEGORIES:
+        _resolved_category = _raw_cat
+    else:
+        _resolved_category = _CATEGORY_MAP.get(_raw_cat, triage_cfg.default_category or "support")
+
     content = {
-        "category": route.get("queue") or entities.get("intent") or email_type or triage_cfg.default_category,
+        "category": _resolved_category,
         "priority": route.get("priority") or ("P4" if action_required is False else triage_cfg.default_priority),
         "sentiment": entities.get("sentiment") or "neutral",
         "intent": entities.get("intent"),
