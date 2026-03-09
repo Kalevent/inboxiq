@@ -486,6 +486,38 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         if existing:
             span.set_attribute("email.duplicate", True)
             span.set_attribute("email.existing_ticket_id", str(existing.id))
+            # For emails that are duplicates but were processed before the current
+            # category→label mapping existed, re-apply the correct InboxIQ label.
+            # Only runs for emails with a Gmail native category that maps to a
+            # canonical InboxIQ label — cheap and idempotent.
+            _NATIVE_LABEL_MAP = {
+                "CATEGORY_SOCIAL":     "social",
+                "CATEGORY_FORUMS":     "forums",
+                "CATEGORY_UPDATES":    "updates",
+                "CATEGORY_PROMOTIONS": "promotions",
+                "CATEGORY_PURCHASES":  "transactions",
+            }
+            _provider_label_ids = normalized.get("provider_label_ids") or []
+            for _native, _cat in _NATIVE_LABEL_MAP.items():
+                if _native in _provider_label_ids:
+                    try:
+                        _writeback_to_provider(
+                            provider=normalized.get("provider"),
+                            provider_message_id=normalized.get("provider_message_id"),
+                            provider_thread_id=normalized.get("provider_thread_id"),
+                            account_id=account_id,
+                            category=_cat,
+                            priority=existing.priority or "P3",
+                            action_required=False,
+                            reply_text=None,
+                            from_email=normalized.get("from_email", ""),
+                            subject=normalized.get("subject", ""),
+                            email_type=_cat,
+                            is_automated=True,
+                        )
+                    except Exception:
+                        pass
+                    break
             return {"status": "duplicate", "ticket_id": existing.id}
 
         span.set_attribute("email.duplicate", False)

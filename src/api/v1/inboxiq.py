@@ -1012,10 +1012,21 @@ def _detect_label_correction(ticket, raw_email: dict, account_id: int | None) ->
     Phase 2 — passive feedback loop.
 
     When Oliver moves an email to a different Gmail label (e.g. from
-    "InboxIQ · Support · P2" to "InboxIQ · Transactions · P3"), the next
-    poll detects the mismatch and records a ClassificationCorrection.  This
-    feeds SenderProfile confidence updates so future emails from the same
-    domain are classified correctly without DSPy.
+    InboxIQ/Support to InboxIQ/Transactions), the next poll detects the
+    mismatch and records a ClassificationCorrection.  This feeds SenderProfile
+    confidence updates so future emails from the same domain are classified
+    correctly without DSPy.
+
+    Label format: InboxIQ/{Category} or InboxIQ/{Category}/{Sublabel}
+    The canonical category is always parts[1] regardless of depth, which means:
+      - InboxIQ/Billing/Urgent    (InboxIQ P1 sublabel) → "billing"
+      - InboxIQ/Support/VIP       (user-created sublabel) → "support"
+      - InboxIQ/Support/VIP/Gold  (deeply nested user sublabel) → "support"
+
+    User-created sublabels are an emergent behaviour: users may create child
+    labels under any InboxIQ/ label in their Gmail sidebar.  These label IDs
+    are not stored in conn.metadata_json (we never created them), so we resolve
+    unknown user-label IDs in one batched Gmail API call and cache the results.
 
     Only fires for Gmail (labelIds are included in the fetch payload).
     Outlook correction detection is a future enhancement.
@@ -1033,27 +1044,61 @@ def _detect_label_correction(ticket, raw_email: dict, account_id: int | None) ->
     if not inboxiq_applied_category:
         return
 
-    # Look up label_id→name mapping stored in conn.metadata_json
     from src.models.core import InboxConnection
+    from src.extensions import db
     conn = InboxConnection.query.filter_by(
         account_id=account_id, provider="gmail", status="connected"
     ).first()
     if not conn:
         return
 
-    label_id_to_name: dict = {}
+    # Build id→name from labels we created (stored in metadata_json)
     meta = conn.metadata_json or {}
-    for name, lid in (meta.get("label_ids") or {}).items():
-        label_id_to_name[lid] = name
+    label_id_to_name: dict = {lid: name for name, lid in (meta.get("label_ids") or {}).items()}
 
-    # Find which InboxIQ labels are currently on the message
+    # User-created sublabels (e.g. InboxIQ/Support/VIP) have IDs starting with
+    # "Label_" and won't be in our map.  Resolve them in a single API call and
+    # cache so subsequent polls don't repeat the request.
+    unknown_user_label_ids = [
+        lid for lid in provider_label_ids
+        if lid.startswith("Label_") and lid not in label_id_to_name
+    ]
+    if unknown_user_label_ids and conn.access_token:
+        try:
+            import requests as _req
+            resp = _req.get(
+                "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+                headers={"Authorization": f"Bearer {conn.access_token}"},
+                timeout=8,
+            )
+            if resp.status_code == 200:
+                cache_updated = False
+                for lbl in resp.json().get("labels") or []:
+                    lid, lname = lbl.get("id", ""), lbl.get("name", "")
+                    if not lid or not lname:
+                        continue
+                    label_id_to_name[lid] = lname
+                    # Cache any InboxIQ sublabels we didn't create ourselves
+                    if lname.lower().startswith("inboxiq/") and lname not in meta.get("label_ids", {}):
+                        meta.setdefault("label_ids", {})[lname] = lid
+                        cache_updated = True
+                if cache_updated:
+                    conn.metadata_json = meta
+                    db.session.commit()
+        except Exception as _resolve_exc:
+            current_app.logger.debug("label resolve failed (non-fatal): %s", _resolve_exc)
+
+    # Extract canonical InboxIQ category from label name.
+    # Always use parts[1] after splitting on "/" — this correctly handles:
+    #   InboxIQ/Support           → "support"
+    #   InboxIQ/Billing/Urgent    → "billing"  (our own P1 sublabel)
+    #   InboxIQ/Support/VIP       → "support"  (user-created sublabel)
     current_inboxiq_categories: list[str] = []
     for lid in provider_label_ids:
         name = label_id_to_name.get(lid, "")
-        if name.lower().startswith("inboxiq ·"):
-            # Format: "InboxIQ · Category · Priority"  or "InboxIQ · Category"
-            parts = [p.strip() for p in name.split("·")]
-            if len(parts) >= 2:
+        if name.lower().startswith("inboxiq/"):
+            parts = name.split("/")
+            if len(parts) >= 2 and parts[1]:
                 current_inboxiq_categories.append(parts[1].lower())
 
     if not current_inboxiq_categories:
@@ -1065,7 +1110,6 @@ def _detect_label_correction(ticket, raw_email: dict, account_id: int | None) ->
         try:
             from src.models.tickets import ClassificationCorrection
             from src.inbox.sender_profile import upsert_sender_profile, _extract_domain
-            from src.extensions import db
 
             correction = ClassificationCorrection(
                 account_id=account_id,
