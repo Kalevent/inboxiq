@@ -603,8 +603,19 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         if pre_filter_type in _PRE_FILTER_CATEGORY_MAP:
             merged["category"] = _PRE_FILTER_CATEGORY_MAP[pre_filter_type]
 
-    # Extract final values from merged decision
-    category = merged.get("category") or decision.category
+    # Extract final values from merged decision.
+    # Normalize to canonical InboxIQ categories — "general", "bug", "sales" etc.
+    # can come from the agent pipeline and must be mapped before ticket creation.
+    _CANONICAL_CATS = {"support", "billing", "transactions", "updates", "promotions", "social", "forums"}
+    _CAT_NORM_MAP = {
+        "general": "support", "other": "support", "bug": "support", "bug_report": "support",
+        "technical": "support", "sales": "support", "feedback": "support",
+        "marketing": "promotions", "newsletter": "updates",
+        "spam": "updates", "auto_reply": "updates", "notification": "updates",
+        "informational": "updates",
+    }
+    _raw_category = (merged.get("category") or decision.category or "support").lower().strip()
+    category = _raw_category if _raw_category in _CANONICAL_CATS else _CAT_NORM_MAP.get(_raw_category, "support")
     priority = merged.get("priority") or decision.priority
     sentiment = merged.get("sentiment") or decision.sentiment
     action_required = merged.get("action_required")
