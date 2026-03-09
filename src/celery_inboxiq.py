@@ -45,6 +45,7 @@ def _writeback_to_provider(
     Best-effort — failures are logged and swallowed so they never block ticket creation.
     """
     if not provider or provider not in ("gmail", "outlook") or not provider_message_id:
+        _log.info("writeback skipped: provider=%s msg_id=%s", provider, bool(provider_message_id))
         return
 
     from src.models.core import InboxConnection
@@ -54,7 +55,9 @@ def _writeback_to_provider(
         account_id=account_id, provider=provider, status="connected"
     ).first()
     if not conn or not conn.access_token:
+        _log.warning("writeback skipped: no connected %s for account=%s", provider, account_id)
         return
+    _log.info("writeback starting: provider=%s account=%s reply_text=%s", provider, account_id, bool(reply_text))
 
     meta = conn.metadata_json or {}
     label_cache = meta.setdefault("label_ids", {})
