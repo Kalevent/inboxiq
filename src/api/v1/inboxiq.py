@@ -1159,7 +1159,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                 refresh_token=conn.refresh_token,
                 client_id=current_app.config.get("GOOGLE_CLIENT_ID"),
                 client_secret=current_app.config.get("GOOGLE_CLIENT_SECRET"),
-                limit=10,
+                limit=25,
             )
             if new_token:
                 conn.access_token = new_token
@@ -1208,7 +1208,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                 client_id=current_app.config.get("MICROSOFT_CLIENT_ID"),
                 client_secret=current_app.config.get("MICROSOFT_CLIENT_SECRET"),
                 tenant_id=current_app.config.get("MICROSOFT_TENANT_ID"),
-                limit=10,
+                limit=25,
             )
             if new_token:
                 conn.access_token = new_token
@@ -1292,6 +1292,11 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             )
             db.session.rollback()
         return jsonify({"error": "Authentication error. Please reconnect your inbox.", "status": fetch_status}), 401
+    current_app.logger.info(
+        "poll fetched %d messages for connection=%s subjects=%s",
+        len(messages), conn.id,
+        [(m.get("subject") or "")[:50] for m in messages[:5]],
+    )
     for raw_email in messages:
         try:
             normalized = normalize_email_payload(raw_email)
