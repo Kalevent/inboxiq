@@ -67,6 +67,12 @@ def writeback_to_provider(
 
     label_applied = False
     draft_created = False
+    _log.info(
+        "writeback: provider=%s category=%s priority=%s email_type=%s is_automated=%s "
+        "reply_text_present=%s draft_needed=%s thread_id=%s",
+        provider, category, priority, email_type, is_automated,
+        bool(reply_text), draft_needed, bool(provider_thread_id),
+    )
     try:
         if provider == "gmail":
             label_id = label_cache.get(label_name)
@@ -78,6 +84,7 @@ def writeback_to_provider(
             if draft_needed and provider_thread_id:
                 create_gmail_draft_reply(access_token, provider_thread_id, from_email, subject, reply_text)
                 draft_created = True
+                _log.info("draft reply created: thread_id=%s subject=%s", provider_thread_id, subject)
         elif provider == "outlook":
             apply_label_outlook(access_token, provider_message_id, label_name)
             label_applied = True
@@ -443,8 +450,9 @@ _INBOXIQ_DEPRECATED_LABELS: list[str] = [
 # Gmail label colors — must use Gmail's predefined hex palette.
 # backgroundColor is the chip color; textColor is the label text.
 _GMAIL_LABEL_COLOURS: dict[str, dict] = {
-    "InboxIQ/Support":      {"backgroundColor": "#4a86e8", "textColor": "#ffffff"},  # blue
-    "InboxIQ/Billing":      {"backgroundColor": "#fb4c2f", "textColor": "#ffffff"},  # red
+    "InboxIQ/Support":              {"backgroundColor": "#4a86e8", "textColor": "#ffffff"},  # blue
+    "InboxIQ/Support/Urgent":       {"backgroundColor": "#cc3a21", "textColor": "#ffffff"},  # deep red — urgent
+    "InboxIQ/Billing":              {"backgroundColor": "#fb4c2f", "textColor": "#ffffff"},  # red
     "InboxIQ/Transactions": {"backgroundColor": "#16a766", "textColor": "#ffffff"},  # green
     "InboxIQ/Updates":      {"backgroundColor": "#ffad47", "textColor": "#ffffff"},  # amber
     "InboxIQ/Promotions":   {"backgroundColor": "#a479e2", "textColor": "#ffffff"},  # purple
@@ -688,10 +696,14 @@ def ensure_gmail_label(access_token: str, label_name: str) -> str:
             if lbl.get("name", "").lower() == label_name.lower():
                 return lbl["id"]
     # Label doesn't exist — create it
+    _body: dict = {"name": label_name, "labelListVisibility": "labelShow", "messageListVisibility": "show"}
+    _colour = _GMAIL_LABEL_COLOURS.get(label_name)
+    if _colour:
+        _body["color"] = _colour
     create_resp = requests.post(
         "https://gmail.googleapis.com/gmail/v1/users/me/labels",
         headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
-        json={"name": label_name, "labelListVisibility": "labelShow", "messageListVisibility": "show"},
+        json=_body,
         timeout=8,
     )
     if create_resp.status_code not in (200, 201):

@@ -154,9 +154,14 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
                         escalation_json=escalation_json,
                         kb_context=kb_context,
                     ).reply_text
+                    import logging as _log
+                    _log.getLogger(__name__).info(
+                        "DraftReplySig succeeded: reply_text_len=%s",
+                        len(reply_text) if reply_text else 0,
+                    )
                 except Exception as _draft_exc:
                     import logging as _log
-                    _log.getLogger(__name__).warning("DraftReplySig failed (non-fatal): %s", _draft_exc)
+                    _log.getLogger(__name__).warning("DraftReplySig failed (non-fatal): %s", _draft_exc, exc_info=True)
             return dspy.Prediction(
                 entities_json=entities_json,
                 route_json=route_json,
