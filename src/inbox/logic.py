@@ -215,7 +215,7 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
         sender_hint = normalized.get("sender_hint") or ""
         dspy_result = run_dspy_triage(normalized, context=dspy_context or None, labels=label_config, account_id=account_id, sender_hint=sender_hint)
 
-        category = _normalize_choice(dspy_result.get("category"), categories, (categories[0] if categories else "general"))
+        category = _normalize_choice(dspy_result.get("category"), categories, (categories[0] if categories else "support"))
         priority = _normalize_priority(dspy_result.get("priority"), priorities)
         sentiment = _normalize_choice(dspy_result.get("sentiment"), sentiments, (sentiments[0] if sentiments else "neutral"))
         intent = _normalize_choice(dspy_result.get("intent"), intents, (intents[0] if intents else "general"))

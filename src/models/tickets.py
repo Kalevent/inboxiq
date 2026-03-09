@@ -19,7 +19,7 @@ class Ticket(db.Model):
     subject = db.Column(db.String(500), nullable=False)
     from_email = db.Column(db.String(255), nullable=False)
     body_preview = db.Column(db.Text, nullable=True)
-    category = db.Column(db.String(64), nullable=False, default="general")
+    category = db.Column(db.String(64), nullable=False, default="support")
     priority = db.Column(db.String(8), nullable=False, default="P2")
     sentiment = db.Column(db.String(32), nullable=False, default="neutral")
     entities = db.Column(db.JSON, nullable=False, default=dict)

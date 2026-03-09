@@ -1319,26 +1319,38 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                     _reply_text = _decision.get("reply_text")
                     _meta = conn.metadata_json or {}
                     _label_cache = _meta.setdefault("label_ids", {})
+                    # Normalize old stored categories to canonical InboxIQ labels.
+                    # Old tickets may have "general", "bug", "technical" etc. from before normalization.
+                    _CANONICAL_CATS = {"support", "billing", "transactions", "updates", "promotions", "social", "forums"}
+                    _HEAL_CAT_MAP = {
+                        "general": "support", "bug": "support", "technical": "support",
+                        "sales": "support", "feedback": "support", "other": "support",
+                        "marketing": "promotions", "newsletter": "updates",
+                        "spam": "updates", "auto_reply": "updates", "notification": "updates",
+                    }
+                    _raw_cat = (existing.category or "support").lower().strip()
+                    _heal_category = _raw_cat if _raw_cat in _CANONICAL_CATS else _HEAL_CAT_MAP.get(_raw_cat, "support")
+                    _heal_email_type = _decision.get("email_type") or _decision.get("entities", {}).get("email_type") or None
                     _result = _wb(
                         provider=normalized.get("provider"),
                         provider_message_id=normalized.get("provider_message_id"),
                         provider_thread_id=normalized.get("provider_thread_id"),
                         access_token=conn.access_token,
                         label_cache=_label_cache,
-                        category=existing.category,
+                        category=_heal_category,
                         priority=existing.priority or "P3",
                         reply_text=_reply_text,
                         from_email=normalized.get("from_email", ""),
                         subject=normalized.get("subject", ""),
-                        email_type=existing.category,
+                        email_type=_heal_email_type,
                         is_automated=(existing.status == "auto_handled"),
                     )
                     if _result.get("label_applied"):
                         conn.metadata_json = dict(_meta)
                         db.session.commit()
                     current_app.logger.info(
-                        "writeback healed for orphaned ticket id=%s category=%s label=%s draft=%s",
-                        existing.id, existing.category,
+                        "writeback healed for orphaned ticket id=%s raw_category=%s healed_category=%s label=%s draft=%s",
+                        existing.id, existing.category, _heal_category,
                         _result.get("label_applied"), _result.get("draft_created"),
                     )
                 except Exception as _heal_exc:
