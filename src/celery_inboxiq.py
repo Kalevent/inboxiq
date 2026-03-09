@@ -25,33 +25,6 @@ DEFAULT_BODY_PREVIEW_LIMIT = 240
 _log = logging.getLogger(__name__)
 
 
-# Email types that are non-actionable — no draft reply should ever be created for these.
-# These are senders that don't expect a reply (newsletters, noreply, spam, auto-replies).
-_NON_ACTIONABLE_EMAIL_TYPES = {
-    "spam", "marketing", "newsletter", "transactional",
-    "auto_reply", "out_of_office", "promotional", "notification",
-    "updates", "promotions", "social", "forums",
-}
-
-
-def _should_draft(
-    reply_text: str | None,
-    email_type: str | None,
-    is_automated: bool,
-) -> bool:
-    """
-    Return True only when a draft reply makes sense — i.e. the email is a real
-    human message that deserves a response, not a newsletter, noreply, or spam.
-    """
-    if not reply_text:
-        return False
-    if is_automated:
-        return False
-    if (email_type or "").lower() in _NON_ACTIONABLE_EMAIL_TYPES:
-        return False
-    return True
-
-
 def _writeback_to_provider(
     provider: str | None,
     provider_message_id: str | None,
@@ -67,27 +40,15 @@ def _writeback_to_provider(
     is_automated: bool = False,
 ) -> None:
     """
-    Write triage results back into the user's inbox so the value is visible
-    without opening the InboxIQ dashboard:
-      - Gmail: applies a label (e.g. "InboxIQ · Billing · P1") to the original message
-               and, if a draft reply exists, creates it collapsed in the thread
-      - Outlook: applies a category and creates a draft reply via Graph API
-
-    Draft replies are only created for real human emails (Primary inbox).
-    Newsletters, noreply, spam, auto-replies, and promotional emails never get a draft.
-
-    This is intentionally best-effort — failures are logged and swallowed so
-    they never block ticket creation.
+    Write triage results back into the user's inbox (Gmail label + optional draft reply).
+    Delegates to poll.writeback_to_provider after resolving the connection and token.
+    Best-effort — failures are logged and swallowed so they never block ticket creation.
     """
     if not provider or provider not in ("gmail", "outlook") or not provider_message_id:
         return
 
     from src.models.core import InboxConnection
-    from src.inbox.poll import (
-        apply_label_gmail, ensure_gmail_label,
-        create_gmail_draft_reply,
-        apply_label_outlook, create_outlook_draft_reply,
-    )
+    from src.inbox.poll import writeback_to_provider as _wb
 
     conn = InboxConnection.query.filter_by(
         account_id=account_id, provider=provider, status="connected"
@@ -95,45 +56,32 @@ def _writeback_to_provider(
     if not conn or not conn.access_token:
         return
 
-    token = conn.access_token
-    # Build the Gmail/Outlook label using `/` nesting.
-    # Gmail supports unlimited nesting depth — so P1 emails get a sub-label:
-    #   InboxIQ/Billing        → normal billing email
-    #   InboxIQ/Billing/Urgent → P1 billing email (shows as child under Billing)
-    # This keeps the canonical top-level labels clean while surfacing urgency naturally.
-    _cat = category.title()
-    label_name = f"InboxIQ/{_cat}/Urgent" if priority == "P1" else f"InboxIQ/{_cat}"
-    draft_needed = _should_draft(reply_text, email_type, is_automated)
+    meta = conn.metadata_json or {}
+    label_cache = meta.setdefault("label_ids", {})
 
-    try:
-        if provider == "gmail":
-            # Ensure the label exists (creates it on first use, idempotent after)
-            meta = conn.metadata_json or {}
-            label_id = meta.get("label_ids", {}).get(label_name)
-            if not label_id:
-                label_id = ensure_gmail_label(token, label_name)
-                meta.setdefault("label_ids", {})[label_name] = label_id
-                conn.metadata_json = meta
-                db.session.commit()
+    result = _wb(
+        provider=provider,
+        provider_message_id=provider_message_id,
+        provider_thread_id=provider_thread_id,
+        access_token=conn.access_token,
+        label_cache=label_cache,
+        category=category,
+        priority=priority,
+        reply_text=reply_text,
+        from_email=from_email,
+        subject=subject,
+        email_type=email_type,
+        is_automated=is_automated,
+    )
 
-            apply_label_gmail(token, provider_message_id, label_id)
-
-            if draft_needed and provider_thread_id:
-                create_gmail_draft_reply(
-                    token, provider_thread_id, from_email, subject, reply_text
-                )
-
-        elif provider == "outlook":
-            apply_label_outlook(token, provider_message_id, label_name)
-
-            if draft_needed:
-                create_outlook_draft_reply(token, provider_message_id, reply_text)
-
-    except Exception as exc:
-        _log.warning(
-            "inbox write-back failed: provider=%s account=%s error=%s",
-            provider, account_id, exc,
-        )
+    # Persist any newly-created label IDs back to the connection
+    if result.get("label_applied"):
+        try:
+            conn.metadata_json = dict(meta)
+            db.session.commit()
+        except Exception as exc:
+            db.session.rollback()
+            _log.warning("writeback metadata save failed: account=%s error=%s", account_id, exc)
 
 
 def make_celery(app) -> Celery:

@@ -8,10 +8,88 @@ from __future__ import annotations
 
 import imaplib
 import email
+import logging
 from email.header import decode_header
 from typing import Any, Dict, List
 import requests
 import base64
+
+_log = logging.getLogger(__name__)
+
+# Email types that are non-actionable (no draft reply).
+_NON_ACTIONABLE_EMAIL_TYPES = {
+    "spam", "marketing", "newsletter", "transactional",
+    "auto_reply", "out_of_office", "promotional", "notification",
+    "updates", "promotions", "social", "forums",
+}
+
+
+def _should_draft(reply_text: str | None, email_type: str | None, is_automated: bool) -> bool:
+    if not reply_text:
+        return False
+    if is_automated:
+        return False
+    if (email_type or "").lower() in _NON_ACTIONABLE_EMAIL_TYPES:
+        return False
+    return True
+
+
+def writeback_to_provider(
+    provider: str | None,
+    provider_message_id: str | None,
+    provider_thread_id: str | None,
+    access_token: str,
+    label_cache: dict,
+    category: str,
+    priority: str,
+    reply_text: str | None,
+    from_email: str,
+    subject: str,
+    email_type: str | None = None,
+    is_automated: bool = False,
+) -> dict:
+    """
+    Apply an InboxIQ label and optional draft reply to a provider message.
+
+    Args:
+        label_cache: mutable dict (conn.metadata_json["label_ids"]) — updated in-place
+                     when a new label is created so the caller can persist it.
+
+    Returns:
+        {"label_applied": bool, "draft_created": bool}
+    """
+    if not provider or provider not in ("gmail", "outlook") or not provider_message_id:
+        return {"label_applied": False, "draft_created": False}
+
+    _cat = category.title()
+    label_name = f"InboxIQ/{_cat}/Urgent" if priority == "P1" else f"InboxIQ/{_cat}"
+    draft_needed = _should_draft(reply_text, email_type, is_automated)
+
+    label_applied = False
+    draft_created = False
+    try:
+        if provider == "gmail":
+            label_id = label_cache.get(label_name)
+            if not label_id:
+                label_id = ensure_gmail_label(access_token, label_name)
+                label_cache[label_name] = label_id
+            apply_label_gmail(access_token, provider_message_id, label_id)
+            label_applied = True
+            if draft_needed and provider_thread_id:
+                create_gmail_draft_reply(access_token, provider_thread_id, from_email, subject, reply_text)
+                draft_created = True
+        elif provider == "outlook":
+            apply_label_outlook(access_token, provider_message_id, label_name)
+            label_applied = True
+            if draft_needed:
+                create_outlook_draft_reply(access_token, provider_message_id, reply_text)
+                draft_created = True
+    except Exception as exc:
+        _log.warning(
+            "writeback_to_provider failed: provider=%s error=%s", provider, exc
+        )
+
+    return {"label_applied": label_applied, "draft_created": draft_created}
 
 IMAP_HOSTS = {
     "gmail": "imap.gmail.com",

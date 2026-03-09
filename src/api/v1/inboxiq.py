@@ -1306,6 +1306,43 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             # Phase 2 — ClassificationCorrection: detect if Oliver moved the email
             # to a label that differs from what InboxIQ applied.
             _detect_label_correction(existing, raw_email, conn.account_id)
+
+            # Writeback healing: if this ticket was created but the label/draft was never
+            # written back (e.g. worker was OOMKilled mid-task), heal it now.
+            # Check: ticket has a category AND message has no InboxIQ Label_* tag yet.
+            _provider_label_ids = normalized.get("provider_label_ids") or []
+            _has_inboxiq_label = any(lid for lid in _provider_label_ids if lid.startswith("Label_"))
+            if not _has_inboxiq_label and existing.category:
+                try:
+                    from src.inbox.poll import writeback_to_provider as _wb
+                    _decision = existing.decision or {}
+                    _reply_text = _decision.get("reply_text")
+                    _meta = conn.metadata_json or {}
+                    _label_cache = _meta.setdefault("label_ids", {})
+                    _result = _wb(
+                        provider=normalized.get("provider"),
+                        provider_message_id=normalized.get("provider_message_id"),
+                        provider_thread_id=normalized.get("provider_thread_id"),
+                        access_token=conn.access_token,
+                        label_cache=_label_cache,
+                        category=existing.category,
+                        priority=existing.priority or "P3",
+                        reply_text=_reply_text,
+                        from_email=normalized.get("from_email", ""),
+                        subject=normalized.get("subject", ""),
+                        email_type=existing.category,
+                        is_automated=(existing.status == "auto_handled"),
+                    )
+                    if _result.get("label_applied"):
+                        conn.metadata_json = dict(_meta)
+                        db.session.commit()
+                    current_app.logger.info(
+                        "writeback healed for orphaned ticket id=%s category=%s label=%s draft=%s",
+                        existing.id, existing.category,
+                        _result.get("label_applied"), _result.get("draft_created"),
+                    )
+                except Exception as _heal_exc:
+                    current_app.logger.warning("writeback heal failed: ticket=%s error=%s", existing.id, _heal_exc)
             continue
         try:
             task = _celery_client().send_task(
