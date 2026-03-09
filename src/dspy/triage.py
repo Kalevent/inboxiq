@@ -215,26 +215,47 @@ def _run_dspy_triage_impl(
             "auto_resolve" if ar == "false" else
             "ask_clarifying"
         )
+        _fallback_entities = json.dumps({
+            "intent": getattr(triage_pred, "intent", ""),
+            "sentiment": getattr(triage_pred, "sentiment", "neutral"),
+            "email_type": getattr(triage_pred, "email_type", "unknown"),
+            "is_automated": getattr(triage_pred, "is_automated", "false"),
+            "requires_human_response": str(ar == "true").lower(),
+        })
+        _fallback_escalation = json.dumps({
+            "decision": escalation_decision,
+            "reason": getattr(triage_pred, "ai_reason", ""),
+            "required_role": getattr(triage_pred, "assigned_to", ""),
+        })
+        # Attempt standalone draft even though the main pipeline fell back.
+        # The 5-stage DecisionProgram may have failed, but a single-step draft
+        # call is far more likely to succeed and must not be silently skipped.
+        _fallback_reply = None
+        if draft_enabled:
+            try:
+                from src.dspy.signatures import build_decision_program as _bdp
+                _draft_prog = _bdp(dspy, label_config)
+                _dr = _draft_prog.draft(
+                    case_json=case_json,
+                    entities_json=_fallback_entities,
+                    workflow_json="{}",
+                    escalation_json=_fallback_escalation,
+                    kb_context=kb_context_json,
+                )
+                _fallback_reply = _dr.reply_text
+            except Exception as _fde:
+                logger.warning("fallback draft generation failed (non-fatal): %s", _fde)
+
         result = dspy.Prediction(
-            entities_json=json.dumps({
-                "intent": getattr(triage_pred, "intent", ""),
-                "sentiment": getattr(triage_pred, "sentiment", "neutral"),
-                "email_type": getattr(triage_pred, "email_type", "unknown"),
-                "is_automated": getattr(triage_pred, "is_automated", "false"),
-                "requires_human_response": str(ar == "true").lower(),
-            }),
+            entities_json=_fallback_entities,
             route_json=json.dumps({
                 "queue": getattr(triage_pred, "category", ""),
                 "priority": getattr(triage_pred, "priority", "P3"),
                 "rationale": getattr(triage_pred, "ai_reason", ""),
             }),
             workflow_json="{}",
-            escalation_json=json.dumps({
-                "decision": escalation_decision,
-                "reason": getattr(triage_pred, "ai_reason", ""),
-                "required_role": getattr(triage_pred, "assigned_to", ""),
-            }),
-            reply_text=None,
+            escalation_json=_fallback_escalation,
+            reply_text=_fallback_reply,
         )
 
     # Extract results
