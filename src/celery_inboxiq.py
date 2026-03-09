@@ -541,9 +541,13 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     agent_result = None
     agent_decision = None
 
-    # Only run agent pipeline if not skipping triage and not bypassing via SenderProfile
-    _ACTIONABLE_CATEGORIES = {"support", "billing"}
-    _effective_bypass = _bypass_dspy and _sender_hint not in _ACTIONABLE_CATEGORIES
+    # Only run agent pipeline if not skipping triage and not bypassing via SenderProfile.
+    # Bypass only for explicitly non-actionable categories — "general"/unknown always runs DSPy.
+    _NON_ACTIONABLE_BYPASS_CATEGORIES = {
+        "updates", "promotions", "social", "forums", "transactions",
+        "spam", "marketing", "newsletter", "auto_reply", "notification",
+    }
+    _effective_bypass = _bypass_dspy and _sender_hint in _NON_ACTIONABLE_BYPASS_CATEGORIES
     if not skip_triage and not _effective_bypass:
         try:
             agent_result = process_email_with_agents(normalized)
