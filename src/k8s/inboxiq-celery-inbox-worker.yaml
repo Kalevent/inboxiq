@@ -52,24 +52,15 @@ spec:
                 name: inboxiq-env
             - configMapRef:
                 name: inboxiq-config
-          # Health check for Celery worker
-          readinessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - "celery -A src.celery_inboxiq.celery inspect ping -d celery@$HOSTNAME"
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
+          # Liveness only — no readiness probe needed for a queue worker.
+          # ps is available in python:3.11-slim; pgrep is NOT.
           livenessProbe:
             exec:
               command:
                 - /bin/sh
                 - -c
-                - "pgrep -f 'celery.*worker' > /dev/null"
-            initialDelaySeconds: 30
+                - "ps aux | grep -q '[c]elery'"
+            initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
