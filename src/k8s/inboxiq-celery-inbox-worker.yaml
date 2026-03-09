@@ -52,18 +52,8 @@ spec:
                 name: inboxiq-env
             - configMapRef:
                 name: inboxiq-config
-          # Liveness only — no readiness probe needed for a queue worker.
-          # ps is available in python:3.11-slim; pgrep is NOT.
-          livenessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - "ps aux | grep -q '[c]elery'"
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
+          # No liveness or readiness probes — python:3.11-slim has neither pgrep nor ps.
+          # If Celery crashes the container exits (non-zero) and Kubernetes restarts it.
           resources:
             requests:
               cpu: 100m

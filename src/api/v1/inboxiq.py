@@ -1181,14 +1181,11 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                     meta["label_ids"] = {**meta.get("label_ids", {}), **canonical_ids}
                     meta["labels_version"] = _LABEL_VERSION
                     meta["labels_synced_at"] = datetime.now(timezone.utc).isoformat()
-                    conn.metadata_json = meta
+                    conn.metadata_json = dict(meta)  # new dict forces SQLAlchemy dirty-tracking
                     db.session.commit()
-                    # Create Gmail filters so category-tab emails are labelled instantly on arrival.
-                    # Best-effort — filter creation failures never block the poll.
-                    try:
-                        bootstrap_gmail_filters(conn.access_token, canonical_ids)
-                    except Exception as _flt_exc:
-                        current_app.logger.warning("gmail filter bootstrap failed: %s", _flt_exc)
+                    # Note: Gmail Filters API (category:social etc.) returns 403 for OAuth apps
+                    # without domain-wide delegation. InboxIQ's post-triage writeback is the
+                    # reliable mechanism — do not call bootstrap_gmail_filters here.
 
                 # Hourly: merge user-created Gmail labels into triage categories
                 elif not last_sync or last_sync < _one_hour_ago:

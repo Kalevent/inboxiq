@@ -486,10 +486,16 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         if existing:
             span.set_attribute("email.duplicate", True)
             span.set_attribute("email.existing_ticket_id", str(existing.id))
-            # For emails that are duplicates but were processed before the current
-            # category→label mapping existed, re-apply the correct InboxIQ label.
-            # Only runs for emails with a Gmail native category that maps to a
-            # canonical InboxIQ label — cheap and idempotent.
+
+            # Writeback healing — re-apply the InboxIQ label (and draft if available)
+            # for any ticket whose writeback was interrupted (e.g. worker killed mid-task).
+            #
+            # Two paths:
+            # 1. Native Gmail category signal → use that category (cheap, no DB lookup)
+            # 2. Ticket has a category but email has no InboxIQ label yet → re-apply from ticket
+            #    This covers support/billing emails where the worker was killed before writeback.
+            #
+            # Both paths are idempotent — applying a label that already exists is a no-op.
             _NATIVE_LABEL_MAP = {
                 "CATEGORY_SOCIAL":     "social",
                 "CATEGORY_FORUMS":     "forums",
@@ -498,6 +504,9 @@ def process_incoming_email_task(self, payload: dict) -> dict:
                 "CATEGORY_PURCHASES":  "transactions",
             }
             _provider_label_ids = normalized.get("provider_label_ids") or []
+
+            # Path 1: native signal
+            _healed = False
             for _native, _cat in _NATIVE_LABEL_MAP.items():
                 if _native in _provider_label_ids:
                     try:
@@ -517,7 +526,36 @@ def process_incoming_email_task(self, payload: dict) -> dict:
                         )
                     except Exception:
                         pass
+                    _healed = True
                     break
+
+            # Path 2: ticket has category but no InboxIQ label on the message yet
+            if not _healed and existing.category:
+                _has_inboxiq_label = any(
+                    lid for lid in _provider_label_ids
+                    if lid.startswith("Label_")  # user/InboxIQ-created labels have Label_ prefix
+                )
+                if not _has_inboxiq_label:
+                    _decision = existing.decision or {}
+                    _reply_text = _decision.get("reply_text")
+                    try:
+                        _writeback_to_provider(
+                            provider=normalized.get("provider"),
+                            provider_message_id=normalized.get("provider_message_id"),
+                            provider_thread_id=normalized.get("provider_thread_id"),
+                            account_id=account_id,
+                            category=existing.category,
+                            priority=existing.priority or "P3",
+                            action_required=existing.status not in ("auto_handled",),
+                            reply_text=_reply_text,
+                            from_email=normalized.get("from_email", ""),
+                            subject=normalized.get("subject", ""),
+                            email_type=existing.category,
+                            is_automated=(existing.status == "auto_handled"),
+                        )
+                    except Exception:
+                        pass
+
             return {"status": "duplicate", "ticket_id": existing.id}
 
         span.set_attribute("email.duplicate", False)
