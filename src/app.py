@@ -552,10 +552,12 @@ def create_app() -> Flask:
       )
 
     account_connections = InboxConnection.query.filter_by(account_id=account_id, status="connected").all()
+    email_inbox_connections = [c for c in account_connections if (c.provider or "").lower() in {"gmail", "outlook", "imap"}]
     last_connection = _pick_connection(account_connections)
     if not last_connection:
       user_connections = InboxConnection.query.filter_by(user_id=user.id, status="connected").all()
       last_connection = _pick_connection(user_connections)
+      email_inbox_connections = email_inbox_connections or [c for c in user_connections if (c.provider or "").lower() in {"gmail", "outlook", "imap"}]
     last_poll = (last_connection.metadata_json or {}).get("last_poll_at") if last_connection else None
     last_poll_status = (last_connection.metadata_json or {}).get("last_poll_status") if last_connection else None
     last_poll_error = (last_connection.metadata_json or {}).get("last_poll_error") if last_connection else None
@@ -761,6 +763,7 @@ def create_app() -> Flask:
       connection_provider=connection_provider,
       connection_email=connection_email,
       connection_status=connection_status,
+      email_inbox_connections=email_inbox_connections,
       has_admin_access=has_admin_access,
       scope=scope,
       integration_status=integration_status,

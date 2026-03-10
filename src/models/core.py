@@ -37,13 +37,14 @@ class User(db.Model):
 
 class InboxConnection(db.Model):
     __tablename__ = "inbox_connections"
-    __table_args__ = (db.UniqueConstraint("user_id", "provider", name="uq_user_provider_inbox"),)
+    __table_args__ = (db.UniqueConstraint("account_id", "email_address", name="uq_account_email_inbox"),)
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=True)
     provider = db.Column(db.String(32), nullable=False)
     email_address = db.Column(db.String(255), nullable=True)
+    display_name = db.Column(db.String(100), nullable=True)
     status = db.Column(db.String(32), nullable=False, default="connected")
     access_token = db.Column(db.Text, nullable=True)
     refresh_token = db.Column(db.Text, nullable=True)
@@ -58,6 +59,7 @@ class InboxConnection(db.Model):
             "id": self.id,
             "provider": self.provider,
             "email_address": self.email_address,
+            "display_name": self.display_name,
             "status": self.status,
             "scopes": self.scopes or [],
             "metadata": self.metadata_json or {},

@@ -1278,31 +1278,52 @@
                 </div>
 
                 <div class="mt-6 grid settings-2col md:grid-cols-2 gap-4">
-                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-                    <div class="text-sm font-semibold text-slate-100">Gmail / Google Workspace</div>
-                    <p class="text-sm text-slate-300 mt-2">Connect Gmail to enable polling and triage.</p>
-                    <div class="mt-4 flex gap-2">
-                      <a href="/api/v1/auth/google/inbox/start" class="cta-pill-gmail">
-                        Connect Gmail
-                      </a>
-                      <a href="/integrations/google/manage" class="rounded-xl border border-slate-700 bg-slate-950/40 hover:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200">
-                        Manage
-                      </a>
+                  {% for conn in inbox_connections %}
+                  <div class="rounded-2xl border {% if conn.status == 'connected' %}border-emerald-700/40 bg-emerald-950/10{% else %}border-slate-800 bg-slate-900/70{% endif %} p-5">
+                    <div class="flex items-center gap-2">
+                      <div class="text-sm font-semibold text-slate-100">
+                        {% if conn.provider == 'gmail' %}Gmail / Google Workspace{% elif conn.provider == 'outlook' %}Microsoft Outlook{% else %}{{ conn.provider }}{% endif %}
+                      </div>
+                      {% if conn.status == 'connected' %}
+                        <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Connected</span>
+                      {% else %}
+                        <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-300">Disconnected</span>
+                      {% endif %}
                     </div>
+                    <p class="text-sm text-slate-300 mt-1">{{ conn.display_name or conn.email_address }}</p>
+                    {% if conn.display_name %}<p class="text-xs text-slate-500">{{ conn.email_address }}</p>{% endif %}
+                    {% if current_user and current_user.role in ('owner', 'admin') %}
+                    <div class="mt-4 flex gap-2 flex-wrap">
+                      {% if conn.provider == 'gmail' %}
+                        <a href="/api/v1/auth/google/inbox/start" class="cta-pill-gmail">Reconnect</a>
+                      {% else %}
+                        <a href="/api/v1/auth/outlook/inbox/start" class="cta-pill-outlook">Reconnect</a>
+                      {% endif %}
+                      <form method="POST" action="{{ url_for('settings.inbox_disconnect') }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="connection_id" value="{{ conn.id }}" />
+                        <button type="submit" class="rounded-xl px-4 py-2 text-sm font-semibold border border-red-800/50 text-red-400 hover:bg-red-900/20 transition-colors">
+                          Disconnect
+                        </button>
+                      </form>
+                    </div>
+                    {% endif %}
                   </div>
+                  {% else %}
+                  <div class="col-span-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                    <p class="text-sm text-slate-400">No email inboxes connected yet. Use the buttons below to connect one.</p>
+                  </div>
+                  {% endfor %}
 
-                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-                    <div class="text-sm font-semibold text-slate-100">Microsoft Outlook</div>
-                    <p class="text-sm text-slate-300 mt-2">Connect Outlook to ingest and triage support emails.</p>
-                    <div class="mt-4 flex gap-2">
-                      <a href="/api/v1/auth/outlook/inbox/start" class="cta-pill-outlook">
-                        Connect Outlook
-                      </a>
-                      <a href="/integrations/microsoft/manage" class="rounded-xl border border-slate-700 bg-slate-950/40 hover:bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200">
-                        Manage
-                      </a>
+                  {% if current_user and current_user.role in ('owner', 'admin') %}
+                  <div class="col-span-2 rounded-2xl border border-slate-700/50 bg-slate-900/40 p-5">
+                    <div class="text-sm font-semibold text-slate-200 mb-3">Add another inbox</div>
+                    <div class="flex gap-3 flex-wrap">
+                      <a href="/api/v1/auth/google/inbox/start" class="cta-pill-gmail">Connect Gmail</a>
+                      <a href="/api/v1/auth/outlook/inbox/start" class="cta-pill-outlook">Connect Outlook</a>
                     </div>
                   </div>
+                  {% endif %}
 
                   <div class="rounded-2xl border {% if linkedin_connection and linkedin_connection.status == 'connected' %}border-emerald-700/40 bg-emerald-950/10{% else %}border-slate-800 bg-slate-900/70{% endif %} p-5">
                     <div class="flex items-center gap-2">

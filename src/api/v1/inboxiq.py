@@ -967,7 +967,7 @@ def connect_inbox():
         return jsonify({"error": "email_address and access_token are required"}), 400
 
     account_id = _get_account_id(user_id)
-    conn = InboxConnection.query.filter_by(user_id=user_id, provider=provider).first()
+    conn = InboxConnection.query.filter_by(account_id=account_id, email_address=email_address).first()
     if not conn:
         conn = InboxConnection(
             user_id=user_id or 0,
@@ -977,6 +977,7 @@ def connect_inbox():
         )
         db.session.add(conn)
 
+    conn.provider = provider
     conn.access_token = access_token
     conn.refresh_token = data.get("refresh_token")
     conn.scopes = data.get("scopes") or []
@@ -1603,7 +1604,7 @@ def finish_connect():
     user_id = get_jwt_identity()
     account_id = _get_account_id(user_id)
 
-    conn = InboxConnection.query.filter_by(user_id=user_id, provider=provider).first()
+    conn = InboxConnection.query.filter_by(account_id=account_id, email_address=email_address).first()
     if not conn:
         conn = InboxConnection(
             user_id=user_id or 0,
@@ -1613,6 +1614,7 @@ def finish_connect():
         )
         db.session.add(conn)
 
+    conn.provider = provider
     conn.access_token = token
     conn.status = "connected"
     conn.metadata_json = {"last_poll_status": "never"}

@@ -148,7 +148,9 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
     if not resolved_user_id:
         raise RuntimeError("login_required")
 
-    conn = InboxConnection.query.filter_by(user_id=resolved_user_id, provider=provider).first()
+    conn = InboxConnection.query.filter_by(account_id=account_id, email_address=email_address).first() if account_id else None
+    if conn is None:
+        conn = InboxConnection.query.filter_by(user_id=resolved_user_id, provider=provider).first()
     if not conn:
         conn = InboxConnection(
             user_id=resolved_user_id,
@@ -157,8 +159,10 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
             email_address=email_address,
         )
         db.session.add(conn)
-    elif account_id and not conn.account_id:
-        conn.account_id = account_id
+    else:
+        if account_id and not conn.account_id:
+            conn.account_id = account_id
+        conn.provider = provider
 
     conn.access_token = access_token
     if refresh_token:

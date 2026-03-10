@@ -22,6 +22,7 @@ RBAC_DEFAULT_ROLES = [
     "permissions": [
       "Manage billing & seats",
       "Invite/remove users",
+      "Connect and disconnect email inboxes",
       "Manage integrations and security",
       "View and respond to tickets",
       "Full access to Marketing Ops",
@@ -34,6 +35,7 @@ RBAC_DEFAULT_ROLES = [
     "description": "Workspace configuration without billing authority.",
     "permissions": [
       "Manage users (except owners)",
+      "Connect and disconnect email inboxes",
       "Manage integrations and security",
       "View and respond to tickets",
       "Full access to Marketing Ops",
@@ -47,6 +49,7 @@ RBAC_DEFAULT_ROLES = [
     "permissions": [
       "View/triage/respond to tickets",
       "Create and edit macros",
+      "View connected inboxes (cannot connect or disconnect)",
       "View integrations status",
       "View automation rules (read-only)",
       "No access to Marketing Ops",
@@ -58,8 +61,7 @@ RBAC_DEFAULT_ROLES = [
     "description": "Read-only access for audits or leadership.",
     "permissions": [
       "Read tickets and metrics",
-      "View integrations status",
-      "No configuration access",
+      "View connected inboxes (no configuration access)",
       "No access to Marketing Ops or Automation Studio",
     ],
   },
@@ -125,10 +127,15 @@ def settings_page(tab):
   crm_prefill = {}
   linkedin_connection = None
   twitter_connection = None
+  inbox_connections = []
   if tab == "integrations" and account_id:
     crm_connection = InboxConnection.query.filter_by(account_id=account_id, provider="crm").first()
     linkedin_connection = InboxConnection.query.filter_by(account_id=account_id, provider="linkedin_social").first()
     twitter_connection = InboxConnection.query.filter_by(account_id=account_id, provider="twitter_social").first()
+    inbox_connections = InboxConnection.query.filter(
+      InboxConnection.account_id == account_id,
+      InboxConnection.provider.in_(["gmail", "outlook"]),
+    ).order_by(InboxConnection.created_at.asc()).all()
     if crm_connection and crm_connection.metadata_json:
       meta = crm_connection.metadata_json
       crm_prefill = {
@@ -183,6 +190,7 @@ def settings_page(tab):
     crm_prefill=crm_prefill,
     linkedin_connection=linkedin_connection,
     twitter_connection=twitter_connection,
+    inbox_connections=inbox_connections,
     developer_access_request=developer_access_request,
     registered_apps=registered_apps,
     developer_error=None,
@@ -570,6 +578,33 @@ def integrations_social_disconnect():
 
     conn = InboxConnection.query.filter_by(account_id=account_id, provider=provider).first()
     if conn:
+        from src.extensions import db
+        conn_id = str(conn.id)
+        conn_provider = conn.provider
+        db.session.delete(conn)
+        db.session.commit()
+        from src.security import log_audit
+        log_audit("inbox.disconnected", resource_type="inbox_connection", resource_id=conn_id,
+                  metadata={"provider": conn_provider})
+
+    return redirect(url_for("settings.settings_page", tab="integrations"))
+
+
+@bp.route("/integrations/inbox/disconnect", methods=["POST"])
+@login_required_settings
+def inbox_disconnect():
+    """Disconnect a Gmail or Outlook inbox connection. Owner/admin only."""
+    from src.models import InboxConnection
+    account_id = getattr(g, "current_account_id", None)
+    user = getattr(g, "current_user", None)
+    if not user or getattr(user, "role", None) not in ("owner", "admin"):
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+    connection_id = request.form.get("connection_id", "").strip()
+    if not account_id or not connection_id:
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+
+    conn = InboxConnection.query.filter_by(id=connection_id, account_id=account_id).first()
+    if conn and conn.provider in ("gmail", "outlook"):
         from src.extensions import db
         conn_id = str(conn.id)
         conn_provider = conn.provider

@@ -141,7 +141,7 @@
       <div class="max-w-6xl mx-auto px-4 py-10 lg:py-14">
 
         <div class="rounded-3xl border border-slate-800 bg-slate-950/85 p-6 lg:p-7 shadow-lg shadow-slate-950/30 relative overflow-hidden">
-          {% if not connection_email %}
+          {% if not email_inbox_connections %}
           <div class="mb-4 rounded-xl border border-indigo-500/60 bg-indigo-500/10 px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div class="space-y-1">
               <p class="text-sm font-semibold text-slate-100">Your inbox is not connected yet</p>
@@ -160,28 +160,25 @@
           <!-- Reporting dashboard -->
           <div class="space-y-6">
 
-            <!-- Status: inbox connected -->
-            {% if connection_email %}
+            <!-- Status: connected inboxes -->
+            {% for conn in email_inbox_connections %}
             <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 flex items-center gap-3">
-              <div class="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse" id="poll-status-dot"></div>
+              <div class="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse"></div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-slate-100">Connected · {{ connection_email }}</p>
-                <p class="text-xs text-slate-400 mt-0.5" id="poll-status-text">InboxIQ is monitoring your inbox via {{ connection_provider | capitalize if connection_provider else "email" }}</p>
+                <p class="text-sm font-medium text-slate-100">{{ conn.display_name or conn.email_address }}</p>
+                <p class="text-xs text-slate-400 mt-0.5">InboxIQ is monitoring via {{ conn.provider | capitalize }}</p>
               </div>
               <div class="flex items-center gap-3 flex-shrink-0">
-                {% if connection_id %}
                 <button
-                  id="poll-btn"
-                  onclick="triggerPoll('{{ connection_id }}')"
+                  onclick="triggerPoll('{{ conn.id }}')"
                   class="text-xs text-indigo-400 hover:text-indigo-200 font-medium border border-indigo-500/40 hover:border-indigo-400 rounded-lg px-3 py-1.5 transition-colors"
                 >
                   Check inbox
                 </button>
-                {% endif %}
                 <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="text-xs text-slate-400 hover:text-slate-200">Manage →</a>
               </div>
             </div>
-            {% endif %}
+            {% endfor %}
 
             <!-- Metric cards -->
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -221,7 +218,7 @@
             <div class="rounded-2xl border border-slate-800 bg-slate-900/40 px-5 py-4">
               <p class="text-sm text-slate-300 leading-relaxed">
                 Your inbox is your workspace. InboxIQ classifies emails, drafts replies, and applies labels directly inside Gmail or Outlook — there is nothing to do here.
-                {% if not connection_email %}
+                {% if not email_inbox_connections %}
                 <a href="/onboarding" class="text-indigo-400 hover:text-indigo-300 font-medium">Connect your inbox to get started →</a>
                 {% endif %}
               </p>
