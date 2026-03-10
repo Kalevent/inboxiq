@@ -107,14 +107,19 @@ def _find_or_create_user(email: str, display_name: str | None) -> tuple[User, bo
 
 
 def _issue_social_session(user: User, is_new: bool):
-    """Set JWT cookies and redirect to onboarding (new) or dashboard (returning)."""
+    """Set JWT cookies and redirect to dashboard (connected) or onboarding (not yet connected)."""
     additional_claims = {"account_id": str(user.account_id)}
     token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
     refresh = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
     _whitelist_refresh(refresh)
     log_audit("auth.social_login", resource_type="user", resource_id=str(user.id),
               account_id=user.account_id, user_id=user.id)
-    dest = url_for("onboarding_page")
+    has_inbox = InboxConnection.query.filter(
+        InboxConnection.account_id == user.account_id,
+        InboxConnection.provider.in_(["gmail", "outlook"]),
+        InboxConnection.access_token.isnot(None),
+    ).first() is not None
+    dest = url_for("dashboard_home") if has_inbox else url_for("onboarding_page")
     response = redirect(dest)
     set_access_cookies(response, token)
     set_refresh_cookies(response, refresh)

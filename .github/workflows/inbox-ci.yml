@@ -14,7 +14,7 @@ on:
     paths:
       - 'src/**'
       - '.github/workflows/inbox-ci.yml'
-      - '.github/dependabot.yml'
+      - 'renovate.json'
   workflow_dispatch:
     inputs:
       run_migrations:

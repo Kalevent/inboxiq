@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base"],
+  "schedule": ["on monday"],
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    {
+      "groupName": "python dependencies",
+      "matchManagers": ["pip_requirements"],
+      "addLabels": ["dependencies"],
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "addLabels": ["dependencies", "ci"],
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"]
+    },
+    {
+      "matchPackageNames": ["flask", "sqlalchemy", "celery", "rich"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "matchPackageNames": ["aws-actions/configure-aws-credentials"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}
