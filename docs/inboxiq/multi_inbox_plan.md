@@ -82,6 +82,59 @@ Review the generated migration before `flask db upgrade`. It must drop `uq_user_
 
 ---
 
+## Phase 1.5 — Inbox invite link (BUILT)
+
+### The problem Phase 1 left open
+
+Phase 1 requires Oliver to run the Gmail OAuth flow on his wife's behalf. Google shows the consent screen in Oliver's browser — she never sees it, never grants it herself. If Google requires her identity (2FA, suspicious activity), Oliver is stuck. More fundamentally, she never consented to anything.
+
+### The solution
+
+A signed, time-limited invite link. Oliver enters her email in Settings → Inboxes → "Invite someone else's inbox". She gets one email with one link. She clicks it, sees Google's consent screen in her own browser, clicks Allow. Done. She never logs into InboxIQ.
+
+### How it works
+
+**Step 1 — Oliver sends the invite**
+
+`POST /api/v1/inboxiq/inbox/invite` (owner/admin only):
+- Creates a placeholder `InboxConnection`: `account_id=Oliver's, email_address=sarah@gmail.com, status="pending"`
+- Generates a signed token: `HMAC(nonce|timestamp|account_id|expected_email)` — 72-hour TTL
+- Stores the token on the row for replay protection (nulled after use)
+- Emails Sarah: *"Oliver wants to connect your Gmail to InboxIQ — click here."*
+
+**Step 2 — Sarah clicks the link**
+
+`GET /api/v1/auth/inbox/accept-invite?token=...`:
+- Verifies HMAC signature and expiry; matches token against stored row
+- Redirects to Google OAuth with `login_hint=sarah@gmail.com`, `state=inbox_invite:<token>`
+
+**Step 3 — Google sends her back**
+
+`GET /api/v1/auth/google/callback` (state starts with `inbox_invite:`):
+- Verifies returned email matches `expected_email` — rejects wrong Google account
+- Updates `InboxConnection`: OAuth tokens, `status="connected"`, invite_token nulled
+- Shows: "Your Gmail inbox has been connected. You can close this tab."
+
+**What Sarah sees:** Email → click link → Google consent screen → "Connected. Close this tab." Two clicks. No InboxIQ account.
+
+### Files changed
+
+| File | Change |
+| --- | --- |
+| `src/models/core.py` | `invite_token`, `invite_token_expires_at` on `InboxConnection` |
+| `src/api/v1/auth.py` | `make_inbox_invite_token()`, `verify_inbox_invite_token()`, `_complete_invite_connection()`, `GET /auth/inbox/accept-invite`, updated Google + Outlook callbacks |
+| `src/api/v1/inboxiq.py` | `POST /inboxiq/inbox/invite` |
+| `src/notifications/emails.py` | `send_inbox_invite_email()` |
+| `src/templates/settings/index.html` | "Invite someone else's inbox" form; amber "Invite pending" badge |
+
+### Migration required
+
+```bash
+flask db migrate -m "inbox invite token fields"
+```
+
+---
+
 ## Phase 2 — Multi-user / seat model
 
 ### The problem Phase 1 does not solve

@@ -51,6 +51,8 @@ class InboxConnection(db.Model):
     token_expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
     scopes = db.Column(db.JSON, nullable=False, default=list)
     metadata_json = db.Column("metadata", db.JSON, nullable=False, default=dict)
+    invite_token = db.Column(db.String(256), nullable=True)
+    invite_token_expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

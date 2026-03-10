@@ -1279,13 +1279,15 @@
 
                 <div class="mt-6 grid settings-2col md:grid-cols-2 gap-4">
                   {% for conn in inbox_connections %}
-                  <div class="rounded-2xl border {% if conn.status == 'connected' %}border-emerald-700/40 bg-emerald-950/10{% else %}border-slate-800 bg-slate-900/70{% endif %} p-5">
+                  <div class="rounded-2xl border {% if conn.status == 'connected' %}border-emerald-700/40 bg-emerald-950/10{% elif conn.status == 'pending' %}border-amber-700/40 bg-amber-950/10{% else %}border-slate-800 bg-slate-900/70{% endif %} p-5">
                     <div class="flex items-center gap-2">
                       <div class="text-sm font-semibold text-slate-100">
                         {% if conn.provider == 'gmail' %}Gmail / Google Workspace{% elif conn.provider == 'outlook' %}Microsoft Outlook{% else %}{{ conn.provider }}{% endif %}
                       </div>
                       {% if conn.status == 'connected' %}
                         <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Connected</span>
+                      {% elif conn.status == 'pending' %}
+                        <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">Invite pending</span>
                       {% else %}
                         <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-300">Disconnected</span>
                       {% endif %}
@@ -1317,12 +1319,75 @@
 
                   {% if current_user and current_user.role in ('owner', 'admin') %}
                   <div class="col-span-2 rounded-2xl border border-slate-700/50 bg-slate-900/40 p-5">
-                    <div class="text-sm font-semibold text-slate-200 mb-3">Add another inbox</div>
+                    <div class="text-sm font-semibold text-slate-200 mb-1">Connect your own inbox</div>
+                    <p class="text-xs text-slate-400 mb-3">Sign in with your Google or Microsoft account to grant access.</p>
                     <div class="flex gap-3 flex-wrap">
                       <a href="/api/v1/auth/google/inbox/start" class="cta-pill-gmail">Connect Gmail</a>
                       <a href="/api/v1/auth/outlook/inbox/start" class="cta-pill-outlook">Connect Outlook</a>
                     </div>
                   </div>
+                  <div class="col-span-2 rounded-2xl border border-slate-700/50 bg-slate-900/40 p-5">
+                    <div class="text-sm font-semibold text-slate-200 mb-1">Invite someone else's inbox</div>
+                    <p class="text-xs text-slate-400 mb-3">Send them a one-click link. They grant access themselves — no InboxIQ account needed.</p>
+                    <form id="inboxInviteForm" class="flex gap-2 flex-wrap items-end">
+                      <div class="flex flex-col gap-1">
+                        <label class="text-xs text-slate-400">Email address</label>
+                        <input type="email" id="inviteEmail" placeholder="sarah@gmail.com" required
+                               class="rounded-lg bg-slate-800 border border-slate-700 text-slate-100 text-sm px-3 py-2 w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      </div>
+                      <div class="flex flex-col gap-1">
+                        <label class="text-xs text-slate-400">Provider</label>
+                        <select id="inviteProvider"
+                                class="rounded-lg bg-slate-800 border border-slate-700 text-slate-100 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                          <option value="gmail">Gmail</option>
+                          <option value="outlook">Outlook</option>
+                        </select>
+                      </div>
+                      <div class="flex flex-col gap-1">
+                        <label class="text-xs text-slate-400">Label (optional)</label>
+                        <input type="text" id="inviteDisplayName" placeholder="Sarah's Gmail"
+                               class="rounded-lg bg-slate-800 border border-slate-700 text-slate-100 text-sm px-3 py-2 w-40 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      </div>
+                      <button type="submit"
+                              class="rounded-xl px-4 py-2 text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
+                        Send invite
+                      </button>
+                    </form>
+                    <p id="inviteMsg" class="text-xs mt-2 hidden"></p>
+                  </div>
+                  <script>
+                  (function(){
+                    var form = document.getElementById('inboxInviteForm');
+                    if (!form) return;
+                    form.addEventListener('submit', function(e){
+                      e.preventDefault();
+                      var email = document.getElementById('inviteEmail').value.trim();
+                      var provider = document.getElementById('inviteProvider').value;
+                      var displayName = document.getElementById('inviteDisplayName').value.trim();
+                      var msg = document.getElementById('inviteMsg');
+                      msg.className = 'text-xs mt-2';
+                      msg.textContent = 'Sending…';
+                      fetch('/api/v1/inboxiq/inbox/invite', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({email_address: email, provider: provider, display_name: displayName || null}),
+                        credentials: 'include'
+                      })
+                      .then(function(r){ return r.json().then(function(d){ return {ok: r.ok, data: d}; }); })
+                      .then(function(res){
+                        if (res.ok) {
+                          msg.className = 'text-xs mt-2 text-emerald-400';
+                          msg.textContent = res.data.message || 'Invite sent.';
+                          form.reset();
+                        } else {
+                          msg.className = 'text-xs mt-2 text-red-400';
+                          msg.textContent = res.data.error || 'Could not send invite.';
+                        }
+                      })
+                      .catch(function(){ msg.className = 'text-xs mt-2 text-red-400'; msg.textContent = 'Network error.'; });
+                    });
+                  })();
+                  </script>
                   {% endif %}
 
                   <div class="rounded-2xl border {% if linkedin_connection and linkedin_connection.status == 'connected' %}border-emerald-700/40 bg-emerald-950/10{% else %}border-slate-800 bg-slate-900/70{% endif %} p-5">

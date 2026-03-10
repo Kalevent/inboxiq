@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import base64
+import hashlib
+import hmac
 import json
+import secrets
+import time
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import requests
 from flask import Blueprint, current_app, jsonify, redirect, request, url_for
@@ -175,6 +179,184 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
     return conn
 
 
+# ── Inbox invite token helpers ────────────────────────────────────────────────
+
+_INVITE_TTL = 72 * 3600  # 72 hours
+
+
+def _signing_key() -> bytes:
+    key = current_app.config.get("SECRET_KEY") or "dev-secret"
+    return key.encode()
+
+
+def make_inbox_invite_token(account_id: int, expected_email: str) -> str:
+    """Return a signed, time-limited token encoding account_id + expected_email."""
+    nonce = secrets.token_urlsafe(16)
+    ts = str(int(time.time()))
+    payload = f"{nonce}|{ts}|{account_id}|{expected_email}"
+    sig = hmac.new(_signing_key(), payload.encode(), hashlib.sha256).hexdigest()[:24]
+    encoded = base64.urlsafe_b64encode(payload.encode()).rstrip(b"=").decode()
+    return f"{encoded}.{sig}"
+
+
+def verify_inbox_invite_token(token: str):
+    """Verify a token. Returns (valid: bool, account_id: int | None, expected_email: str)."""
+    try:
+        encoded, sig = token.rsplit(".", 1)
+        padding = "=" * (4 - len(encoded) % 4)
+        payload = base64.urlsafe_b64decode(encoded + padding).decode()
+        expected_sig = hmac.new(_signing_key(), payload.encode(), hashlib.sha256).hexdigest()[:24]
+        if not hmac.compare_digest(sig, expected_sig):
+            return False, None, ""
+        parts = payload.split("|", 3)
+        if len(parts) < 4:
+            return False, None, ""
+        _, ts_str, account_id_str, expected_email = parts
+        if time.time() - int(ts_str) > _INVITE_TTL:
+            return False, None, ""
+        return True, int(account_id_str), expected_email
+    except Exception:
+        return False, None, ""
+
+
+@v1.route("/auth/inbox/accept-invite", methods=["GET"])
+def inbox_accept_invite():
+    """
+    Entry point for the inbox invite link sent to the inbox owner (e.g. Oliver's wife).
+    Verifies the signed token then redirects to the appropriate provider OAuth consent screen.
+    No InboxIQ login required — the token carries all the context needed.
+    """
+    token = request.args.get("token", "")
+    if not token:
+        return _invite_result_page(False, "Invalid or missing invite link.")
+
+    valid, account_id, expected_email = verify_inbox_invite_token(token)
+    if not valid:
+        return _invite_result_page(False, "This invite link has expired or is invalid. Ask the account owner to send a new one.")
+
+    # Look up the placeholder connection to determine provider
+    conn = InboxConnection.query.filter_by(
+        account_id=account_id, email_address=expected_email, status="pending"
+    ).first()
+    if not conn:
+        # Already connected — show success
+        existing = InboxConnection.query.filter_by(
+            account_id=account_id, email_address=expected_email, status="connected"
+        ).first()
+        if existing:
+            return _invite_result_page(True, f"{expected_email} is already connected.")
+        return _invite_result_page(False, "Invite not found. It may have already been used or cancelled.")
+
+    # Verify the stored token matches (replay protection)
+    if conn.invite_token != token:
+        return _invite_result_page(False, "This invite link has already been used.")
+
+    provider = conn.provider or "gmail"
+
+    client_id = current_app.config.get("GOOGLE_CLIENT_ID")
+    redirect_uri = current_app.config.get("GOOGLE_REDIRECT_URI") or url_for(".google_callback", _external=True)
+
+    if provider == "gmail":
+        if not client_id or not redirect_uri:
+            return _invite_result_page(False, "Google OAuth is not configured. Contact support.")
+        params = {
+            "response_type": "code",
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "scope": " ".join(GOOGLE_GMAIL_SCOPES),
+            "access_type": "offline",
+            "include_granted_scopes": "true",
+            "prompt": "consent",
+            "login_hint": expected_email,
+            "state": f"inbox_invite:{token}",
+        }
+        return redirect(f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}")
+
+    if provider == "outlook":
+        ms_client_id = current_app.config.get("MICROSOFT_CLIENT_ID")
+        ms_redirect_uri = current_app.config.get("MICROSOFT_REDIRECT_URI") or url_for(".outlook_callback", _external=True)
+        if not ms_client_id or not ms_redirect_uri:
+            return _invite_result_page(False, "Microsoft OAuth is not configured. Contact support.")
+        params = {
+            "client_id": ms_client_id,
+            "response_type": "code",
+            "redirect_uri": ms_redirect_uri,
+            "scope": " ".join(MS_MAIL_SCOPES),
+            "response_mode": "query",
+            "prompt": "consent",
+            "login_hint": expected_email,
+            "state": f"inbox_invite:{token}",
+        }
+        return redirect(f"{MS_AUTH_URL}?{urllib.parse.urlencode(params)}")
+
+    return _invite_result_page(False, f"Unsupported provider: {provider}.")
+
+
+def _complete_invite_connection(provider: str, email: str, access_token: str, refresh_token: str | None, token: str):
+    """
+    Called from Google/Outlook callbacks when state starts with inbox_invite:.
+    Verifies email match, updates the placeholder InboxConnection to connected.
+    Returns (success: bool, message: str).
+    """
+    valid, account_id, expected_email = verify_inbox_invite_token(token)
+    if not valid:
+        return False, "Invite link expired. Ask the account owner to send a new one."
+
+    if email.lower().strip() != expected_email.lower().strip():
+        return False, (
+            f"You signed in as {email} but the invite was sent to {expected_email}. "
+            "Please sign in with the correct Google account."
+        )
+
+    conn = InboxConnection.query.filter_by(
+        account_id=account_id, email_address=expected_email
+    ).first()
+    if not conn:
+        return False, "Invite not found. It may have been cancelled."
+
+    if conn.invite_token != token:
+        return False, "This invite link has already been used."
+
+    conn.access_token = access_token
+    if refresh_token:
+        conn.refresh_token = refresh_token
+    conn.status = "connected"
+    conn.provider = provider
+    conn.invite_token = None
+    conn.invite_token_expires_at = None
+    meta = conn.metadata_json or {}
+    meta.update({"last_poll_status": "never", "last_poll_counts": {"created": 0, "duplicates": 0, "errors": 0, "fetched": 0}})
+    conn.metadata_json = meta
+    db.session.commit()
+    current_app.logger.info(
+        {"event": "inbox.invite.connected", "account_id": account_id, "email": email, "provider": provider}
+    )
+    return True, f"Your {provider.title()} inbox has been connected to InboxIQ. You can close this tab."
+
+
+def _invite_result_page(success: bool, message: str) -> str:
+    from flask import render_template_string
+    color = "#16a34a" if success else "#dc2626"
+    icon = "✅" if success else "❌"
+    return render_template_string(
+        """<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>InboxIQ Inbox Connect</title>
+<style>
+  body{font-family:-apple-system,sans-serif;display:flex;justify-content:center;
+       align-items:center;min-height:100vh;margin:0;background:#f9fafb}
+  .card{background:#fff;border-radius:12px;padding:40px 48px;max-width:480px;
+        box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}
+  h2{font-size:22px;margin-bottom:16px}
+  p{color:#374151;line-height:1.6}
+</style></head>
+<body><div class="card">
+  <h2 style="color:{{ color }}">{{ icon }} Inbox Connect</h2>
+  <p>{{ message }}</p>
+</div></body></html>""",
+        color=color, icon=icon, message=message,
+    )
+
+
 @v1.route("/auth/google/start", methods=["GET"])
 @jwt_required(optional=True)
 def google_start():
@@ -246,6 +428,11 @@ def google_callback():
     access_token = tok.get("access_token")
     refresh_token = tok.get("refresh_token")
     user_id = get_jwt_identity()
+
+    if state.startswith("inbox_invite:"):
+        invite_token = state[len("inbox_invite:"):]
+        ok, message = _complete_invite_connection("gmail", email, access_token, refresh_token, invite_token)
+        return _invite_result_page(ok, message)
 
     if state == "connect_inbox":
         # Authenticated user connecting their Gmail inbox — store connection and redirect
@@ -323,7 +510,7 @@ def outlook_callback():
         return jsonify({"error": "Microsoft OAuth not configured"}), 500
 
     state = request.args.get("state", "signin")
-    scopes = MS_MAIL_SCOPES if state == "connect_inbox" else MS_SIGNIN_SCOPES
+    scopes = MS_MAIL_SCOPES if (state == "connect_inbox" or state.startswith("inbox_invite:")) else MS_SIGNIN_SCOPES
 
     token_data = {
         "client_id": client_id,
@@ -342,6 +529,11 @@ def outlook_callback():
     access_token = tok.get("access_token")
     refresh_token = tok.get("refresh_token")
     user_id = get_jwt_identity()
+
+    if state.startswith("inbox_invite:"):
+        invite_token = state[len("inbox_invite:"):]
+        ok, message = _complete_invite_connection("outlook", email, access_token, refresh_token, invite_token)
+        return _invite_result_page(ok, message)
 
     if state == "connect_inbox":
         # Authenticated user connecting their Outlook inbox

@@ -9,7 +9,7 @@ from sqlalchemy import func, or_, case, desc
 from src.api.v1 import v1
 from src.extensions import db
 from src.models.ai import DspyTrainingMetric
-from src.models.core import InboxConnection, AccountLLMConfig, ALLOWED_LLM_PROVIDERS
+from src.models.core import Account, InboxConnection, AccountLLMConfig, ALLOWED_LLM_PROVIDERS
 from src.models.misc import Feedback
 from src.models.tickets import Ticket, DraftReplyFeedback
 from src.inbox.logic import normalize_email_payload, run_dspy_decision, sample_messages, compute_due_at
@@ -991,6 +991,106 @@ def connect_inbox():
               metadata={"provider": provider, "email": email_address})
 
     return jsonify({"connection": conn.to_dict()})
+
+
+@v1.route("/inboxiq/inbox/invite", methods=["POST"])
+@jwt_required()
+def send_inbox_invite():
+    """
+    Oliver enters a colleague's or family member's email address so they can
+    connect their own inbox without ever logging into InboxIQ.
+
+    Creates a placeholder InboxConnection (status="pending"), generates a
+    signed 72-hour invite token, and emails the link to the recipient.
+
+    Body: { email_address, provider ("gmail"|"outlook"), display_name (optional) }
+    """
+    from datetime import timedelta
+    from src.api.v1.auth import make_inbox_invite_token
+    from src.notifications.emails import send_inbox_invite_email
+    from src.models.core import User
+
+    user_id = get_jwt_identity()
+    account_id = _get_account_id(user_id)
+    if not account_id:
+        return jsonify({"error": "Account not found"}), 404
+
+    # Only owner/admin may invite
+    user = User.query.get(user_id)
+    if not user or getattr(user, "role", None) not in ("owner", "admin"):
+        return jsonify({"error": "Only account owners and admins can invite inboxes"}), 403
+
+    data = request.get_json() or {}
+    email_address = (data.get("email_address") or "").strip().lower()
+    provider = (data.get("provider") or "gmail").lower()
+    display_name = (data.get("display_name") or "").strip() or None
+
+    if not email_address:
+        return jsonify({"error": "email_address is required"}), 400
+    if provider not in ("gmail", "outlook"):
+        return jsonify({"error": "provider must be gmail or outlook"}), 400
+
+    # Check not already connected
+    existing = InboxConnection.query.filter_by(account_id=account_id, email_address=email_address).first()
+    if existing and existing.status == "connected":
+        return jsonify({"error": f"{email_address} is already connected to this account"}), 409
+
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(hours=72)
+    token = make_inbox_invite_token(account_id, email_address)
+
+    if existing:
+        # Resend: refresh token on existing pending row
+        existing.invite_token = token
+        existing.invite_token_expires_at = expires_at
+        existing.provider = provider
+        if display_name:
+            existing.display_name = display_name
+        conn = existing
+    else:
+        conn = InboxConnection(
+            user_id=int(user_id),
+            account_id=account_id,
+            provider=provider,
+            email_address=email_address,
+            display_name=display_name,
+            status="pending",
+            invite_token=token,
+            invite_token_expires_at=expires_at,
+        )
+        db.session.add(conn)
+
+    db.session.commit()
+
+    # Build the accept link
+    base_url = current_app.config.get("BASE_URL") or "https://inboxiq.kalevent.com"
+    accept_link = f"{base_url}/api/v1/auth/inbox/accept-invite?token={token}"
+
+    account = Account.query.get(account_id)
+    inviter_name = account.name if account else "Your InboxIQ account"
+
+    sent = send_inbox_invite_email(
+        to_email=email_address,
+        accept_link=accept_link,
+        inviter_name=inviter_name,
+        provider=provider,
+    )
+
+    current_app.logger.info({
+        "event": "inbox.invite.sent",
+        "account_id": account_id,
+        "email": email_address,
+        "provider": provider,
+        "email_sent": sent,
+    })
+
+    return jsonify({
+        "connection_id": conn.id,
+        "email_address": email_address,
+        "status": "pending",
+        "invite_sent": sent,
+        "message": f"Invite {'sent' if sent else 'created (email delivery disabled)'} for {email_address}",
+    })
 
 
 def _fetch_messages_stub(conn: InboxConnection, limit: int = 5):

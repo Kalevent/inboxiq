@@ -5,6 +5,79 @@ from typing import Optional
 from flask import current_app
 
 
+def send_inbox_invite_email(to_email: str, accept_link: str, inviter_name: str, provider: str = "gmail") -> bool:
+    """Send an inbox connect invite to a third party (e.g. Oliver's wife's Gmail)."""
+    app = current_app
+    host = app.config.get("SMTP_HOST")
+    port = app.config.get("SMTP_PORT")
+    user = app.config.get("SMTP_USER")
+    password = app.config.get("SMTP_PASSWORD")
+    use_tls = app.config.get("SMTP_USE_TLS", True)
+    use_ssl = app.config.get("SMTP_USE_SSL", False)
+    mail_from = app.config.get("MAIL_FROM", "noreply@kalevent.com")
+
+    provider_label = "Gmail" if provider == "gmail" else "Outlook"
+
+    if not host:
+        app.logger.info({"event": "email.disabled", "reason": "SMTP_HOST not configured", "to": to_email, "accept_link": accept_link})
+        return False
+
+    msg = EmailMessage()
+    msg["Subject"] = f"{inviter_name} wants to connect your {provider_label} inbox to InboxIQ"
+    msg["From"] = mail_from
+    msg["To"] = to_email
+    msg.set_content(
+        f"Hi,\n\n{inviter_name} has set up InboxIQ to help manage email.\n\n"
+        f"To connect your {provider_label} inbox, click the link below. "
+        f"You'll be taken directly to {provider_label} — no InboxIQ account required.\n\n"
+        f"Connect your inbox: {accept_link}\n\n"
+        f"This link expires in 72 hours.\n\n"
+        f"If you didn't expect this email, you can ignore it.\n\nThanks,\nThe InboxIQ Team"
+    )
+    msg.add_alternative(
+        f"""
+        <div style="font-family:-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:24px">
+          <h2 style="color:#1e293b;font-size:20px">Connect your {provider_label} inbox</h2>
+          <p style="color:#475569">{inviter_name} has set up InboxIQ to help manage email.</p>
+          <p style="color:#475569">
+            Click the button below to connect your {provider_label} inbox.
+            You'll be taken directly to {provider_label} — <strong>no InboxIQ account required</strong>.
+          </p>
+          <p style="margin:28px 0">
+            <a href="{accept_link}"
+               style="display:inline-block;background:#4f46e5;color:#fff;padding:12px 24px;
+                      border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
+              Connect your {provider_label} inbox →
+            </a>
+          </p>
+          <p style="color:#94a3b8;font-size:13px">This link expires in 72 hours. If you didn't expect this email, you can ignore it.</p>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
+          <p style="color:#94a3b8;font-size:12px">InboxIQ by Kalevent</p>
+        </div>
+        """,
+        subtype="html",
+    )
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port) as server:
+                if user and password:
+                    server.login(user, password)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port) as server:
+                if use_tls:
+                    server.starttls()
+                if user and password:
+                    server.login(user, password)
+                server.send_message(msg)
+        app.logger.info({"event": "email.sent.inbox_invite", "to": to_email})
+        return True
+    except Exception as exc:
+        app.logger.warning({"event": "email.failed.inbox_invite", "to": to_email, "error": str(exc)})
+        return False
+
+
 def send_content_review_email(
     to_email: str,
     title: str,
