@@ -185,17 +185,17 @@ def process_uploaded_files(
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     """Extract text from PDF (basic implementation)."""
     try:
-        import PyPDF2
+        import pypdf
         from io import BytesIO
 
         pdf_file = BytesIO(pdf_bytes)
-        reader = PyPDF2.PdfReader(pdf_file)
+        reader = pypdf.PdfReader(pdf_file)
         text_parts = []
         for page in reader.pages:
             text_parts.append(page.extract_text())
         return "\n".join(text_parts)
     except ImportError:
-        logger.warning("PyPDF2 not installed, skipping PDF extraction")
+        logger.warning("pypdf not installed, skipping PDF extraction")
         return ""
     except Exception as e:
         logger.error(f"PDF extraction failed: {e}")
