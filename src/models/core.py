@@ -17,9 +17,14 @@ class Account(db.Model):
     seats_limit = db.Column(db.Integer, nullable=False, default=1)
     seats_used = db.Column(db.Integer, nullable=False, default=1)
     developer_access = db.Column(db.Boolean, nullable=False, default=False)
+    deleted_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     users = db.relationship("User", backref="account", lazy=True)
+
+    @property
+    def is_deleted(self) -> bool:
+        return self.deleted_at is not None
 
 class User(db.Model):
     __tablename__ = "users"

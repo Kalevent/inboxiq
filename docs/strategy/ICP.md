@@ -1,7 +1,7 @@
 # Ideal Customer Profile (ICP)
 
 > Status: Draft — for discussion at next innovation meeting
-> Last updated: 7 Mar 2026
+> Last updated: 11 Mar 2026
 
 ---
 
@@ -17,15 +17,27 @@ The innovation manager's observation is correct: focus on one pain point, one bu
 
 ### Who they are
 
-**The founder or head of operations at a B2B SaaS company, 10–50 employees, $500K–$5M ARR.**
+The founder or head of operations at a B2B SaaS company, 10–50 employees, $500K–$5M ARR.
 
 More specifically:
-- They have a small customer support function — 1 to 3 people handling email support, or the founder is still doing it themselves
-- They are receiving between 50 and 300 support emails per week
+
+- They have a small team handling email support — 1 to 3 people, or the founder is still doing it themselves, each with their own inbox
+- They are receiving between 50 and 300 support emails per week across those inboxes combined
 - The majority of those emails are repetitive: billing questions, password resets, onboarding help, "how do I do X" questions
 - They have evaluated Intercom (Fin AI) or Zendesk (AI features) and found them too expensive or too complex for where they are now
 - They make their own buying decisions — no procurement process, no IT manager sign-off needed
 - They care about customer experience but cannot afford to staff it properly
+- They want consistent AI behaviour across every inbox the team manages — not just their own
+
+### Quick reference
+
+- Founder or Head of Ops, B2B SaaS
+- 10–50 employees, $500K–$5M ARR
+- 50–300 repetitive support emails/week across the team
+- Self-serve buyer — no IT/procurement
+- Evaluated Zendesk — too complex
+- Persona: "Overwhelmed Oliver", 28–42
+- Finds tools via: Product Hunt, LinkedIn, Hacker News
 
 ### Why this segment
 

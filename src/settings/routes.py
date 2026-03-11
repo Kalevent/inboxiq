@@ -566,6 +566,65 @@ def activity_log_page():
   return render_template("settings/activity_log.html", account_id=account_id)
 
 
+@bp.post("/settings/account/delete")
+@login_required_settings
+@limiter.limit("3 per hour")
+def account_delete():
+  """
+  Soft-delete the account. Owner-only. Writes an AuditLog row before marking
+  deleted_at, so the record survives even if something goes wrong afterward.
+  The account is not hard-deleted here — a scheduled job purges after 30 days.
+  """
+  from datetime import timezone
+  from src.models.auth import AuditLog
+
+  account_id = getattr(g, "current_account_id", None)
+  user = getattr(g, "current_user", None)
+  if not account_id or not user:
+    return jsonify({"error": "Unauthorized"}), 401
+
+  if user.role != "owner":
+    return jsonify({"error": "Only the account owner can delete this account."}), 403
+
+  account = db.session.get(Account, account_id)
+  if not account or account.is_deleted:
+    return jsonify({"error": "Account not found."}), 404
+
+  confirmation = (request.json or {}).get("confirm_name", "").strip()
+  if confirmation != account.name:
+    return jsonify({"error": "Account name does not match. Type the account name exactly to confirm."}), 422
+
+  # Write audit log before mutating — immutable record survives the deletion
+  log = AuditLog(
+    account_id=account_id,
+    user_id=user.id,
+    action="account.deleted",
+    resource_type="account",
+    resource_id=str(account_id),
+    ip_address=request.remote_addr,
+    user_agent=(request.user_agent.string or "")[:300],
+    metadata_json={
+      "account_name": account.name,
+      "initiated_by_email": user.email,
+      "reason": (request.json or {}).get("reason", ""),
+    },
+  )
+  db.session.add(log)
+
+  account.deleted_at = datetime.now(timezone.utc)
+  db.session.commit()
+
+  current_app.logger.warning({
+    "event": "account.deleted",
+    "account_id": account_id,
+    "account_name": account.name,
+    "user_id": user.id,
+    "ip": request.remote_addr,
+  })
+
+  return jsonify({"ok": True, "message": "Account scheduled for deletion. Data will be permanently removed in 30 days."}), 200
+
+
 @bp.route("/integrations/social/disconnect", methods=["POST"])
 @login_required_settings
 def integrations_social_disconnect():

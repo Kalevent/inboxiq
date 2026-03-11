@@ -1,0 +1,177 @@
+        <section id="section-pending-deletion" class="admin-section">
+          <div class="content-container space-y-6">
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight">Pending Deletion</h1>
+              <p class="text-sm text-slate-300 mt-1">Accounts soft-deleted by their owner. Hard purge becomes available after the 30-day grace period.</p>
+            </div>
+
+            <!-- Summary bar -->
+            <div id="pendingDeletionSummary" class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-sm text-slate-300 hidden">
+              <span id="pendingDeletionSummaryText"></span>
+            </div>
+
+            <!-- Table -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
+              <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+                <h2 class="text-base font-semibold text-slate-100">Accounts awaiting purge</h2>
+                <button id="refreshPendingDeletion" class="text-xs text-indigo-400 hover:text-indigo-300 transition">Refresh</button>
+              </div>
+
+              <div id="pendingDeletionLoading" class="px-4 py-8 text-center text-sm text-slate-400">Loading...</div>
+              <div id="pendingDeletionEmpty" class="px-4 py-8 text-center text-sm text-slate-400 hidden">No accounts pending deletion.</div>
+
+              <table id="pendingDeletionTable" class="w-full text-sm hidden">
+                <thead>
+                  <tr class="border-b border-slate-800 text-xs text-slate-400 uppercase tracking-wider">
+                    <th class="px-4 py-2 text-left">Account</th>
+                    <th class="px-4 py-2 text-left">ID</th>
+                    <th class="px-4 py-2 text-left">Deleted at</th>
+                    <th class="px-4 py-2 text-left">Grace period</th>
+                    <th class="px-4 py-2 text-left">Initiated by</th>
+                    <th class="px-4 py-2 text-left"></th>
+                  </tr>
+                </thead>
+                <tbody id="pendingDeletionBody" class="divide-y divide-slate-800"></tbody>
+              </table>
+            </div>
+
+            <!-- Audit trail note -->
+            <p class="text-xs text-slate-500">All purge actions are written to the audit log before data is removed. Purged accounts cannot be recovered.</p>
+          </div>
+        </section>
+
+        <script>
+          (function () {
+            const GRACE_DAYS = 30;
+
+            function daysRemaining(deletedAt) {
+              const deleted = new Date(deletedAt);
+              const purgeAt = new Date(deleted.getTime() + GRACE_DAYS * 86400 * 1000);
+              const diff = Math.ceil((purgeAt - Date.now()) / 86400000);
+              return diff;
+            }
+
+            function renderRow(acct) {
+              const days = daysRemaining(acct.deleted_at);
+              const eligible = days <= 0;
+              const graceBadge = eligible
+                ? '<span class="inline-flex items-center gap-1 rounded-full bg-red-500/20 text-red-400 px-2 py-0.5 text-xs font-medium">Eligible for purge</span>'
+                : `<span class="inline-flex items-center gap-1 rounded-full bg-amber-500/20 text-amber-400 px-2 py-0.5 text-xs font-medium">${days}d remaining</span>`;
+
+              const purgeBtn = eligible
+                ? `<button class="purge-btn inline-flex items-center gap-1 rounded-lg bg-red-600 hover:bg-red-500 px-3 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
+                     data-id="${acct.id}" data-name="${acct.name}">
+                     Purge now
+                   </button>`
+                : `<span class="text-xs text-slate-500">—</span>`;
+
+              return `<tr data-account-id="${acct.id}">
+                <td class="px-4 py-3 font-medium text-slate-100">${acct.name}</td>
+                <td class="px-4 py-3 text-slate-400">${acct.id}</td>
+                <td class="px-4 py-3 text-slate-400">${new Date(acct.deleted_at).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</td>
+                <td class="px-4 py-3">${graceBadge}</td>
+                <td class="px-4 py-3 text-slate-400 text-xs">${acct.initiated_by || '—'}</td>
+                <td class="px-4 py-3 text-right">${purgeBtn}</td>
+              </tr>`;
+            }
+
+            async function loadPendingDeletion() {
+              const loading = document.getElementById('pendingDeletionLoading');
+              const empty = document.getElementById('pendingDeletionEmpty');
+              const table = document.getElementById('pendingDeletionTable');
+              const body = document.getElementById('pendingDeletionBody');
+              const summary = document.getElementById('pendingDeletionSummary');
+              const summaryText = document.getElementById('pendingDeletionSummaryText');
+              const badge = document.getElementById('pendingDeletionBadge');
+
+              loading.classList.remove('hidden');
+              empty.classList.add('hidden');
+              table.classList.add('hidden');
+              summary.classList.add('hidden');
+
+              try {
+                const res = await fetch('/api/v1/admin/accounts/pending-deletion', {
+                  headers: { 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                const accounts = data.accounts || [];
+
+                loading.classList.add('hidden');
+
+                if (accounts.length === 0) {
+                  empty.classList.remove('hidden');
+                  badge.classList.add('hidden');
+                  return;
+                }
+
+                const eligible = accounts.filter(a => daysRemaining(a.deleted_at) <= 0).length;
+                summaryText.textContent = `${accounts.length} account${accounts.length !== 1 ? 's' : ''} pending deletion · ${eligible} eligible for immediate purge`;
+                summary.classList.remove('hidden');
+
+                if (eligible > 0) {
+                  badge.textContent = eligible;
+                  badge.classList.remove('hidden');
+                } else {
+                  badge.classList.add('hidden');
+                }
+
+                body.innerHTML = accounts.map(renderRow).join('');
+                table.classList.remove('hidden');
+              } catch (e) {
+                loading.textContent = 'Failed to load. Check console.';
+                console.error(e);
+              }
+            }
+
+            async function purgeAccount(accountId, accountName) {
+              if (!confirm(`Permanently delete all data for "${accountName}" (ID ${accountId})?\n\nThis cannot be undone.`)) return;
+
+              const btn = document.querySelector(`.purge-btn[data-id="${accountId}"]`);
+              if (btn) { btn.disabled = true; btn.textContent = 'Purging…'; }
+
+              try {
+                const res = await fetch(`/api/v1/admin/accounts/${accountId}/purge`, {
+                  method: 'DELETE',
+                  headers: { 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                  const row = document.querySelector(`tr[data-account-id="${accountId}"]`);
+                  if (row) row.remove();
+                  const remaining = document.querySelectorAll('#pendingDeletionBody tr').length;
+                  if (remaining === 0) {
+                    document.getElementById('pendingDeletionTable').classList.add('hidden');
+                    document.getElementById('pendingDeletionEmpty').classList.remove('hidden');
+                    document.getElementById('pendingDeletionBadge').classList.add('hidden');
+                    document.getElementById('pendingDeletionSummary').classList.add('hidden');
+                  }
+                } else {
+                  alert(`Purge failed: ${data.error || 'Unknown error'}`);
+                  if (btn) { btn.disabled = false; btn.textContent = 'Purge now'; }
+                }
+              } catch (e) {
+                alert('Purge request failed. See console.');
+                console.error(e);
+                if (btn) { btn.disabled = false; btn.textContent = 'Purge now'; }
+              }
+            }
+
+            document.getElementById('pendingDeletionBody').addEventListener('click', (e) => {
+              const btn = e.target.closest('.purge-btn');
+              if (btn) purgeAccount(parseInt(btn.dataset.id), btn.dataset.name);
+            });
+
+            document.getElementById('refreshPendingDeletion').addEventListener('click', loadPendingDeletion);
+
+            // Auto-load when section becomes active
+            const observer = new MutationObserver(() => {
+              const section = document.getElementById('section-pending-deletion');
+              if (section && section.classList.contains('active')) {
+                loadPendingDeletion();
+                observer.disconnect();
+              }
+            });
+            const section = document.getElementById('section-pending-deletion');
+            if (section) observer.observe(section, { attributes: true, attributeFilter: ['class'] });
+          })();
+        </script>

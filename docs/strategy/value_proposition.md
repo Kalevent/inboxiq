@@ -1,7 +1,7 @@
 # Value Proposition
 
 > Status: Draft — for discussion at next innovation meeting
-> Last updated: 7 Mar 2026
+> Last updated: 11 Mar 2026
 
 Anchored to the primary ICP: founder or head of ops at a B2B SaaS company, 10–50 employees.
 See [ICP.md](ICP.md) first.
@@ -10,9 +10,7 @@ See [ICP.md](ICP.md) first.
 
 ## The one-sentence pitch
 
-**InboxIQ handles the repetitive support emails your team keeps answering manually, so you stop losing hours to your inbox every day.**
-
-No enterprise setup. No AI hallucinations sent to customers. Works inside your existing Gmail or Outlook.
+InboxIQ is the AI layer that sits under your Gmail or Outlook — it reads every email, drafts the reply, and routes anything that needs action. Your team never opens another tool.
 
 ---
 
@@ -38,7 +36,19 @@ Growing from 200 to 500 customers doubles the support load. Hiring a support per
 
 **What InboxIQ does**: Handles the volume growth without headcount growth. Priced at a fraction of a hire.
 
-### 4. No visibility into what customers are actually asking about
+### 4. Support is spread across multiple inboxes — none of them connected
+
+Oliver's support emails arrive in three places: his own Gmail, the `support@company.com` alias managed by a team member, and the `sales@company.com` address another colleague handles. Each inbox operates in isolation. The team member answers support emails without AI assistance. The sales alias has no drafts. Oliver cannot see a unified picture of what is coming in across all of them.
+
+In an enterprise setting the same problem scales: a team of five has five separate inboxes, each one a silo. Knowledge stays personal. Response consistency is zero.
+
+**What InboxIQ does**: One account connects as many inboxes as the team manages. Oliver sends a one-click invite link to his team member — she clicks, authorizes her Gmail in her own browser, and her inbox is connected. No InboxIQ login required for her. No password sharing. No IT involvement. From that point, InboxIQ applies the same triage intelligence, the same KB-grounded draft replies, and the same automation rules to every connected inbox. Labels appear inside each person's Gmail independently. The intelligence is shared; the inboxes stay separate.
+
+The billing unit is the inbox connection, not the seat — because a team member whose inbox is connected consumes the same AI resources as Oliver's, regardless of whether she ever logs into InboxIQ. More inboxes connected means more value delivered, and the pricing reflects that.
+
+---
+
+### 5. No visibility into what customers are actually asking about
 
 Oliver handles support reactively — he replies to emails one by one but has no view of the patterns. He does not know that 40% of his support volume this month is about the same onboarding step, or that billing questions have doubled since the pricing change. Without that visibility, he cannot fix the root cause and keeps answering the same questions forever.
 
@@ -46,7 +56,24 @@ Oliver handles support reactively — he replies to emails one by one but has no
 
 ---
 
-### 5. No way to measure what the inbox is actually costing the business
+### 6. Manual routing rules that cannot use AI context
+
+Oliver wants bug reports forwarded to engineering. He wants billing emails to move to a folder. He wants automated senders tagged and archived. Gmail filters and Outlook rules cannot do any of this — they run at message delivery time, before any AI classification has happened. They can match on sender address or subject keyword, nothing more.
+
+**What InboxIQ does**: Automation Studio lets Oliver configure rules that fire after triage, with full AI context available as conditions. Rules are built in a UI — no code, no IT ticket. Conditions can combine any triage output:
+
+- `label = InboxIQ/Support AND intent = bug_report` → forward to `engineering@company.com`
+- `category = Billing` → move to Billing folder, tag email
+- `is_automated = true` → tag and archive
+- `sentiment = Frustrated AND action_required = true` → send webhook to Slack
+
+Actions available today: forward (send email), tag, move to folder, send webhook, extract structured data. Rules are account-level — one set of rules applies across all connected inboxes. Oliver configures it in Settings → Automation and it runs silently after every triage.
+
+**Why native rules cannot replicate this**: A Gmail filter on `from:stripe.com` catches every Stripe email regardless of what it is. An InboxIQ rule on `category = Billing` catches only actual billing emails — receipts, disputes, invoices — identified by AI, not by sender address guesswork.
+
+---
+
+### 7. No way to measure what the inbox is actually costing the business
 
 Oliver knows support emails take time but cannot quantify it. He has no number to show a co-founder, investor, or himself when justifying the cost of a tool or a hire. He also cannot tell if response times are improving or getting worse without manually tracking it.
 

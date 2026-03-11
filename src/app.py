@@ -218,7 +218,20 @@ def create_app() -> Flask:
           }
       )
       return None, None
-    return user, account_id or user.account_id
+    # Block access for soft-deleted accounts
+    resolved_account_id = account_id or user.account_id
+    if resolved_account_id:
+      from src.models.core import Account as _Account
+      acct = db.session.get(_Account, resolved_account_id)
+      if acct and acct.is_deleted:
+        current_app.logger.warning({
+            "event": "auth.load_user_failed",
+            "reason": "account_deleted",
+            "user_id": user_id,
+            "account_id": resolved_account_id,
+        })
+        return None, None
+    return user, resolved_account_id
 
   def login_required_page(view_func):
     """Require a valid JWT for HTML pages and redirect to login when missing/invalid."""

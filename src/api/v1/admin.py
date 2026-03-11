@@ -972,3 +972,142 @@ def delete_marketing_spend(entry_id: str):
     db.session.delete(entry)
     db.session.commit()
     return jsonify({"status": "deleted"}), 200
+
+
+@v1.route("/admin/accounts/pending-deletion", methods=["GET"])
+@jwt_required()
+def admin_accounts_pending_deletion():
+    """List all soft-deleted accounts, ordered oldest deletion first."""
+    from src.models.auth import AuditLog
+
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    accounts = (
+        Account.query.filter(Account.deleted_at.isnot(None))
+        .order_by(Account.deleted_at.asc())
+        .all()
+    )
+
+    result = []
+    for acct in accounts:
+        log = (
+            AuditLog.query
+            .filter_by(account_id=acct.id, action="account.deleted")
+            .order_by(AuditLog.created_at.desc())
+            .first()
+        )
+        initiated_by = (log.metadata_json or {}).get("initiated_by_email") if log else None
+        result.append({
+            "id": acct.id,
+            "name": acct.name,
+            "deleted_at": acct.deleted_at.isoformat(),
+            "initiated_by": initiated_by,
+        })
+
+    return jsonify({"accounts": result}), 200
+
+
+@v1.route("/admin/accounts/<int:account_id>/purge", methods=["DELETE"])
+@jwt_required()
+def admin_account_purge(account_id: int):
+    """
+    Hard-delete an account that has been soft-deleted for at least 30 days.
+    Removes all rows across every account-scoped table.
+    Admin-only. Irreversible.
+    """
+    from src.models.auth import AuditLog
+    from sqlalchemy import text
+
+    admin = _require_admin()
+    if not admin:
+        return jsonify({"error": "forbidden"}), 403
+
+    account = db.session.get(Account, account_id)
+    if not account:
+        return jsonify({"error": "Account not found"}), 404
+    if not account.is_deleted:
+        return jsonify({"error": "Account has not been soft-deleted. Use the account deletion endpoint first."}), 409
+
+    grace_cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    if account.deleted_at > grace_cutoff:
+        days_remaining = (account.deleted_at - grace_cutoff).days + 1
+        return jsonify({"error": f"Grace period not yet elapsed. {days_remaining} day(s) remaining."}), 409
+
+    # Write audit log before destroying data
+    log = AuditLog(
+        account_id=None,  # account is being removed; keep as NULL so FK doesn't break
+        user_id=admin.id,
+        action="account.purged",
+        resource_type="account",
+        resource_id=str(account_id),
+        ip_address=request.remote_addr,
+        user_agent=(request.user_agent.string or "")[:300],
+        metadata_json={
+            "account_name": account.name,
+            "deleted_at": account.deleted_at.isoformat(),
+            "purged_by_email": admin.email,
+        },
+    )
+    db.session.add(log)
+    db.session.flush()  # persist log before cascade deletes
+
+    # Delete in FK-safe dependency order
+    purge_tables = [
+        ("ticket_embeddings", "account_id"),
+        ("draft_reply_feedback", "account_id"),
+        ("automation_rule_executions", "account_id"),
+        ("automation_rules", "account_id"),
+        ("automation_suggestions", "account_id"),
+        ("automation_studio_waitlist", "account_id"),
+        ("kb_article_embeddings", "account_id"),
+        ("kb_articles", "account_id"),
+        ("kb_integrations", "account_id"),
+        ("inboxiq_tickets", "account_id"),
+        ("inbox_connections", "account_id"),
+        ("triage_label_configs", "account_id"),
+        ("triage_configs", "account_id"),
+        ("dspy_training_metrics", "account_id"),
+        ("agent_events", "account_id"),
+        ("charge_attempts", "account_id"),
+        ("invoices", "account_id"),
+        ("subscriptions", "account_id"),
+        ("customer_billing_profiles", "account_id"),
+        ("account_usage_counters", "account_id"),
+        ("account_feature_flags", "account_id"),
+        ("account_llm_configs", "account_id"),
+        ("registered_apps", "account_id"),
+        ("webhook_providers", "account_id"),
+        ("passkeys", "user_id"),   # via users
+        ("totp_devices", "user_id"),
+        ("auth_events", "user_id"),
+        ("users", "account_id"),
+        ("accounts", "id"),
+    ]
+    deleted_counts = {}
+    for table, col in purge_tables:
+        if col == "user_id":
+            # scope to this account's users
+            user_ids = db.session.execute(
+                text("SELECT id FROM users WHERE account_id = :aid"), {"aid": account_id}
+            ).scalars().all()
+            if user_ids:
+                result = db.session.execute(
+                    text(f"DELETE FROM {table} WHERE {col} = ANY(:ids)"),
+                    {"ids": list(user_ids)},
+                )
+                deleted_counts[table] = result.rowcount
+        else:
+            result = db.session.execute(
+                text(f"DELETE FROM {table} WHERE {col} = :aid"), {"aid": account_id}
+            )
+            deleted_counts[table] = result.rowcount
+
+    db.session.commit()
+    current_app.logger.warning({
+        "event": "account.purged",
+        "account_id": account_id,
+        "admin_user_id": admin.id,
+        "rows_deleted": deleted_counts,
+    })
+    return jsonify({"ok": True, "purged_account_id": account_id, "rows_deleted": deleted_counts}), 200
