@@ -460,15 +460,17 @@ _GMAIL_LABEL_COLOURS: dict[str, dict] = {
     "InboxIQ/Forums":       {"backgroundColor": "#f691b3", "textColor": "#ffffff"},  # pink — mirrors Gmail's Forums tab
 }
 
-# Outlook colour presets (Graph API colour names)
+# Outlook colour presets — Graph API requires "presetN" values, not colour names.
+# preset0=red, preset4=green, preset5=teal, preset7=blue, preset8=purple,
+# preset9=cranberry, preset1=orange
 _OUTLOOK_LABEL_COLOURS: dict[str, str] = {
-    "InboxIQ/Support":      "blue",
-    "InboxIQ/Billing":      "red",
-    "InboxIQ/Transactions": "green",
-    "InboxIQ/Updates":      "orange",
-    "InboxIQ/Promotions":   "purple",
-    "InboxIQ/Social":       "teal",
-    "InboxIQ/Forums":       "cranberry",
+    "InboxIQ/Support":      "preset7",   # blue
+    "InboxIQ/Billing":      "preset0",   # red
+    "InboxIQ/Transactions": "preset4",   # green
+    "InboxIQ/Updates":      "preset1",   # orange
+    "InboxIQ/Promotions":   "preset8",   # purple
+    "InboxIQ/Social":       "preset5",   # teal
+    "InboxIQ/Forums":       "preset9",   # cranberry
 }
 
 
@@ -642,11 +644,22 @@ def bootstrap_inboxiq_labels_outlook(access_token: str) -> dict[str, str]:
     result: dict[str, str] = {}
     for label_name in INBOXIQ_CANONICAL_LABELS:
         key = label_name.lower()
+        colour = _OUTLOOK_LABEL_COLOURS.get(label_name, "none")
         if key in existing:
-            result[label_name] = existing[key]
+            cat_id = existing[key]
+            result[label_name] = cat_id
+            # Patch colour — idempotent, fixes categories created before preset values were correct
+            try:
+                requests.patch(
+                    f"https://graph.microsoft.com/v1.0/me/outlook/masterCategories/{cat_id}",
+                    headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+                    json={"color": colour},
+                    timeout=8,
+                )
+            except Exception:
+                pass
         else:
             try:
-                colour = _OUTLOOK_LABEL_COLOURS.get(label_name, "none")
                 cr = requests.post(
                     "https://graph.microsoft.com/v1.0/me/outlook/masterCategories",
                     headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
