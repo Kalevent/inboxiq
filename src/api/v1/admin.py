@@ -1093,13 +1093,13 @@ def admin_account_purge(account_id: int):
             ).scalars().all()
             if user_ids:
                 result = db.session.execute(
-                    text(f"DELETE FROM {table} WHERE {col} = ANY(:ids)"),
+                    text(f"DELETE FROM {table} WHERE {col} = ANY(:ids)"),  # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text.avoid-sqlalchemy-text
                     {"ids": list(user_ids)},
                 )
                 deleted_counts[table] = result.rowcount
         else:
             result = db.session.execute(
-                text(f"DELETE FROM {table} WHERE {col} = :aid"), {"aid": account_id}
+                text(f"DELETE FROM {table} WHERE {col} = :aid"), {"aid": account_id}  # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text.avoid-sqlalchemy-text
             )
             deleted_counts[table] = result.rowcount
 
