@@ -428,7 +428,9 @@ def fetch_gmail_labels(access_token: str) -> list[dict]:
 # "InboxIQ" section in the Gmail sidebar, making InboxIQ's presence immediately visible.
 INBOXIQ_CANONICAL_LABELS: list[str] = [
     "InboxIQ/Support",
+    "InboxIQ/Support/Urgent",
     "InboxIQ/Billing",
+    "InboxIQ/Billing/Urgent",
     "InboxIQ/Transactions",
     "InboxIQ/Updates",
     "InboxIQ/Promotions",
@@ -453,6 +455,7 @@ _GMAIL_LABEL_COLOURS: dict[str, dict] = {
     "InboxIQ/Support":              {"backgroundColor": "#4a86e8", "textColor": "#ffffff"},  # blue
     "InboxIQ/Support/Urgent":       {"backgroundColor": "#cc3a21", "textColor": "#ffffff"},  # deep red — urgent
     "InboxIQ/Billing":              {"backgroundColor": "#fb4c2f", "textColor": "#ffffff"},  # red
+    "InboxIQ/Billing/Urgent":       {"backgroundColor": "#cc3a21", "textColor": "#ffffff"},  # deep red — urgent
     "InboxIQ/Transactions": {"backgroundColor": "#16a766", "textColor": "#ffffff"},  # green
     "InboxIQ/Updates":      {"backgroundColor": "#ffad47", "textColor": "#ffffff"},  # amber
     "InboxIQ/Promotions":   {"backgroundColor": "#a479e2", "textColor": "#ffffff"},  # purple
@@ -464,13 +467,15 @@ _GMAIL_LABEL_COLOURS: dict[str, dict] = {
 # preset0=red, preset4=green, preset5=teal, preset7=blue, preset8=purple,
 # preset9=cranberry, preset1=orange
 _OUTLOOK_LABEL_COLOURS: dict[str, str] = {
-    "InboxIQ/Support":      "preset7",   # blue
-    "InboxIQ/Billing":      "preset0",   # red
-    "InboxIQ/Transactions": "preset4",   # green
-    "InboxIQ/Updates":      "preset1",   # orange
-    "InboxIQ/Promotions":   "preset8",   # purple
-    "InboxIQ/Social":       "preset5",   # teal
-    "InboxIQ/Forums":       "preset9",   # cranberry
+    "InboxIQ/Support":          "preset7",   # blue
+    "InboxIQ/Support/Urgent":   "preset0",   # red — urgent
+    "InboxIQ/Billing":          "preset15",  # dark red
+    "InboxIQ/Billing/Urgent":   "preset0",   # red — urgent
+    "InboxIQ/Transactions":     "preset4",   # green
+    "InboxIQ/Updates":          "preset1",   # orange
+    "InboxIQ/Promotions":       "preset8",   # purple
+    "InboxIQ/Social":           "preset5",   # teal
+    "InboxIQ/Forums":           "preset9",   # cranberry
 }
 
 
