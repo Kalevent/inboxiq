@@ -1110,43 +1110,62 @@ def _fetch_messages_stub(conn: InboxConnection, limit: int = 5):
 
 def _detect_label_correction(ticket, raw_email: dict, account_id: int | None) -> None:
     """
-    Phase 2 — passive feedback loop.
+    Phase 2 — passive feedback loop (Gmail + Outlook).
 
-    When Oliver moves an email to a different Gmail label (e.g. from
-    InboxIQ/Support to InboxIQ/Transactions), the next poll detects the
-    mismatch and records a ClassificationCorrection.  This feeds SenderProfile
-    confidence updates so future emails from the same domain are classified
-    correctly without DSPy.
+    Gmail: detects when Oliver moves an email to a different InboxIQ/ label.
+           LabelIds come from the fetch payload; user-created sublabels are
+           resolved via the Gmail labels API and cached.
 
-    Label format: InboxIQ/{Category} or InboxIQ/{Category}/{Sublabel}
-    The canonical category is always parts[1] regardless of depth, which means:
-      - InboxIQ/Billing/Urgent    (InboxIQ P1 sublabel) → "billing"
-      - InboxIQ/Support/VIP       (user-created sublabel) → "support"
-      - InboxIQ/Support/VIP/Gold  (deeply nested user sublabel) → "support"
+    Outlook: detects when the user changes an InboxIQ/* category on a message.
+             provider_categories is a list of display-name strings from Graph API.
 
-    User-created sublabels are an emergent behaviour: users may create child
-    labels under any InboxIQ/ label in their Gmail sidebar.  These label IDs
-    are not stored in conn.metadata_json (we never created them), so we resolve
-    unknown user-label IDs in one batched Gmail API call and cache the results.
-
-    Only fires for Gmail (labelIds are included in the fetch payload).
-    Outlook correction detection is a future enhancement.
+    Label/category format: InboxIQ/{Category} or InboxIQ/{Category}/{Sublabel}
+    The canonical category is always parts[1] regardless of depth:
+      - InboxIQ/Billing/Urgent    → "billing"
+      - InboxIQ/Support/VIP       → "support"
     """
     if not account_id:
         return
 
-    # We only have label IDs for Gmail
-    provider_label_ids: list = raw_email.get("provider_label_ids") or []
-    if not provider_label_ids:
-        return
-
-    # Reconstruct the InboxIQ label name we applied to this ticket
     inboxiq_applied_category = (ticket.category or "").strip().lower()
     if not inboxiq_applied_category:
         return
 
     from src.models.core import InboxConnection
     from src.extensions import db
+
+    provider = raw_email.get("provider") or ""
+
+    # ------------------------------------------------------------------ Outlook
+    if provider == "outlook":
+        provider_categories: list = raw_email.get("provider_categories") or []
+        if not provider_categories:
+            return
+
+        current_inboxiq_categories: list[str] = []
+        for cat_name in provider_categories:
+            if cat_name.lower().startswith("inboxiq/"):
+                parts = cat_name.split("/")
+                if len(parts) >= 2 and parts[1]:
+                    current_inboxiq_categories.append(parts[1].lower())
+
+        if not current_inboxiq_categories:
+            return
+
+        if inboxiq_applied_category not in current_inboxiq_categories:
+            _record_correction(
+                ticket=ticket,
+                account_id=account_id,
+                corrected_category=current_inboxiq_categories[0],
+                signal_source="category_change",
+            )
+        return
+
+    # ------------------------------------------------------------------ Gmail
+    provider_label_ids: list = raw_email.get("provider_label_ids") or []
+    if not provider_label_ids:
+        return
+
     conn = InboxConnection.query.filter_by(
         account_id=account_id, provider="gmail", status="connected"
     ).first()
@@ -1190,11 +1209,7 @@ def _detect_label_correction(ticket, raw_email: dict, account_id: int | None) ->
             current_app.logger.debug("label resolve failed (non-fatal): %s", _resolve_exc)
 
     # Extract canonical InboxIQ category from label name.
-    # Always use parts[1] after splitting on "/" — this correctly handles:
-    #   InboxIQ/Support           → "support"
-    #   InboxIQ/Billing/Urgent    → "billing"  (our own P1 sublabel)
-    #   InboxIQ/Support/VIP       → "support"  (user-created sublabel)
-    current_inboxiq_categories: list[str] = []
+    current_inboxiq_categories = []
     for lid in provider_label_ids:
         name = label_id_to_name.get(lid, "")
         if name.lower().startswith("inboxiq/"):
@@ -1203,40 +1218,47 @@ def _detect_label_correction(ticket, raw_email: dict, account_id: int | None) ->
                 current_inboxiq_categories.append(parts[1].lower())
 
     if not current_inboxiq_categories:
-        return  # No InboxIQ label on message — nothing to compare
+        return
 
-    # If none of the current InboxIQ labels match the applied category, it's a correction
     if inboxiq_applied_category not in current_inboxiq_categories:
-        corrected_category = current_inboxiq_categories[0]
-        try:
-            from src.models.tickets import ClassificationCorrection
-            from src.inbox.sender_profile import upsert_sender_profile, _extract_domain
+        _record_correction(
+            ticket=ticket,
+            account_id=account_id,
+            corrected_category=current_inboxiq_categories[0],
+            signal_source="label_move",
+        )
 
-            correction = ClassificationCorrection(
-                account_id=account_id,
-                ticket_id=ticket.id,
-                sender_domain=_extract_domain(ticket.from_email) or ticket.from_email,
-                original_category=inboxiq_applied_category,
-                corrected_category=corrected_category,
-                signal_source="label_move",
-            )
-            db.session.add(correction)
 
-            # Upsert SenderProfile with the corrected category (user_verified=True
-            # because this is an explicit inbox action from Oliver)
-            upsert_sender_profile(
-                from_email=ticket.from_email,
-                category=corrected_category,
-                account_id=account_id,
-                user_verified=True,
-            )
-            db.session.commit()
+def _record_correction(ticket, account_id: int, corrected_category: str, signal_source: str) -> None:
+    """Write ClassificationCorrection + upsert SenderProfile. Shared by Gmail and Outlook paths."""
+    from src.extensions import db
+    try:
+        from src.models.tickets import ClassificationCorrection
+        from src.inbox.sender_profile import upsert_sender_profile, _extract_domain
 
-        except Exception as exc:
-            db.session.rollback()
-            current_app.logger.warning(
-                "ClassificationCorrection failed: ticket=%s error=%s", ticket.id, exc
-            )
+        correction = ClassificationCorrection(
+            account_id=account_id,
+            ticket_id=ticket.id,
+            sender_domain=_extract_domain(ticket.from_email) or ticket.from_email,
+            original_category=(ticket.category or "").strip().lower(),
+            corrected_category=corrected_category,
+            signal_source=signal_source,
+        )
+        db.session.add(correction)
+
+        upsert_sender_profile(
+            from_email=ticket.from_email,
+            category=corrected_category,
+            account_id=account_id,
+            user_verified=True,
+        )
+        db.session.commit()
+
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.warning(
+            "ClassificationCorrection failed: ticket=%s error=%s", ticket.id, exc
+        )
 
 
 def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
@@ -1415,9 +1437,13 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
 
             # Writeback healing: if this ticket was created but the label/draft was never
             # written back (e.g. worker was OOMKilled mid-task), heal it now.
-            # Check: ticket has a category AND message has no InboxIQ Label_* tag yet.
+            # Gmail: check for Label_* IDs. Outlook: check provider_categories for InboxIQ/*.
             _provider_label_ids = normalized.get("provider_label_ids") or []
-            _has_inboxiq_label = any(lid for lid in _provider_label_ids if lid.startswith("Label_"))
+            _provider_categories = raw_email.get("provider_categories") or []
+            if conn.provider == "outlook":
+                _has_inboxiq_label = any(c.lower().startswith("inboxiq/") for c in _provider_categories)
+            else:
+                _has_inboxiq_label = any(lid for lid in _provider_label_ids if lid.startswith("Label_"))
             if not _has_inboxiq_label and existing.category:
                 try:
                     from src.inbox.poll import writeback_to_provider as _wb

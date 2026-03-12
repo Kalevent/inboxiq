@@ -860,7 +860,7 @@ def fetch_messages_outlook(
     def _list_messages(token: str) -> requests.Response:
         params = {
             "$top": limit,
-            "$select": "subject,from,bodyPreview,body,receivedDateTime,conversationId,internetMessageId",
+            "$select": "subject,from,bodyPreview,body,receivedDateTime,conversationId,internetMessageId,categories",
             "$orderby": "receivedDateTime desc",
         }
         return requests.get(
@@ -916,6 +916,7 @@ def fetch_messages_outlook(
                 "provider": "outlook",
                 "provider_thread_url": f"https://outlook.office.com/mail/inbox/id/{conv_id}" if conv_id else None,
                 "history": thread_history,
+                "provider_categories": m.get("categories") or [],
             }
         )
 
