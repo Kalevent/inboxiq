@@ -36,6 +36,8 @@ class User(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
     role = db.Column(db.String(32), nullable=False, server_default="agent",
                      comment="owner | admin | agent | viewer | billing")
+    mfa_setup_required = db.Column(db.Boolean, nullable=False, server_default="false",
+                                   comment="True for invited sub-users until they configure TOTP or a passkey")
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 

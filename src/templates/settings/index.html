@@ -147,22 +147,41 @@
                   </p>
                   <h2 class="text-xl md:text-3xl font-semibold">Invite teammates</h2>
                   <p class="text-sm text-slate-300 max-w-3xl">
-                    Add teammates with activation links. This panel is not wired yet; use Roles & access for now.
+                    Send an activation link to add someone to your workspace. They will set a password and must configure 2FA or a passkey before accessing the dashboard.
                   </p>
                 </div>
-                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-3">
-                  <p class="text-sm text-slate-300">Invitations will be managed here when the flow is connected.</p>
-                  <p class="text-xs text-slate-400">Until then, add teammates via your existing user creation path and set roles in Roles & access.</p>
-                  <div class="flex items-center gap-3">
-                    <button class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white" disabled>
-                      Coming soon
-                    </button>
-                    <a href="{{ url_for('settings.team_roles_page') }}" class="text-sm text-indigo-200 hover:text-white">
-                      Go to roles →
-                    </a>
-                    <a href="{{ url_for('settings.settings_page', tab='team') }}" class="text-sm text-indigo-200 hover:text-white">
-                      ← Back to team
-                    </a>
+                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:p-6 shadow-xl shadow-slate-950/30 space-y-4">
+                  <form id="inviteForm" class="space-y-4">
+                    <div>
+                      <label for="inviteEmail" class="text-sm text-slate-200">Teammate email</label>
+                      <input
+                        id="inviteEmail"
+                        name="inviteEmail"
+                        type="email"
+                        required
+                        class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30 input-dark"
+                        placeholder="teammate@company.com"
+                        autocomplete="email"
+                      />
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                      <button
+                        id="inviteButton"
+                        type="submit"
+                        class="inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        Send invite
+                      </button>
+                      <a href="{{ url_for('settings.team_roles_page') }}" class="text-sm text-indigo-200 hover:text-white">
+                        Manage roles →
+                      </a>
+                    </div>
+                  </form>
+                  <div id="inviteStatus" class="text-sm text-slate-200 hidden"></div>
+                  <div id="activationLink" class="text-xs text-slate-300 hidden see_url_box"></div>
+                  <div class="border-t border-slate-800 pt-4 text-xs text-slate-400 space-y-1">
+                    <p>Invited teammates will receive an activation email to set their password.</p>
+                    <p>They must configure TOTP 2FA or a passkey before accessing the workspace.</p>
                   </div>
                 </div>
               {% elif team_view == 'roles' %}
@@ -1995,6 +2014,9 @@ Content-Type: application/json
 
     {% if team_view == 'roles' %}
       <script src="{{ url_for('static', filename='settings/js/settings_roles.js') }}"></script>
+    {% endif %}
+    {% if team_view == 'invite' %}
+      <script src="{{ url_for('static', filename='settings/js/settings_team.js') }}"></script>
     {% endif %}
     {% if active_tab == 'security' %}
       <script src="{{ url_for('static', filename='settings/js/security.js') }}"></script>

@@ -105,6 +105,18 @@ def login():
         db.session.add(user)
         db.session.commit()
 
+    # If the user has a verified TOTP device, require a TOTP challenge before issuing full tokens.
+    totp_device = TOTPDevice.query.filter_by(user_id=user.id).filter(
+        TOTPDevice.verified_at.isnot(None)
+    ).first()
+    if totp_device:
+        partial_token = create_access_token(
+            identity=str(user.id),
+            additional_claims={"account_id": str(user.account_id), "totp_pending": True},
+            expires_delta=timedelta(minutes=5),
+        )
+        return jsonify({"totp_required": True, "partial_token": partial_token}), 200
+
     additional_claims = {"account_id": str(user.account_id)}
     token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
     refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
@@ -302,6 +314,96 @@ def totp_status():
     return jsonify({"devices": [d.to_dict() for d in devices]}), 200
 
 
+@bp.route("/2fa/totp/challenge", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+@limiter.limit("10 per minute", override_defaults=False)
+def totp_challenge():
+    """
+    Second step of password login when TOTP is enabled.
+    Accepts {"partial_token": "...", "code": "123456"}.
+    Returns full JWT on success.
+    """
+    data = request.get_json(silent=True) or {}
+    partial_token_str = (data.get("partial_token") or "").strip()
+    code = (data.get("code") or "").strip()
+    if not partial_token_str or not code:
+        return jsonify({"error": "partial_token and code are required"}), 400
+
+    try:
+        decoded = decode_token(partial_token_str)
+    except Exception:
+        return jsonify({"error": "invalid or expired token"}), 400
+
+    if not decoded.get("totp_pending"):
+        return jsonify({"error": "invalid token"}), 400
+
+    user_id_str = decoded.get("sub")
+    try:
+        user_id_int = int(user_id_str)
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid token payload"}), 400
+
+    user = db.session.get(User, user_id_int)
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+
+    device = TOTPDevice.query.filter_by(user_id=user.id).filter(
+        TOTPDevice.verified_at.isnot(None)
+    ).first()
+    if not device:
+        return jsonify({"error": "no TOTP device configured"}), 400
+
+    if not pyotp.TOTP(device.secret).verify(code, valid_window=1):
+        _log_login_attempt(outcome="fail", email=user.email, account_id=user.account_id,
+                           user_id=user.id, reason="bad totp code")
+        return jsonify({"error": "invalid code"}), 400
+
+    additional_claims = {"account_id": str(user.account_id)}
+    token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
+    refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
+    _whitelist_refresh(jwt_token=refresh_token)
+    _log_login_attempt(outcome="success", email=user.email, account_id=user.account_id, user_id=user.id)
+    log_audit("auth.login_success", resource_type="user", resource_id=str(user.id),
+              account_id=user.account_id, user_id=user.id)
+
+    response = jsonify({
+        "access_token": token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "account_id": user.account_id,
+    })
+    set_access_cookies(response, token)
+    set_refresh_cookies(response, refresh_token)
+    return response, 200
+
+
+@bp.route("/mfa/setup-complete", methods=["POST"])
+@jwt_required()
+def mfa_setup_complete():
+    """
+    Called after an invited user successfully registers a passkey or TOTP device.
+    Clears the mfa_setup_required flag so they can proceed to the dashboard.
+    """
+    user, _ = _current_user()
+    if not user:
+        return jsonify({"error": "unauthorized"}), 401
+
+    has_totp = TOTPDevice.query.filter_by(user_id=user.id).filter(
+        TOTPDevice.verified_at.isnot(None)
+    ).first() is not None
+    has_passkey = Passkey.query.filter_by(user_id=user.id).first() is not None
+
+    if not has_totp and not has_passkey:
+        return jsonify({"error": "no MFA method configured yet"}), 400
+
+    user.mfa_setup_required = False
+    user.updated_at = datetime.now(timezone.utc)
+    db.session.add(user)
+    db.session.commit()
+    log_audit("auth.mfa_setup_complete", resource_type="user", resource_id=str(user.id))
+    return jsonify({"status": "ok"}), 200
+
+
 def _rp_id():
     return current_app.config.get("PASSKEY_RP_ID") or (request.host.split(":")[0] if request.host else "localhost")
 
@@ -342,7 +444,7 @@ def passkey_registration_verify():
     if not expected_challenge:
         return jsonify({"error": "registration challenge expired"}), 400
     try:
-        credential = RegistrationCredential.parse_raw(json.dumps(data))
+        credential = RegistrationCredential.model_validate_json(json.dumps(data))
         verification = verify_registration_response(
             credential=credential,
             expected_challenge=expected_challenge,
@@ -402,6 +504,118 @@ def passkey_delete():
     db.session.commit()
     log_audit("auth.passkey_deleted", resource_type="passkey", resource_id=str(passkey_id))
     return jsonify({"status": "deleted"}), 200
+
+
+@bp.route("/passkeys/authenticate/options", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+@limiter.limit("10 per minute", override_defaults=False)
+def passkey_authenticate_options():
+    """
+    Generate a WebAuthn assertion challenge for passkey login.
+    Accepts optional {"email": "..."} to scope allowed credentials.
+    """
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+
+    allow_credentials = []
+    user_ref = None
+    if email:
+        user_ref = User.query.filter_by(email=email).first()
+        if user_ref:
+            passkeys = Passkey.query.filter_by(user_id=user_ref.id).all()
+            from webauthn.helpers.structs import PublicKeyCredentialDescriptor
+            allow_credentials = [
+                PublicKeyCredentialDescriptor(id=bytes.fromhex(p.credential_id)
+                    if all(c in "0123456789abcdefABCDEF" for c in p.credential_id)
+                    else _b64url_to_bytes(p.credential_id))
+                for p in passkeys
+            ]
+
+    options = generate_authentication_options(
+        rp_id=_rp_id(),
+        allow_credentials=allow_credentials,
+        user_verification=UserVerificationRequirement.PREFERRED,
+    )
+    challenge_key = f"passkey:auth:{options.challenge.hex()}"
+    cache.set(challenge_key, options.challenge, timeout=300)
+    return jsonify(json.loads(options_to_json(options)))
+
+
+def _b64url_to_bytes(s: str) -> bytes:
+    import base64 as _b64
+    pad = 4 - len(s) % 4
+    return _b64.urlsafe_b64decode(s + "=" * (pad % 4))
+
+
+@bp.route("/passkeys/authenticate/verify", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+@limiter.limit("10 per minute", override_defaults=False)
+def passkey_authenticate_verify():
+    """Verify WebAuthn assertion and issue JWT if valid."""
+    data = request.get_json(silent=True) or {}
+
+    raw_id = data.get("rawId") or data.get("id") or ""
+    raw_id_bytes = _b64url_to_bytes(raw_id) if raw_id else b""
+    credential_id_b64 = bytes_to_base64url(raw_id_bytes)
+
+    passkey = Passkey.query.filter_by(credential_id=credential_id_b64).first()
+    if not passkey:
+        return jsonify({"error": "passkey not found"}), 404
+
+    client_data_json_bytes = _b64url_to_bytes(
+        data.get("response", {}).get("clientDataJSON", "")
+    )
+    challenge_from_client = json.loads(client_data_json_bytes).get("challenge", "")
+    challenge_bytes = _b64url_to_bytes(challenge_from_client)
+    challenge_key = f"passkey:auth:{challenge_bytes.hex()}"
+    expected_challenge = cache.get(challenge_key)
+    if not expected_challenge:
+        return jsonify({"error": "authentication challenge expired"}), 400
+
+    try:
+        credential = AuthenticationCredential.model_validate_json(json.dumps(data))
+        verification = verify_authentication_response(
+            credential=credential,
+            expected_challenge=expected_challenge,
+            expected_rp_id=_rp_id(),
+            expected_origin=_rp_origin(),
+            credential_public_key=_b64url_to_bytes(passkey.public_key),
+            credential_current_sign_count=passkey.sign_count,
+            require_user_verification=True,
+        )
+    except Exception as exc:
+        current_app.logger.exception("passkey authentication failed")
+        return jsonify({"error": f"authentication failed: {exc}"}), 400
+
+    cache.delete(challenge_key)
+    passkey.sign_count = verification.new_sign_count
+    passkey.last_used_at = datetime.now(timezone.utc)
+    db.session.add(passkey)
+    db.session.commit()
+
+    user = db.session.get(User, passkey.user_id)
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+
+    account = db.session.get(Account, user.account_id)
+    if not account or (account.deleted_at is not None):
+        return jsonify({"error": "account not available"}), 403
+
+    additional_claims = {"account_id": str(user.account_id)}
+    access_token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
+    refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
+    _whitelist_refresh(jwt_token=refresh_token)
+    log_audit("auth.passkey_login", resource_type="passkey", resource_id=str(passkey.id),
+              account_id=user.account_id, user_id=user.id)
+
+    response = jsonify({
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "account_id": user.account_id,
+    })
+    set_access_cookies(response, access_token)
+    set_refresh_cookies(response, refresh_token)
+    return response, 200
 
 
 @bp.route("/refresh", methods=["POST"])
@@ -524,6 +738,7 @@ def activate():
             "token_type": "bearer",
             "user_id": user.id,
             "account_id": user.account_id,
+            "mfa_setup_required": bool(user.mfa_setup_required),
         }
     )
     set_access_cookies(response, access_token)

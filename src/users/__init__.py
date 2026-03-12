@@ -122,7 +122,8 @@ def invite_user():
         return jsonify({"error": "email already exists"}), 409
 
     now = datetime.now(timezone.utc)
-    user = User(email=email, password_hash=None, account_id=account.id, created_at=now, updated_at=now)
+    user = User(email=email, password_hash=None, account_id=account.id,
+                mfa_setup_required=True, created_at=now, updated_at=now)
     account.seats_used = account.seats_used + 1
     db.session.add(user)
     db.session.add(account)

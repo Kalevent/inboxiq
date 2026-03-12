@@ -54,10 +54,17 @@
       if (!response.ok) {
         throw new Error(data.error || 'Unable to activate. Token may be invalid or expired.');
       }
-      setStatus('success', 'Account activated! You are now signed in. You can close this tab and go to the app.');
-      if (data.account_id !== undefined) {
-        localStorage.setItem('inboxiqAccountId', data.account_id);
+      if (data.access_token) localStorage.setItem('inboxiqAccessToken', data.access_token);
+      if (data.account_id !== undefined) localStorage.setItem('inboxiqAccountId', data.account_id);
+      if (data.user_id !== undefined) localStorage.setItem('inboxiqUserId', data.user_id);
+
+      if (data.mfa_setup_required) {
+        setStatus('success', 'Account activated! Please set up two-factor authentication before continuing.');
+        window.location.href = '/settings/security?mfa_required=1';
+        return;
       }
+      setStatus('success', 'Account activated! Redirecting…');
+      window.location.href = '/onboarding';
     } catch (error) {
       setStatus('error', error.message || 'Activation failed.');
     } finally {

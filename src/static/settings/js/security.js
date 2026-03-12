@@ -103,6 +103,7 @@
     }
     setPasskeyStatus('success', 'Passkey registered.');
     refreshPasskeyList();
+    await _notifyMfaCompleteIfRequired();
   }
 
   if (passkeyButton) {
@@ -175,6 +176,7 @@
       return;
     }
     setTotpStatus('success', '2FA enabled.');
+    await _notifyMfaCompleteIfRequired();
   }
 
   async function disableTotp() {
@@ -192,6 +194,29 @@
     if (totpSecretEl) totpSecretEl.textContent = '';
     if (totpDeviceIdEl) totpDeviceIdEl.value = '';
     if (totpCodeInput) totpCodeInput.value = '';
+  }
+
+  // MFA setup completion — called after passkey or TOTP is registered when redirected from activation
+  const _mfaRequired = new URLSearchParams(window.location.search).get('mfa_required') === '1';
+
+  if (_mfaRequired) {
+    const banner = document.createElement('div');
+    banner.className = 'mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100';
+    banner.textContent = 'Security setup required — please configure TOTP 2FA or register a passkey before accessing your workspace.';
+    document.querySelector('.settings-content, main, [data-settings-content]')?.prepend(banner)
+      || document.body.prepend(banner);
+  }
+
+  async function _notifyMfaCompleteIfRequired() {
+    if (!_mfaRequired) return;
+    try {
+      await fetch('/auth/mfa/setup-complete', {
+        method: 'POST',
+        credentials: 'include',
+        headers: csrf() ? { 'X-CSRF-TOKEN': csrf() } : {},
+      });
+    } catch (_) { /* non-blocking */ }
+    window.location.href = '/dashboard';
   }
 
   if (totpStartBtn) totpStartBtn.addEventListener('click', () => startTotp().catch((err) => setTotpStatus('error', err.message || 'Error')));
