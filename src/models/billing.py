@@ -82,6 +82,7 @@ class Plan(db.Model):
     content_posts_limit      = db.Column(db.Integer, nullable=True)
     leads_limit              = db.Column(db.Integer, nullable=True)
     nurture_emails_limit     = db.Column(db.Integer, nullable=True)
+    kb_articles_limit        = db.Column(db.Integer, nullable=True)  # None = unlimited
 
     # Stripe metered price IDs for overage reporting (set after Stripe setup)
     stripe_ai_overage_price_id         = db.Column(db.String(128), nullable=True)

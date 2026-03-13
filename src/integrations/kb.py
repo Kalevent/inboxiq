@@ -23,6 +23,208 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_FORMATS = {".md", ".txt", ".html", ".pdf"}
 MAX_URL_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 MB
+
+# Default article limits by plan code (used until subscription wiring is complete)
+_KB_LIMIT_BY_PLAN: dict[str, int | None] = {
+    "pro": 50,
+    "business": 200,
+    "scale": None,  # unlimited
+}
+_KB_LIMIT_DEFAULT = 25  # trial / no plan
+
+
+def _account_is_admin(account_id: int) -> bool:
+    """Return True if the account has developer_access (admin/owner account)."""
+    try:
+        from src.models.core import Account
+        account = Account.query.get(account_id)
+        return bool(account and account.developer_access)
+    except Exception:
+        return False
+
+
+def get_kb_article_limit(account_id: int) -> int | None:
+    """Return the KB article limit for the account. None = unlimited.
+
+    Admin accounts (developer_access=True) are always unlimited.
+    Reads kb_articles_limit from the Plan row when set; falls back to
+    _KB_LIMIT_BY_PLAN by plan code; defaults to _KB_LIMIT_DEFAULT.
+    """
+    if _account_is_admin(account_id):
+        return None  # unlimited for admin/owner account
+    try:
+        from src.models.billing import CustomerBillingProfile, Plan
+        profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
+        if profile and profile.plan_choice:
+            plan = Plan.query.filter_by(code=profile.plan_choice).first()
+            if plan and plan.kb_articles_limit is not None:
+                return plan.kb_articles_limit
+            return _KB_LIMIT_BY_PLAN.get(profile.plan_choice, _KB_LIMIT_DEFAULT)
+    except Exception:
+        pass
+    return _KB_LIMIT_DEFAULT
+
+
+def count_kb_articles(account_id: int) -> int:
+    """Count total KB articles across all integrations for the account."""
+    integrations = KBIntegration.query.filter_by(account_id=account_id).all()
+    return sum(i.article_count or 0 for i in integrations)
+
+
+# Plans that can use the crawl feature
+_KB_CRAWL_PLANS = {"business", "scale"}
+# Max pages per crawl by plan (admin gets 200)
+_KB_CRAWL_MAX: dict[str, int] = {"business": 50, "scale": 200}
+_KB_CRAWL_MAX_DEFAULT = 200  # admin
+
+
+def is_crawl_enabled(account_id: int) -> bool:
+    """Return True if crawl mode is available for this account."""
+    if _account_is_admin(account_id):
+        return True
+    try:
+        from src.models.billing import CustomerBillingProfile
+        profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
+        return bool(profile and profile.plan_choice in _KB_CRAWL_PLANS)
+    except Exception:
+        return False
+
+
+def get_crawl_max_pages(account_id: int) -> int:
+    """Return the max pages this account can crawl in one job."""
+    if _account_is_admin(account_id):
+        return _KB_CRAWL_MAX_DEFAULT
+    try:
+        from src.models.billing import CustomerBillingProfile
+        profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
+        if profile and profile.plan_choice:
+            return _KB_CRAWL_MAX.get(profile.plan_choice, 0)
+    except Exception:
+        pass
+    return 0
+
+
+class _LinkExtractor(HTMLParser):
+    """Extract all href values from anchor tags."""
+
+    def __init__(self):
+        super().__init__()
+        self.links: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            for attr, val in attrs:
+                if attr == "href" and val:
+                    self.links.append(val)
+
+
+def _discover_same_domain_links(html: str, base_url: str, max_pages: int) -> list[str]:
+    """
+    Parse HTML and return same-domain absolute URLs found in anchor tags.
+    Strips fragments and deduplicates. Caps at max_pages.
+    """
+    from urllib.parse import urljoin, urlparse
+    base_parsed = urlparse(base_url)
+    base_domain = base_parsed.netloc
+    extractor = _LinkExtractor()
+    try:
+        extractor.feed(html)
+    except Exception:
+        pass
+
+    seen: set[str] = set()
+    links: list[str] = []
+    for href in extractor.links:
+        try:
+            absolute = urljoin(base_url, href)
+            parsed = urlparse(absolute)
+            clean = parsed._replace(fragment="").geturl()
+            if (
+                parsed.netloc == base_domain
+                and parsed.scheme in ("http", "https")
+                and clean not in seen
+            ):
+                seen.add(clean)
+                links.append(clean)
+                if len(links) >= max_pages:
+                    break
+        except Exception:
+            continue
+    return links
+
+
+def crawl_kb_source(account_id: int, base_url: str) -> dict:
+    """
+    Crawl base_url and index all same-domain pages found (one level deep).
+
+    Returns {"indexed": int, "skipped": int, "errors": [str]}
+    """
+    import requests as req
+
+    if not is_crawl_enabled(account_id):
+        return {
+            "indexed": 0, "skipped": 0,
+            "errors": ["Crawl mode is available on Business and Scale plans."],
+        }
+
+    err = _validate_url(base_url)
+    if err:
+        return {"indexed": 0, "skipped": 0, "errors": [err]}
+
+    max_pages = get_crawl_max_pages(account_id)
+
+    # Fetch base page
+    try:
+        session = req.Session()
+
+        def _check_redirect(response, *args, **kwargs):
+            location = response.headers.get("Location", "")
+            if location:
+                redir_parsed = urlparse(location)
+                if redir_parsed.hostname and _is_private_ip(redir_parsed.hostname):
+                    raise ValueError(f"Redirect to private address blocked: {location}")
+
+        session.hooks["response"].append(_check_redirect)
+        resp = session.get(
+            base_url, timeout=15,
+            headers={"User-Agent": "InboxIQ-KB/1.0 (+https://kalevent.com)"},
+            stream=True,
+        )
+        resp.raise_for_status()
+        content = b""
+        for chunk in resp.iter_content(chunk_size=65536):
+            content += chunk
+            if len(content) > MAX_URL_CONTENT_LENGTH:
+                break
+        html_content = content.decode("utf-8", errors="ignore")
+    except Exception as exc:
+        return {"indexed": 0, "skipped": 0, "errors": [f"Could not fetch base URL: {exc}"]}
+
+    # Build crawl queue: base URL + discovered same-domain links
+    discovered = _discover_same_domain_links(html_content, base_url, max_pages - 1)
+    urls_to_crawl = [base_url] + discovered
+
+    indexed = 0
+    skipped = 0
+    errors: list[str] = []
+
+    for url in urls_to_crawl:
+        result = process_url_source(account_id, url, "")
+        if result["success"]:
+            indexed += 1
+        elif result.get("error") == "This URL is already in your knowledge base":
+            skipped += 1
+        elif "limit reached" in (result.get("error") or ""):
+            errors.append(result["error"])
+            break  # no point continuing past the limit
+        else:
+            errors.append(f"{url}: {result.get('error', 'unknown error')}")
+
+    logger.info(
+        "crawl_kb_source account=%s base=%s indexed=%d skipped=%d errors=%d",
+        account_id, base_url, indexed, skipped, len(errors),
+    )
+    return {"indexed": indexed, "skipped": skipped, "errors": errors}
 _PRIVATE_RANGES = [
     ipaddress.ip_network("10.0.0.0/8"),
     ipaddress.ip_network("172.16.0.0/12"),
@@ -67,6 +269,25 @@ class _TextExtractor(HTMLParser):
         return " ".join(self.parts)
 
 
+def _is_private_ip(hostname: str) -> bool:
+    """Return True if any resolved address for hostname is in a private/internal range."""
+    try:
+        results = socket.getaddrinfo(hostname, None)
+        for result in results:
+            addr_str = result[4][0]
+            # Strip IPv6 zone ID if present (e.g. "fe80::1%eth0")
+            addr_str = addr_str.split("%")[0]
+            try:
+                addr = ipaddress.ip_address(addr_str)
+                if any(addr in net for net in _PRIVATE_RANGES):
+                    return True
+            except ValueError:
+                pass
+    except Exception:
+        pass  # DNS failure is handled by requests itself
+    return False
+
+
 def _validate_url(url: str) -> str | None:
     """Return error string if URL is invalid or targets a private/internal host, else None."""
     try:
@@ -77,12 +298,8 @@ def _validate_url(url: str) -> str | None:
         return "URL must start with http:// or https://"
     if not parsed.hostname:
         return "URL has no hostname"
-    try:
-        addr = ipaddress.ip_address(socket.gethostbyname(parsed.hostname))
-        if any(addr in net for net in _PRIVATE_RANGES):
-            return "URL resolves to a private/internal address"
-    except Exception:
-        pass  # DNS failure is handled by requests itself
+    if _is_private_ip(parsed.hostname):
+        return "URL resolves to a private/internal address"
     return None
 
 
@@ -124,6 +341,13 @@ def process_url_source(account_id: int, url: str, title: str) -> dict:
     """
     import requests as req
 
+    limit = get_kb_article_limit(account_id)
+    if limit is not None and count_kb_articles(account_id) >= limit:
+        return {
+            "success": False,
+            "error": f"Article limit reached ({limit} articles on your plan). Upgrade to add more.",
+        }
+
     url = url.strip()
     err = _validate_url(url)
     if err:
@@ -144,11 +368,27 @@ def process_url_source(account_id: int, url: str, title: str) -> dict:
             return {"success": False, "error": "This URL is already in your knowledge base"}
 
     try:
-        resp = req.get(
+        # Validate each redirect destination before following it (prevents SSRF via open redirects)
+        session = req.Session()
+
+        def _check_redirect(response, *args, **kwargs):
+            location = response.headers.get("Location", "")
+            if location:
+                try:
+                    redir_parsed = urlparse(location)
+                    if redir_parsed.hostname and _is_private_ip(redir_parsed.hostname):
+                        raise ValueError(f"Redirect to private address blocked: {location}")
+                except ValueError:
+                    raise
+
+        session.hooks["response"].append(_check_redirect)
+
+        resp = session.get(
             url,
             timeout=15,
             headers={"User-Agent": "InboxIQ-KB/1.0 (+https://kalevent.com)"},
             stream=True,
+            allow_redirects=True,
         )
         resp.raise_for_status()
 
@@ -173,6 +413,8 @@ def process_url_source(account_id: int, url: str, title: str) -> dict:
         if len(raw_text) > 100_000:
             raw_text = raw_text[:100_000]
 
+    except ValueError as exc:
+        return {"success": False, "error": str(exc)}
     except req.exceptions.Timeout:
         return {"success": False, "error": "URL timed out (15s limit)"}
     except req.exceptions.RequestException as exc:
@@ -193,7 +435,7 @@ def process_url_source(account_id: int, url: str, title: str) -> dict:
         db.session.add(article)
         db.session.flush()
 
-        embedding_vector = embed_text(raw_text, account_id=str(account_id))
+        embedding_vector = embed_text(raw_text)
         if embedding_vector:
             db.session.add(KBArticleEmbedding(
                 id=str(uuid.uuid4()),
@@ -255,6 +497,20 @@ def process_uploaded_files(
             "failed": len(files),
             "errors": [f"Too many files (max {MAX_FILES_PER_UPLOAD})"]
         }
+
+    limit = get_kb_article_limit(account_id)
+    if limit is not None:
+        current_count = count_kb_articles(account_id)
+        remaining = limit - current_count
+        if remaining <= 0:
+            return {
+                "success": 0,
+                "failed": len(files),
+                "errors": [f"Article limit reached ({limit} articles on your plan). Upgrade to add more."],
+            }
+        if len(files) > remaining:
+            files = files[:remaining]
+            logger.info("Trimmed upload batch to %d files (plan limit %d, current %d)", remaining, limit, current_count)
 
     integration = create_file_upload_integration(account_id)
 
@@ -344,7 +600,7 @@ def process_uploaded_files(
             db.session.flush()  # Get article.id
 
             # Generate embedding from sanitized text content
-            embedding_vector = embed_text(text_content, account_id=str(account_id))
+            embedding_vector = embed_text(text_content)
             if embedding_vector:
                 embedding = KBArticleEmbedding(
                     id=str(uuid.uuid4()),

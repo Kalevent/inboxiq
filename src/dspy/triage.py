@@ -189,6 +189,9 @@ def _run_dspy_triage_impl(
     # Check if draft reply is enabled
     draft_enabled = draft_reply_enabled(context, account_id)
 
+    # Thread history is already in case["history"]; surface it explicitly for DraftReplySig
+    thread_history_json = json.dumps(case.get("history") or [])
+
     # Fetch KB context if draft reply is enabled
     kb_context_list = []
     kb_context_json = "[]"
@@ -200,7 +203,7 @@ def _run_dspy_triage_impl(
 
     # Run DSPy decision program
     try:
-        result = module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json, sender_hint=sender_hint)
+        result = module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json, sender_hint=sender_hint, thread_history=thread_history_json)
     except Exception as exc:
         logger.warning("DSPy decision program failed, falling back to compiled triage: %s", exc)
         # Use compiled TriageModule if available (takes content= not case_json=),
@@ -237,6 +240,7 @@ def _run_dspy_triage_impl(
                 _draft_prog = _bdp(dspy, label_config)
                 _dr = _draft_prog.draft(
                     case_json=case_json,
+                    thread_history=thread_history_json,
                     entities_json=_fallback_entities,
                     workflow_json="{}",
                     escalation_json=_fallback_escalation,

@@ -971,3 +971,24 @@ def train_dspy_overrides_task(self) -> dict:
             del os.environ["DSPY_MODEL"]
 
     return {"status": "ok", "providers": results}
+
+
+@celery.task(
+    name="inboxiq.crawl_kb_source",
+    bind=True,
+    max_retries=0,
+    queue="inbox",
+)
+def crawl_kb_source_task(self, account_id: int, base_url: str) -> dict:
+    """
+    Background task: crawl base_url and index all same-domain pages (one level deep).
+    Called from the KB settings route when a user submits a crawl request.
+    """
+    from src.integrations.kb import crawl_kb_source
+    result = crawl_kb_source(account_id, base_url)
+    logger.info(
+        "crawl_kb_source_task done account=%s base=%s indexed=%d skipped=%d errors=%d",
+        account_id, base_url,
+        result.get("indexed", 0), result.get("skipped", 0), len(result.get("errors", [])),
+    )
+    return result

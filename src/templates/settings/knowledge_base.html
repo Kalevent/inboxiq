@@ -99,7 +99,7 @@
 
             <form method="POST" id="kb-url-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-              <input type="hidden" name="action" value="add_url">
+              <input type="hidden" name="action" id="kb-url-action" value="add_url">
               <div class="flex flex-col sm:flex-row gap-3">
                 <div class="flex-1 space-y-2">
                   <input type="url" name="url" id="kb-url-input" required
@@ -108,12 +108,23 @@
                   <input type="text" name="title" id="kb-title-input"
                     placeholder="Title (optional — we'll use the URL if blank)"
                     class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                  {% if crawl_enabled %}
+                  <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="kb-crawl-toggle" class="rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500" onchange="kbToggleCrawl(this)">
+                    <span class="text-xs text-slate-300">Crawl entire site <span class="text-slate-500">— follows links on the same domain and indexes all pages found</span></span>
+                  </label>
+                  {% else %}
+                  <p class="text-xs text-slate-500">
+                    Want to index an entire help centre at once?
+                    <a href="{{ url_for('upgrade') }}" class="text-indigo-400 hover:text-indigo-300 underline">Upgrade to Business</a> to enable crawl mode.
+                  </p>
+                  {% endif %}
                 </div>
-                <button type="submit" class="self-start inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white transition whitespace-nowrap">
+                <button type="submit" id="kb-url-submit" class="self-start inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white transition whitespace-nowrap">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
                   </svg>
-                  Add URL
+                  <span id="kb-url-btn-label">Add URL</span>
                 </button>
               </div>
             </form>
@@ -121,7 +132,14 @@
 
           <!-- Upload Form -->
           <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 mb-6">
-            <h2 class="text-lg font-semibold mb-4">Upload files</h2>
+            <h2 class="text-lg font-semibold mb-1">Upload files</h2>
+            <p class="text-xs text-slate-400 mb-4">
+              Most platforms let you export your help centre as files.
+              <span class="text-slate-300">Zendesk</span> → Guide → Export articles &nbsp;·&nbsp;
+              <span class="text-slate-300">Notion</span> → Export as Markdown &nbsp;·&nbsp;
+              <span class="text-slate-300">GitBook</span> → Export as PDF &nbsp;·&nbsp;
+              <span class="text-slate-300">Intercom</span> → Articles → Export
+            </p>
             <form method="POST" enctype="multipart/form-data" id="kb-upload-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" name="action" value="upload_files">
@@ -156,7 +174,7 @@
           {% if integration %}
           <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 mb-6">
             <h2 class="text-lg font-semibold mb-4">KB Status</h2>
-            <dl class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <dl class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
               <div>
                 <dt class="text-slate-400 mb-1">Status:</dt>
                 <dd>
@@ -170,8 +188,10 @@
               </div>
 
               <div>
-                <dt class="text-slate-400 mb-1">Total Articles:</dt>
-                <dd class="text-slate-100 font-semibold">{{ total_articles }}</dd>
+                <dt class="text-slate-400 mb-1">Articles:</dt>
+                <dd class="text-slate-100 font-semibold">
+                  {{ total_articles }}{% if kb_article_limit %} / {{ kb_article_limit }}{% endif %}
+                </dd>
               </div>
 
               <div>
@@ -185,6 +205,30 @@
                 </dd>
               </div>
             </dl>
+
+            {% if kb_article_limit %}
+              {% set pct = (total_articles / kb_article_limit * 100) | int %}
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs text-slate-400">
+                  <span>{{ total_articles }} of {{ kb_article_limit }} articles used</span>
+                  <span>{{ pct }}%</span>
+                </div>
+                <div class="h-1.5 w-full rounded-full bg-slate-800">
+                  <div class="h-1.5 rounded-full transition-all {% if pct >= 90 %}bg-red-400{% elif pct >= 70 %}bg-amber-400{% else %}bg-indigo-400{% endif %}"
+                       style="width: {{ [pct, 100] | min }}%"></div>
+                </div>
+                {% if pct >= 90 %}
+                <p class="text-xs text-red-300">
+                  You are at {{ pct }}% of your article limit.
+                  <a href="{{ url_for('upgrade') }}" class="underline hover:text-red-200">Upgrade your plan</a> to add more.
+                </p>
+                {% elif pct >= 70 %}
+                <p class="text-xs text-amber-300">
+                  Approaching your limit. <a href="{{ url_for('upgrade') }}" class="underline hover:text-amber-200">Upgrade</a> to increase your allowance.
+                </p>
+                {% endif %}
+              </div>
+            {% endif %}
           </div>
           {% endif %}
 
@@ -276,6 +320,21 @@ function kbSetPlatform(platform) {
   hint.classList.remove('hidden');
   urlInput.placeholder = cfg.placeholder;
   urlInput.focus();
+}
+
+function kbToggleCrawl(checkbox) {
+  const action = document.getElementById('kb-url-action');
+  const label = document.getElementById('kb-url-btn-label');
+  const titleInput = document.getElementById('kb-title-input');
+  if (checkbox.checked) {
+    action.value = 'crawl_url';
+    label.textContent = 'Crawl site';
+    if (titleInput) titleInput.style.display = 'none';
+  } else {
+    action.value = 'add_url';
+    label.textContent = 'Add URL';
+    if (titleInput) titleInput.style.display = '';
+  }
 }
 </script>
 </body>

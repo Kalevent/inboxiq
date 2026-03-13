@@ -115,13 +115,19 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
         )
 
     class DraftReplySig(dspy.Signature):
-        """Generate customer-ready draft reply based on triage context and knowledge base."""
-        case_json = dspy.InputField(desc="Customer case details including email content and metadata")
+        """Generate customer-ready draft reply based on triage context, thread history, and knowledge base."""
+        case_json = dspy.InputField(desc="Customer case details including the latest email content and metadata")
+        thread_history = dspy.InputField(
+            desc="Prior messages in this email thread, oldest-first (JSON array). "
+                 "Each entry has: from_email, body, received_at, is_outbound (true = sent by Oliver's team). "
+                 "Use this to: avoid repeating questions already asked, reference what was previously said, "
+                 "understand the full context of the conversation, and continue naturally from the last reply."
+        )
         entities_json = dspy.InputField(desc="Extracted entities: intent, sentiment, urgency")
         workflow_json = dspy.InputField(desc="Selected workflow and required tools")
         escalation_json = dspy.InputField(desc="Escalation decision and reasoning")
         kb_context = dspy.InputField(desc="Relevant knowledge base articles for context (JSON array)")
-        reply_text = dspy.OutputField(desc="Draft reply for human review. Be helpful, concise, and professional. Reference KB articles when applicable.")
+        reply_text = dspy.OutputField(desc="Draft reply for human review. Be helpful, concise, and professional. Reference KB articles when applicable. Continue naturally from the thread history — do not repeat questions already asked.")
 
     class DecisionProgram(dspy.Module):
         def __init__(self) -> None:
@@ -132,7 +138,7 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
             self.escalate = dspy.Predict(EscalationDecisionSig)
             self.draft = dspy.ChainOfThought(DraftReplySig)
 
-        def forward(self, case_json: str, draft_enabled: bool = False, kb_context: str = "[]", sender_hint: str = "") -> Any:
+        def forward(self, case_json: str, draft_enabled: bool = False, kb_context: str = "[]", sender_hint: str = "", thread_history: str = "[]") -> Any:
             entities_json = self.extract(case_json=case_json, sender_hint=sender_hint).entities_json
             route_json = self.route(case_json=case_json, entities_json=entities_json).route_json
             workflow_json = self.select(
@@ -149,6 +155,7 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
                 try:
                     reply_text = self.draft(
                         case_json=case_json,
+                        thread_history=thread_history,
                         entities_json=entities_json,
                         workflow_json=workflow_json,
                         escalation_json=escalation_json,

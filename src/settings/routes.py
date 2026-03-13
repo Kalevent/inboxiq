@@ -1391,6 +1391,7 @@ def rule_analytics(rule_id):
 
 @bp.route("/integrations/knowledge-base", methods=["GET", "POST"])
 @login_required_settings
+@limiter.limit("10 per minute", methods=["POST"])
 def knowledge_base_integration():
     """Knowledge base integration settings."""
     from flask import flash
@@ -1435,6 +1436,20 @@ def knowledge_base_integration():
                 flash(result["error"] or "Failed to add URL", "error")
             return redirect(url_for("settings.knowledge_base_integration"))
 
+        elif action == "crawl_url":
+            url = request.form.get("url", "").strip()
+            if not url:
+                flash("URL is required", "error")
+                return redirect(url_for("settings.knowledge_base_integration"))
+            from src.integrations.kb import is_crawl_enabled
+            if not is_crawl_enabled(account_id):
+                flash("Crawl mode is available on Business and Scale plans.", "error")
+                return redirect(url_for("settings.knowledge_base_integration"))
+            from src.celery_inboxiq import crawl_kb_source_task
+            crawl_kb_source_task.delay(account_id, url)
+            flash("Crawl started — articles will appear in your knowledge base within a few minutes.", "success")
+            return redirect(url_for("settings.knowledge_base_integration"))
+
         elif action == "delete_article":
             article_id = request.form.get("article_id")
             from src.integrations.kb import delete_kb_article
@@ -1461,10 +1476,16 @@ def knowledge_base_integration():
     # Primary integration for status display (file_upload, falling back to any)
     integration = next((i for i in integrations if i.integration_type == "file_upload"), None) or (integrations[0] if integrations else None)
 
+    from src.integrations.kb import get_kb_article_limit, is_crawl_enabled
+    kb_article_limit = get_kb_article_limit(account_id)
+    crawl_enabled = is_crawl_enabled(account_id)
+
     return render_template(
         "settings/knowledge_base.html",
         integration=integration,
         total_articles=total_articles,
+        kb_article_limit=kb_article_limit,
+        crawl_enabled=crawl_enabled,
         articles=articles,
         account_id=account_id,
     )
