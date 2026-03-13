@@ -118,6 +118,7 @@ KB_CATEGORIES = [
             {"slug": "charged-but-not-used", "title": "I was charged but didn't use InboxIQ this month"},
             {"slug": "reset-password", "title": "How do I reset my password?"},
             {"slug": "add-a-user", "title": "How do I add a user or teammate?"},
+            {"slug": "mobile-app", "title": "Where can I download the mobile app?"},
         ],
     },
 ]
