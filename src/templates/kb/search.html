@@ -40,7 +40,7 @@
       <div class="kb-other-cats-grid">
         {% for cat in categories %}
         <a href="{{ url_for('kb.kb_category', category_slug=cat.slug) }}" class="kb-other-cat-chip">
-          <span>{% if cat.icon == 'rocket' %}🚀{% elif cat.icon == 'sparkles' %}✨{% elif cat.icon == 'bolt' %}⚡{% elif cat.icon == 'book' %}📚{% elif cat.icon == 'shield' %}🔐{% elif cat.icon == 'credit-card' %}💳{% elif cat.icon == 'wrench' %}🔧{% elif cat.icon == 'question' %}❓{% endif %}</span>
+          <span>{% if cat.icon == 'rocket' %}🚀{% elif cat.icon == 'sparkles' %}✨{% elif cat.icon == 'bolt' %}⚡{% elif cat.icon == 'book' %}📚{% elif cat.icon == 'shield' %}🛡️{% elif cat.icon == 'credit-card' %}💳{% elif cat.icon == 'wrench' %}🔧{% elif cat.icon == 'question' %}❓{% endif %}</span>
           {{ cat.title }}
         </a>
         {% endfor %}
