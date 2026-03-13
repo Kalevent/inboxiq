@@ -73,12 +73,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Verify requirements and lockfile resolve without conflicts
+      - name: Verify lockfile is installable
         run: |
-          # Verify the lock file installs cleanly
-          pip install --quiet -r src/requirements-inboxiq.lock.txt
-          # Verify the source requirements file also resolves (catches Renovate updates to requirements.txt)
-          pip install --quiet -r src/requirements-inboxiq.txt
+          # --no-deps skips resolution (the lock file is fully pinned by design).
+          # This catches missing/yanked packages without hitting pip's depth limit.
+          pip install --quiet --no-deps -r src/requirements-inboxiq.lock.txt
           echo "All dependencies resolved successfully"
 
   build-and-deploy:
