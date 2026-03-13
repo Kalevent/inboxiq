@@ -16,6 +16,7 @@ from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
 from src.extensions import db
 from src.models.core import User, Account
+from src.models.billing import CustomerBillingProfile
 
 
 
@@ -35,9 +36,8 @@ def get_trial_metrics():
     if not _require_admin():
         return jsonify({"error": "forbidden"}), 403
 
-    # Get recent users (created in last 30 days) as trial proxy
-    # Note: Assumes trial period is ~14 days, so 30 days captures active + recently ended trials
-    thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+    # Get recent users — extend window to 90 days to capture long-running beta trials
+    ninety_days_ago = datetime.now(timezone.utc) - timedelta(days=90)
 
     active_trials = db.session.query(
         User.id,
@@ -45,22 +45,30 @@ def get_trial_metrics():
         User.name,
         User.created_at,
         Account.id.label('account_id'),
-        Account.name.label('account_name')
+        Account.name.label('account_name'),
+        CustomerBillingProfile.trial_end.label('trial_end'),
     ).join(
         Account, User.account_id == Account.id
+    ).outerjoin(
+        CustomerBillingProfile, CustomerBillingProfile.account_id == Account.id
     ).filter(
-        User.created_at >= thirty_days_ago
+        User.created_at >= ninety_days_ago
     ).order_by(
         User.created_at.desc()
     ).all()
 
     # Calculate days since signup for each user
+    now = datetime.now(timezone.utc)
     trial_users = []
     for user in active_trials:
-        days_since_signup = (datetime.now(timezone.utc) - user.created_at).days if user.created_at else 0
+        days_since_signup = (now - user.created_at).days if user.created_at else 0
 
-        # Assume 14-day trial period
-        trial_days_remaining = max(0, 14 - days_since_signup)
+        # Use actual trial_end from billing profile; fall back to 14-day default
+        if user.trial_end:
+            trial_end_dt = user.trial_end if user.trial_end.tzinfo else user.trial_end.replace(tzinfo=timezone.utc)
+            trial_days_remaining = max(0, (trial_end_dt - now).days)
+        else:
+            trial_days_remaining = max(0, 14 - days_since_signup)
 
         # Determine which emails should have been sent
         expected_emails = []
@@ -73,8 +81,8 @@ def get_trial_metrics():
         if days_since_signup >= 6:
             expected_emails.append('Day 7')
 
-        # Determine trial status (simplified without subscription data)
-        if days_since_signup > 14:
+        # Determine trial status based on actual remaining days
+        if trial_days_remaining == 0:
             trial_status = 'ended'
         elif trial_days_remaining < 3:
             trial_status = 'ending_soon'
