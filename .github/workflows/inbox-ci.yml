@@ -23,7 +23,7 @@ on:
         default: "false"
 
 concurrency:
-  group: inbox
+  group: ${{ github.event_name == 'push' && 'inbox-deploy' || format('inbox-pr-{0}', github.event.pull_request.number) }}
   cancel-in-progress: true
 
 env:
@@ -73,10 +73,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Verify lockfile resolves without conflicts
+      - name: Verify requirements and lockfile resolve without conflicts
         run: |
-          pip install --dry-run --no-deps -r src/requirements-inboxiq.lock.txt 2>&1 | grep -i "conflict\|error" && exit 1 || true
+          # Verify the lock file installs cleanly
           pip install --quiet -r src/requirements-inboxiq.lock.txt
+          # Verify the source requirements file also resolves (catches Renovate updates to requirements.txt)
+          pip install --quiet -r src/requirements-inboxiq.txt
           echo "All dependencies resolved successfully"
 
   build-and-deploy:
