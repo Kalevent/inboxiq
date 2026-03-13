@@ -30,6 +30,38 @@ from src.security import log_audit
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
+_CONNECT_STATE_TTL = 600  # 10 minutes
+
+
+def _make_connect_state(user_id: str | int) -> str:
+    """Embed a signed user_id in the OAuth state so the callback works even when
+    the JWT cookie cannot be read (e.g. password-auth users on a different subdomain)."""
+    secret = current_app.config.get("SECRET_KEY", "")
+    ts = int(time.time())
+    payload = f"connect_inbox:{user_id}:{ts}"
+    sig = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()[:24]
+    return f"{payload}:{sig}"
+
+
+def _parse_connect_state(state: str) -> str | None:
+    """Verify and return the user_id from a state made by _make_connect_state.
+    Returns None if the state is invalid, tampered, or expired."""
+    try:
+        parts = state.split(":")
+        if len(parts) != 4 or parts[0] != "connect_inbox":
+            return None
+        _, user_id, ts_str, sig = parts
+        if int(time.time()) - int(ts_str) > _CONNECT_STATE_TTL:
+            return None
+        secret = current_app.config.get("SECRET_KEY", "")
+        payload = f"connect_inbox:{user_id}:{ts_str}"
+        expected = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()[:24]
+        if not hmac.compare_digest(sig, expected):
+            return None
+        return user_id
+    except Exception:
+        return None
+
 # Sign-in only — no restricted scopes, no Google verification required
 GOOGLE_SIGNIN_SCOPES = ["openid", "email", "profile"]
 
@@ -399,7 +431,7 @@ def google_inbox_start():
         "access_type": "offline",
         "include_granted_scopes": "true",
         "prompt": "consent",
-        "state": "connect_inbox",
+        "state": _make_connect_state(get_jwt_identity()),
     }
     return redirect(f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}")
 
@@ -432,14 +464,16 @@ def google_callback():
     email = (id_claims.get("email") or "").strip().lower() or "unknown@gmail.com"
     access_token = tok.get("access_token")
     refresh_token = tok.get("refresh_token")
-    user_id = get_jwt_identity()
+    # Prefer user_id from signed state (works for password-auth users whose JWT cookie
+    # is on a different subdomain than the callback URL). Fall back to JWT cookie identity.
+    user_id = _parse_connect_state(state) or get_jwt_identity()
 
     if state.startswith("inbox_invite:"):
         invite_token = state[len("inbox_invite:"):]
         ok, message = _complete_invite_connection("gmail", email, access_token, refresh_token, invite_token)
         return _invite_result_page(ok, message)
 
-    if state == "connect_inbox":
+    if state.startswith("connect_inbox:") or state == "connect_inbox":
         # Authenticated user connecting their Gmail inbox — store connection and redirect
         if not user_id:
             return redirect(url_for("login_page") + "?error=login_required")
@@ -496,7 +530,7 @@ def outlook_inbox_start():
         "redirect_uri": redirect_uri,
         "scope": " ".join(MS_MAIL_SCOPES),
         "response_mode": "query",
-        "state": "connect_inbox",
+        "state": _make_connect_state(get_jwt_identity()),
         "prompt": "consent",
     }
     return redirect(f"{MS_AUTH_URL}?{urllib.parse.urlencode(params)}")
@@ -515,7 +549,8 @@ def outlook_callback():
         return jsonify({"error": "Microsoft OAuth not configured"}), 500
 
     state = request.args.get("state", "signin")
-    scopes = MS_MAIL_SCOPES if (state == "connect_inbox" or state.startswith("inbox_invite:")) else MS_SIGNIN_SCOPES
+    _is_connect = state.startswith("connect_inbox:") or state == "connect_inbox"
+    scopes = MS_MAIL_SCOPES if (_is_connect or state.startswith("inbox_invite:")) else MS_SIGNIN_SCOPES
 
     token_data = {
         "client_id": client_id,
@@ -533,14 +568,14 @@ def outlook_callback():
     email = (id_claims.get("preferred_username") or id_claims.get("email") or "").strip().lower() or "unknown@outlook.com"
     access_token = tok.get("access_token")
     refresh_token = tok.get("refresh_token")
-    user_id = get_jwt_identity()
+    user_id = _parse_connect_state(state) or get_jwt_identity()
 
     if state.startswith("inbox_invite:"):
         invite_token = state[len("inbox_invite:"):]
         ok, message = _complete_invite_connection("outlook", email, access_token, refresh_token, invite_token)
         return _invite_result_page(ok, message)
 
-    if state == "connect_inbox":
+    if _is_connect:
         # Authenticated user connecting their Outlook inbox
         if not user_id:
             return redirect(url_for("login_page") + "?error=login_required")
