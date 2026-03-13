@@ -1,0 +1,52 @@
+{% extends "kb/base.html" %}
+
+{% block body %}
+<main class="kb-main">
+  <div class="kb-container kb-container--narrow">
+
+    <nav class="kb-breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('kb.kb_home') }}">Help Centre</a>
+      <span class="kb-breadcrumb-sep">›</span>
+      <span>Search</span>
+    </nav>
+
+    <h1 class="kb-page-title">
+      {% if query %}Search results for <em>"{{ query }}"</em>{% else %}Search{% endif %}
+    </h1>
+
+    {% if query and not results %}
+    <div class="kb-no-results">
+      <p>No articles matched <strong>"{{ query }}"</strong>.</p>
+      <p>Try a shorter term, or <a href="mailto:support@kalevent.com">contact support</a> if you can't find what you need.</p>
+    </div>
+    {% elif results %}
+    <p class="kb-result-count">{{ results | length }} article{{ 's' if results | length != 1 }} found</p>
+    <ul class="kb-search-results">
+      {% for r in results %}
+      <li class="kb-search-result">
+        <a href="{{ url_for('kb.kb_article', category_slug=r.category.slug, article_slug=r.article.slug) }}" class="kb-search-result-link">
+          <span class="kb-search-result-cat">{{ r.category.title }}</span>
+          <span class="kb-search-result-title">{{ r.article.title }}</span>
+          <p class="kb-search-result-snippet">{{ r.snippet }}</p>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    <!-- Browse categories -->
+    <div class="kb-other-cats" style="margin-top:3rem">
+      <h2 class="kb-section-title kb-section-title--sm">Browse all topics</h2>
+      <div class="kb-other-cats-grid">
+        {% for cat in categories %}
+        <a href="{{ url_for('kb.kb_category', category_slug=cat.slug) }}" class="kb-other-cat-chip">
+          <span>{% if cat.icon == 'rocket' %}🚀{% elif cat.icon == 'sparkles' %}✨{% elif cat.icon == 'bolt' %}⚡{% elif cat.icon == 'book' %}📚{% elif cat.icon == 'shield' %}🔐{% elif cat.icon == 'credit-card' %}💳{% elif cat.icon == 'wrench' %}🔧{% elif cat.icon == 'question' %}❓{% endif %}</span>
+          {{ cat.title }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</main>
+{% endblock %}

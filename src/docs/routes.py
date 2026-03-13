@@ -10,6 +10,7 @@ from markupsafe import Markup
 
 from src.docs import bp
 from src.sanitize import sanitize_html
+from src.models.core import Account
 
 logger = logging.getLogger(__name__)
 
@@ -107,16 +108,19 @@ class DocSearcher:
 
 
 def _require_auth():
-    """Require JWT; redirect to login with next + signup hint when missing."""
+    """Require JWT and developer_access; redirect to login when missing, 403 when unauthorized."""
     try:
         verify_jwt_in_request()
-        _ = get_jwt_identity()
-        return None
+        account_id = get_jwt_identity()
     except Exception:
         login_url = url_for("login_page")
         next_param = request.path
         signup_hint = url_for("root")
         return redirect(f"{login_url}?next={next_param}&signup_hint={signup_hint}")
+    account = Account.query.get(account_id) if account_id else None
+    if not account or not account.developer_access:
+        abort(403)
+    return None
 
 
 @bp.route("/")

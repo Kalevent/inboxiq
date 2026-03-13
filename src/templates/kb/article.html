@@ -1,0 +1,91 @@
+{% extends "kb/base.html" %}
+
+{% block body %}
+<main class="kb-main">
+  <div class="kb-article-layout">
+
+    <!-- Sidebar -->
+    <aside class="kb-article-sidebar">
+      <div class="kb-sidebar-section">
+        <div class="kb-sidebar-cat-title">
+          <a href="{{ url_for('kb.kb_category', category_slug=category.slug) }}">{{ category.title }}</a>
+        </div>
+        <ul class="kb-sidebar-list">
+          {% for art in category.articles %}
+          <li class="kb-sidebar-item {% if art.slug == article.slug %}kb-sidebar-item--active{% endif %}">
+            <a href="{{ url_for('kb.kb_article', category_slug=category.slug, article_slug=art.slug) }}">{{ art.title }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <div class="kb-article-content-wrap">
+
+      <!-- Breadcrumb -->
+      <nav class="kb-breadcrumb" aria-label="Breadcrumb">
+        <a href="{{ url_for('kb.kb_home') }}">Help Centre</a>
+        <span class="kb-breadcrumb-sep">›</span>
+        <a href="{{ url_for('kb.kb_category', category_slug=category.slug) }}">{{ category.title }}</a>
+        <span class="kb-breadcrumb-sep">›</span>
+        <span>{{ article.title }}</span>
+      </nav>
+
+      <article class="kb-article-body">
+        <h1 class="kb-article-title">{{ article.title }}</h1>
+        <div class="kb-article-prose">
+          {{ content }}
+        </div>
+      </article>
+
+      <!-- Helpful? -->
+      <div class="kb-helpful" id="kb-helpful">
+        <span class="kb-helpful-label">Was this article helpful?</span>
+        <div class="kb-helpful-btns">
+          <button class="kb-helpful-btn" data-val="yes" onclick="kbFeedback('yes', this)">
+            👍 Yes
+          </button>
+          <button class="kb-helpful-btn" data-val="no" onclick="kbFeedback('no', this)">
+            👎 No
+          </button>
+        </div>
+        <p class="kb-helpful-thanks hidden" id="kb-helpful-thanks">Thanks for the feedback!</p>
+      </div>
+
+      <!-- Prev / Next -->
+      {% if prev_article or next_article %}
+      <div class="kb-prev-next">
+        {% if prev_article %}
+        <a href="{{ url_for('kb.kb_article', category_slug=category.slug, article_slug=prev_article.slug) }}" class="kb-prev-next-link kb-prev-next-link--prev">
+          <span class="kb-prev-next-dir">← Previous</span>
+          <span class="kb-prev-next-title">{{ prev_article.title }}</span>
+        </a>
+        {% else %}
+        <span></span>
+        {% endif %}
+        {% if next_article %}
+        <a href="{{ url_for('kb.kb_article', category_slug=category.slug, article_slug=next_article.slug) }}" class="kb-prev-next-link kb-prev-next-link--next">
+          <span class="kb-prev-next-dir">Next →</span>
+          <span class="kb-prev-next-title">{{ next_article.title }}</span>
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Still need help -->
+      <div class="kb-still-stuck">
+        <p>Still need help? <a href="mailto:support@kalevent.com">Contact support →</a></p>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script>
+function kbFeedback(val, btn) {
+  document.querySelectorAll('.kb-helpful-btn').forEach(b => b.disabled = true);
+  document.getElementById('kb-helpful-thanks').classList.remove('hidden');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "kb/base.html" %}
+
+{% block body %}
+<main class="kb-main">
+  <div class="kb-container kb-container--narrow">
+
+    <!-- Breadcrumb -->
+    <nav class="kb-breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('kb.kb_home') }}">Help Centre</a>
+      <span class="kb-breadcrumb-sep">›</span>
+      <span>{{ category.title }}</span>
+    </nav>
+
+    <!-- Category header -->
+    <div class="kb-cat-header">
+      <span class="kb-cat-header-icon">
+        {% if category.icon == 'rocket' %}🚀
+        {% elif category.icon == 'sparkles' %}✨
+        {% elif category.icon == 'bolt' %}⚡
+        {% elif category.icon == 'book' %}📚
+        {% elif category.icon == 'shield' %}🔐
+        {% elif category.icon == 'credit-card' %}💳
+        {% elif category.icon == 'wrench' %}🔧
+        {% elif category.icon == 'question' %}❓
+        {% endif %}
+      </span>
+      <div>
+        <h1 class="kb-cat-header-title">{{ category.title }}</h1>
+        <p class="kb-cat-header-desc">{{ category.description }}</p>
+      </div>
+    </div>
+
+    <!-- Article list -->
+    <ul class="kb-article-list">
+      {% for art in category.articles %}
+      <li class="kb-article-list-item">
+        <a href="{{ url_for('kb.kb_article', category_slug=category.slug, article_slug=art.slug) }}" class="kb-article-list-link">
+          <span class="kb-article-list-title">{{ art.title }}</span>
+          <svg class="kb-article-list-arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <!-- Other categories -->
+    <div class="kb-other-cats">
+      <h2 class="kb-section-title kb-section-title--sm">Other topics</h2>
+      <div class="kb-other-cats-grid">
+        {% for cat in categories if cat.slug != category.slug %}
+        <a href="{{ url_for('kb.kb_category', category_slug=cat.slug) }}" class="kb-other-cat-chip">
+          <span>{% if cat.icon == 'rocket' %}🚀{% elif cat.icon == 'sparkles' %}✨{% elif cat.icon == 'bolt' %}⚡{% elif cat.icon == 'book' %}📚{% elif cat.icon == 'shield' %}🔐{% elif cat.icon == 'credit-card' %}💳{% elif cat.icon == 'wrench' %}🔧{% elif cat.icon == 'question' %}❓{% endif %}</span>
+          {{ cat.title }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</main>
+{% endblock %}

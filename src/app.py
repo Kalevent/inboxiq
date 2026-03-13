@@ -18,6 +18,7 @@ from src.users import bp as users_bp
 from src.accounts import bp as accounts_bp
 from src.api import bp as api_bp
 from src.docs import bp as docs_bp
+from src.kb import bp as kb_bp
 from src.blog import bp as blog_bp
 from src.settings import bp as settings_bp
 from src.publishing import bp as publishing_bp
@@ -278,6 +279,7 @@ def create_app() -> Flask:
   app.register_blueprint(accounts_bp)
   app.register_blueprint(api_bp)
   app.register_blueprint(docs_bp)
+  app.register_blueprint(kb_bp)
   app.register_blueprint(blog_bp)
   app.register_blueprint(settings_bp)
   app.register_blueprint(publishing_bp)

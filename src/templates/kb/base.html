@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} — InboxIQ Help</title>
+  <meta name="description" content="InboxIQ Help Centre — guides, tutorials, and answers to common questions.">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('kb.static', filename='css/kb.css') }}">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="kb-header">
+    <div class="kb-header-inner">
+      <a href="{{ url_for('kb.kb_home') }}" class="kb-logo">
+        <img src="{{ url_for('static', filename='favicon.svg') }}" alt="InboxIQ" width="28" height="28">
+        <span class="kb-logo-name">InboxIQ</span>
+        <span class="kb-logo-divider">|</span>
+        <span class="kb-logo-label">Help Centre</span>
+      </a>
+      <form class="kb-header-search" action="{{ url_for('kb.kb_search') }}" method="get" role="search">
+        <div class="kb-search-wrap">
+          <svg class="kb-search-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <input class="kb-search-input" type="search" name="q" placeholder="Search help articles…"
+                 value="{{ request.args.get('q', '') }}" autocomplete="off">
+        </div>
+      </form>
+      {% set has_token = request.cookies.get('access_token_cookie') %}
+      <div class="kb-header-actions">
+        {% if has_token %}
+          <a href="/dashboard" class="kb-btn-secondary">Dashboard</a>
+        {% else %}
+          <a href="{{ url_for('login_page') }}" class="kb-btn-secondary">Sign in</a>
+          <a href="{{ url_for('root') }}#pricing" class="kb-btn-primary">Start free trial</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% block body %}{% endblock %}
+
+  <!-- Footer -->
+  <footer class="kb-footer">
+    <div class="kb-footer-inner">
+      <span class="kb-footer-copy">&copy; {{ now.year if now else 2026 }} Kalevent · InboxIQ</span>
+      <nav class="kb-footer-nav" aria-label="Footer">
+        <a href="{{ url_for('root') }}">Home</a>
+        <a href="{{ url_for('root') }}#pricing">Pricing</a>
+        <a href="{{ url_for('privacy_policy') }}">Privacy</a>
+        <a href="{{ url_for('terms_of_service') }}">Terms</a>
+      </nav>
+    </div>
+  </footer>
+
+</body>
+</html>

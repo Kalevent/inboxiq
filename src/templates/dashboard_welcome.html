@@ -125,7 +125,7 @@
               <a href="/marketing" class="dashboard-user-menu__item">Marketing</a>
               <a href="/dashboard" class="dashboard-user-menu__item">Dashboard</a>
               {% endif %}
-              <a href="/docs" class="dashboard-user-menu__item">Help</a>
+              <a href="/kb" class="dashboard-user-menu__item">Help</a>
                 <form id="logoutForm" action="/auth/logout" method="post">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                   <button type="submit" class="dashboard-user-menu__item dashboard-user-menu__item--danger">Log out</button>
