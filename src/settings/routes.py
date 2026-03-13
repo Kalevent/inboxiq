@@ -1421,6 +1421,20 @@ def knowledge_base_integration():
 
             return redirect(url_for("settings.knowledge_base_integration"))
 
+        elif action == "add_url":
+            url = request.form.get("url", "").strip()
+            title = request.form.get("title", "").strip()
+            if not url:
+                flash("URL is required", "error")
+                return redirect(url_for("settings.knowledge_base_integration"))
+            from src.integrations.kb import process_url_source
+            result = process_url_source(account_id, url, title)
+            if result["success"]:
+                flash("URL added to your knowledge base", "success")
+            else:
+                flash(result["error"] or "Failed to add URL", "error")
+            return redirect(url_for("settings.knowledge_base_integration"))
+
         elif action == "delete_article":
             article_id = request.form.get("article_id")
             from src.integrations.kb import delete_kb_article
@@ -1430,21 +1444,27 @@ def knowledge_base_integration():
                 flash("Article not found", "error")
             return redirect(url_for("settings.knowledge_base_integration"))
 
-    # GET: Display current KB status
-    integration = KBIntegration.query.filter_by(
-        account_id=account_id,
-        integration_type="file_upload"
-    ).first()
-
+    # GET: Display current KB status — include all integration types
+    integrations = KBIntegration.query.filter_by(account_id=account_id).all()
+    integration_ids = [i.id for i in integrations]
+    total_articles = sum(i.article_count or 0 for i in integrations)
     articles = []
-    if integration:
-        articles = KBArticle.query.filter_by(
-            integration_id=integration.id
-        ).order_by(KBArticle.created_at.desc()).limit(50).all()
+    if integration_ids:
+        articles = (
+            KBArticle.query
+            .filter(KBArticle.integration_id.in_(integration_ids))
+            .order_by(KBArticle.created_at.desc())
+            .limit(50)
+            .all()
+        )
+
+    # Primary integration for status display (file_upload, falling back to any)
+    integration = next((i for i in integrations if i.integration_type == "file_upload"), None) or (integrations[0] if integrations else None)
 
     return render_template(
         "settings/knowledge_base.html",
         integration=integration,
+        total_articles=total_articles,
         articles=articles,
         account_id=account_id,
     )

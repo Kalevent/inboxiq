@@ -79,9 +79,49 @@
             </p>
           </div>
 
+          <!-- Add from URL -->
+          <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-1">Connect an online knowledge base</h2>
+            <p class="text-sm text-slate-400 mb-4">Paste any public help centre, Notion page, GitBook, or documentation URL and InboxIQ will index it automatically.</p>
+
+            <!-- Platform shortcuts -->
+            <div class="flex flex-wrap gap-2 mb-4">
+              <button type="button" onclick="kbSetPlatform('zendesk')" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-500/50 hover:bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition">🎧 Zendesk</button>
+              <button type="button" onclick="kbSetPlatform('intercom')" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-500/50 hover:bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition">💬 Intercom</button>
+              <button type="button" onclick="kbSetPlatform('notion')" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-500/50 hover:bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition">📝 Notion</button>
+              <button type="button" onclick="kbSetPlatform('gitbook')" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-500/50 hover:bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition">📖 GitBook</button>
+              <button type="button" onclick="kbSetPlatform('helpscout')" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-500/50 hover:bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition">🔭 Help Scout</button>
+              <button type="button" onclick="kbSetPlatform('confluence')" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-500/50 hover:bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition">🔷 Confluence</button>
+              <button type="button" onclick="kbSetPlatform('custom')" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-500/50 hover:bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition">🌐 Custom URL</button>
+            </div>
+
+            <div id="kb-platform-hint" class="hidden mb-3 rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-3 py-2 text-xs text-indigo-300"></div>
+
+            <form method="POST" id="kb-url-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <input type="hidden" name="action" value="add_url">
+              <div class="flex flex-col sm:flex-row gap-3">
+                <div class="flex-1 space-y-2">
+                  <input type="url" name="url" id="kb-url-input" required
+                    placeholder="https://help.yourcompany.com/article/..."
+                    class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                  <input type="text" name="title" id="kb-title-input"
+                    placeholder="Title (optional — we'll use the URL if blank)"
+                    class="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <button type="submit" class="self-start inline-flex items-center gap-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white transition whitespace-nowrap">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                  </svg>
+                  Add URL
+                </button>
+              </div>
+            </form>
+          </div>
+
           <!-- Upload Form -->
           <div class="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 mb-6">
-            <h2 class="text-lg font-semibold mb-4">Upload Articles</h2>
+            <h2 class="text-lg font-semibold mb-4">Upload files</h2>
             <form method="POST" enctype="multipart/form-data" id="kb-upload-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" name="action" value="upload_files">
@@ -131,7 +171,7 @@
 
               <div>
                 <dt class="text-slate-400 mb-1">Total Articles:</dt>
-                <dd class="text-slate-100 font-semibold">{{ integration.article_count }}</dd>
+                <dd class="text-slate-100 font-semibold">{{ total_articles }}</dd>
               </div>
 
               <div>
@@ -173,12 +213,21 @@
                     <td class="py-3">
                       <div class="flex items-center gap-2">
                         {% if article.url %}
+                        {% if article.url.startswith('http') %}
+                        <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 px-2 py-1 text-xs font-medium transition">
+                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                          </svg>
+                          View
+                        </a>
+                        {% else %}
                         <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-200 px-2 py-1 text-xs font-medium transition">
                           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                           </svg>
                           Download
                         </a>
+                        {% endif %}
                         {% endif %}
                         <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this article?');">
                           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -208,5 +257,26 @@
       </div>
     </main>
   </div>
+<script>
+const KB_PLATFORM_HINTS = {
+  zendesk:   { hint: 'Paste a Zendesk Help Center article URL, e.g. https://yourcompany.zendesk.com/hc/en-us/articles/...', placeholder: 'https://yourcompany.zendesk.com/hc/en-us/articles/...' },
+  intercom:  { hint: 'Paste an Intercom article URL, e.g. https://intercom.help/yourcompany/en/articles/...', placeholder: 'https://intercom.help/yourcompany/en/articles/...' },
+  notion:    { hint: 'Paste a public Notion page URL (must be shared to the web), e.g. https://yourcompany.notion.site/...', placeholder: 'https://yourcompany.notion.site/...' },
+  gitbook:   { hint: 'Paste any GitBook page URL, e.g. https://docs.yourcompany.com/...', placeholder: 'https://docs.yourcompany.com/...' },
+  helpscout: { hint: 'Paste a Help Scout Docs article URL, e.g. https://yourcompany.helpscoutdocs.com/article/...', placeholder: 'https://yourcompany.helpscoutdocs.com/article/...' },
+  confluence:{ hint: 'Paste a Confluence page URL — the page must be publicly accessible.', placeholder: 'https://yourcompany.atlassian.net/wiki/spaces/.../pages/...' },
+  custom:    { hint: 'Paste any public URL. InboxIQ will fetch the page and extract readable text.', placeholder: 'https://...' },
+};
+function kbSetPlatform(platform) {
+  const cfg = KB_PLATFORM_HINTS[platform];
+  if (!cfg) return;
+  const hint = document.getElementById('kb-platform-hint');
+  const urlInput = document.getElementById('kb-url-input');
+  hint.textContent = cfg.hint;
+  hint.classList.remove('hidden');
+  urlInput.placeholder = cfg.placeholder;
+  urlInput.focus();
+}
+</script>
 </body>
 </html>

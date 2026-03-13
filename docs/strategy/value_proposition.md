@@ -1,7 +1,7 @@
 # Value Proposition
 
 > Status: Draft — for discussion at next innovation meeting
-> Last updated: 11 Mar 2026
+> Last updated: 13 Mar 2026
 
 Anchored to the primary ICP: founder or head of ops at a B2B SaaS company, 10–50 employees.
 See [ICP.md](ICP.md) first.
@@ -132,6 +132,8 @@ Generic AI gives generic answers. Oliver's customers ask about his specific feat
 - Every correction he makes improves the next response
 
 **What this requires from the product**: Onboarding must include a knowledge base setup step that feels immediate. Oliver should be able to paste in 5 past email replies and see the AI use them within 10 minutes of signing up.
+
+✅ **Implemented**: Settings → Knowledge Base supports file upload (.md, .txt, .html, .pdf) and URL-based sources. Pre-configured shortcuts for Zendesk, Intercom, Notion, GitBook, HelpScout, Confluence, and any custom URL. Indexed content is immediately available to the draft reply pipeline via semantic search.
 
 ---
 
