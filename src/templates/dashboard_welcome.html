@@ -141,6 +141,23 @@
       <div class="max-w-6xl mx-auto px-4 py-10 lg:py-14">
 
         <div class="rounded-3xl border border-slate-800 bg-slate-950/85 p-6 lg:p-7 shadow-lg shadow-slate-950/30 relative overflow-hidden">
+          {% if not has_kb %}
+          <div class="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/8 px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div class="space-y-0.5">
+              <p class="text-sm font-semibold text-slate-100">Link your knowledge base to improve draft replies</p>
+              <p class="text-xs text-slate-400">
+                Connect your help centre, Notion docs, or any URL so InboxIQ can reference your content when drafting replies. This message disappears once you add a source.
+              </p>
+            </div>
+            <a
+              href="{{ url_for('settings.settings_page', tab='knowledge_base') }}"
+              class="inline-flex items-center gap-2 rounded-full border border-amber-500/50 text-amber-300 hover:bg-amber-500/10 text-sm font-medium px-4 py-2 flex-shrink-0 transition-colors"
+            >
+              Add a source →
+            </a>
+          </div>
+          {% endif %}
+
           {% if not email_inbox_connections %}
           <div class="mb-4 rounded-xl border border-indigo-500/60 bg-indigo-500/10 px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div class="space-y-1">

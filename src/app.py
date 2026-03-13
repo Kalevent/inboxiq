@@ -608,6 +608,12 @@ def create_app() -> Flask:
       "api": _has_connection(["api", "webhook", "webhooks"]),
     }
 
+    from src.models.content import KBIntegration
+    has_kb = KBIntegration.query.filter(
+        KBIntegration.account_id == account_id,
+        KBIntegration.article_count > 0,
+    ).first() is not None
+
     banner_first_batch = total_tickets >= 5
     allowed = set(
       e.strip().lower()
@@ -786,6 +792,7 @@ def create_app() -> Flask:
       active_rules_count=active_rules_count,
       automation_executions_30d=automation_executions_30d,
       automation_time_saved_display=automation_time_saved_display,
+      has_kb=has_kb,
     )
 
   @app.route("/home", methods=["GET"])
