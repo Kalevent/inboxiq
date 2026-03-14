@@ -20,7 +20,7 @@ Flask-Cors==6.0.2
 bleach==6.1.0
 requests==2.32.5
 aiohttp==3.13.3
-markdown==3.7
+markdown==3.8.1
 fastmcp==2.14.0
 stripe==11.1.1
 pyotp==2.9.0
