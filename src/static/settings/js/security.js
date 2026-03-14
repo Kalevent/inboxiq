@@ -45,37 +45,14 @@
         const li = document.createElement('li');
         li.className = 'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm';
         li.dataset.passkeyId = p.id;
-        li.innerHTML = `<span class="text-slate-100">${p.label || 'Passkey'}</span><div class="flex items-center gap-3"><span class="text-xs text-slate-500">${p.created_at || ''}</span><button class="text-xs text-rose-400 hover:text-rose-300 font-medium" data-delete-passkey="${p.id}">Delete</button></div>`;
+        li.innerHTML = `<span class="text-slate-100">${p.label || 'Passkey'}</span><span class="text-xs text-slate-500">${p.created_at || ''}</span>`;
         passkeyList.appendChild(li);
-      });
-      passkeyList.querySelectorAll('[data-delete-passkey]').forEach((btn) => {
-        btn.addEventListener('click', () => deletePasskey(btn.dataset.deletePasskey));
       });
     } catch (err) {
       setPasskeyStatus('error', err.message || 'Unable to refresh passkeys');
     }
   }
 
-  async function deletePasskey(id) {
-    if (!confirm('Remove this passkey? You will need your password or another passkey to sign in.')) return;
-    try {
-      const resp = await fetch('/auth/passkeys/delete', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrf() ? { 'X-CSRF-TOKEN': csrf() } : {}),
-        },
-        body: JSON.stringify({ id }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Failed to delete passkey');
-      setPasskeyStatus('success', 'Passkey removed.');
-      refreshPasskeyList();
-    } catch (err) {
-      setPasskeyStatus('error', err.message || 'Unable to delete passkey');
-    }
-  }
 
   async function registerPasskey() {
     if (!window.PublicKeyCredential) {
