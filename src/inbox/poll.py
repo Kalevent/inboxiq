@@ -157,6 +157,63 @@ def _extract_header(headers: list[dict], name: str) -> str:
     return ""
 
 
+def fetch_label_changes_gmail(
+    access_token: str,
+    start_history_id: str,
+) -> tuple[list[dict], str | None]:
+    """
+    Use the Gmail History API to fetch all label additions since start_history_id.
+
+    Returns (changed_messages, new_history_id).
+    Each item: {"provider_message_id": str, "provider_label_ids": list[str]}
+    where provider_label_ids are the CURRENT labels on the message at time of change.
+
+    Returns ([], None) on any error — non-fatal, corrections are best-effort.
+    """
+    try:
+        resp = requests.get(
+            "https://gmail.googleapis.com/gmail/v1/users/me/history",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={
+                "startHistoryId": start_history_id,
+                "historyTypes": "labelAdded",
+                "maxResults": 100,
+            },
+            timeout=10,
+        )
+        if resp.status_code == 404:
+            # historyId expired (>7 days old) — reset by returning None for new_history_id
+            return [], None
+        if resp.status_code != 200:
+            _log.debug("gmail history fetch %s: %s", resp.status_code, resp.text[:200])
+            return [], None
+
+        data = resp.json()
+        new_history_id: str | None = data.get("historyId")
+
+        # Collect the current label set per changed message (deduplicated by provider_message_id)
+        changed: dict[str, list[str]] = {}
+        for record in data.get("history") or []:
+            for label_change in record.get("labelsAdded") or []:
+                msg = label_change.get("message") or {}
+                mid = msg.get("id")
+                if not mid:
+                    continue
+                # message.labelIds = ALL current labels on the message (not just the added ones)
+                label_ids = msg.get("labelIds") or []
+                changed[mid] = label_ids  # last write wins; that's fine
+
+        result = [
+            {"provider_message_id": mid, "provider_label_ids": label_ids, "provider": "gmail"}
+            for mid, label_ids in changed.items()
+        ]
+        return result, new_history_id
+
+    except Exception as exc:
+        _log.debug("fetch_label_changes_gmail non-fatal: %s", exc)
+        return [], None
+
+
 def fetch_messages_gmail(
     access_token: str,
     refresh_token: str | None,
@@ -837,6 +894,56 @@ def _ms_refresh_access_token(refresh_token: str, client_id: str, client_secret: 
     resp.raise_for_status()
     payload = resp.json()
     return payload.get("access_token")
+
+
+def fetch_category_changes_outlook(
+    access_token: str,
+    modified_since: str,
+) -> tuple[list[dict], str]:
+    """
+    Fetch Outlook messages whose categories changed since modified_since.
+
+    Uses Graph API $filter=lastModifiedDateTime gt <iso> — the Outlook equivalent
+    of Gmail's History API. Catches corrections on already-triaged messages that
+    would never appear in the normal top-N poll.
+
+    Returns (changed_messages, new_since_timestamp).
+    Each item: {"provider_message_id": str, "provider_categories": list[str], "provider": "outlook"}
+
+    Returns ([], now_iso) on any error — non-fatal, corrections are best-effort.
+    """
+    from datetime import datetime, timezone as _tz
+    now_iso = datetime.now(_tz.utc).isoformat()
+    try:
+        resp = requests.get(
+            "https://graph.microsoft.com/v1.0/me/messages",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={
+                "$filter": f"lastModifiedDateTime gt {modified_since}",
+                "$select": "id,categories,internetMessageId",
+                "$top": 100,
+                "$orderby": "lastModifiedDateTime desc",
+            },
+            timeout=10,
+        )
+        if resp.status_code != 200:
+            _log.debug("outlook category changes %s: %s", resp.status_code, resp.text[:200])
+            return [], now_iso
+
+        changed = []
+        for msg in resp.json().get("value") or []:
+            mid = msg.get("id")
+            if mid:
+                changed.append({
+                    "provider_message_id": mid,
+                    "provider_categories": msg.get("categories") or [],
+                    "provider": "outlook",
+                })
+        return changed, now_iso
+
+    except Exception as exc:
+        _log.debug("fetch_category_changes_outlook non-fatal: %s", exc)
+        return [], now_iso
 
 
 def fetch_messages_outlook(

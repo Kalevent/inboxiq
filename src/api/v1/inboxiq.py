@@ -1324,6 +1324,63 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                     db.session.commit()
             except Exception as _lbl_exc:
                 current_app.logger.warning("gmail label sync failed: %s", _lbl_exc)
+
+            # ── Phase 2: History API correction sweep ─────────────────────────
+            # Gmail label changes on previously-triaged emails never re-appear in
+            # the normal poll (which fetches only the latest N messages). The History
+            # API streams every labelAdded event since the last stored historyId so
+            # we catch corrections the moment Oliver moves an email.
+            try:
+                from src.inbox.poll import fetch_label_changes_gmail as _fetch_changes
+                _meta = conn.metadata_json or {}
+                _last_hid = _meta.get("history_id")
+
+                if not _last_hid:
+                    # First poll: anchor the historyId from the mailbox profile so we
+                    # start tracking from now (not retroactively).
+                    import requests as _req_hid
+                    _prof = _req_hid.get(
+                        "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+                        headers={"Authorization": f"Bearer {conn.access_token}"},
+                        timeout=8,
+                    )
+                    if _prof.status_code == 200:
+                        _meta["history_id"] = _prof.json().get("historyId")
+                        conn.metadata_json = dict(_meta)
+                        db.session.commit()
+                else:
+                    _changes, _new_hid = _fetch_changes(conn.access_token, _last_hid)
+
+                    if _new_hid:
+                        _meta["history_id"] = _new_hid
+                        conn.metadata_json = dict(_meta)
+                        db.session.commit()
+                    elif _new_hid is None and _changes == []:
+                        # historyId expired (>7 days) — reset anchor
+                        import requests as _req_reset
+                        _prof2 = _req_reset.get(
+                            "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+                            headers={"Authorization": f"Bearer {conn.access_token}"},
+                            timeout=8,
+                        )
+                        if _prof2.status_code == 200:
+                            _meta["history_id"] = _prof2.json().get("historyId")
+                            conn.metadata_json = dict(_meta)
+                            db.session.commit()
+
+                    for _chg in _changes:
+                        _pmid = _chg.get("provider_message_id")
+                        if not _pmid:
+                            continue
+                        _t = Ticket.query.filter_by(
+                            provider_message_id=_pmid, provider="gmail"
+                        ).first()
+                        if _t:
+                            _detect_label_correction(_t, _chg, conn.account_id)
+
+            except Exception as _hist_exc:
+                current_app.logger.warning("gmail history correction sweep failed: %s", _hist_exc)
+
         elif conn.provider == "outlook" and conn.access_token:
             messages, new_token = fetch_messages_outlook(
                 access_token=conn.access_token,
@@ -1365,6 +1422,40 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                     db.session.commit()
             except Exception as _lbl_exc:
                 current_app.logger.warning("outlook category sync failed: %s", _lbl_exc)
+
+            # ── Phase 2: delta correction sweep for Outlook ───────────────────
+            # Graph API: find all messages modified since the last poll anchor.
+            # When Oliver changes an Outlook category (e.g. moves to InboxIQ/Billing),
+            # that message's lastModifiedDateTime updates — we catch it here.
+            try:
+                from src.inbox.poll import fetch_category_changes_outlook as _fetch_out_changes
+                _ometa = conn.metadata_json or {}
+                _since = _ometa.get("outlook_corrections_since")
+
+                if not _since:
+                    # First poll: anchor to now — start tracking from this point forward
+                    _ometa["outlook_corrections_since"] = datetime.now(timezone.utc).isoformat()
+                    conn.metadata_json = dict(_ometa)
+                    db.session.commit()
+                else:
+                    _out_changes, _new_since = _fetch_out_changes(conn.access_token, _since)
+                    _ometa["outlook_corrections_since"] = _new_since
+                    conn.metadata_json = dict(_ometa)
+                    db.session.commit()
+
+                    for _ochg in _out_changes:
+                        _opmid = _ochg.get("provider_message_id")
+                        if not _opmid:
+                            continue
+                        _ot = Ticket.query.filter_by(
+                            provider_message_id=_opmid, provider="outlook"
+                        ).first()
+                        if _ot:
+                            _detect_label_correction(_ot, _ochg, conn.account_id)
+
+            except Exception as _out_hist_exc:
+                current_app.logger.warning("outlook delta correction sweep failed: %s", _out_hist_exc)
+
         else:
             messages = _fetch_messages_stub(conn)
     except Exception as exc:

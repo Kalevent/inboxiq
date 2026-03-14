@@ -213,8 +213,33 @@ def should_skip_triage(payload: Dict[str, Any]) -> tuple[bool, str | None, str |
         "your subscription renews", "subscription renewal",
         "renewal notice", "your plan renews", "next billing date",
         "upcoming renewal", "auto-renews on", "will be charged on",
+        # Domain and hosting renewals (GoDaddy, Namecheap, etc.)
+        "will auto-renew", "auto-renew soon", "domain renewal", "domain will expire",
+        "domain expir", "hosting renewal", "ssl renewal", "ssl certificate expir",
     ]
     if any(sig in _text for sig in _RENEWAL_SIGNALS):
-        return True, "updates", "Commerce signal: subscription renewal notice"
+        return True, "updates", "Commerce signal: subscription/domain renewal notice"
+
+    # ── Layer 2: Newsletter / digest subject patterns ──────────────────────────
+    # Emails that Gmail places in Primary (not Promotions) despite being newsletters.
+    # Caught by subject line patterns — no body scan needed.
+    _NEWSLETTER_SUBJECT_SIGNALS = [
+        "episode #", "episode no.", "podcast:",
+        "weekly digest", "daily digest", "weekly newsletter", "daily newsletter",
+        "this week in ", "this week's ", "in this week's",
+        "weekly roundup", "monthly roundup", "weekly update", "monthly update",
+        "issue #", "issue no.", "vol. ", "volume ",
+        "what's new in ", "new in ", "top stories",
+        "morning brew", "evening edition",
+        "digest:", "newsletter:",
+    ]
+    if any(sig in subject for sig in _NEWSLETTER_SUBJECT_SIGNALS):
+        return True, "newsletter", "Newsletter/digest subject pattern"
+
+    # ── Layer 3: Outlook ad injection ─────────────────────────────────────────
+    # Outlook injects Microsoft-sponsored [Ad] or [Sponsored] emails that have no
+    # Gmail equivalent. These are never human emails; skip triage entirely.
+    if "[ad]" in subject or "[sponsored]" in subject or "[advertisement]" in subject:
+        return True, "promotions", "Outlook sponsored/ad email"
 
     return False, None, None
