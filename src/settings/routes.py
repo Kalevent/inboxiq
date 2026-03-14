@@ -112,15 +112,12 @@ def settings_page(tab):
     llm_config = AccountLLMConfig.query.filter_by(account_id=account_id).first()
 
   # Get draft reply feature status for features tab
-  draft_reply_enabled = False
-  draft_reply_has_access = False
+  draft_reply_enabled = True
   if tab == "features" and account_id:
     from src.models import AccountFeatureFlags
-    from src.features import check_draft_reply_access
 
     feature_flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
-    draft_reply_enabled = feature_flags.draft_reply_enabled if feature_flags else False
-    draft_reply_has_access = check_draft_reply_access(account_id)
+    draft_reply_enabled = feature_flags.draft_reply_enabled if feature_flags else True
 
   # Get CRM connection for integrations tab
   crm_connection = None
@@ -185,7 +182,6 @@ def settings_page(tab):
     account=account,
     plan_name=plan_name,
     draft_reply_enabled=draft_reply_enabled,
-    draft_reply_has_access=draft_reply_has_access,
     crm_connection=crm_connection,
     crm_prefill=crm_prefill,
     linkedin_connection=linkedin_connection,
@@ -645,6 +641,72 @@ def integrations_social_disconnect():
         from src.security import log_audit
         log_audit("inbox.disconnected", resource_type="inbox_connection", resource_id=conn_id,
                   metadata={"provider": conn_provider})
+
+    return redirect(url_for("settings.settings_page", tab="integrations"))
+
+
+@bp.route("/integrations/inbox/toggle-gmail-filters", methods=["POST"])
+@login_required_settings
+def inbox_toggle_gmail_filters():
+    """Toggle 'Sync learned filters to Gmail' for a Gmail inbox connection."""
+    from src.models import InboxConnection
+    from src.extensions import db
+    account_id = getattr(g, "current_account_id", None)
+    user = getattr(g, "current_user", None)
+    if not user or getattr(user, "role", None) not in ("owner", "admin"):
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+    connection_id = request.form.get("connection_id", "").strip()
+    if not account_id or not connection_id:
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+
+    conn = InboxConnection.query.filter_by(
+        id=connection_id, account_id=account_id, provider="gmail"
+    ).first()
+    if conn:
+        meta = dict(conn.metadata_json or {})
+        enabled = not meta.get("sync_gmail_filters", False)
+        meta["sync_gmail_filters"] = enabled
+        conn.metadata_json = meta
+        db.session.commit()
+        if enabled:
+            try:
+                from src.inbox.tasks import sync_gmail_filters_task
+                sync_gmail_filters_task.delay(connection_id)
+            except Exception:
+                pass
+
+    return redirect(url_for("settings.settings_page", tab="integrations"))
+
+
+@bp.route("/integrations/inbox/toggle-outlook-rules", methods=["POST"])
+@login_required_settings
+def inbox_toggle_outlook_rules():
+    """Toggle 'Sync learned rules to Outlook' for an Outlook inbox connection."""
+    from src.models import InboxConnection
+    from src.extensions import db
+    account_id = getattr(g, "current_account_id", None)
+    user = getattr(g, "current_user", None)
+    if not user or getattr(user, "role", None) not in ("owner", "admin"):
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+    connection_id = request.form.get("connection_id", "").strip()
+    if not account_id or not connection_id:
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+
+    conn = InboxConnection.query.filter_by(
+        id=connection_id, account_id=account_id, provider="outlook"
+    ).first()
+    if conn:
+        meta = dict(conn.metadata_json or {})
+        enabled = not meta.get("sync_outlook_rules", False)
+        meta["sync_outlook_rules"] = enabled
+        conn.metadata_json = meta
+        db.session.commit()
+        if enabled:
+            try:
+                from src.inbox.tasks import sync_outlook_rules_task
+                sync_outlook_rules_task.delay(connection_id)
+            except Exception:
+                pass
 
     return redirect(url_for("settings.settings_page", tab="integrations"))
 
@@ -1767,8 +1829,7 @@ def _developer_page(*, account_id, account, developer_access_request, registered
     seats_used=0,
     seats_limit=account.seats_limit if account else None,
     plan_name=None,
-    draft_reply_enabled=False,
-    draft_reply_has_access=False,
+    draft_reply_enabled=True,
     crm_connection=None,
     crm_prefill={},
     linkedin_connection=None,

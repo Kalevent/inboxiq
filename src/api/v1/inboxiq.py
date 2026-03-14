@@ -1254,6 +1254,23 @@ def _record_correction(ticket, account_id: int, corrected_category: str, signal_
         )
         db.session.commit()
 
+        # Phase 5 / 6: Schedule provider rule/filter sync if enabled on any connection
+        # for this account. Never block the correction path on failure.
+        try:
+            from src.models.core import InboxConnection
+            for _sync_conn in InboxConnection.query.filter_by(
+                account_id=account_id, status="connected"
+            ).all():
+                _sync_meta = _sync_conn.metadata_json or {}
+                if _sync_conn.provider == "outlook" and _sync_meta.get("sync_outlook_rules"):
+                    from src.inbox.tasks import sync_outlook_rules_task
+                    sync_outlook_rules_task.delay(str(_sync_conn.id))
+                elif _sync_conn.provider == "gmail" and _sync_meta.get("sync_gmail_filters"):
+                    from src.inbox.tasks import sync_gmail_filters_task
+                    sync_gmail_filters_task.delay(str(_sync_conn.id))
+        except Exception:
+            pass  # Never block the correction path
+
     except Exception as exc:
         db.session.rollback()
         current_app.logger.warning(
@@ -1879,16 +1896,6 @@ def update_draft_reply_feature():
     if not isinstance(enabled, bool):
         return jsonify({"error": "invalid_enabled_value"}), 400
 
-    # Check if account is eligible for draft reply feature
-    from src.features import check_draft_reply_access
-    has_access = check_draft_reply_access(account_id)
-
-    if enabled and not has_access:
-        return jsonify({
-            "error": "not_eligible",
-            "message": "Draft reply feature requires Business plan or active trial"
-        }), 403
-
     # Get or create feature flags
     from src.models import AccountFeatureFlags
     feature_flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
@@ -1922,15 +1929,11 @@ def get_draft_reply_feature():
         return jsonify({"error": "account_not_found"}), 404
 
     from src.models import AccountFeatureFlags
-    from src.features import check_draft_reply_access
 
     feature_flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
-    has_access = check_draft_reply_access(account_id)
 
     return jsonify({
-        "draft_reply_enabled": feature_flags.draft_reply_enabled if feature_flags else False,
-        "has_access": has_access,
-        "can_enable": has_access
+        "draft_reply_enabled": feature_flags.draft_reply_enabled if feature_flags else True,
     }), 200
 
 

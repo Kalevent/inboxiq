@@ -25,25 +25,39 @@ def draft_reply_enabled(context: Dict[str, Any] | None, account_id: int | None =
     """
     Check if draft reply generation is enabled for this request.
 
-    Draft reply is a core promise — on for all accounts from day one.
-    Only the global kill switch (DSPY_DRAFT_REPLY_ENABLED=false) can disable it.
+    Global kill switch: DSPY_DRAFT_REPLY_ENABLED=false disables for all accounts.
+    Per-account: respects AccountFeatureFlags.draft_reply_enabled (defaults True
+    when no row exists — all new accounts get drafts out of the box).
 
     Args:
-        context: Request context dict with features/plan info
-        account_id: Account ID for feature access control
+        context: Request context dict (checked for an explicit override first)
+        account_id: Account ID for per-account preference lookup
 
     Returns:
         True if draft reply should be generated
     """
+    # Global kill switch
+    if not _env_bool("DSPY_DRAFT_REPLY_ENABLED", True):
+        return False
+
+    # Explicit context override (useful for tests / celery task context)
+    if context and isinstance(context, dict):
+        features = context.get("features")
+        if isinstance(features, dict) and "draft_reply" in features:
+            return bool(features["draft_reply"])
+
     if account_id:
         try:
-            from src.features import check_draft_reply_access
-            return check_draft_reply_access(account_id, context)
+            from src.models.core import AccountFeatureFlags
+            flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
+            # No row → feature not yet configured → default ON
+            if flags is None:
+                return True
+            return bool(flags.draft_reply_enabled)
         except Exception as exc:
-            logger.warning("Failed to check draft_reply access: %s", exc)
+            logger.warning("draft_reply_enabled db lookup failed: %s", exc)
 
-    # No account_id — check kill switch only, default enabled
-    return _env_bool("DSPY_DRAFT_REPLY_ENABLED", True)
+    return True
 
 
 def fetch_kb_context(

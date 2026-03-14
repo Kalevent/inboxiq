@@ -1314,6 +1314,45 @@
                     </div>
                     <p class="text-sm text-slate-300 mt-1">{{ conn.display_name or conn.email_address }}</p>
                     {% if conn.display_name %}<p class="text-xs text-slate-500">{{ conn.email_address }}</p>{% endif %}
+                    {% if conn.provider == 'gmail' and conn.status == 'connected' and current_user and current_user.role in ('owner', 'admin') %}
+                    <div class="mt-3 pt-3 border-t border-slate-700/50 flex items-center justify-between gap-3">
+                      <div>
+                        <p class="text-xs font-medium text-slate-200">Sync learned filters to Gmail</p>
+                        <p class="text-xs text-slate-500">Auto-label emails from known senders at delivery, before InboxIQ polls</p>
+                      </div>
+                      {% set has_filter_scope = 'https://www.googleapis.com/auth/gmail.settings.basic' in (conn.scopes or []) %}
+                      {% if has_filter_scope %}
+                      <form method="POST" action="{{ url_for('settings.inbox_toggle_gmail_filters') }}" class="shrink-0">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="connection_id" value="{{ conn.id }}" />
+                        {% set filters_on = (conn.metadata_json or {}).get('sync_gmail_filters', false) %}
+                        <button type="submit" title="{% if filters_on %}Disable{% else %}Enable{% endif %} Gmail filter sync"
+                                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors {% if filters_on %}bg-indigo-600{% else %}bg-slate-600{% endif %}">
+                          <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform {% if filters_on %}translate-x-5{% else %}translate-x-0{% endif %}"></span>
+                        </button>
+                      </form>
+                      {% else %}
+                      <span class="text-xs text-amber-400 shrink-0">Reconnect inbox to enable</span>
+                      {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if conn.provider == 'outlook' and conn.status == 'connected' and current_user and current_user.role in ('owner', 'admin') %}
+                    <div class="mt-3 pt-3 border-t border-slate-700/50 flex items-center justify-between gap-3">
+                      <div>
+                        <p class="text-xs font-medium text-slate-200">Sync learned rules to Outlook</p>
+                        <p class="text-xs text-slate-500">Auto-sort emails from known senders at delivery, before InboxIQ polls</p>
+                      </div>
+                      <form method="POST" action="{{ url_for('settings.inbox_toggle_outlook_rules') }}" class="shrink-0">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="connection_id" value="{{ conn.id }}" />
+                        {% set rules_on = (conn.metadata_json or {}).get('sync_outlook_rules', false) %}
+                        <button type="submit" title="{% if rules_on %}Disable{% else %}Enable{% endif %} Outlook rule sync"
+                                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors {% if rules_on %}bg-indigo-600{% else %}bg-slate-600{% endif %}">
+                          <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform {% if rules_on %}translate-x-5{% else %}translate-x-0{% endif %}"></span>
+                        </button>
+                      </form>
+                    </div>
+                    {% endif %}
                     {% if current_user and current_user.role in ('owner', 'admin') %}
                     <div class="mt-4 flex gap-2 flex-wrap">
                       {% if conn.provider == 'gmail' %}
@@ -1539,11 +1578,6 @@
                         Automatically generate AI-powered draft replies using your knowledge base and conversation history.
                         Drafts appear on eligible tickets and require human review before sending.
                       </p>
-                      {% if not draft_reply_has_access %}
-                        <div class="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
-                          Draft reply feature requires Business plan or active trial. Contact sales to upgrade.
-                        </div>
-                      {% endif %}
                     </div>
                     <div class="flex-shrink-0">
                       <label class="relative inline-flex items-center cursor-pointer" id="draftReplyToggleWrapper">
@@ -1552,9 +1586,8 @@
                           id="draftReplyToggle"
                           class="sr-only peer"
                           {% if draft_reply_enabled %}checked{% endif %}
-                          {% if not draft_reply_has_access %}disabled{% endif %}
                         />
-                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 {% if not draft_reply_has_access %}opacity-50 cursor-not-allowed{% endif %}"></div>
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                       </label>
                     </div>
                   </div>

@@ -86,7 +86,7 @@ class AccountFeatureFlags(db.Model):
     __tablename__ = "account_feature_flags"
 
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), primary_key=True)
-    draft_reply_enabled = db.Column(db.Boolean, nullable=False, default=False)
+    draft_reply_enabled = db.Column(db.Boolean, nullable=False, default=True)
     draft_reply_auto_approve = db.Column(db.Boolean, nullable=False, default=False)  # Future: auto-send low-risk replies
     draft_reply_min_confidence = db.Column(db.Float, nullable=False, default=0.7)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)

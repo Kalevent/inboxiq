@@ -4,8 +4,7 @@ Handles plan-based gating, feature flags, and trial access.
 """
 import os
 from typing import Optional
-from src.extensions import db
-from src.models.core import Account, AccountFeatureFlags
+from src.models.core import AccountFeatureFlags
 from src.models.billing import CustomerBillingProfile
 
 
@@ -33,35 +32,6 @@ def get_account_plan(account_id: int) -> Optional[str]:
         return None
     return profile.plan_choice
 
-
-def check_draft_reply_access(account_id: int, context: Optional[dict] = None) -> bool:
-    """
-    Check if an account has access to the draft reply feature.
-
-    Draft reply is a core product promise — available to all users.
-    Only the global kill switch (DSPY_DRAFT_REPLY_ENABLED=false) can disable it.
-
-    Args:
-        account_id: The account ID to check
-        context: Optional context dict with features override
-
-    Returns:
-        True if account has access, False otherwise
-    """
-    # Check global kill switch (defaults to enabled; set DSPY_DRAFT_REPLY_ENABLED=false to disable)
-    if not _env_bool("DSPY_DRAFT_REPLY_ENABLED", True):
-        return False
-
-    # Check explicit context override (useful for testing)
-    if context and isinstance(context, dict):
-        features = context.get("features")
-        if isinstance(features, dict):
-            draft_reply_setting = features.get("draft_reply")
-            if draft_reply_setting is not None:
-                return bool(draft_reply_setting)
-
-    # Draft reply is available to all users — no plan gate
-    return True
 
 
 def feature_enabled(feature: str, account_id: int) -> bool:
@@ -124,9 +94,9 @@ def get_draft_reply_config(account_id: int) -> dict:
     )
 
     if not feature_flags:
-        # Return defaults
+        # Return defaults (draft reply is on by default for all accounts)
         return {
-            "enabled": check_draft_reply_access(account_id),
+            "enabled": True,
             "auto_approve": False,
             "min_confidence": 0.7,
         }
