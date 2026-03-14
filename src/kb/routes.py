@@ -52,6 +52,7 @@ KB_CATEGORIES = [
             {"slug": "how-rules-work", "title": "How rules work"},
             {"slug": "conditions", "title": "Available conditions"},
             {"slug": "actions", "title": "Available actions"},
+            {"slug": "inbox-actions", "title": "Inbox actions — Gmail & Outlook"},
             {"slug": "rule-recipes", "title": "Rule recipes and examples"},
         ],
     },

@@ -1,67 +1,111 @@
 # Rule recipes and examples
 
-Ready-made rule configurations for the most common use cases. Copy these into your Automation Studio.
+Ready-made phrases you can type into the Automation Studio natural language builder. Go to **Settings → Automation**, paste any of these into the text box, and click **Create rule**.
 
 ---
 
-## Route bug reports to engineering
+## Department routing
 
-**Conditions:** `category = Support` AND `action_required = True`
-**Action:** Forward to `engineering@yourcompany.com`
+### Route transaction receipts to accounting
 
-> Refine this by adding a `sender_domain` condition if you only want bugs from paying customers.
+> "When category is Transactions, forward to accounting@yourcompany.com and archive it"
 
----
-
-## Slack alert for frustrated urgent customers
-
-**Conditions:** `sentiment = Frustrated` AND `priority = P1`
-**Action:** Send webhook → your Slack incoming webhook URL
-
-This is one of the highest-value rules. Frustrated, urgent customers need a human response fast — a Slack ping ensures nothing slips through.
+Receipts and order confirmations are classified automatically. This rule forwards them to your accountant and removes them from your inbox so they never pile up.
 
 ---
 
-## Archive automated receipts
+### Route bug reports to engineering
 
-**Conditions:** `category = Transactions` AND `is_automated = True`
-**Action:** Archive
+> "If the subject contains 'bug report' or category is Support, forward to engineering@yourcompany.com"
 
-Automated receipt emails (Stripe, PayPal, Xero) don't need human review. Archive them automatically after InboxIQ logs them.
+Or route by both AI category and keywords:
 
----
-
-## Flag billing disputes for founder review
-
-**Conditions:** `category = Billing` AND `sentiment = Frustrated`
-**Action:** Forward to `founder@yourcompany.com`
-
-Billing disputes need senior attention. Forward them directly rather than leaving them in the general inbox queue.
+> "When category is Support and subject contains bug, forward to engineering@yourcompany.com and star it"
 
 ---
 
-## Extract invoice data for accounting
+### Route billing queries to finance
 
-**Conditions:** `category = Billing` AND `is_automated = True`
-**Action:** Extract structured data + Send webhook → your accounting webhook
-
-InboxIQ extracts the invoice number, amount, and date and posts them to your accounting integration.
+> "When category is Billing and priority is P1, forward to billing@yourcompany.com"
 
 ---
 
-## Archive social and promotional noise
+### Escalate frustrated customers to the founder
 
-Two rules:
+> "When sentiment is frustrated and priority is P1, forward to founder@yourcompany.com and star it"
 
-**Rule 1** — `category = Social` → Archive
-**Rule 2** — `category = Promotions` → Archive
+---
 
-Keeps your inbox focused on emails that actually need your attention.
+## Slack and webhook alerts
+
+### Alert the team for urgent support tickets
+
+> "When category is Support and priority is P1, star the email and send a Slack webhook"
+>
+> "When sentiment is frustrated and category is Support, send a Slack webhook alert"
+
+---
+
+### Alert on billing disputes
+
+> "When category is Billing and sentiment is frustrated, send a Slack webhook and forward to billing@yourcompany.com"
+
+---
+
+## Inbox clean-up
+
+### Archive automated receipts
+
+> "When category is Transactions, archive it and mark as read"
+
+Automated receipt emails (Stripe, PayPal, Xero) don't need human review. Archive them after InboxIQ logs them.
+
+---
+
+### Move newsletters out of your inbox
+
+> "When category is Promotions, move to the Newsletters folder"
+
+---
+
+### Archive all social and promotional noise
+
+> "When category is Promotions, archive and mark as read"
+>
+> "When category is Social, archive and mark as read"
+
+---
+
+### Star anything that needs a reply
+
+> "When action required is true and priority is P1, star the email"
+
+---
+
+## Accounting integrations
+
+### Extract invoice data and send to QuickBooks
+
+> "Extract invoices from vendor emails and send to QuickBooks"
+
+### Extract receipts and sync to Xero
+
+> "Extract receipts from Stripe and PayPal emails and sync to Xero"
+
+---
+
+## Tips
+
+- You can combine multiple actions in one sentence: *"forward to X, mark as read, and archive it"*
+- Use **and** to add conditions: *"When category is Billing and priority is P1"*
+- Use **or** for alternatives: *"If subject contains 'invoice' or 'receipt'"*
+- InboxIQ understands natural language — write how you'd explain it to a colleague
 
 ---
 
 ## Related articles
 
+- [Inbox actions — Gmail & Outlook](/kb/automation-studio/inbox-actions)
 - [How rules work](/kb/automation-studio/how-rules-work)
 - [Available conditions](/kb/automation-studio/conditions)
 - [Available actions](/kb/automation-studio/actions)

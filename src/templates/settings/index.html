@@ -816,7 +816,7 @@
                         id="nlRuleInput"
                         rows="3"
                         class="w-full rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
-                        placeholder="Example: When an invoice email arrives with amount over $500, extract the invoice data and send it to QuickBooks, then notify the #accounting Slack channel"
+                        placeholder="Example: When category is Transactions, forward to accounting@company.com and archive it"
                       ></textarea>
 
                       <div class="flex items-center gap-3">
@@ -882,10 +882,11 @@
                       <details class="text-xs text-slate-400">
                         <summary class="cursor-pointer hover:text-slate-300">Show example prompts</summary>
                         <ul class="mt-2 space-y-1 list-disc list-inside text-slate-500">
-                          <li>"When a ticket is created with priority P1, send it to Slack #urgent channel"</li>
-                          <li>"Extract invoice data from emails and send to Sage accounting system"</li>
-                          <li>"When payment receipts arrive, parse the amount and customer name, then create a lead"</li>
-                          <li>"If ticket contains 'refund' and amount > $500, assign to billing team and tag as high-value"</li>
+                          <li>"When category is Transactions, forward to accounting@company.com and archive it"</li>
+                          <li>"When subject contains 'bug report', forward to engineering@company.com and notify #engineering on Slack"</li>
+                          <li>"When category is Support and priority is P1, star the email and send to Slack #urgent"</li>
+                          <li>"When category is Promotions, archive and mark as read"</li>
+                          <li>"When an invoice email arrives, extract the data and send to QuickBooks"</li>
                         </ul>
                       </details>
                     </div>
@@ -981,7 +982,7 @@
                         <h3 class="mt-2 text-sm font-medium text-slate-400">No automation rules yet</h3>
                         <p class="mt-1 text-sm text-slate-500">Get started by creating your first automation rule.</p>
                         <div class="mt-6">
-                          <button type="button" onclick="openAutomationRuleModal()" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow">
+                          <button type="button" onclick="openAutomationRuleModal('When category is Transactions, forward to accounting@company.com and archive it')" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white shadow">
                             + Create Your First Rule
                           </button>
                         </div>
@@ -2748,8 +2749,16 @@ Content-Type: application/json
 
   <script>
     // Automation Rule Modal Functions
-    function openAutomationRuleModal() {
-      document.getElementById('automationRuleModal')?.classList.remove('hidden');
+    function openAutomationRuleModal(prefill) {
+      // The NL builder is the correct entry point — it creates rules with full
+      // conditions and actions. The old modal was a dead-end skeleton.
+      const textarea = document.getElementById('nlRuleInput');
+      const builder = textarea?.closest('.space-y-3') || textarea?.parentElement;
+      if (textarea) {
+        if (prefill) textarea.value = prefill;
+        textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => textarea.focus(), 300);
+      }
     }
 
     function closeAutomationRuleModal() {

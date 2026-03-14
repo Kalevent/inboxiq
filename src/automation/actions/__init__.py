@@ -46,6 +46,9 @@ from src.automation.actions.storage_actions import (
     execute_upload_to_s3,
     execute_generate_public_url,
 )
+from src.automation.actions.provider_actions import (
+    execute_provider_action,
+)
 
 
 # Action registry: maps action type to handler function
@@ -68,6 +71,9 @@ ACTION_HANDLERS: Dict[str, Callable] = {
     # Storage actions
     "upload_to_s3": execute_upload_to_s3,
     "generate_public_url": execute_generate_public_url,
+
+    # Provider actions — execute directly in Gmail / Outlook after triage
+    "provider_action": execute_provider_action,
 }
 
 
@@ -131,4 +137,6 @@ __all__ = [
     # Storage
     "execute_upload_to_s3",
     "execute_generate_public_url",
+    # Provider
+    "execute_provider_action",
 ]

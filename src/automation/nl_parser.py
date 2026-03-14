@@ -150,7 +150,8 @@ def validate_workflow_structure(
         "send_webhook", "conditional_webhook",
         "tag_email", "move_to_folder", "create_note", "send_email",
         "upload_to_s3", "generate_public_url",
-        "assign", "update_field", "tag", "priority", "status"
+        "assign", "update_field", "tag", "priority", "status",
+        "provider_action",
     ]
 
     actions = workflow_json.get("actions", [])
@@ -291,6 +292,15 @@ Ticket:
 - tag: Add tags to ticket
 - priority: Change priority
 - status: Change status
+
+Provider (Gmail / Outlook — executes directly in the inbox after triage):
+- provider_action: Execute an action in Gmail or Outlook. Config requires:
+    - action: archive | mark_read | star | trash | forward | apply_label | move_to_folder
+    - to: (forward only) email address to forward to
+    - label: (apply_label only) label or category name
+    - folder: (move_to_folder only) destination folder or label name
+  Example: { "type": "provider_action", "action": "archive" }
+  Example: { "type": "provider_action", "action": "forward", "to": "billing@company.com" }
 
 Storage:
 - upload_to_s3: Upload file to S3
