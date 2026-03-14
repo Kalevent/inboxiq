@@ -86,12 +86,25 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
         entities_json = dspy.OutputField(
             desc=f"JSON with: intent, sentiment, urgency, identifiers, missing_info, "
                  f"email_type ({label_desc(label_config, 'email_types', 'type of email')}), "
-                 f"is_automated (true/false), requires_human_response (true/false)."
+                 f"is_automated (true/false), requires_human_response (true/false), "
+                 f"order_id (string or null — order/transaction ID if present in subject or body), "
+                 f"invoice_number (string or null — invoice or receipt number if present), "
+                 f"renewal_date (string or null — subscription renewal or expiry date if present, ISO format), "
+                 f"unsubscribe_present (true/false — true if an unsubscribe link or opt-out instruction is present), "
+                 f"is_automated_sender (true/false — true if sender is noreply/donotreply/automated system)."
         )
 
     class RouteCaseSig(dspy.Signature):
+        """Route the email to the correct queue using extracted entities and commerce signals.
+        If entities_json contains order_id or invoice_number, queue MUST be 'transactions'.
+        If entities_json contains renewal_date, queue MUST be 'updates'.
+        If entities_json has unsubscribe_present=true and is_automated_sender=true with no human question, queue MUST be 'promotions' or 'updates'.
+        """
         case_json = dspy.InputField()
-        entities_json = dspy.InputField()
+        entities_json = dspy.InputField(
+            desc="Extracted entities including commerce signals: order_id, invoice_number, renewal_date, "
+                 "unsubscribe_present, is_automated_sender. Use these as deterministic routing signals."
+        )
         route_json = dspy.OutputField(
             desc=f"JSON with queue ({label_desc(label_config, 'categories', 'support/billing/transactions/updates/promotions/social/forums')}), "
                  f"priority ({label_desc(label_config, 'priorities', 'P1/P2/P3/P4')}), sla_minutes, tags, rationale."

@@ -191,4 +191,30 @@ def should_skip_triage(payload: Dict[str, Any]) -> tuple[bool, str | None, str |
     if any(pattern in body for pattern in auto_reply_patterns):
         return True, "auto_reply", "Auto-reply body pattern"
 
+    # ── Layer 1: Commerce / Transaction signals (deterministic, zero-LLM) ─────
+    # Emails containing receipt/invoice/order identifiers are almost certainly
+    # Transactions regardless of subject line. Subject is checked first; body
+    # is the fallback. No AI call needed — these patterns are unambiguous.
+    _TRANSACTION_SIGNALS = [
+        "invoice #", "invoice number", "invoice no",
+        "receipt #", "receipt number", "your receipt",
+        "order #", "order number", "order confirmation", "your order",
+        "payment confirmation", "payment received", "payment processed",
+        "payment successful", "payment of",
+        "shipment confirmation", "your shipment has", "track your order",
+        "package has shipped", "out for delivery",
+    ]
+    _text = subject + " " + body[:500]  # subject + first 500 chars is enough
+    if any(sig in _text for sig in _TRANSACTION_SIGNALS):
+        return True, "transactions", "Commerce signal: transaction/receipt/order detected"
+
+    # Renewal / subscription notices → Updates category
+    _RENEWAL_SIGNALS = [
+        "your subscription renews", "subscription renewal",
+        "renewal notice", "your plan renews", "next billing date",
+        "upcoming renewal", "auto-renews on", "will be charged on",
+    ]
+    if any(sig in _text for sig in _RENEWAL_SIGNALS):
+        return True, "updates", "Commerce signal: subscription renewal notice"
+
     return False, None, None
