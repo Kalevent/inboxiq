@@ -61,6 +61,12 @@
         localStorage.setItem('inboxiqUserId', data.user_id);
       }
 
+      if (data.passkey_required) {
+        setStatus('info', 'A passkey is configured for this account. Please sign in with your passkey.');
+        handlePasskeyLogin();
+        return;
+      }
+
       if (data.totp_required) {
         _showTotpStep(data.partial_token);
         return;

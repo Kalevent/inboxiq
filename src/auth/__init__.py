@@ -105,6 +105,10 @@ def login():
         db.session.add(user)
         db.session.commit()
 
+    # If the user has a registered passkey, block password login and require passkey auth instead.
+    if Passkey.query.filter_by(user_id=user.id).first():
+        return jsonify({"passkey_required": True}), 200
+
     # If the user has a verified TOTP device, require a TOTP challenge before issuing full tokens.
     totp_device = TOTPDevice.query.filter_by(user_id=user.id).filter(
         TOTPDevice.verified_at.isnot(None)
