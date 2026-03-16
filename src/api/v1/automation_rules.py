@@ -175,6 +175,14 @@ def create_rule_from_nl():
         return jsonify({"error": "Missing 'description' field"}), 400
 
     nl_description = data["description"]
+    if not isinstance(nl_description, str):
+        return jsonify({"error": "'description' must be a string"}), 400
+    # Strip control characters and enforce length limit to prevent prompt stuffing
+    nl_description = "".join(ch for ch in nl_description if ch >= " " or ch in "\t").strip()
+    if not nl_description:
+        return jsonify({"error": "'description' must not be empty"}), 400
+    if len(nl_description) > 500:
+        return jsonify({"error": "'description' must be 500 characters or fewer"}), 400
 
     try:
         # Parse natural language to workflow JSON
