@@ -214,20 +214,34 @@
                 <p class="text-2xl font-semibold text-slate-50">{{ triage_eliminated_pct or 0 }}%</p>
                 <p class="text-[11px] text-slate-400">Handled without intervention</p>
               </div>
-              <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-slate-500 mb-1">HOURS SAVED</p>
-                <p class="text-2xl font-semibold text-slate-500">—</p>
-                <p class="text-[11px] text-slate-500">Coming soon</p>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">HOURS SAVED</p>
+                <p class="text-2xl font-semibold text-slate-50">{{ hours_saved_display }}</p>
+                <p class="text-[11px] text-slate-400">Estimated time reclaimed</p>
               </div>
-              <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-slate-500 mb-1">TOP TOPICS</p>
-                <p class="text-2xl font-semibold text-slate-500">—</p>
-                <p class="text-[11px] text-slate-500">Coming soon</p>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">TOP TOPICS</p>
+                {% if top_topics %}
+                  <p class="text-2xl font-semibold text-slate-50">{{ top_topics[0][0] }}</p>
+                  <p class="text-[11px] text-slate-400">
+                    {{ top_topics[0][1] }} emails
+                    {% if top_topics|length > 1 %} · {{ top_topics[1][0] }}{% endif %}
+                    {% if top_topics|length > 2 %} · {{ top_topics[2][0] }}{% endif %}
+                  </p>
+                {% else %}
+                  <p class="text-2xl font-semibold text-slate-500">—</p>
+                  <p class="text-[11px] text-slate-500">No data yet</p>
+                {% endif %}
               </div>
-              <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-slate-500 mb-1">DRAFT ACCEPTANCE</p>
-                <p class="text-2xl font-semibold text-slate-500">—</p>
-                <p class="text-[11px] text-slate-500">Coming soon</p>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+                <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">DRAFT ACCEPTANCE</p>
+                {% if draft_acceptance_pct is not none %}
+                  <p class="text-2xl font-semibold text-slate-50">{{ draft_acceptance_pct }}%</p>
+                  <p class="text-[11px] text-slate-400">Drafts accepted or edited</p>
+                {% else %}
+                  <p class="text-2xl font-semibold text-slate-500">—</p>
+                  <p class="text-[11px] text-slate-500">No drafts reviewed yet</p>
+                {% endif %}
               </div>
             </div>
 

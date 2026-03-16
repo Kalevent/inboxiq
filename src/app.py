@@ -734,6 +734,34 @@ def create_app() -> Flask:
     actionable_today = action_required_count
     auto_handled_today = auto_handled_count
 
+    # Hours saved: 3 min per email processed, all-time
+    hours_saved_raw = total_tickets * 3 / 60
+    if hours_saved_raw >= 10:
+      hours_saved_display = f"{round(hours_saved_raw)}h"
+    elif hours_saved_raw >= 1:
+      hours_saved_display = f"{hours_saved_raw:.1f}h"
+    else:
+      hours_saved_display = f"{round(hours_saved_raw * 60)}m"
+
+    # Top topics: aggregate all_tickets by category, take top 3
+    from collections import Counter
+    category_counts = Counter(
+      (t.get("category") or "other").replace("_", " ").title()
+      for t in (action_required_tickets + optional_tickets + auto_handled_items)
+    )
+    top_topics = category_counts.most_common(3)  # [(label, count), ...]
+
+    # Draft acceptance rate
+    try:
+      from src.models.tickets import DraftReplyFeedback
+      feedback_rows = DraftReplyFeedback.query.filter_by(account_id=account_id).all()
+      total_feedback = len(feedback_rows)
+      accepted_feedback = sum(1 for f in feedback_rows if f.feedback_type in ("accepted", "edited"))
+      draft_acceptance_pct = round(accepted_feedback / total_feedback * 100) if total_feedback else None
+    except Exception as e:
+      current_app.logger.error(f"Failed to fetch draft feedback: {e}")
+      draft_acceptance_pct = None
+
     # Get automation metrics
     try:
       from src.models import AutomationRule, AutomationRuleExecution
@@ -793,6 +821,9 @@ def create_app() -> Flask:
       automation_executions_30d=automation_executions_30d,
       automation_time_saved_display=automation_time_saved_display,
       has_kb=has_kb,
+      hours_saved_display=hours_saved_display,
+      top_topics=top_topics,
+      draft_acceptance_pct=draft_acceptance_pct,
     )
 
   @app.route("/home", methods=["GET"])
