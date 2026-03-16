@@ -2801,6 +2801,15 @@ Content-Type: application/json
       }
     }
 
+    // Pre-fill NL builder from ?prefill= query param (e.g. linked from dashboard Top Topics)
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const prefill = params.get('prefill');
+      if (prefill) {
+        openAutomationRuleModal(decodeURIComponent(prefill));
+      }
+    })();
+
     // Natural Language Rule Generation
     let generatedRuleData = null;
 

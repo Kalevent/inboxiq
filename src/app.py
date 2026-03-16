@@ -743,13 +743,40 @@ def create_app() -> Flask:
     else:
       hours_saved_display = f"{round(hours_saved_raw * 60)}m"
 
-    # Top topics: aggregate all_tickets by category, take top 3
+    # Top topics: aggregate all_tickets by intent, take top 5
     from collections import Counter
-    category_counts = Counter(
-      (t.get("category") or "other").replace("_", " ").title()
+    intent_counts = Counter(
+      (t.get("intent") or t.get("category") or "other").replace("_", " ").title()
       for t in (action_required_tickets + optional_tickets + auto_handled_items)
     )
-    top_topics = category_counts.most_common(3)  # [(label, count), ...]
+    top_raw_topics = intent_counts.most_common(5)  # [(label, count), ...]
+
+    # Check which topics already have an automation rule (match on conditions field)
+    try:
+      from src.models.automation import AutomationRule
+      existing_rules = AutomationRule.query.filter_by(account_id=account_id, enabled=True).all()
+
+      def _rule_for_topic(topic_label):
+        tl = topic_label.lower()
+        for rule in existing_rules:
+          for cond in (rule.conditions or []):
+            val = str(cond.get("value") or "").lower()
+            if val and val in tl:
+              return rule
+        return None
+
+      top_topics = []
+      for label, count in top_raw_topics:
+        rule = _rule_for_topic(label)
+        top_topics.append({
+          "label": label,
+          "count": count,
+          "rule_id": str(rule.id) if rule else None,
+          "rule_name": rule.name if rule else None,
+        })
+    except Exception as e:
+      current_app.logger.error(f"Failed to build top topics: {e}")
+      top_topics = [{"label": lbl, "count": cnt, "rule_id": None, "rule_name": None} for lbl, cnt in top_raw_topics]
 
     # Draft acceptance rate
     try:
