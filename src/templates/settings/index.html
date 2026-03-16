@@ -2835,10 +2835,12 @@ Content-Type: application/json
       try {
         const response = await fetch('/api/v1/automation/rules/from-natural-language', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': getCsrfToken(),
           },
-          body: JSON.stringify({ user_input: input })
+          body: JSON.stringify({ description: input })
         });
 
         const data = await response.json();
@@ -2881,8 +2883,10 @@ Content-Type: application/json
       try {
         const response = await fetch('/api/v1/automation/rules', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': getCsrfToken(),
           },
           body: JSON.stringify(generatedRuleData)
         });
