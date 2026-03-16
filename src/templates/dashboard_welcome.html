@@ -248,13 +248,13 @@
                       <p class="text-[11px] text-slate-500">{{ topic.count }} email{{ 's' if topic.count != 1 else '' }}</p>
                     </div>
                     {% if topic.rule_id %}
-                      <a href="/settings?tab=integrations#rule-{{ topic.rule_id }}"
+                      <a href="/settings/integrations#rule-{{ topic.rule_id }}"
                          class="shrink-0 flex items-center gap-1 text-xs text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 rounded-lg px-3 py-1.5 hover:bg-emerald-500/20 transition-colors">
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                         Automated
                       </a>
                     {% else %}
-                      <a href="/settings?tab=integrations&prefill={{ ('When category is ' ~ topic.label ~ ', send auto-reply using KB article')|urlencode }}"
+                      <a href="/settings/integrations?prefill={{ ('When category is ' ~ topic.label ~ ', send auto-reply using KB article')|urlencode }}"
                          class="shrink-0 text-xs text-indigo-400 border border-indigo-500/30 rounded-lg px-3 py-1.5 hover:bg-indigo-500/10 transition-colors">
                         Automate →
                       </a>
