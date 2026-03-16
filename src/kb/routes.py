@@ -112,6 +112,7 @@ KB_CATEGORIES = [
             {"slug": "what-happens-if-i-disconnect", "title": "What happens if I disconnect my inbox?"},
             {"slug": "team-visibility", "title": "Will my teammates see each other's emails?"},
             {"slug": "stop-drafts-for-sender", "title": "How do I stop InboxIQ drafting for a specific sender?"},
+            {"slug": "disable-draft-reply", "title": "Can I switch off Draft Reply in my account?"},
             {"slug": "multiple-inboxes", "title": "Can I connect more than one inbox?"},
             {"slug": "data-on-deletion", "title": "What happens to my data if I delete my account?"},
             {"slug": "how-long-to-learn", "title": "How long does InboxIQ take to learn my style?"},

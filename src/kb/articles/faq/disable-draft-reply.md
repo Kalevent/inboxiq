@@ -1,34 +1,35 @@
 # Can I switch off Draft Reply in my account?
 
-Yes. Draft Reply is enabled for all accounts by default, but you can turn it off at any time from your account settings.
+Yes. Draft Reply is enabled by default on all plans, but you can turn it off at any time.
 
 ## Turn off Draft Reply for your whole account
 
-1. Go to **Settings → Features**
-2. Find the **Draft Reply** toggle
+1. Go to **Settings → AI Features**
+2. Find the **Draft Reply Generation** toggle
 3. Switch it off
 
-Once disabled, InboxIQ will continue to classify and label incoming emails as normal, but will not generate any draft replies. You can re-enable it at any time using the same toggle.
-
-## Turn off drafts for a specific sender or domain
-
-If you want to keep Draft Reply on generally but suppress it for certain senders:
-
-1. Go to **Automation Studio → New rule**
-2. Set the condition: **Sender email** → **ends with** → `@example.com`
-3. Set the action: **Skip draft**
-4. Save and enable the rule
+InboxIQ will continue to classify and label incoming emails, but will stop generating draft replies entirely. You can re-enable it at any time — no data is lost.
 
 ## Turn off drafts for a specific category
 
-To stop drafts for a whole category (e.g. all Transactions emails):
+If you only want to stop drafts for one category (e.g. Transactions or Promotions):
 
 1. Go to **Settings → Triage**
 2. Find the category
 3. Toggle **Draft replies** off for that category
 
+## Turn off drafts for a specific sender or domain
+
+Use an Automation rule to skip drafts selectively:
+
+1. Go to **Automation Studio → New rule**
+2. Condition: **Sender email** → **is** → `sender@example.com`
+3. Action: **Skip draft**
+4. Save and enable the rule
+
+See [How do I stop InboxIQ drafting for a specific sender?](/kb/faq/stop-drafts-for-sender) for full details.
+
 ## Related articles
 
-- [How draft replies work](/kb/triage-and-ai/ai-draft-replies)
+- [How rules work](/kb/automation-studio/how-rules-work)
 - [How do I stop InboxIQ drafting for a specific sender?](/kb/faq/stop-drafts-for-sender)
-- [Available actions in Automation Studio](/kb/automation-studio/actions)
