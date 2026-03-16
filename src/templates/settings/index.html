@@ -871,7 +871,7 @@
                       <!-- Error Display -->
                       <div id="nlRuleError" class="hidden mt-4 rounded-lg border border-red-500/40 bg-red-500/10 p-4">
                         <div class="flex items-start gap-2">
-                          <svg class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <div class="text-xs text-red-200" id="nlErrorMessage"></div>
@@ -2781,6 +2781,16 @@ Content-Type: application/json
   </div>
 
   <script>
+    // Shared auth helper — getCsrfToken may not be defined on all tab views
+    function getCsrfToken() {
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name.trim() === 'csrf_access_token') return decodeURIComponent(value);
+      }
+      return '';
+    }
+
     // Automation Rule Modal Functions
     function openAutomationRuleModal(prefill) {
       // The NL builder is the correct entry point — it creates rules with full
@@ -2918,7 +2928,8 @@ Content-Type: application/json
     }
   </script>
 
-  <!-- Chart.js for Analytics -->
+  {% if integrations_view == 'automation_analytics' %}
+  <!-- Chart.js for Analytics — only loaded on analytics view -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     // Render execution history chart if on analytics page
@@ -2992,6 +3003,7 @@ Content-Type: application/json
       }
     });
   </script>
+  {% endif %}
 
   <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
 </body>
