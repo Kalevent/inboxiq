@@ -5,13 +5,18 @@ Uses AI/OCR to extract structured data from invoices, receipts, and expense docu
 Leverages OpenAI GPT-4 Vision for document understanding.
 """
 
-import os
 import base64
+import json as _json
+import logging
+import os
 from typing import Dict, Any, List, Optional
 from opentelemetry import trace
-import openai
 
 from src.sanitize import sanitize_html
+from src.dspy.config import _configure_dspy
+from src.dspy.signatures import build_document_extractor
+
+logger = logging.getLogger(__name__)
 
 
 def execute_extract_invoice_data(context: Dict[str, Any], config: Dict[str, Any], span: trace.Span) -> Dict[str, Any]:
@@ -254,86 +259,61 @@ def _extract_with_openai(
     mime_type: str,
     fields: List[str],
     document_type: str,
-    provider: Optional[str] = None
+    provider: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Use OpenAI GPT-4 to extract structured data from document content.
+    Extract structured data from a document using DSPy (text) or vision API (image/PDF).
 
-    Args:
-        content: Document content (text or base64 encoded image/PDF)
-        mime_type: MIME type of content
-        fields: List of fields to extract
-        document_type: "invoice", "receipt", or "expense"
-        provider: Optional payment provider context
-
-    Returns:
-        Extracted data dictionary
+    For text content, uses the DSPy DocumentExtractor signature so the extraction
+    prompt is provider-agnostic and optimisable.
+    For image/PDF content, falls back to the OpenAI vision API (no DSPy equivalent yet).
     """
+    is_visual = mime_type.startswith("image/") or "pdf" in mime_type
+
+    if not is_visual:
+        # --- DSPy path for text documents ---
+        try:
+            _, _, dspy = _configure_dspy()
+            extractor = build_document_extractor(dspy)
+            result = extractor(
+                document_type=document_type,
+                fields_requested=", ".join(fields),
+                provider_context=provider or "",
+                document_content=content[:5000],
+            )
+            raw = result.extracted_json.strip()
+            # Strip markdown fences if present
+            import re
+            raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.IGNORECASE)
+            raw = re.sub(r"\s*```$", "", raw)
+            return _json.loads(raw)
+        except Exception as exc:
+            logger.warning("DSPy document extraction failed, returning empty: %s", exc)
+            return {}
+
+    # --- Vision path for images/PDFs — requires OpenAI vision API ---
+    import openai
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    if not client.api_key:
+        logger.warning("OPENAI_API_KEY not set; cannot extract from visual document")
+        return {}
 
-    # Build prompt based on document type
-    if document_type == "invoice":
-        prompt = f"""Extract the following invoice data from this document:
-{', '.join(fields)}
-
-Return ONLY valid JSON with these exact field names. Use null if a field is not found.
-For line_items, return an array of objects with: description, quantity, unit_price.
-For amounts, return numbers without currency symbols.
-For dates, use ISO format (YYYY-MM-DD)."""
-
-    elif document_type == "receipt":
-        prompt = f"""Extract the following payment receipt data:
-{', '.join(fields)}
-
-This is a {provider or 'payment processor'} receipt email.
-Return ONLY valid JSON with these exact field names. Use null if not found.
-For amounts, return numbers without symbols.
-For dates, use ISO format (YYYY-MM-DD)."""
-
-    else:  # expense
-        prompt = f"""Extract the following expense data from this receipt:
-{', '.join(fields)}
-
-Return ONLY valid JSON with these exact field names. Use null if not found.
-For category, choose from: meals, travel, office_supplies, software, other.
-For amount, return number without currency symbols."""
-
-    # Prepare messages based on content type
-    if mime_type.startswith("image/") or "pdf" in mime_type:
-        # Vision API for images/PDFs
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{mime_type};base64,{content}"
-                        }
-                    }
-                ]
-            }
-        ]
-        model = "gpt-4o"  # GPT-4 with vision
-
-    else:
-        # Text-based extraction
-        messages = [
-            {"role": "user", "content": f"{prompt}\n\nDocument content:\n{content[:5000]}"}
-        ]
-        model = "gpt-4o"
-
-    # Call OpenAI
+    prompt = (
+        f"Extract the following {document_type} data from this document: {', '.join(fields)}. "
+        "Return ONLY valid JSON with these exact field names. Use null if not found. "
+        "For amounts use numbers without currency symbols. For dates use ISO format (YYYY-MM-DD)."
+    )
+    messages = [{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{content}"}},
+        ],
+    }]
     response = client.chat.completions.create(
-        model=model,
+        model="gpt-4o",
         messages=messages,
         response_format={"type": "json_object"},
-        temperature=0.1,  # Low temperature for factual extraction
+        temperature=0.1,
     )
-
-    # Parse JSON response
-    import json
-    extracted_data = json.loads(response.choices[0].message.content)
-
-    return extracted_data
+    return _json.loads(response.choices[0].message.content)

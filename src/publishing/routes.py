@@ -10,7 +10,8 @@ from flask import abort, jsonify, request, send_file, render_template, current_a
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.extensions import db
-from src.ai.client import call_openai
+from src.dspy.config import _configure_dspy
+from src.dspy.signatures import build_newsletter_writer, build_whitepaper_writer
 from src.publishing import bp
 from src.models.publishing import NewsletterDraft, WhitepaperDraft
 from src.publishing.service import (
@@ -20,13 +21,6 @@ from src.publishing.service import (
     _read_icp,
 )
 from src.models.content import BlogPost
-
-try:
-    from app.publishing.controllers import SYSTEM_NEWSLETTER, SYSTEM_WHITEPAPER
-except Exception:
-    SYSTEM_NEWSLETTER = ""
-    SYSTEM_WHITEPAPER = ""
-
 
 def _safe_json() -> dict[str, Any]:
     try:
@@ -41,33 +35,26 @@ def _render_newsletter_sync(draft: NewsletterDraft):
     audience = (draft.brief_json or {}).get("audience", "")
     brief = (draft.brief_json or {}).get("brief", "")
     feedback = (draft.brief_json or {}).get("feedback", "")
-    brief_block = f"Audience: {audience}\n\nBrief: {brief}\n\nFeedback: {feedback}\n\nICP:\n{icp}"
-    llm_resp = call_openai(
-        [
-            {"role": "system", "content": SYSTEM_NEWSLETTER},
-            {"role": "user", "content": brief_block},
-        ],
-        max_tokens=1200,
-    )
-    content = (llm_resp or {}).get("content") or "{}"
+
+    journey_stage = (draft.brief_json or {}).get("journey_stage", "awareness")
+    _, _, dspy = _configure_dspy()
+    writer = build_newsletter_writer(dspy)
+    result = writer(audience=audience, journey_stage=journey_stage, brief=brief, feedback=feedback, icp=icp)
+    raw = (result.newsletter_json or "{}").strip()
+
     try:
-        payload = json.loads(content or "{}")
+        payload = json.loads(raw)
     except json.JSONDecodeError:
-        fixed = call_openai(
-            [
-                {"role": "system", "content": "Return strict, valid JSON only."},
-                {"role": "user", "content": content},
-            ],
-            max_tokens=800,
-        )
-        payload = json.loads((fixed or {}).get("content") or "{}")
+        payload = {}
 
-    from flask import render_template  # local import to avoid circulars
-
-    html = render_template("email/newsletter.html.j2", **payload)
+    from flask import render_template as _render  # avoid circular
+    html = _render("email/newsletter.html.j2", **payload)
     draft.rendered_html = html
     draft.status = "ready"
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     return html
 
 
@@ -75,18 +62,19 @@ def _render_whitepaper_sync(draft: WhitepaperDraft):
     icp = _read_icp()
     brief = (draft.brief_json or {}).get("brief", "")
     audience = (draft.brief_json or {}).get("audience", "")
-    msg = f"Audience: {audience}\n\nBrief:\n{brief}\n\n---\nICP:\n{icp}"
-    llm_resp = call_openai(
-        [
-            {"role": "system", "content": SYSTEM_WHITEPAPER},
-            {"role": "user", "content": msg},
-        ],
-        max_tokens=1500,
-    )
-    md = (llm_resp or {}).get("content") or ""
+
+    journey_stage = (draft.brief_json or {}).get("journey_stage", "consideration")
+    _, _, dspy = _configure_dspy()
+    writer = build_whitepaper_writer(dspy)
+    result = writer(audience=audience, journey_stage=journey_stage, brief=brief, icp=icp)
+    md = (result.whitepaper_markdown or "").strip()
+
     draft.markdown = md
     draft.status = "ready"
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     return md
 
 

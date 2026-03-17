@@ -197,46 +197,49 @@ def invoke_llm(
 
     Priority:
     1. If account has a BYOL config (AccountLLMConfig), route to their endpoint.
-    2. If DSPY_ENABLED, use the DSPy pipeline.
-    3. Try InboxIQ's OpenAI key; fall back to Ollama if enabled.
+    2. Use DSPy EmailSummarizer (respects DSPY_PROVIDER / DSPY_MODEL).
+    3. Fall back to Ollama if enabled.
     """
-    messages: List[Dict[str, str]] = [
-        {
-            "role": "system",
-            "content": (
-                "You are InboxIQ. Summarize and classify support emails (intent, priority, sentiment) and extract IDs. "
-                "Respond concisely. If the user requests cancellation, mark sentiment as negative/concerned. "
-                "If the message is praise or thanks, mark sentiment as positive."
-            ),
-        },
-        {"role": "user", "content": user_input},
-    ]
-    if context:
-        messages.append({"role": "system", "content": f"Context: {context}"})
+    import json as _json
+    from src.dspy.config import _configure_dspy
+    from src.dspy.signatures import build_email_summarizer
 
     # 1. BYOL — route to customer's own LLM endpoint
     if account_id is not None:
         byol_config = resolve_llm_config(account_id)
         if byol_config:
+            # BYOL still needs raw messages; keep the call_byol path
+            messages: List[Dict[str, str]] = [
+                {"role": "user", "content": user_input},
+            ]
+            if context:
+                messages.append({"role": "system", "content": f"Context: {context}"})
             return call_byol(messages, byol_config)
 
-    # 2. DSPy pipeline
-    if DSPY_ENABLED:
-        from src.dspy import run_dspy_llm
-        return run_dspy_llm(user_input, context)
-
-    # 3. Default: InboxIQ's OpenAI key with Ollama fallback
+    # 2. DSPy path (default)
     try:
-        return call_openai(messages)
-    except Exception as exc_openai:
+        _, _, dspy = _configure_dspy()
+        summarizer = build_email_summarizer(dspy)
+        result = summarizer(
+            email_content=user_input,
+            context=_json.dumps(context) if context else "{}",
+        )
+        return {
+            "provider": "dspy",
+            "content": result.summary_json,
+        }
+    except Exception as exc_dspy:
+        logger.warning("DSPy invoke_llm failed: %s", exc_dspy)
         if not OLLAMA_ENABLED:
-            raise RuntimeError(f"LLM invocation failed (OpenAI). OpenAI error: {exc_openai}")
-        try:
-            fallback = call_ollama(messages)
-            fallback["warning"] = f"OpenAI failed: {exc_openai}"
-            return fallback
-        except Exception as exc_ollama:
-            raise RuntimeError(
-                f"LLM invocation failed (OpenAI and Ollama). "
-                f"OpenAI error: {exc_openai}; Ollama error: {exc_ollama}"
-            )
+            raise RuntimeError(f"LLM invocation failed: {exc_dspy}") from exc_dspy
+
+    # 3. Ollama fallback
+    messages = [{"role": "user", "content": user_input}]
+    if context:
+        messages.append({"role": "system", "content": f"Context: {context}"})
+    try:
+        fallback = call_ollama(messages)
+        fallback["warning"] = f"DSPy failed, used Ollama"
+        return fallback
+    except Exception as exc_ollama:
+        raise RuntimeError(f"LLM invocation failed (DSPy and Ollama): {exc_ollama}") from exc_ollama

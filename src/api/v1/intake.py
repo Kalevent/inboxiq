@@ -481,59 +481,30 @@ def chat_submit():
 
 def _generate_chat_reply(account_id_int: int, message: str, name: str, company: str, history: list | None = None) -> str | None:
     """Generate a contextual AI reply for the chat widget. Returns None if AI is unavailable."""
-    import os
+    import json as _json
+    from src.dspy.config import _configure_dspy
+    from src.dspy.signatures import build_chat_widget_reply
 
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return None
-
-    # Fetch account name for context
     try:
         account = Account.query.get(account_id_int)
         account_name = account.name if account else "our company"
     except Exception:
         account_name = "our company"
 
-    system_prompt = (
-        f"You are a friendly, knowledgeable AI assistant for {account_name}. "
-        "Your role is to help website visitors understand how the product can help their team, "
-        "answer questions about features, and encourage them to get started. "
-        "Be conversational and concise — keep replies to 2-3 sentences. "
-        "If asked about pricing or trials, mention there is a free trial available. "
-        "If you cannot answer a specific question, suggest they start a free trial or contact the team directly."
-    )
-
-    # Build messages: system + conversation history + current message
-    user_content = f"[Visitor: {name}] {message}" if name else message
-    messages = [{"role": "system", "content": system_prompt}]
-    if history:
-        messages.extend(history)
-    messages.append({"role": "user", "content": user_content})
-
     try:
-        resp = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            json={
-                "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-                "messages": messages,
-                "max_tokens": 150,
-                "temperature": 0.7,
-            },
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            timeout=8,
+        _, _, dspy = _configure_dspy()
+        module = build_chat_widget_reply(dspy)
+        result = module(
+            account_name=account_name,
+            visitor_name=name or "",
+            conversation_history=_json.dumps(history or []),
+            message=message,
         )
-        if resp.status_code == 200:
-            data = resp.json()
-            choice = (data.get("choices") or [{}])[0]
-            content = (choice.get("message") or {}).get("content", "").strip()
-            return content or None
+        reply = (result.reply or "").strip()
+        return reply or None
     except Exception as exc:
         current_app.logger.debug("Chat AI reply failed: %s", exc)
-
-    return None
+        return None
 
 
 def _ensure_chat_connection(account_id: int) -> None:

@@ -15,9 +15,8 @@ from flask import current_app
 
 from src.extensions import db
 from src.models.content import BlogPost
-from src.ai.client import call_openai
-
-SYSTEM_BLOG = """You are a B2B SaaS marketing writer. Create concise blog articles with a clear CTA, short intro, and scannable sections. Keep tone confident, direct, and helpful. Return Markdown only."""
+from src.dspy.config import _configure_dspy
+from src.dspy.signatures import build_blog_writer
 
 
 def _safe_json_dict(data: Any) -> dict:
@@ -106,15 +105,22 @@ def generate_blog_content(brief_data: dict) -> Tuple[str, str, str]:
         f"ICP:\n{icp}"
     )
 
+    journey_stage = _coerce_str(brief_data.get("journey_stage")) or "awareness"
+    target_keywords = _coerce_str(brief_data.get("target_keywords"))
+
     try:
-        llm_resp = call_openai(
-            [
-                {"role": "system", "content": SYSTEM_BLOG},
-                {"role": "user", "content": composite},
-            ],
-            max_tokens=900,
+        _, _, dspy = _configure_dspy()
+        writer = build_blog_writer(dspy)
+        result = writer(
+            title=title,
+            audience=audience,
+            brief=brief,
+            journey_stage=journey_stage,
+            feedback=feedback,
+            icp=icp,
+            target_keywords=target_keywords,
         )
-        md_text = _coerce_str(llm_resp.get("content")) or _fallback_blog_md(title, brief, audience)
+        md_text = _coerce_str(result.seo_markdown) or _fallback_blog_md(title, brief, audience)
     except Exception:
         md_text = _fallback_blog_md(title, brief, audience)
 
