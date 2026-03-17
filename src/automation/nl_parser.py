@@ -125,6 +125,9 @@ def validate_workflow_structure(
     if isinstance(trigger, str):
         trigger = {"event": trigger}
         workflow_json["trigger"] = trigger
+    # Fill in missing 'object' from the event name (e.g. "email.received" → "email")
+    if isinstance(trigger, dict) and not trigger.get("object") and trigger.get("event"):
+        trigger.setdefault("object", trigger["event"].split(".")[0])
     if trigger.get("event") not in valid_trigger_events:
         errors.append(
             f"Invalid trigger event: {trigger.get('event')}. "
