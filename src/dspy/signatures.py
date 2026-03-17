@@ -191,3 +191,46 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
             )
 
     return DecisionProgram()
+
+
+def build_nl_rule_parser(dspy: Any) -> Any:
+    """
+    Build a DSPy module that converts natural language into an AutomationRule JSON structure.
+
+    Uses ChainOfThought so the model reasons through trigger → conditions → actions
+    before committing to a structure, improving accuracy on ambiguous descriptions.
+    """
+    class NLRuleParserSignature(dspy.Signature):
+        """
+        Convert a natural language automation rule description into a structured JSON rule.
+
+        The rule must have:
+        - trigger: one of email.received, ticket.created, ticket.updated, lead.created, webhook.received
+        - conditions: list of {field, operator, value} objects (may be empty)
+        - condition_logic: AND or OR
+        - actions: list of {type, config} objects using valid action types
+        - name: short descriptive name
+
+        Valid action types: send_webhook, conditional_webhook, tag_email, move_to_folder,
+        create_note, send_email, upload_to_s3, generate_public_url, assign, update_field,
+        tag, priority, status, provider_action, extract_invoice_data, extract_receipt_data,
+        extract_expense_data.
+
+        For provider_action the config must include an 'action' key:
+        archive, mark_read, star, trash, forward, apply_label, move_to_folder.
+
+        Return only valid JSON — no markdown, no explanation.
+        """
+        description = dspy.InputField(desc="Natural language automation rule written by the user.")
+        account_context = dspy.InputField(desc="JSON with available teams, priorities, and custom fields for this account.")
+        rule_json = dspy.OutputField(desc="Complete AutomationRule JSON with name, trigger, conditions, condition_logic, and actions.")
+
+    class NLRuleParserModule(dspy.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.parse = dspy.ChainOfThought(NLRuleParserSignature)
+
+        def forward(self, description: str, account_context: str) -> Any:
+            return self.parse(description=description, account_context=account_context)
+
+    return NLRuleParserModule()
