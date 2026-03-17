@@ -82,6 +82,17 @@ def parse_natural_language_rule(
     except json.JSONDecodeError as e:
         raise ValueError(f"Model returned invalid JSON: {e}") from e
 
+    # DSPy sometimes double-encodes the output (returns a JSON string instead of object).
+    # If json.loads gave us a string, try one more decode.
+    if isinstance(parsed_rule, str):
+        try:
+            parsed_rule = json.loads(parsed_rule)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Model returned double-encoded JSON that could not be parsed: {e}") from e
+
+    if not isinstance(parsed_rule, dict):
+        raise ValueError(f"Model returned unexpected type {type(parsed_rule).__name__}, expected a JSON object.")
+
     return validate_workflow_structure(parsed_rule, account_context)
 
 

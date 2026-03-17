@@ -315,8 +315,6 @@ def execute_workflow_with_tool_calling_agent(
     Drop-in replacement for execute_workflow_with_dspy_agent — same signature,
     same return shape, different execution strategy.
     """
-    from src.models.automation import AutomationRule
-
     workflow = AutomationRule.query.filter_by(id=workflow_id).first()
     if not workflow:
         return {"executed": False, "error": "Workflow not found"}
