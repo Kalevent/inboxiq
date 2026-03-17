@@ -141,8 +141,12 @@ def create_rule():
         source=data.get("source", "user_created"),
     )
 
-    db.session.add(rule)
-    db.session.commit()
+    try:
+        db.session.add(rule)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({"error": "Failed to save rule. Please try again."}), 500
 
     return jsonify(rule.to_dict()), 201
 
@@ -185,27 +189,12 @@ def create_rule_from_nl():
         return jsonify({"error": "'description' must be 500 characters or fewer"}), 400
 
     try:
-        # Parse natural language to workflow JSON
+        # Parse natural language to workflow JSON — do NOT save here.
+        # The caller previews the result then saves via POST /automation/rules.
         workflow_json = parse_natural_language_rule(nl_description, account_id)
+        workflow_json.setdefault("description", nl_description)
 
-        # Create rule
-        rule = AutomationRule(
-            id=str(uuid4()),
-            account_id=account_id,
-            name=workflow_json["name"],
-            description=nl_description,
-            trigger=workflow_json["trigger"],
-            conditions=workflow_json["conditions"],
-            condition_logic=workflow_json["condition_logic"],
-            actions=workflow_json["actions"],
-            enabled=data.get("enabled", True),
-            source="user_created",
-        )
-
-        db.session.add(rule)
-        db.session.commit()
-
-        return jsonify(rule.to_dict()), 201
+        return jsonify(workflow_json), 200
 
     except Exception as e:
         return jsonify({"error": f"Failed to parse rule: {str(e)}"}), 400

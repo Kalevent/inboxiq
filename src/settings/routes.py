@@ -1073,7 +1073,7 @@ def integrations_webhooks():
 
 _AUTOMATION_VIEW_ROLES = {"owner", "admin", "agent"}
 _AUTOMATION_MANAGE_ROLES = {"owner", "admin"}
-_AUTOMATION_DELETE_ROLES = {"admin"}
+_AUTOMATION_DELETE_ROLES = {"owner", "admin"}
 
 
 @bp.route("/integrations/automation", methods=["GET", "POST"])
@@ -1107,8 +1107,11 @@ def integrations_automation():
       if rule_id:
         rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
         if rule:
-          rule.enabled = not rule.enabled
-          db.session.commit()
+          try:
+            rule.enabled = not rule.enabled
+            db.session.commit()
+          except Exception:
+            db.session.rollback()
 
     elif action == "delete_rule" and account_id:
       if user_role not in _AUTOMATION_DELETE_ROLES:
@@ -1118,8 +1121,11 @@ def integrations_automation():
       if rule_id:
         rule = AutomationRule.query.filter_by(id=rule_id, account_id=account_id).first()
         if rule:
-          db.session.delete(rule)
-          db.session.commit()
+          try:
+            db.session.delete(rule)
+            db.session.commit()
+          except Exception:
+            db.session.rollback()
 
     elif action == "create_rule" and account_id:
       if user_role not in _AUTOMATION_MANAGE_ROLES:

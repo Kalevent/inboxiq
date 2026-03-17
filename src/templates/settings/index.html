@@ -2890,6 +2890,13 @@ Content-Type: application/json
         return;
       }
 
+      const saveBtn = document.querySelector('[onclick="saveNLRule()"]');
+      if (saveBtn) {
+        if (saveBtn.disabled) return;
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+      }
+
       try {
         const response = await fetch('/api/v1/automation/rules', {
           method: 'POST',
@@ -2907,11 +2914,14 @@ Content-Type: application/json
           throw new Error(data.error || 'Failed to save rule');
         }
 
-        // Reload page to show the new rule
         window.location.reload();
 
       } catch (err) {
         showNLError(err.message || 'Failed to save rule. Please try again.');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Rule';
+        }
       }
     }
 
