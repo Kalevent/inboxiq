@@ -29,6 +29,10 @@ spec:
               value: "production"
             - name: SEARXNG_URL
               value: "http://searxng:8000"
+            - name: HOME
+              value: "/tmp"
+            - name: DSPY_COMPILED_DIR
+              value: "/dspy-artifacts"
 
             # OpenTelemetry configuration (send traces directly to Phoenix)
             - name: OTEL_ENABLED
@@ -47,11 +51,6 @@ spec:
               value: "production"
             - name: K8S_CLUSTER_NAME
               value: "inboxiq-prod"
-          env:
-            - name: HOME
-              value: "/tmp"
-            - name: DSPY_COMPILED_DIR
-              value: "/dspy-artifacts"
           envFrom:
             - secretRef:
                 name: inboxiq-env

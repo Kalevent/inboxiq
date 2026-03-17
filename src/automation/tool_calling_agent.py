@@ -302,3 +302,26 @@ class ToolCallingAutomationAgent:
     def log(self, message: str) -> None:
         self.execution_log.append(message)
         logger.info("[ToolCallingAgent %s] %s", self.workflow.name, message)
+
+
+def execute_workflow_with_tool_calling_agent(
+    workflow_id: str,
+    trigger_context: Dict[str, Any],
+    trigger_event: str = "unknown",
+) -> Dict[str, Any]:
+    """
+    Execute an AutomationRule using the DSPy ReAct tool-calling agent.
+
+    Drop-in replacement for execute_workflow_with_dspy_agent — same signature,
+    same return shape, different execution strategy.
+    """
+    from src.models.automation import AutomationRule
+
+    workflow = AutomationRule.query.filter_by(id=workflow_id).first()
+    if not workflow:
+        return {"executed": False, "error": "Workflow not found"}
+    if not workflow.enabled:
+        return {"executed": False, "reason": "workflow_disabled"}
+
+    agent = ToolCallingAutomationAgent(workflow=workflow, trigger_context=trigger_context)
+    return agent.execute(trigger_event=trigger_event)
