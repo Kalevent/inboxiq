@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: inboxiq-train-dspy
+  namespace: kaley
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: train
+          image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
+          command:
+            - python
+            - -c
+            - |
+              from src.celery_inboxiq import train_dspy_overrides_task
+              result = train_dspy_overrides_task.apply()
+              print(result.result)
+          env:
+            - name: APP_ENV
+              value: "production"
+            - name: HOME
+              value: "/tmp"
+            - name: DSPY_COMPILED_DIR
+              value: "/dspy-artifacts"
+          envFrom:
+            - secretRef:
+                name: inboxiq-env
+            - configMapRef:
+                name: inboxiq-config
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          volumeMounts:
+            - name: dspy-artifacts
+              mountPath: /dspy-artifacts
+      volumes:
+        - name: dspy-artifacts
+          persistentVolumeClaim:
+            claimName: dspy-artifacts-pvc
