@@ -121,6 +121,10 @@ def validate_workflow_structure(
         "lead.created", "webhook.received",
     ]
     trigger = workflow_json.get("trigger", {})
+    # Normalise: model sometimes returns trigger as a bare string e.g. "email.received"
+    if isinstance(trigger, str):
+        trigger = {"event": trigger}
+        workflow_json["trigger"] = trigger
     if trigger.get("event") not in valid_trigger_events:
         errors.append(
             f"Invalid trigger event: {trigger.get('event')}. "
