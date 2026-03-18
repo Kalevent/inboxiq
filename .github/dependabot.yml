@@ -1,0 +1,4 @@
+# Dependabot version updates are managed by Renovate.
+# This file disables all Dependabot update schedules.
+version: 2
+updates: []
