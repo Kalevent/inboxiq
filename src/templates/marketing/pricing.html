@@ -1,0 +1,281 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}Pricing | InboxIQ — Per-Inbox Pricing, Not Per Seat{% endblock %}
+{% block meta_description %}
+InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI costs — all triage and drafts included. See what each plan covers and how to calculate your ROI.
+{% endblock %}
+{% block canonical %}{{ url_for('pricing_page', _external=True) }}{% endblock %}
+
+{% block content %}
+<div class="marketing-main space-y-16">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="space-y-4 text-center">
+    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      InboxIQ &bull; Pricing
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      Pay per active inbox.<br class="hidden sm:block"> Not per seat.
+    </h1>
+    <p class="text-lg text-slate-300 leading-relaxed max-w-xl mx-auto">
+      A 10-person team where 4 people handle customer email pays for 4 inboxes — not 10 seats.
+      Every plan includes AI triage, draft replies, and automation. No à-la-carte AI add-ons.
+    </p>
+  </header>
+
+  {# ── Plans ─────────────────────────────────────────────────── #}
+  <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 marketing-section">
+
+    {# Pro #}
+    <div class="marketing-card space-y-5 flex flex-col">
+      <div>
+        <p class="text-slate-400 text-sm font-medium mb-1">Pro</p>
+        <p class="text-3xl font-bold text-white">£49<span class="text-base font-normal text-slate-400">/mo</span></p>
+        <p class="text-slate-400 text-xs mt-1">Up to 2 inboxes</p>
+      </div>
+      <ul class="space-y-2 text-slate-300 text-sm leading-relaxed flex-1">
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> AI triage on every email</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> 1,000 AI decisions/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Urgency &amp; intent detection</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Automation rules</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Dashboard &amp; top topics</li>
+        <li class="flex gap-2 text-slate-600"><span>&#10005;</span> AI chat assistant</li>
+        <li class="flex gap-2 text-slate-600"><span>&#10005;</span> KB draft replies</li>
+        <li class="flex gap-2 text-slate-600"><span>&#10005;</span> Lead discovery</li>
+      </ul>
+      <a href="{{ url_for('login_page') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-600 text-slate-100 font-semibold hover:border-slate-400 transition text-sm">
+        Get started
+      </a>
+    </div>
+
+    {# Business — highlighted #}
+    <div class="marketing-card space-y-5 flex flex-col ring-2 ring-indigo-500 relative">
+      <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+        <span class="bg-indigo-500 text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">Most popular</span>
+      </div>
+      <div>
+        <p class="text-slate-400 text-sm font-medium mb-1">Business</p>
+        <p class="text-3xl font-bold text-white">£149<span class="text-base font-normal text-slate-400">/mo</span></p>
+        <p class="text-slate-400 text-xs mt-1">Up to 5 inboxes</p>
+      </div>
+      <ul class="space-y-2 text-slate-300 text-sm leading-relaxed flex-1">
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Everything in Pro</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> 5,000 AI decisions/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> AI chat assistant (200 queries/mo)</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> KB-grounded draft replies</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> 500 automation runs/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Content generation (8 posts/mo)</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Nurture emails (2,000/mo)</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> API access</li>
+      </ul>
+      <a href="{{ url_for('login_page') }}" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition text-sm">
+        Get started
+      </a>
+    </div>
+
+    {# Scale #}
+    <div class="marketing-card space-y-5 flex flex-col">
+      <div>
+        <p class="text-slate-400 text-sm font-medium mb-1">Scale</p>
+        <p class="text-3xl font-bold text-white">£399<span class="text-base font-normal text-slate-400">/mo</span></p>
+        <p class="text-slate-400 text-xs mt-1">Up to 15 inboxes</p>
+      </div>
+      <ul class="space-y-2 text-slate-300 text-sm leading-relaxed flex-1">
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Everything in Business</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> 25,000 AI decisions/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Chat assistant (1,000 queries/mo)</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> 5,000 automation runs/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Content generation (30 posts/mo)</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Nurture emails (20,000/mo)</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Lead discovery (200 leads/mo)</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Unlimited registered apps</li>
+      </ul>
+      <a href="{{ url_for('login_page') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-600 text-slate-100 font-semibold hover:border-slate-400 transition text-sm">
+        Get started
+      </a>
+    </div>
+
+    {# Enterprise #}
+    <div class="marketing-card space-y-5 flex flex-col">
+      <div>
+        <p class="text-slate-400 text-sm font-medium mb-1">Enterprise</p>
+        <p class="text-3xl font-bold text-white">Custom</p>
+        <p class="text-slate-400 text-xs mt-1">Unlimited inboxes</p>
+      </div>
+      <ul class="space-y-2 text-slate-300 text-sm leading-relaxed flex-1">
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Everything in Scale</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Unlimited AI decisions</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Dedicated onboarding</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Custom automation workflows</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> SLA &amp; uptime guarantee</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Value-based invoicing</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Security review &amp; DPA</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Dedicated Slack channel</li>
+      </ul>
+      <a href="{{ url_for('contact') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-600 text-slate-100 font-semibold hover:border-slate-400 transition text-sm">
+        Talk to us
+      </a>
+    </div>
+
+  </section>
+
+  {# ── What counts as an AI decision ─────────────────────────── #}
+  <section class="marketing-card space-y-4 marketing-section">
+    <h2 class="text-xl font-semibold text-white">What counts as an AI decision?</h2>
+    <p class="text-slate-300 text-sm leading-relaxed max-w-2xl">
+      One AI decision = one email processed through the triage pipeline (classify, prioritise, detect urgency, assign).
+      Draft reply generation uses a separate allocation from the chat quota. Automation rule <em>executions</em> are not AI decisions — only the triage step that triggered them counts.
+    </p>
+    <div class="grid sm:grid-cols-3 gap-4 pt-2">
+      <div class="bg-slate-800/50 rounded-lg p-4 space-y-1">
+        <p class="text-white font-semibold text-sm">50 emails/week</p>
+        <p class="text-slate-400 text-xs">≈ 200 AI decisions/mo &mdash; well within Pro</p>
+      </div>
+      <div class="bg-slate-800/50 rounded-lg p-4 space-y-1">
+        <p class="text-white font-semibold text-sm">150 emails/week</p>
+        <p class="text-slate-400 text-xs">≈ 650 AI decisions/mo &mdash; comfortably on Pro</p>
+      </div>
+      <div class="bg-slate-800/50 rounded-lg p-4 space-y-1">
+        <p class="text-white font-semibold text-sm">300 emails/week</p>
+        <p class="text-slate-400 text-xs">≈ 1,300 AI decisions/mo &mdash; Business recommended</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── ROI calculation ───────────────────────────────────────── #}
+  <section class="grid lg:grid-cols-2 gap-8 marketing-section">
+    <div class="space-y-4">
+      <h2 class="text-2xl font-semibold text-white">What does InboxIQ actually cost to run?</h2>
+      <p class="text-slate-300 leading-relaxed">
+        The AI model cost for triage is roughly <strong class="text-white">£1–£2/month per inbox</strong> at typical B2B SaaS email volumes (300 emails/week).
+        The rest of your subscription covers infrastructure, the dashboard, automation engine, and KB retrieval.
+      </p>
+      <p class="text-slate-300 leading-relaxed">
+        Compare that to the cost of a person spending 90 minutes per day sorting email:
+        at a blended cost of £30/hr, that's <strong class="text-white">£675/month in lost productivity per inbox</strong>.
+      </p>
+    </div>
+    <div class="marketing-card space-y-4">
+      <h3 class="font-semibold text-white">ROI at a glance — Business plan, 3 inboxes</h3>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between py-2 border-b border-slate-700">
+          <span class="text-slate-300">InboxIQ Business plan</span>
+          <span class="text-slate-300 font-semibold">£149/mo</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-slate-700">
+          <span class="text-slate-300">Time recovered per inbox (1.5 hr/day × 22 days)</span>
+          <span class="text-slate-300 font-semibold">33 hrs/mo</span>
+        </div>
+        <div class="flex justify-between py-2 border-b border-slate-700">
+          <span class="text-slate-300">Value at £30/hr across 3 inboxes</span>
+          <span class="text-green-400 font-semibold">£2,970/mo recovered</span>
+        </div>
+        <div class="flex justify-between py-2">
+          <span class="text-slate-400">Net ROI</span>
+          <span class="text-green-400 font-bold text-base">19× return</span>
+        </div>
+      </div>
+      <p class="text-slate-500 text-xs">Estimate based on 200 emails/week per inbox at 30 seconds manual triage per email.</p>
+    </div>
+  </section>
+
+  {# ── FAQ ───────────────────────────────────────────────────── #}
+  <section class="space-y-6 marketing-section">
+    <h2 class="text-2xl font-semibold text-white">Pricing FAQ</h2>
+    <div class="grid sm:grid-cols-2 gap-6">
+      {% set faqs = [
+        (
+          "What exactly is an inbox?",
+          "An inbox is a connected Gmail or Outlook account. support@company.com and hello@company.com are two separate inboxes. Personal accounts like jane@company.com are also individual inboxes."
+        ),
+        (
+          "Can I add inboxes mid-month?",
+          "Yes. Inboxes are added at any time and prorated to the billing cycle. Remove an inbox and it's deactivated at the end of the current period."
+        ),
+        (
+          "What happens if I exceed my AI decision limit?",
+          "Triage continues but excess decisions are billed at the overage rate shown in your dashboard. We notify you before you exceed your limit."
+        ),
+        (
+          "Is there a free trial?",
+          "Yes — connect your inbox and get 7 days free on Business. No credit card required."
+        ),
+        (
+          "Do you offer annual billing?",
+          "Yes. Annual billing is available at 2 months free (equivalent to ~17% off). Contact us to switch."
+        ),
+        (
+          "Can I downgrade my plan?",
+          "Yes. Downgrades take effect at the next billing cycle. If you're over the lower plan's limits we'll notify you before the downgrade is applied."
+        ),
+        (
+          "Does InboxIQ read my emails?",
+          "InboxIQ processes email metadata and content through the triage pipeline only. No email content is stored after processing. See our Security page for full details."
+        ),
+        (
+          "What if I only want triage — not drafts or automation?",
+          "Pro is designed for exactly that. Triage, urgency detection, and basic automation. Upgrade when you're ready for drafts and advanced features."
+        ),
+      ] %}
+      {% for question, answer in faqs %}
+      <div class="space-y-1">
+        <h3 class="font-semibold text-white text-sm">{{ question }}</h3>
+        <p class="text-slate-300 text-sm leading-relaxed">{{ answer }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ── CTA ──────────────────────────────────────────────────── #}
+  <section class="bg-indigo-600 text-white rounded-2xl p-8 space-y-4 marketing-section">
+    <h2 class="text-2xl font-semibold">Start recovering your mornings this week</h2>
+    <p class="text-indigo-100 leading-relaxed max-w-xl">
+      Connect your inbox in under two minutes. InboxIQ starts triaging immediately.
+      Upgrade, downgrade, or cancel any time — no lock-in.
+    </p>
+    <div class="flex flex-wrap gap-3">
+      <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition">
+        Start free — no card needed
+      </a>
+      <a href="{{ url_for('contact') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-indigo-300 text-white font-semibold hover:bg-indigo-500 transition">
+        Talk to us about Enterprise
+      </a>
+    </div>
+    <p class="text-indigo-200 text-sm">7-day free trial on Business &bull; Works with Gmail and Outlook &bull; Cancel any time</p>
+  </section>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What exactly is an inbox?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "An inbox is a connected Gmail or Outlook account. support@company.com and hello@company.com are two separate inboxes."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is there a free trial?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes — connect your inbox and get 7 days free on Business. No credit card required."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens if I exceed my AI decision limit?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Triage continues but excess decisions are billed at the overage rate shown in your dashboard. We notify you before you exceed your limit."
+        }
+      }
+    ]
+  }
+  </script>
+
+</div>
+{% endblock %}

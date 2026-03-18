@@ -30,6 +30,8 @@ ROUTES = [
     "/sitemap.xml",
     "/robots.txt",
     # Product pages
+    "/features",
+    "/pricing",
     "/support-automation",
     "/solutions/email/triage-automation",
     # Auth pages (unauthenticated)

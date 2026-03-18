@@ -298,11 +298,6 @@ def create_app() -> Flask:
   def root():
     return render_template("index.html")
 
-  @app.route("/home", methods=["GET"])
-  def redirect_home():
-    # Permanent redirect to canonical root.
-    return redirect(url_for("root"), code=301)
-
   @app.route("/favicon.ico")
   def favicon():
     return current_app.send_static_file("favicon.svg")
@@ -426,6 +421,14 @@ def create_app() -> Flask:
   @app.get("/playbook/unified-intake-system")
   def playbook_intake_system():
     return render_template("marketing/unified-intake-system.html")
+
+  @app.get("/features")
+  def features_page():
+    return render_template("marketing/features.html")
+
+  @app.get("/pricing")
+  def pricing_page():
+    return render_template("marketing/pricing.html")
 
   @app.route("/robots.txt")
   def robots_txt():
