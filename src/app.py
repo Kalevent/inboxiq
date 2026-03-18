@@ -838,14 +838,27 @@ def create_app() -> Flask:
     else:
       hours_saved_display = f"{round(hours_saved_raw * 60)}m"
 
-    # Top topics: cluster tickets by subject similarity and label each cluster
-    # with the most representative subject line — avoids generic labels like
-    # "General" or "Support" that come from DSPy's coarse intent field.
+    # Top topics: independent 30-day query — never scoped to the dashboard
+    # date filter so "today" (5 emails) can't produce an empty topic list.
     _SUPPORT_CATEGORIES = {"support", "billing"}
-    _support_tickets = [
-      t for t in (action_required_tickets + optional_tickets + auto_handled_items)
-      if (t.get("category") or "").lower() in _SUPPORT_CATEGORIES
-    ]
+    try:
+      _topics_after = datetime.now(timezone.utc) - timedelta(days=30)
+      _topics_rows = Ticket.query.filter(
+        Ticket.account_id == account_id,
+        Ticket.created_at >= _topics_after,
+        Ticket.category.in_(list(_SUPPORT_CATEGORIES)),
+      ).order_by(Ticket.created_at.desc()).limit(500).all()
+      _support_tickets = [
+        {
+          "id": t.id,
+          "subject": t.subject,
+          "category": t.category or (t.decision or {}).get("category") or "",
+          "intent": (t.decision or {}).get("intent") or "",
+        }
+        for t in _topics_rows
+      ]
+    except Exception:
+      _support_tickets = []
     top_raw_topics = _cluster_top_topics(
       account_id,
       _support_tickets,

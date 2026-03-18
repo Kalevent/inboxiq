@@ -2253,6 +2253,37 @@ def set_referral_source():
             db.session.rollback()
             return jsonify({"error": "Failed to save"}), 500
 
+        # Wire into marketing funnel: set first_attribution_source on the Lead
+        # for the account owner and create a LeadAttribution touchpoint so the
+        # funnel dashboard can segment signups by channel.
+        try:
+            from src.models.leads import Lead, LeadAttribution
+            from src.models.core import User as _User
+            from uuid import uuid4 as _uuid4
+            from datetime import datetime as _dt, timezone as _tz
+
+            owner = _User.query.filter_by(account_id=account_id).order_by(_User.id.asc()).first()
+            if owner:
+                lead = Lead.query.filter_by(email=owner.email).first()
+                if lead and not lead.first_attribution_source:
+                    lead.first_attribution_source = source
+                    existing_count = LeadAttribution.query.filter_by(lead_id=lead.id).count()
+                    attribution = LeadAttribution(
+                        id=str(_uuid4()),
+                        lead_id=lead.id,
+                        touchpoint_order=existing_count + 1,
+                        source=source,
+                        medium="organic",
+                        attribution_model="first_touch",
+                        attribution_weight=1.0,
+                        touched_at=_dt.now(_tz.utc),
+                    )
+                    db.session.add(attribution)
+                    db.session.commit()
+        except Exception as exc:
+            current_app.logger.warning("referral_source funnel attribution skipped: %s", exc)
+            db.session.rollback()
+
     return jsonify({"saved": True, "source": account.referral_source})
 
 
