@@ -213,7 +213,11 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
     meta = conn.metadata_json or {}
     meta.update({"last_poll_status": "never", "last_poll_counts": {"created": 0, "duplicates": 0, "errors": 0, "fetched": 0}})
     conn.metadata_json = meta
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return conn
 
 
@@ -480,9 +484,14 @@ def google_callback():
             return redirect(url_for("login_page") + "?error=login_required")
         try:
             _store_connection("gmail", email, access_token, refresh_token, user_id)
-        except RuntimeError:
-            pass
-        return redirect("https://mail.google.com")
+            current_app.logger.info("gmail inbox connected: user_id=%s email=%s", user_id, email)
+            return redirect(url_for("settings_page") + "?tab=connections&status=connected")
+        except RuntimeError as exc:
+            current_app.logger.warning("gmail connect failed (login_required): user_id=%s", user_id)
+            return redirect(url_for("settings_page") + "?tab=connections&status=error&reason=login_required")
+        except Exception as exc:
+            current_app.logger.exception("gmail connect failed: user_id=%s error=%s", user_id, exc)
+            return redirect(url_for("settings_page") + "?tab=connections&status=error&reason=connection_failed")
 
     # state == "signin" (default): sign-up or log-in flow — no Gmail scopes requested
     if not user_id:
@@ -582,9 +591,14 @@ def outlook_callback():
             return redirect(url_for("login_page") + "?error=login_required")
         try:
             _store_connection("outlook", email, access_token, refresh_token, user_id)
-        except RuntimeError:
-            pass
-        return redirect("https://outlook.office.com/mail")
+            current_app.logger.info("outlook inbox connected: user_id=%s email=%s", user_id, email)
+            return redirect(url_for("settings_page") + "?tab=connections&status=connected")
+        except RuntimeError as exc:
+            current_app.logger.warning("outlook connect failed (login_required): user_id=%s", user_id)
+            return redirect(url_for("settings_page") + "?tab=connections&status=error&reason=login_required")
+        except Exception as exc:
+            current_app.logger.exception("outlook connect failed: user_id=%s error=%s", user_id, exc)
+            return redirect(url_for("settings_page") + "?tab=connections&status=error&reason=connection_failed")
 
     # state == "signin": sign-up or log-in flow — no mail scopes requested
     if not user_id:

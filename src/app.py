@@ -37,7 +37,11 @@ from datetime import datetime, timezone, timedelta
 
 def create_app() -> Flask:
   """Create and configure the Flask application."""
+  from werkzeug.middleware.proxy_fix import ProxyFix
   app = Flask(__name__)
+  # Trust X-Forwarded-Proto/Host from the AWS ALB (one hop) so url_for(_external=True)
+  # produces https:// URLs instead of http://.
+  app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
   env = (os.getenv("APP_ENV") or "").lower()
   if env in ("prod", "production"):
     app.config.from_object(ProductionConfig)
