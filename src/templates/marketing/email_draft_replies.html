@@ -7,296 +7,254 @@ InboxIQ reads every inbound email, searches your knowledge base, and prepares a 
 {% block canonical %}{{ url_for('solutions_email_draft_replies', _external=True) }}{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-12">
+<div class="marketing-main space-y-16">
 
-  {# ── Hero ──────────────────────────────────────────────────── #}
-  <header class="space-y-4">
-    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
-      InboxIQ &bull; AI Draft Replies
+  {# ── Hero with UI mockup ────────────────────────────────────── #}
+  <header class="grid lg:grid-cols-2 gap-10 items-center">
+    <div class="space-y-5">
+      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+        InboxIQ &bull; AI Draft Replies
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+        Draft replies grounded in your KB.<br class="hidden sm:block"> You review. You send.
+      </h1>
+      <p class="text-slate-300 leading-relaxed">
+        After triage, InboxIQ reads the full thread, searches your knowledge base, and has a draft ready
+        before you open the email. 30 seconds to review instead of 5 minutes writing from scratch.
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition text-sm">
+          Connect your inbox free
+        </a>
+        <a href="#how-it-works" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition text-sm">
+          See how it works
+        </a>
+      </div>
+      <p class="text-slate-500 text-xs">InboxIQ never sends on your behalf &bull; Every draft requires your approval</p>
     </div>
-    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
-      Draft replies grounded in your knowledge base.<br class="hidden sm:block"> You review. You send.
-    </h1>
-    <p class="text-lg text-slate-200 leading-relaxed max-w-2xl">
-      After triage, InboxIQ reads the full email thread, searches your knowledge base, and prepares a reply draft
-      for every support email that needs a response.
-      You spend 30 seconds reviewing instead of 5 minutes writing from scratch — and the answer always comes from <em>your</em> documentation, not guesswork.
-    </p>
-    <div class="flex flex-wrap gap-3">
-      <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
-        Connect your inbox
-      </a>
-      <a href="#how-it-works" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
-        See how it works
-      </a>
+
+    {# ── UI Mockup ── #}
+    <div class="rounded-2xl border border-slate-700/50 bg-slate-900 overflow-hidden shadow-2xl shadow-indigo-500/5 text-xs">
+      {# Titlebar #}
+      <div class="flex items-center gap-1.5 px-3 py-2.5 border-b border-slate-800 bg-slate-950">
+        <span class="h-2.5 w-2.5 rounded-full bg-red-500/70"></span>
+        <span class="h-2.5 w-2.5 rounded-full bg-yellow-500/70"></span>
+        <span class="h-2.5 w-2.5 rounded-full bg-green-500/70"></span>
+        <span class="ml-3 text-slate-500 text-[10px]">InboxIQ Dashboard</span>
+      </div>
+      {# Inbound email summary #}
+      <div class="p-4 border-b border-slate-800 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-400 text-[10px] uppercase tracking-wide">Inbound email</span>
+          <span class="text-[10px] text-slate-600">10:57 AM</span>
+        </div>
+        <p class="text-slate-200 font-medium">Re: Can't access my account after password reset</p>
+        <p class="text-slate-500 text-[11px]">sarah@example.com &rarr; support@kalevent.com</p>
+        <p class="text-slate-400 text-[11px] leading-relaxed italic">"Hi, I reset my password yesterday but I'm still getting an error when I try to log in. I've tried three times now..."</p>
+        <div class="flex flex-wrap gap-1.5 pt-1">
+          <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-semibold">Support</span>
+          <span class="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 text-[10px] font-semibold">P2</span>
+          <span class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[10px]">Access issue</span>
+          <span class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[10px]">KB matched</span>
+        </div>
+      </div>
+      {# Draft reply #}
+      <div class="p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-400 text-[10px] uppercase tracking-wide">Draft reply</span>
+          <span class="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 text-[10px] font-semibold">Ready to review</span>
+        </div>
+        <div class="bg-slate-800/70 rounded-lg p-3 space-y-2 border border-slate-700/50">
+          <p class="text-slate-300 text-[11px] leading-relaxed">Hi Sarah,</p>
+          <p class="text-slate-300 text-[11px] leading-relaxed">Thanks for reaching out. After a password reset, it can take up to 5 minutes for the change to propagate. Please try clearing your browser cache and logging in again...</p>
+          <p class="text-slate-500 text-[10px] pt-1 border-t border-slate-700">&#9889; Drafted by InboxIQ &middot; Review before sending</p>
+        </div>
+        <div class="flex items-center gap-2 text-[10px] text-slate-500">
+          <span>Source:</span>
+          <span class="text-indigo-400">Password reset troubleshooting.md</span>
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button class="flex-1 px-3 py-1.5 rounded-md bg-indigo-500 text-white text-[11px] font-semibold">Copy &amp; send</button>
+          <button class="px-3 py-1.5 rounded-md border border-slate-700 text-slate-300 text-[11px]">Edit</button>
+          <button class="px-3 py-1.5 rounded-md border border-slate-700 text-slate-300 text-[11px]">Discard</button>
+        </div>
+      </div>
     </div>
-    <p class="text-slate-400 text-sm">InboxIQ never sends email on your behalf &bull; Every draft requires your approval before it leaves your inbox</p>
   </header>
 
-  {# ── The core problem ──────────────────────────────────────── #}
+  {# ── Metrics strip ─────────────────────────────────────────── #}
+  <div class="grid grid-cols-3 gap-4 marketing-section">
+    <div class="marketing-card text-center space-y-1">
+      <p class="text-3xl font-bold text-indigo-300">30s</p>
+      <p class="text-slate-400 text-sm">avg review time per draft</p>
+    </div>
+    <div class="marketing-card text-center space-y-1">
+      <p class="text-3xl font-bold text-indigo-300">~85%</p>
+      <p class="text-slate-400 text-sm">draft acceptance after 4 weeks</p>
+    </div>
+    <div class="marketing-card text-center space-y-1">
+      <p class="text-3xl font-bold text-indigo-300">3–5h</p>
+      <p class="text-slate-400 text-sm">recovered per inbox per week</p>
+    </div>
+  </div>
+
+  {# ── The problem / solution ────────────────────────────────── #}
   <section class="grid lg:grid-cols-2 gap-8 marketing-section">
     <div class="marketing-card space-y-4">
-      <h2 class="text-2xl font-semibold text-white">The problem with repetitive support replies</h2>
-      <p class="text-slate-200 leading-relaxed">
-        If 40% of your support emails ask the same 20 questions, you're writing the same answers over and over —
-        or copying from a doc you have to hunt down first. Every reply takes 3–7 minutes.
-        Across 50 emails a week, that's 3–6 hours of your time on answers you've written before.
+      <h2 class="text-xl font-semibold text-white">The problem: you're writing the same replies over and over</h2>
+      <p class="text-slate-300 leading-relaxed text-sm">
+        If 40% of your support emails ask the same questions, every reply still takes 3–7 minutes —
+        hunting down the right KB article, rewording it in a friendly tone, then formatting and sending.
+        At 50 emails/week that's 3–6 hours on answers you've already written before.
       </p>
-      <ul class="space-y-2 text-slate-200 text-sm leading-relaxed">
-        <li class="flex gap-2"><span class="text-red-400 mt-0.5">&#8250;</span> Opening your KB to find the right article</li>
-        <li class="flex gap-2"><span class="text-red-400 mt-0.5">&#8250;</span> Rewording the same answer in a friendly tone</li>
-        <li class="flex gap-2"><span class="text-red-400 mt-0.5">&#8250;</span> Inconsistency when different teammates answer the same question differently</li>
-        <li class="flex gap-2"><span class="text-red-400 mt-0.5">&#8250;</span> No record of which KB article was used in the reply</li>
+      <ul class="space-y-2 text-slate-400 text-sm">
+        <li class="flex gap-2"><span class="text-red-400">&#8250;</span> Hunting your KB every time for the same article</li>
+        <li class="flex gap-2"><span class="text-red-400">&#8250;</span> Inconsistent answers when teammates handle the same question differently</li>
+        <li class="flex gap-2"><span class="text-red-400">&#8250;</span> No record of which KB article backed your reply</li>
+        <li class="flex gap-2"><span class="text-red-400">&#8250;</span> Context switching between inbox, KB, and reply window</li>
       </ul>
     </div>
     <div class="marketing-card space-y-4">
-      <h2 class="text-2xl font-semibold text-white">What InboxIQ does instead</h2>
-      <p class="text-slate-200 leading-relaxed">
-        After triage classifies an email as support or billing, InboxIQ automatically searches your knowledge base
-        using the email's intent and key phrases, assembles a draft reply from the most relevant article,
-        and presents it in your dashboard — ready to review in seconds.
+      <h2 class="text-xl font-semibold text-white">The fix: draft ready before you open the email</h2>
+      <p class="text-slate-300 leading-relaxed text-sm">
+        InboxIQ classifies the email, retrieves the most relevant KB article using semantic search,
+        assembles a grounded reply, and places it in your dashboard. You open the email —
+        the answer is already there, cited from your own documentation.
       </p>
-      <ul class="space-y-2 text-slate-200 text-sm leading-relaxed">
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span> Draft ready before you open the email</li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span> Grounded in your actual documentation — not hallucinated</li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span> Source KB article cited so you can verify the answer</li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span> You review, edit if needed, then send from your own inbox</li>
+      <ul class="space-y-2 text-slate-300 text-sm">
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Draft appears in dashboard before you open the email</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Grounded in your KB — not hallucinated</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Source article cited so you verify in 5 seconds</li>
+        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> You review, edit if needed, send from your own inbox</li>
       </ul>
     </div>
   </section>
 
-  {# ── How it works ──────────────────────────────────────────── #}
-  <section id="how-it-works" class="marketing-card space-y-6 marketing-section">
-    <h2 class="text-2xl font-semibold text-white">How KB-grounded draft replies work</h2>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      {% set steps = [
-        ("01", "Email arrives", "InboxIQ's triage pipeline reads the full thread and classifies the email — intent, urgency, category."),
-        ("02", "KB search", "The thread context and key phrases are used to search your connected knowledge base for the most relevant article."),
-        ("03", "Draft assembled", "A reply is generated grounded in the KB article — in your brand's tone, not generic AI output."),
-        ("04", "Draft in dashboard", "The draft appears in your InboxIQ dashboard alongside the email. The source article is cited."),
-        ("05", "You send", "Review, edit if needed, copy to your inbox, and send. InboxIQ never sends on your behalf."),
-      ] %}
-      {% for num, title, desc in steps %}
-      <div class="space-y-2">
-        <span class="text-indigo-400 font-mono text-xs font-semibold">{{ num }}</span>
-        <h3 class="font-semibold text-white text-sm">{{ title }}</h3>
-        <p class="text-slate-300 text-sm leading-relaxed">{{ desc }}</p>
-      </div>
-      {% endfor %}
-    </div>
-    <div class="pt-4 border-t border-slate-700 grid sm:grid-cols-3 gap-4 text-sm">
-      <div class="space-y-1">
-        <p class="text-white font-semibold">Time per reply (before)</p>
-        <p class="text-slate-400">3–7 minutes to find, write, and format a reply from scratch</p>
-      </div>
-      <div class="space-y-1">
-        <p class="text-white font-semibold">Time per reply (with InboxIQ)</p>
-        <p class="text-slate-400">20–45 seconds to review, optionally edit, and send</p>
-      </div>
-      <div class="space-y-1">
-        <p class="text-indigo-300 font-semibold">Weekly saving (50 emails)</p>
-        <p class="text-slate-400">3–5 hours recovered per inbox per week</p>
+  {# ── How it works — visual steps ──────────────────────────── #}
+  <section id="how-it-works" class="space-y-6 marketing-section">
+    <h2 class="text-2xl font-semibold text-white">How it works</h2>
+    <div class="relative">
+      {# Connector line desktop #}
+      <div class="hidden lg:block absolute top-8 left-[10%] right-[10%] h-px bg-slate-700/60"></div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {% set steps = [
+          ("01", "Email arrives", "InboxIQ reads the full thread — not just the latest message — and classifies intent, urgency, and category.", "bg-indigo-500/20 text-indigo-300"),
+          ("02", "KB search", "Semantic search finds the most relevant article from your connected knowledge base.", "bg-indigo-500/20 text-indigo-300"),
+          ("03", "Draft built", "A reply is assembled grounded in the KB article, in your brand tone — not generic AI output.", "bg-indigo-500/20 text-indigo-300"),
+          ("04", "Ready in dashboard", "The draft appears alongside the email with the source article cited. One click to review.", "bg-indigo-500/20 text-indigo-300"),
+          ("05", "You send", "Review, edit if needed, copy to Gmail or Outlook, and send. InboxIQ never sends for you.", "bg-green-500/20 text-green-300"),
+        ] %}
+        {% for num, title, desc, badge_class in steps %}
+        <div class="marketing-card space-y-3 relative">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-full {{ badge_class }} font-mono text-xs font-bold">{{ num }}</span>
+          <h3 class="font-semibold text-white text-sm">{{ title }}</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">{{ desc }}</p>
+        </div>
+        {% endfor %}
       </div>
     </div>
   </section>
 
-  {# ── KB sources ────────────────────────────────────────────── #}
+  {# ── KB sources + gap detection ────────────────────────────── #}
   <section class="grid lg:grid-cols-2 gap-8 marketing-section">
     <div class="space-y-4">
-      <h2 class="text-2xl font-semibold text-white">Connects to the knowledge base you already have</h2>
-      <p class="text-slate-200 leading-relaxed">
-        InboxIQ doesn't require you to build a new knowledge base. It connects to the documentation you've already written —
-        wherever it lives. The richer your KB, the better the drafts.
-      </p>
-      <ul class="space-y-2 text-slate-200 text-sm leading-relaxed">
-        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Notion pages and databases</li>
-        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Confluence spaces</li>
-        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> HelpScout Docs</li>
-        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Intercom Articles</li>
-        <li class="flex gap-2"><span class="text-indigo-400">&#10003;</span> Plain-text or Markdown upload</li>
-      </ul>
-      <p class="text-slate-400 text-sm">
-        No KB yet? Start with a plain-text doc covering your 10 most common questions.
-        InboxIQ will tell you which questions have no matching article so you know what to write next.
-      </p>
-    </div>
-    <div class="marketing-card space-y-4">
-      <h3 class="font-semibold text-white">KB gap detection — a side benefit you'll notice quickly</h3>
-      <p class="text-slate-300 leading-relaxed text-sm">
-        When InboxIQ can't find a matching KB article for an inbound question, it flags the gap in your dashboard.
-        After a few weeks you'll have a clear list of the questions your documentation doesn't answer —
-        and exactly how many times each question was asked.
-      </p>
-      <p class="text-slate-300 leading-relaxed text-sm">
-        Most teams find 5–10 high-frequency questions with no article in the first month.
-        Writing those articles improves every future draft and reduces support volume.
-      </p>
-      <div class="pt-3 border-t border-slate-700 text-sm text-slate-400">
-        KB gap detection is available on Business plan and above.
-      </div>
-    </div>
-  </section>
-
-  {# ── Human control guarantee ────────────────────────────────── #}
-  <section class="marketing-card space-y-4 marketing-section">
-    <h2 class="text-2xl font-semibold text-white">You are always in control. InboxIQ never sends on your behalf.</h2>
-    <p class="text-slate-200 leading-relaxed max-w-2xl">
-      Every draft is a suggestion. It sits in your InboxIQ dashboard until you act on it.
-      You can review, edit, discard, or send — but the decision is always yours.
-      InboxIQ has no write access to your inbox; it cannot send, delete, or move email.
-    </p>
-    <div class="grid sm:grid-cols-3 gap-4 pt-2">
-      <div class="bg-slate-800/50 rounded-lg p-4 space-y-1">
-        <p class="text-white font-semibold text-sm">Review</p>
-        <p class="text-slate-400 text-xs leading-relaxed">Read the draft and the source KB article side by side before deciding.</p>
-      </div>
-      <div class="bg-slate-800/50 rounded-lg p-4 space-y-1">
-        <p class="text-white font-semibold text-sm">Edit or discard</p>
-        <p class="text-slate-400 text-xs leading-relaxed">Edit the draft freely, or discard it and write your own. Both actions improve future drafts.</p>
-      </div>
-      <div class="bg-slate-800/50 rounded-lg p-4 space-y-1">
-        <p class="text-white font-semibold text-sm">Send from your inbox</p>
-        <p class="text-slate-400 text-xs leading-relaxed">Copy to Gmail or Outlook and send as yourself. Your email. Your relationship.</p>
-      </div>
-    </div>
-  </section>
-
-  {# ── Why grounded matters ──────────────────────────────────── #}
-  <section class="grid lg:grid-cols-2 gap-8 marketing-section">
-    <div class="marketing-card space-y-4">
-      <h2 class="text-xl font-semibold text-white">Why grounded retrieval matters more than raw AI generation</h2>
-      <p class="text-slate-200 leading-relaxed text-sm">
-        A generic AI assistant might generate a plausible-sounding answer that contradicts your actual policy or pricing.
-        InboxIQ's drafts are retrieval-augmented — the model can only use content from your KB.
-        If the answer isn't in your documentation, InboxIQ tells you rather than making something up.
-      </p>
-      <div class="space-y-2 pt-2 text-sm">
-        <div class="flex gap-3 items-start">
-          <span class="text-red-400 font-semibold whitespace-nowrap">Generic AI</span>
-          <span class="text-slate-400">Generates a confident-sounding answer that may be wrong, outdated, or inconsistent with your actual policies</span>
+      <h2 class="text-xl font-semibold text-white">Connects to the KB you already have</h2>
+      <p class="text-slate-300 text-sm leading-relaxed">No new tool to build. InboxIQ connects to documentation you've already written.</p>
+      <div class="grid grid-cols-2 gap-3">
+        {% for source in ["Notion", "Confluence", "HelpScout Docs", "Intercom Articles", "Plain-text / Markdown"] %}
+        <div class="flex items-center gap-2 bg-slate-800/50 rounded-lg px-3 py-2.5">
+          <span class="text-indigo-400 text-xs">&#10003;</span>
+          <span class="text-slate-300 text-xs">{{ source }}</span>
         </div>
-        <div class="flex gap-3 items-start">
-          <span class="text-indigo-300 font-semibold whitespace-nowrap">InboxIQ</span>
-          <span class="text-slate-300">Retrieves the relevant section of your KB, grounds the draft in it, and cites the source — so you can verify in 5 seconds</span>
+        {% endfor %}
+        <div class="flex items-center gap-2 bg-indigo-500/10 rounded-lg px-3 py-2.5 border border-indigo-500/20">
+          <span class="text-indigo-400 text-xs">+</span>
+          <span class="text-indigo-300 text-xs">Start with a 10-question FAQ</span>
         </div>
       </div>
     </div>
     <div class="marketing-card space-y-4">
-      <h2 class="text-xl font-semibold text-white">Feedback loop — drafts get better every week</h2>
-      <p class="text-slate-200 leading-relaxed text-sm">
-        When you accept a draft unchanged, InboxIQ records that as a positive signal.
-        When you edit before sending, it learns what you changed and why.
-        When you discard, it flags the draft for review.
-      </p>
-      <p class="text-slate-200 leading-relaxed text-sm">
-        Over 4–6 weeks, draft acceptance rates typically rise from ~60% to ~85% as the model
-        learns your tone, common exceptions, and the edge cases your KB doesn't fully cover yet.
-      </p>
-      <div class="pt-2 border-t border-slate-700 text-xs text-slate-400">
-        Draft acceptance rate is tracked in your dashboard — a clear signal of how well InboxIQ is calibrated to your style.
+      <div class="flex items-start gap-3">
+        <div class="h-10 w-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+          <span class="text-amber-300 text-lg">&#9711;</span>
+        </div>
+        <div class="space-y-1">
+          <h3 class="font-semibold text-white text-sm">KB gap detection — a side benefit</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            When InboxIQ can't find a KB article for an inbound question, it flags the gap.
+            After a few weeks you'll have a ranked list of unanswered questions — and exactly how many times each was asked.
+            Most teams find 5–10 high-frequency questions with no article in the first month.
+          </p>
+        </div>
       </div>
+      <div class="bg-slate-800/60 rounded-lg p-3 space-y-2 text-xs">
+        <p class="text-slate-400 font-medium uppercase tracking-wide text-[10px]">KB gap report — last 30 days</p>
+        {% for q, count in [("How do I cancel my subscription?", 14), ("Can I change my billing date?", 9), ("What happens to my data if I downgrade?", 7)] %}
+        <div class="flex items-center justify-between">
+          <span class="text-slate-300">{{ q }}</span>
+          <span class="text-amber-300 font-semibold ml-2 whitespace-nowrap">{{ count }}x asked</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# ── Control guarantee ─────────────────────────────────────── #}
+  <section class="marketing-card space-y-5 marketing-section">
+    <h2 class="text-xl font-semibold text-white text-center">You are always in control</h2>
+    <div class="grid sm:grid-cols-3 gap-4">
+      {% set controls = [
+        ("&#128065;", "Review", "Read the draft and the source KB article side by side. Verify the answer in 5 seconds."),
+        ("&#9998;", "Edit or discard", "Edit freely or discard and write your own. Both actions improve future drafts."),
+        ("&#128140;", "Send from your inbox", "Copy to Gmail or Outlook and send as yourself. InboxIQ has no send access."),
+      ] %}
+      {% for icon, title, desc in controls %}
+      <div class="text-center space-y-2">
+        <div class="h-12 w-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center mx-auto text-2xl">{{ icon }}</div>
+        <h3 class="font-semibold text-white text-sm">{{ title }}</h3>
+        <p class="text-slate-400 text-xs leading-relaxed">{{ desc }}</p>
+      </div>
+      {% endfor %}
     </div>
   </section>
 
   {# ── FAQ ───────────────────────────────────────────────────── #}
-  <section class="space-y-5 marketing-section">
-    <h2 class="text-2xl font-semibold text-white">Draft replies FAQ</h2>
-    <div class="grid sm:grid-cols-2 gap-5">
+  <section class="space-y-4 marketing-section">
+    <h2 class="text-2xl font-semibold text-white">FAQ</h2>
+    <div class="grid sm:grid-cols-2 gap-4">
       {% set faqs = [
-        (
-          "Can InboxIQ send a reply automatically without me reviewing?",
-          "No. InboxIQ has no write access to your inbox. Every draft requires you to review and send manually. This is by design — you stay in control of every customer conversation."
-        ),
-        (
-          "What if the draft is wrong?",
-          "Discard it and write your own. Marking a draft as discarded sends a signal to the model so future drafts for similar questions improve. You can also flag which KB article needs updating directly from the dashboard."
-        ),
-        (
-          "Does it work if I don't have a knowledge base yet?",
-          "Yes — start by uploading a plain-text FAQ document covering your most common questions. Even 10 articles produce noticeably better drafts than none. InboxIQ will identify the gaps."
-        ),
-        (
-          "Will it reply to every email?",
-          "Only emails classified as support or billing generate draft replies. Transactional emails, promotional messages, and spam are handled by triage rules — they never reach the draft queue."
-        ),
-        (
-          "How does InboxIQ handle sensitive topics like pricing or refunds?",
-          "It can only draft answers that exist in your KB. If your refund policy isn't documented, it won't draft a refund answer — it will flag the email as needing a manual response instead."
-        ),
-        (
-          "Can multiple teammates use draft replies from the same inbox?",
-          "Yes. Each connected inbox has its own draft queue. Teammates see drafts for their inbox; the account owner has visibility across all inboxes on the dashboard."
-        ),
+        ("Can InboxIQ send replies automatically?", "No. InboxIQ has no write access to your inbox. Every draft requires you to review and send manually — by design."),
+        ("What if the draft is wrong?", "Discard it. That signal trains the model. You can also flag which KB article needs updating directly from the dashboard."),
+        ("Does it work without a knowledge base?", "Yes — start with a plain-text FAQ covering your 10 most common questions. InboxIQ will identify what's missing."),
+        ("Will it draft a reply for every email?", "Only emails classified as support or billing. Transactional, promotional, and automated emails are handled silently by triage rules."),
+        ("How does it handle sensitive topics like refunds?", "It can only draft answers that exist in your KB. If your refund policy isn't documented, it flags the email for manual handling instead."),
+        ("Does it read the full thread?", "Yes. InboxIQ fetches the full email thread before drafting so the reply is contextually accurate, not just based on the latest message."),
       ] %}
-      {% for question, answer in faqs %}
-      <div class="space-y-1">
-        <h3 class="font-semibold text-white text-sm">{{ question }}</h3>
-        <p class="text-slate-300 text-sm leading-relaxed">{{ answer }}</p>
+      {% for q, a in faqs %}
+      <div class="marketing-card space-y-1">
+        <h3 class="font-semibold text-white text-sm">{{ q }}</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">{{ a }}</p>
       </div>
       {% endfor %}
     </div>
   </section>
 
   {# ── CTA ──────────────────────────────────────────────────── #}
-  <section class="bg-indigo-600 text-white rounded-2xl p-8 space-y-3 marketing-section">
+  <section class="bg-indigo-600 text-white rounded-2xl p-8 space-y-4 marketing-section">
     <h2 class="text-2xl font-semibold">Stop writing the same reply from scratch every time</h2>
-    <p class="text-indigo-100 leading-relaxed max-w-xl">
-      Connect your inbox and your knowledge base. InboxIQ will have a draft ready before you open the email.
+    <p class="text-indigo-100 text-sm leading-relaxed max-w-xl">
+      Connect your inbox and your KB. InboxIQ will have a draft ready before you open the email.
     </p>
     <div class="flex flex-wrap gap-3">
-      <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition">
+      <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition text-sm">
         Connect your inbox free
       </a>
-      <a href="{{ url_for('pricing_page') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-indigo-300 text-white font-semibold hover:bg-indigo-500/70 transition">
+      <a href="{{ url_for('pricing_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-300 text-white font-semibold hover:bg-indigo-500/70 transition text-sm">
         See pricing
       </a>
     </div>
-    <p class="text-indigo-100/80 text-sm">
-      Draft replies are available on Business plan and above &bull;
-      <a class="font-semibold text-white underline underline-offset-4" href="{{ url_for('features_page') }}">See all features</a>
-    </p>
+    <p class="text-indigo-200 text-xs">Draft replies on Business plan &bull; <a class="underline underline-offset-4" href="{{ url_for('features_page') }}">See all features</a></p>
   </section>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Can InboxIQ send a reply automatically without me reviewing?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "No. InboxIQ has no write access to your inbox. Every draft requires you to review and send manually."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What if the draft is wrong?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Discard it and write your own. Marking a draft as discarded sends a signal to the model so future drafts for similar questions improve."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Does it work if I don't have a knowledge base yet?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes — start by uploading a plain-text FAQ document covering your most common questions. Even 10 articles produce noticeably better drafts than none."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Will it reply to every email?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Only emails classified as support or billing generate draft replies. Transactional emails, promotional messages, and spam are handled by triage rules."
-        }
-      }
-    ]
-  }
-  </script>
 
 </div>
 {% endblock %}
