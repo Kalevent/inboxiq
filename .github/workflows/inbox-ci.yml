@@ -228,9 +228,15 @@ jobs:
           IMAGE: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO }}:${{ env.TAG }}
         run: |
           IMAGE="${ECR_REGISTRY}/${ECR_REPO}:${TAG}"
+          # Apply full deployment specs (with TAG_VALUE substituted) so env vars,
+          # resource limits, and volume mounts are always in sync with the YAML.
+          # This prevents drift where kubectl set image was used but env changes
+          # (e.g. APP_ENV) were never applied — which causes DevelopmentConfig to
+          # be used instead of ProductionConfig, connecting to localhost instead of RDS.
+          export TAG_VALUE="${TAG}"
+          envsubst < src/k8s/inboxiq-celery-inbox-worker.yaml | kubectl apply -f - -n "${KUBE_NAMESPACE}"
+          envsubst < src/k8s/inboxiq-celery-inbox-beat.yaml | kubectl apply -f - -n "${KUBE_NAMESPACE}"
           kubectl set image deploy/inboxiq inboxiq="${IMAGE}" -n "${KUBE_NAMESPACE}"
-          kubectl set image deploy/inboxiq-celery-inbox-worker inbox-worker="${IMAGE}" -n "${KUBE_NAMESPACE}"
-          kubectl set image deploy/inboxiq-celery-inbox-beat inbox-beat="${IMAGE}" -n "${KUBE_NAMESPACE}"
           kubectl scale deploy/inboxiq-celery-inbox-beat -n "${KUBE_NAMESPACE}" --replicas=1
           for deploy in inboxiq inboxiq-celery-inbox-worker inboxiq-celery-inbox-beat; do
             echo "Waiting for rollout: ${deploy}"
