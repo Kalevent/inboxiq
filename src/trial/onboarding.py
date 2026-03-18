@@ -121,7 +121,7 @@ def send_trial_email(
     """
     import boto3
 
-    from_email = from_email or os.getenv('TRIAL_ONBOARDING_FROM_EMAIL', 'support@kalevent.com')
+    from_email = from_email or os.getenv('TRIAL_ONBOARDING_FROM_EMAIL', 'hello@kalevent.com')
     from_name = from_name or os.getenv('TRIAL_ONBOARDING_FROM_NAME', 'Kofi from Kalevent')
 
     try:

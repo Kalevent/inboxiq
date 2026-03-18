@@ -34,7 +34,7 @@ def configure_crash_email(app):
     password = os.getenv("SMTP_PASSWORD")
     use_tls = os.getenv("SMTP_USE_TLS", "true").lower() in ("1", "true", "yes")
     from_addr = os.getenv("MAIL_FROM", "noreply@kalevent.com")
-    to_addr = os.getenv("CRASH_EMAIL_TO", "noreply@kalevent.com")
+    to_addr = os.getenv("CRASH_EMAIL_TO", "security@kalevent.com")
     subject = f"Crash report from InboxIQ ({socket.gethostname()})"
 
     if not all([mailhost, user, password, to_addr]):

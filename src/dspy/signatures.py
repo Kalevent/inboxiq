@@ -218,6 +218,8 @@ def build_nl_rule_parser(dspy: Any) -> Any:
 
         For provider_action the config must include an 'action' key:
         archive, mark_read, star, trash, forward, apply_label, move_to_folder.
+        When action is 'forward', config MUST also include a 'to' key with the
+        destination email address (e.g. {"action": "forward", "to": "accounting@example.com"}).
 
         Return only valid JSON — no markdown, no explanation.
         """

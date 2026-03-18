@@ -93,6 +93,14 @@ def parse_natural_language_rule(
     if not isinstance(parsed_rule, dict):
         raise ValueError(f"Model returned unexpected type {type(parsed_rule).__name__}, expected a JSON object.")
 
+    # Fallback: if the model generated a forward action but omitted 'to',
+    # extract the first email address from the original user input and inject it.
+    _emails_in_input = re.findall(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', user_input)
+    for action in parsed_rule.get("actions", []):
+        cfg = action.get("config", {})
+        if cfg.get("action") == "forward" and not cfg.get("to") and _emails_in_input:
+            cfg["to"] = _emails_in_input[0]
+
     return validate_workflow_structure(parsed_rule, account_context)
 
 
