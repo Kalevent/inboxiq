@@ -17,6 +17,7 @@ class Account(db.Model):
     seats_limit = db.Column(db.Integer, nullable=False, default=1)
     seats_used = db.Column(db.Integer, nullable=False, default=1)
     developer_access = db.Column(db.Boolean, nullable=False, default=False)
+    referral_source = db.Column(db.String(128), nullable=True)
     deleted_at = db.Column(db.DateTime(timezone=True), nullable=True, index=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

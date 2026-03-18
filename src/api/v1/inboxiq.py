@@ -2219,6 +2219,44 @@ def test_llm_config():
 
 
 # ---------------------------------------------------------------------------
+# Onboarding attribution
+# ---------------------------------------------------------------------------
+
+@v1.route("/account/referral-source", methods=["POST"])
+@jwt_required()
+def set_referral_source():
+    """
+    Record how a new user heard about InboxIQ. One-shot: only saves if
+    referral_source is still null so repeated calls are safe.
+    Body: { "source": "google" }
+    """
+    user_id = get_jwt_identity()
+    account_id = _get_account_id(user_id)
+    if not account_id:
+        return jsonify({"error": "Account not found"}), 404
+
+    data = request.get_json(silent=True) or {}
+    source = (data.get("source") or "").strip()[:128]
+    if not source:
+        return jsonify({"error": "source is required"}), 400
+
+    account = Account.query.get(account_id)
+    if not account:
+        return jsonify({"error": "Account not found"}), 404
+
+    # Only save once — don't overwrite an existing answer
+    if not account.referral_source:
+        account.referral_source = source
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            return jsonify({"error": "Failed to save"}), 500
+
+    return jsonify({"saved": True, "source": account.referral_source})
+
+
+# ---------------------------------------------------------------------------
 # GDPR Article 17 — Right to Erasure
 # ---------------------------------------------------------------------------
 

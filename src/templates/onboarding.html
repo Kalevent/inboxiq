@@ -80,6 +80,21 @@
           </div>
         </div>
 
+        <!-- Attribution question -->
+        <div id="attributionCard" class="rounded-2xl border border-slate-700 bg-slate-900/60 p-5 mb-5">
+          <p class="text-sm font-medium text-slate-200 mb-3">Quick question — how did you hear about us?</p>
+          <div class="flex flex-wrap gap-2" id="attributionOptions">
+            <button type="button" data-source="google" class="attr-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800 text-slate-300 hover:border-indigo-400 hover:text-indigo-200 transition">Google search</button>
+            <button type="button" data-source="linkedin" class="attr-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800 text-slate-300 hover:border-indigo-400 hover:text-indigo-200 transition">LinkedIn</button>
+            <button type="button" data-source="twitter" class="attr-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800 text-slate-300 hover:border-indigo-400 hover:text-indigo-200 transition">Twitter / X</button>
+            <button type="button" data-source="word_of_mouth" class="attr-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800 text-slate-300 hover:border-indigo-400 hover:text-indigo-200 transition">Friend / colleague</button>
+            <button type="button" data-source="product_hunt" class="attr-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800 text-slate-300 hover:border-indigo-400 hover:text-indigo-200 transition">Product Hunt</button>
+            <button type="button" data-source="blog" class="attr-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800 text-slate-300 hover:border-indigo-400 hover:text-indigo-200 transition">Blog / article</button>
+            <button type="button" data-source="other" class="attr-btn px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800 text-slate-300 hover:border-indigo-400 hover:text-indigo-200 transition">Other</button>
+          </div>
+          <p id="attributionThanks" class="text-xs text-emerald-400 mt-3 hidden">Thanks! That really helps.</p>
+        </div>
+
         <!-- Primary CTA -->
         <div class="rounded-2xl border border-indigo-500/30 bg-indigo-500/5 p-6 text-center mb-6">
           <h2 class="text-base font-semibold text-slate-50 mb-1">Run this on your real inbox</h2>
@@ -165,6 +180,39 @@
     if (showImapBtn)   showImapBtn.addEventListener('click', openConnectModal);
     if (closeModalBtn) closeModalBtn.addEventListener('click', closeConnectModal);
     if (cancelConnect) cancelConnect.addEventListener('click', closeConnectModal);
+
+    // Attribution question — one-shot, fire and forget
+    document.querySelectorAll('.attr-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var source = btn.dataset.source;
+        // Highlight selected
+        document.querySelectorAll('.attr-btn').forEach(function(b) {
+          b.classList.remove('border-indigo-400', 'text-indigo-200', 'bg-indigo-500/10');
+        });
+        btn.classList.add('border-indigo-400', 'text-indigo-200', 'bg-indigo-500/10');
+
+        var csrfToken = document.cookie.split(';')
+          .map(function(c) { return c.trim(); })
+          .find(function(c) { return c.startsWith('csrf_access_token='); });
+        csrfToken = csrfToken ? csrfToken.split('=')[1] : null;
+
+        fetch('/api/v1/account/referral-source', {
+          method: 'POST',
+          credentials: 'include',
+          headers: Object.assign({'Content-Type': 'application/json'}, csrfToken ? {'X-CSRF-TOKEN': csrfToken} : {}),
+          body: JSON.stringify({ source: source })
+        }).catch(function() {}); // silent — never block onboarding
+
+        var thanks = document.getElementById('attributionThanks');
+        if (thanks) thanks.classList.remove('hidden');
+        // Fade out the card after 2s
+        setTimeout(function() {
+          var card = document.getElementById('attributionCard');
+          if (card) { card.style.transition = 'opacity 0.5s'; card.style.opacity = '0'; }
+          setTimeout(function() { if (card) card.style.display = 'none'; }, 500);
+        }, 2000);
+      });
+    });
   </script>
 </body>
 </html>
