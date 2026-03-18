@@ -130,7 +130,7 @@ def _find_or_create_user(email: str, display_name: str | None) -> tuple[User, bo
         return user, False
     now = datetime.now(timezone.utc)
     account_name = display_name or _derive_account_name(email)
-    account = Account(name=account_name, seats_limit=3, seats_used=0, created_at=now, updated_at=now)
+    account = Account(name=account_name, seats_limit=2, seats_used=0, created_at=now, updated_at=now)
     db.session.add(account)
     db.session.flush()
     user = User(email=email, password_hash=None, account_id=account.id, created_at=now, updated_at=now)

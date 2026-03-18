@@ -111,11 +111,21 @@ def invite_user():
     if token_account_id_int != target_account_id:
         return jsonify({"error": "forbidden for this account"}), 403
 
+    # Only owner or admin may invite additional users
+    caller_id = get_jwt().get("sub")
+    try:
+        caller_id_int = int(caller_id) if caller_id is not None else None
+    except (TypeError, ValueError):
+        caller_id_int = None
+    caller = db.session.get(User, caller_id_int) if caller_id_int else None
+    if not caller or getattr(caller, "role", None) not in ("owner", "admin"):
+        return jsonify({"error": "Only account owners and admins can invite users"}), 403
+
     account = db.session.get(Account, target_account_id)
     if not account:
         return jsonify({"error": "account not found"}), 404
     if account.seats_used >= account.seats_limit:
-        return jsonify({"error": "seat limit reached"}), 403
+        return jsonify({"error": "seat limit reached — upgrade to add more admin users"}), 403
 
     existing = User.query.filter_by(email=email).first()
     if existing:
