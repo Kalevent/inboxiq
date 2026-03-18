@@ -830,9 +830,14 @@ def create_app() -> Flask:
     # Top topics: cluster tickets by subject similarity and label each cluster
     # with the most representative subject line — avoids generic labels like
     # "General" or "Support" that come from DSPy's coarse intent field.
+    _SUPPORT_CATEGORIES = {"support", "billing"}
+    _support_tickets = [
+      t for t in (action_required_tickets + optional_tickets + auto_handled_items)
+      if (t.get("category") or "").lower() in _SUPPORT_CATEGORIES
+    ]
     top_raw_topics = _cluster_top_topics(
       account_id,
-      action_required_tickets + optional_tickets + auto_handled_items,
+      _support_tickets,
       top_n=5,
     )
 
