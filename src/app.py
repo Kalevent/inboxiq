@@ -514,6 +514,90 @@ def create_app() -> Flask:
   def onboarding_page():
     return render_template("onboarding.html")
 
+  def _cluster_top_topics(account_id, tickets, top_n=5):
+    """
+    Return top N topic labels with counts, derived from email subjects.
+
+    Strategy:
+    1. Clean each subject (strip Re:/Fwd: prefixes, brackets, truncate).
+    2. Try to load TicketEmbedding vectors for these tickets and do greedy
+       cosine clustering so semantically similar emails share one topic.
+    3. Fall back to exact-subject grouping when embeddings are unavailable.
+    4. Use the shortest subject in each cluster as the display label —
+       avoids generic DSPy intent values like "General" or "Support".
+    """
+    import math
+    import re
+
+    _GENERIC = {"support", "general", "other", "unknown", "how to", "how_to", "feedback"}
+
+    def _clean_subject(s):
+      s = (s or "").strip()
+      # Strip common prefixes: Re:, Fwd:, [Company], etc.
+      s = re.sub(r"^(re|fwd?|fw)\s*:\s*", "", s, flags=re.IGNORECASE)
+      s = re.sub(r"^\[[^\]]{1,40}\]\s*", "", s)
+      return s.strip()[:80] or None
+
+    def _cosine(a, b):
+      dot = sum(x * y for x, y in zip(a, b))
+      na = math.sqrt(sum(x * x for x in a)) or 1.0
+      nb = math.sqrt(sum(y * y for y in b)) or 1.0
+      return dot / (na * nb)
+
+    # Build list of (ticket_id, clean_subject) — skip tickets with no subject
+    ticket_subjects = []
+    for t in tickets:
+      subj = _clean_subject(t.get("subject"))
+      if not subj:
+        # Fall back to intent only when subject is missing
+        intent = (t.get("intent") or t.get("category") or "").replace("_", " ").lower()
+        if intent and intent not in _GENERIC:
+          subj = intent.title()
+      if subj:
+        ticket_subjects.append((t["id"], subj))
+
+    if not ticket_subjects:
+      return []
+
+    # Attempt embedding-based clustering — scoped by account_id via join
+    try:
+      from src.models.tickets import TicketEmbedding, Ticket as _Ticket
+      ids = [tid for tid, _ in ticket_subjects]
+      rows = (
+        TicketEmbedding.query
+        .join(_Ticket, _Ticket.id == TicketEmbedding.ticket_id)
+        .filter(_Ticket.account_id == account_id, TicketEmbedding.ticket_id.in_(ids))
+        .all()
+      )
+      emb_map = {r.ticket_id: list(r.embedding) for r in rows if r.embedding}
+    except Exception:
+      emb_map = {}
+
+    SIMILARITY_THRESHOLD = 0.78
+    clusters = []  # list of {"label": str, "count": int, "vec": list|None}
+
+    for tid, subj in ticket_subjects:
+      vec = emb_map.get(tid)
+      matched = False
+      for cluster in clusters:
+        if vec and cluster["vec"]:
+          sim = _cosine(vec, cluster["vec"])
+        else:
+          # Fall back to exact subject match when embeddings unavailable
+          sim = 1.0 if subj.lower() == cluster["label"].lower() else 0.0
+        if sim >= SIMILARITY_THRESHOLD:
+          cluster["count"] += 1
+          # Keep the shorter subject as the label (more concise)
+          if len(subj) < len(cluster["label"]):
+            cluster["label"] = subj
+          matched = True
+          break
+      if not matched:
+        clusters.append({"label": subj, "count": 1, "vec": vec})
+
+    clusters.sort(key=lambda c: c["count"], reverse=True)
+    return [(c["label"], c["count"]) for c in clusters[:top_n]]
+
   @app.route("/dashboard", methods=["GET"])
   @login_required_page
   def dashboard_home():
@@ -743,13 +827,14 @@ def create_app() -> Flask:
     else:
       hours_saved_display = f"{round(hours_saved_raw * 60)}m"
 
-    # Top topics: aggregate all_tickets by intent, take top 5
-    from collections import Counter
-    intent_counts = Counter(
-      (t.get("intent") or t.get("category") or "other").replace("_", " ").title()
-      for t in (action_required_tickets + optional_tickets + auto_handled_items)
+    # Top topics: cluster tickets by subject similarity and label each cluster
+    # with the most representative subject line — avoids generic labels like
+    # "General" or "Support" that come from DSPy's coarse intent field.
+    top_raw_topics = _cluster_top_topics(
+      account_id,
+      action_required_tickets + optional_tickets + auto_handled_items,
+      top_n=5,
     )
-    top_raw_topics = intent_counts.most_common(5)  # [(label, count), ...]
 
     # Check which topics already have an automation rule (match on conditions field)
     try:
