@@ -116,12 +116,42 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
   </section>
 
   {# ── What counts as an AI decision ─────────────────────────── #}
-  <section class="marketing-card space-y-4 marketing-section">
-    <h2 class="text-xl font-semibold text-white">What counts as an AI decision?</h2>
-    <p class="text-slate-300 text-sm leading-relaxed max-w-2xl">
-      One AI decision = one email processed through the triage pipeline (classify, prioritise, detect urgency, assign).
-      Draft reply generation uses a separate allocation from the chat quota. Automation rule <em>executions</em> are not AI decisions — only the triage step that triggered them counts.
-    </p>
+  <section class="marketing-card space-y-6 marketing-section">
+    <div class="space-y-1">
+      <h2 class="text-xl font-semibold text-white">How InboxIQ usage is measured</h2>
+      <p class="text-slate-400 text-sm">Three separate meters — each covering a different part of the pipeline.</p>
+    </div>
+    <div class="space-y-3">
+      {% set meters = [
+        (
+          "AI decisions",
+          "1 per email triaged",
+          "One decision = one email processed through the triage pipeline: classify intent, detect urgency, score sentiment, assign priority. Every email that enters a connected inbox costs one AI decision.",
+          "text-indigo-300", "bg-indigo-500/10 border-indigo-500/20"
+        ),
+        (
+          "Automation runs",
+          "1 per rule action fired",
+          "When a triage result triggers an automation rule, each action that executes counts as one run — archive, apply label, forward, notify Slack, etc. A rule with two actions on one email = 2 runs. This is what limits how much InboxIQ does on your behalf.",
+          "text-blue-300", "bg-blue-500/10 border-blue-500/20"
+        ),
+        (
+          "Draft replies",
+          "Included in AI decisions quota",
+          "Draft generation draws from the same AI decisions pool — no separate counter. If you receive 100 emails and 40 get drafts, that's still 100 AI decisions total.",
+          "text-green-300", "bg-green-500/10 border-green-500/20"
+        ),
+      ] %}
+      {% for name, rate, desc, text_class, bg_class in meters %}
+      <div class="flex gap-4 border {{ bg_class }} rounded-xl p-4">
+        <div class="flex-shrink-0 w-36">
+          <p class="font-semibold text-sm {{ text_class }}">{{ name }}</p>
+          <p class="text-slate-500 text-xs mt-0.5">{{ rate }}</p>
+        </div>
+        <p class="text-slate-300 text-sm leading-relaxed">{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
     <div class="grid sm:grid-cols-3 gap-4 pt-2">
       <div class="bg-slate-800/50 rounded-lg p-4 space-y-1">
         <p class="text-white font-semibold text-sm">50 emails/week</p>
