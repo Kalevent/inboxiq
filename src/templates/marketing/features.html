@@ -23,7 +23,7 @@ InboxIQ triage, labels, drafts, and automation run inside Gmail and Outlook — 
       drowning in 50–300 repetitive emails a week.
     </p>
     <div class="flex flex-wrap gap-3">
-      <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+      <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
         Connect your inbox free
       </a>
       <a href="{{ url_for('pricing_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
@@ -253,6 +253,46 @@ InboxIQ triage, labels, drafts, and automation run inside Gmail and Outlook — 
     </div>
   </section>
 
+  {# ── Learning / Feedback loop ──────────────────────────────── #}
+  <section class="marketing-card space-y-6 marketing-section border border-indigo-500/20">
+    <div class="grid lg:grid-cols-2 gap-8 items-center">
+      <div class="space-y-4">
+        <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-300 px-3 py-1 text-xs font-semibold">
+          InboxIQ &bull; Gets Smarter Over Time
+        </div>
+        <h2 class="text-2xl font-semibold text-white">Correct a label once. It never makes that mistake again.</h2>
+        <p class="text-slate-200 leading-relaxed">
+          Every time you correct a triage decision — changing a label, adjusting a priority, rejecting a draft —
+          InboxIQ learns from it immediately. The model updates and applies the correction
+          to similar emails from that moment forward.
+        </p>
+        <ul class="space-y-2 text-slate-200 text-sm leading-relaxed">
+          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">One-click corrections</strong> — fix any label, urgency, or category from your inbox or dashboard</span></li>
+          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Immediate effect</strong> — the correction applies on the next similar email, not after a training cycle</span></li>
+          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Learns your patterns</strong> — adapts to your specific senders, tone, and business context over time</span></li>
+          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Draft feedback loop</strong> — accept or reject a draft reply; both signals improve future drafts</span></li>
+          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Per-account learning</strong> — your corrections only improve your model, never shared with other accounts</span></li>
+        </ul>
+      </div>
+      <div class="space-y-3">
+        <h3 class="font-semibold text-white text-sm">How a correction flows back into the model</h3>
+        {% set loop_steps = [
+          ("InboxIQ labels an email InboxIQ/Promotions", "AI decision"),
+          ("You correct it to InboxIQ/Support — one click", "Your correction"),
+          ("Sender pattern, subject, and intent signal are recorded", "Learning captured"),
+          ("Next similar email from that sender is labelled correctly", "Applied automatically"),
+          ("Triage accuracy score rises in your dashboard", "Measurable improvement"),
+        ] %}
+        {% for step, label in loop_steps %}
+        <div class="flex gap-3 items-start">
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-indigo-500/20 text-indigo-300 whitespace-nowrap mt-0.5">{{ label }}</span>
+          <p class="text-slate-300 text-sm leading-relaxed">{{ step }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
   {# ── Differentiator table ──────────────────────────────────── #}
   <section class="space-y-6 marketing-section">
     <div class="space-y-2">
@@ -351,7 +391,7 @@ InboxIQ triage, labels, drafts, and automation run inside Gmail and Outlook — 
       — no training data required, no configuration needed to get started.
     </p>
     <div class="flex flex-wrap gap-3">
-      <a href="{{ url_for('login_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition">
+      <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition">
         Connect your inbox free
       </a>
       <a href="{{ url_for('pricing_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-indigo-300 text-white font-semibold hover:bg-indigo-500 transition">

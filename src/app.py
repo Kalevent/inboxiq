@@ -1020,6 +1020,10 @@ def create_app() -> Flask:
   def login_page():
     return render_template("login.html")
 
+  @app.route("/signup", methods=["GET"])
+  def signup_page():
+    return redirect("/?open_trial=1")
+
   @app.route("/tickets/<ticket_id>", methods=["GET", "POST"])
   @login_required_page
   def ticket_detail(ticket_id: str):
