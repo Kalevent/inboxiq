@@ -271,6 +271,14 @@ jobs:
 
           echo "✅ All deployments healthy - pods passed readiness probes"
 
+      - name: Smoke test
+        run: |
+          # Hit every key public route and verify no 5xx responses.
+          # Auth-required routes returning 302 → login count as passing.
+          # Exits non-zero and fails the deploy if any route returns 5xx.
+          BASE_URL="${HEALTHCHECK_URL:-https://kalevent.com}"
+          python scripts/smoke_test.py "${BASE_URL}"
+
       - name: Verify deployed images
         run: |
           kubectl get deploy inboxiq -n "${KUBE_NAMESPACE}" -o jsonpath='{.spec.template.spec.containers[0].image}'; echo

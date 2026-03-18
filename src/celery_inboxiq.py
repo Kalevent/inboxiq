@@ -148,6 +148,11 @@ def make_celery(app) -> Celery:
                 "schedule": crontab(minute="*/15"),
                 "options": {"queue": "inbox"},
             },
+            "inboxiq_nightly_link_check": {
+                "task": "inboxiq.nightly_link_check",
+                "schedule": crontab(hour=3, minute=0),  # 3am daily
+                "options": {"queue": "inbox"},
+            },
             **(
                 {
                     "dspy_train_overrides_daily": {
@@ -855,6 +860,36 @@ def poll_connections_task(self):
 def _env_list(name: str) -> list[str]:
     raw = os.getenv(name) or ""
     return [entry.strip() for entry in raw.split(",") if entry.strip()]
+
+
+@celery.task(
+    name="inboxiq.nightly_link_check",
+    bind=True,
+    max_retries=0,
+    queue="inbox",
+)
+def nightly_link_check_task(self) -> dict:
+    """
+    Crawl all public pages nightly, report any broken links to ADMIN_EMAILS.
+    Skips destructive URLs; never reads or stores response bodies.
+    """
+    base_url = os.getenv("INBOXIQ_API_BASE_URL") or os.getenv("APP_BASE_URL") or "https://kalevent.com"
+    # Strip /api path suffix if present — we want the site root.
+    base_url = base_url.rstrip("/").removesuffix("/api/v1").removesuffix("/api")
+
+    from src.monitoring.link_checker import run_link_check, send_link_check_report
+    report = run_link_check(base_url)
+    send_link_check_report(report)
+
+    logging.getLogger(__name__).info(
+        "Link check complete: %d checked, %d broken, %d errors",
+        report["checked"], len(report["broken"]), len(report["errors"]),
+    )
+    return {
+        "checked": report["checked"],
+        "broken": len(report["broken"]),
+        "errors": len(report["errors"]),
+    }
 
 
 @celery.task(
