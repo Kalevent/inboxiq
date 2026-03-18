@@ -232,7 +232,6 @@ document.addEventListener('DOMContentLoaded', function () {
   var tmButton   = document.getElementById('tmButton');
   var tmEmail    = document.getElementById('tmEmail');
   var tmAccount  = document.getElementById('tmAccountName');
-  var tmSeats    = document.getElementById('tmSeats');
   var tmTrigger  = document.getElementById('trialModalTrigger');
   var tmClose    = document.getElementById('tmClose');
   var tmBackdrop = document.getElementById('tmBackdrop');
@@ -267,12 +266,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!tmEmail || !tmButton) return;
     var email       = (tmEmail.value || '').trim().toLowerCase();
     var accountName = (tmAccount ? tmAccount.value || '' : '').trim();
-    var seatsRaw    = (tmSeats ? tmSeats.value || '' : '').trim();
-    var seats       = seatsRaw ? parseInt(seatsRaw, 10) : NaN;
 
     if (!email)       { setTmStatus('error', 'Please provide your work email.'); return; }
     if (!accountName) { setTmStatus('error', 'Please provide an account name.'); return; }
-    if (!seatsRaw || isNaN(seats) || seats < 1) { setTmStatus('error', 'Please enter at least 1 seat.'); return; }
 
     tmButton.disabled = true;
     tmButton.textContent = 'Creating...';
@@ -282,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var response = await fetch('/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ email: email, account_name: accountName, seats: seats }),
+        body: JSON.stringify({ email: email, account_name: accountName }),
       });
       var contentType = response.headers.get('content-type') || '';
       var isJson = contentType.includes('application/json');
