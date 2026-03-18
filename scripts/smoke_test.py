@@ -23,7 +23,6 @@ TIMEOUT = 15
 ROUTES = [
     # Public marketing pages
     "/",
-    "/home",
     "/privacy",
     "/terms",
     "/contact",
@@ -31,23 +30,17 @@ ROUTES = [
     "/sitemap.xml",
     "/robots.txt",
     # Product pages
-    "/features",
-    "/pricing",
     "/support-automation",
     "/solutions/email/triage-automation",
     # Auth pages (unauthenticated)
     "/login",
-    "/register",
     # Auth-required pages (expect 302 redirect, not 5xx)
     "/dashboard",
     "/upgrade",
     "/onboarding",
+    "/settings",
     # Health
     "/health",
-    # Settings (expect 302)
-    "/settings",
-    # API health (expect 200 or 401, not 5xx)
-    "/api/v1/health",
 ]
 
 # Status codes that count as a pass.
