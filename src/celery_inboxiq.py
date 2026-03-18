@@ -75,11 +75,17 @@ def _writeback_to_provider(
         subject=subject,
         email_type=email_type,
         is_automated=is_automated,
+        # Pass refresh creds so writeback can recover from a stale access token.
+        refresh_token=conn.refresh_token,
+        client_id=current_app.config.get("GOOGLE_CLIENT_ID"),
+        client_secret=current_app.config.get("GOOGLE_CLIENT_SECRET"),
     )
 
-    # Persist any newly-created label IDs back to the connection
-    if result.get("label_applied"):
+    # Persist label cache updates and any refreshed access token.
+    if result.get("label_applied") or result.get("new_token"):
         try:
+            if result.get("new_token"):
+                conn.access_token = result["new_token"]
             conn.metadata_json = dict(meta)
             db.session.commit()
         except Exception as exc:
@@ -485,12 +491,18 @@ def process_incoming_email_task(self, payload: dict) -> dict:
                     _healed = True
                     break
 
-            # Path 2: ticket has category but no InboxIQ label on the message yet
+            # Path 2: ticket has category but no InboxIQ label on the message yet.
+            # Use the connection's known InboxIQ label IDs for the check — a plain
+            # "Label_" prefix is too broad and matches any user-created Gmail label.
             if not _healed and existing.category:
-                _has_inboxiq_label = any(
-                    lid for lid in _provider_label_ids
-                    if lid.startswith("Label_")  # user/InboxIQ-created labels have Label_ prefix
-                )
+                from src.models.core import InboxConnection as _IC
+                _conn = _IC.query.filter_by(
+                    account_id=account_id,
+                    provider=normalized.get("provider"),
+                    status="connected",
+                ).first()
+                _inboxiq_ids = set((_conn.metadata_json or {}).get("label_ids", {}).values()) if _conn else set()
+                _has_inboxiq_label = bool(_inboxiq_ids & set(_provider_label_ids))
                 if not _has_inboxiq_label:
                     _decision = existing.decision or {}
                     _reply_text = _decision.get("reply_text")

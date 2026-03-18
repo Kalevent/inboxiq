@@ -312,8 +312,10 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   if (tmForm) tmForm.addEventListener('submit', handleTmSubmit);
 
-  // Auto-open when redirected from login page with ?open_trial=1
+  // Auto-open when redirected from /signup with ?open_trial=1
+  // Strip the query param immediately so a page refresh doesn't re-open the modal.
   if (new URLSearchParams(window.location.search).get('open_trial') === '1') {
+    history.replaceState(null, '', window.location.pathname);
     openTrialModal();
   }
 });

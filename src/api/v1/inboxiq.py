@@ -1551,7 +1551,10 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             if conn.provider == "outlook":
                 _has_inboxiq_label = any(c.lower().startswith("inboxiq/") for c in _provider_categories)
             else:
-                _has_inboxiq_label = any(lid for lid in _provider_label_ids if lid.startswith("Label_"))
+                # Use known InboxIQ label IDs from the connection cache — a generic
+                # "Label_" prefix check incorrectly matches any user-created Gmail label.
+                _inboxiq_ids = set((conn.metadata_json or {}).get("label_ids", {}).values())
+                _has_inboxiq_label = bool(_inboxiq_ids & set(_provider_label_ids))
             if not _has_inboxiq_label and existing.category:
                 try:
                     from src.inbox.poll import writeback_to_provider as _wb
@@ -1584,8 +1587,13 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                         subject=normalized.get("subject", ""),
                         email_type=_heal_email_type,
                         is_automated=(existing.status == "auto_handled"),
+                        refresh_token=conn.refresh_token,
+                        client_id=current_app.config.get("GOOGLE_CLIENT_ID"),
+                        client_secret=current_app.config.get("GOOGLE_CLIENT_SECRET"),
                     )
-                    if _result.get("label_applied"):
+                    if _result.get("label_applied") or _result.get("new_token"):
+                        if _result.get("new_token"):
+                            conn.access_token = _result["new_token"]
                         conn.metadata_json = dict(_meta)
                         db.session.commit()
                     current_app.logger.info(

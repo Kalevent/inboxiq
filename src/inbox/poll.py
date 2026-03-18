@@ -47,6 +47,9 @@ def writeback_to_provider(
     subject: str,
     email_type: str | None = None,
     is_automated: bool = False,
+    refresh_token: str | None = None,
+    client_id: str | None = None,
+    client_secret: str | None = None,
 ) -> dict:
     """
     Apply an InboxIQ label and optional draft reply to a provider message.
@@ -54,12 +57,15 @@ def writeback_to_provider(
     Args:
         label_cache: mutable dict (conn.metadata_json["label_ids"]) — updated in-place
                      when a new label is created so the caller can persist it.
+        refresh_token / client_id / client_secret: optional Gmail OAuth creds.
+            When provided, a single token-refresh retry is attempted on 401 so a
+            stale access_token doesn't silently skip the writeback.
 
     Returns:
-        {"label_applied": bool, "draft_created": bool}
+        {"label_applied": bool, "draft_created": bool, "new_token": str | None}
     """
     if not provider or provider not in ("gmail", "outlook") or not provider_message_id:
-        return {"label_applied": False, "draft_created": False}
+        return {"label_applied": False, "draft_created": False, "new_token": None}
 
     _cat = category.title()
     label_name = f"InboxIQ/{_cat}/Urgent" if priority == "P1" else f"InboxIQ/{_cat}"
@@ -67,24 +73,47 @@ def writeback_to_provider(
 
     label_applied = False
     draft_created = False
+    new_token = None
     _log.info(
         "writeback: provider=%s category=%s priority=%s email_type=%s is_automated=%s "
         "reply_text_present=%s draft_needed=%s thread_id=%s",
         provider, category, priority, email_type, is_automated,
         bool(reply_text), draft_needed, bool(provider_thread_id),
     )
+
+    def _apply_gmail(token: str) -> None:
+        nonlocal label_applied, draft_created
+        label_id = label_cache.get(label_name)
+        if not label_id:
+            label_id = ensure_gmail_label(token, label_name)
+            label_cache[label_name] = label_id
+        apply_label_gmail(token, provider_message_id, label_id)
+        label_applied = True
+        if draft_needed and provider_thread_id:
+            create_gmail_draft_reply(token, provider_thread_id, from_email, subject, reply_text)
+            draft_created = True
+            _log.info("draft reply created: thread_id=%s subject=%s", provider_thread_id, subject)
+
     try:
         if provider == "gmail":
-            label_id = label_cache.get(label_name)
-            if not label_id:
-                label_id = ensure_gmail_label(access_token, label_name)
-                label_cache[label_name] = label_id
-            apply_label_gmail(access_token, provider_message_id, label_id)
-            label_applied = True
-            if draft_needed and provider_thread_id:
-                create_gmail_draft_reply(access_token, provider_thread_id, from_email, subject, reply_text)
-                draft_created = True
-                _log.info("draft reply created: thread_id=%s subject=%s", provider_thread_id, subject)
+            try:
+                _apply_gmail(access_token)
+            except Exception as exc:
+                # On 401: try once with a refreshed token before giving up.
+                if "401" in str(exc) and refresh_token and client_id and client_secret:
+                    try:
+                        new_token = _gmail_refresh_access_token(refresh_token, client_id, client_secret)
+                        _apply_gmail(new_token)
+                        _log.info("writeback succeeded after token refresh: provider=%s", provider)
+                    except Exception as retry_exc:
+                        _log.warning(
+                            "writeback_to_provider failed after refresh: provider=%s error=%s",
+                            provider, retry_exc,
+                        )
+                else:
+                    _log.warning(
+                        "writeback_to_provider failed: provider=%s error=%s", provider, exc
+                    )
         elif provider == "outlook":
             apply_label_outlook(access_token, provider_message_id, label_name)
             label_applied = True
@@ -96,7 +125,7 @@ def writeback_to_provider(
             "writeback_to_provider failed: provider=%s error=%s", provider, exc
         )
 
-    return {"label_applied": label_applied, "draft_created": draft_created}
+    return {"label_applied": label_applied, "draft_created": draft_created, "new_token": new_token}
 
 IMAP_HOSTS = {
     "gmail": "imap.gmail.com",
