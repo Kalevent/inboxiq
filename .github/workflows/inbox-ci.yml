@@ -276,8 +276,7 @@ jobs:
           # Hit every key public route and verify no 5xx responses.
           # Auth-required routes returning 302 → login count as passing.
           # Exits non-zero and fails the deploy if any route returns 5xx.
-          BASE_URL="${HEALTHCHECK_URL:-https://kalevent.com}"
-          python scripts/smoke_test.py "${BASE_URL}"
+          python scripts/smoke_test.py "https://kalevent.com"
 
       - name: Verify deployed images
         run: |
