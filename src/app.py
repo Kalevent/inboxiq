@@ -398,6 +398,10 @@ def create_app() -> Flask:
   def solutions_email_triage_automation():
     return render_template("marketing/email_triage.html")
 
+  @app.get("/solutions/email/draft-replies")
+  def solutions_email_draft_replies():
+    return render_template("marketing/email_draft_replies.html")
+
   @app.get("/solutions/email/shared-inbox")
   def solutions_email_shared_inbox():
     return render_template("marketing/shared_inbox.html")
