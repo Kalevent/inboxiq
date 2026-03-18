@@ -53,26 +53,36 @@ PASS_CODES = set(range(200, 400)) | {401, 403}
 SKIP_PATTERNS = {"/logout", "/delete", "/destroy", "/reset-all", "/_internal"}
 
 
+def _do_request(url: str) -> int:
+    """Fire one GET and return the HTTP status code. Raises on network error."""
+    req = urllib.request.Request(url, method="GET")
+    req.add_header("User-Agent", "InboxIQ-SmokeTest/1.0")
+    opener = urllib.request.build_opener(NoRedirectHandler)
+    try:
+        with opener.open(req, timeout=TIMEOUT) as resp:
+            return resp.status
+    except urllib.error.HTTPError as exc:
+        return exc.code
+
+
 def check(base_url: str, route: str) -> tuple[int | None, str]:
     """
     Return (status_code, outcome) where outcome is 'pass', 'fail', or 'skip'.
     Never reads the response body.
+    Retries once on 5xx (rolling-deploy transient failures).
     """
     for pattern in SKIP_PATTERNS:
         if pattern in route:
             return None, "skip"
 
     url = base_url.rstrip("/") + route
-    req = urllib.request.Request(url, method="GET")
-    req.add_header("User-Agent", "InboxIQ-SmokeTest/1.0")
 
     try:
-        # disable_redirect_handler so we see the 3xx directly
-        opener = urllib.request.build_opener(NoRedirectHandler)
-        with opener.open(req, timeout=TIMEOUT) as resp:
-            code = resp.status
-    except urllib.error.HTTPError as exc:
-        code = exc.code
+        code = _do_request(url)
+        if code >= 500:
+            # One retry after a short wait — rolling deploys can cause transient 5xx
+            time.sleep(10)
+            code = _do_request(url)
     except urllib.error.URLError as exc:
         return None, f"fail (connection error: {exc.reason})"
     except Exception as exc:  # noqa: BLE001
