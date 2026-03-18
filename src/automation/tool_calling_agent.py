@@ -50,6 +50,7 @@ class ToolCallingAutomationAgent:
             self._tool_get_context_summary,
             self._tool_search_context_field,
             self._tool_evaluate_condition,
+            self._tool_execute_provider_action,
             self._tool_search_webhook_providers,
             self._tool_send_webhook,
             self._tool_render_template,
@@ -222,6 +223,16 @@ class ToolCallingAutomationAgent:
         self.tool_calls.append({"tool": "send_webhook", "input": {"provider_id": provider_id}})
         from src.automation.actions import execute_action
         return execute_action("send_webhook", self.trigger_context, {"provider": provider_id, "payload_template": payload})
+
+    def _tool_execute_provider_action(self, action: str, label_name: Optional[str] = None) -> Dict[str, Any]:
+        """Execute a direct action in Gmail or Outlook: archive|mark_read|star|trash|apply_label|move_to_folder.
+        Use action='archive' to move email to archive. Use action='apply_label' with label_name to add a label."""
+        self.tool_calls.append({"tool": "execute_provider_action", "input": {"action": action, "label_name": label_name}})
+        from src.automation.actions import execute_action
+        config: Dict[str, Any] = {"action": action}
+        if label_name:
+            config["label_name"] = label_name
+        return execute_action("provider_action", self.trigger_context, config)
 
     def _tool_render_template(self, template: str) -> Dict[str, Any]:
         """Render a template string with trigger context variables using {{variable}} syntax."""
