@@ -100,25 +100,10 @@
           <div>
             <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">Solutions</p>
             <ul class="space-y-2 text-sm">
-              <li><a href="{{ url_for('solutions_unified_intake') }}" class="hover:text-white transition-colors">Unified Intake</a></li>
-              <li><a href="{{ url_for('solutions_decisions') }}" class="hover:text-white transition-colors">Decisions</a></li>
-              <li class="pt-2 text-[11px] uppercase tracking-wide text-slate-600">Channels</li>
-              <li><a href="{{ url_for('solutions_voice') }}" class="hover:text-white transition-colors">Voice (IVR)</a></li>
-              <li><a href="{{ url_for('solutions_social') }}" class="hover:text-white transition-colors">Social</a></li>
-              <li><a href="{{ url_for('solutions_forms') }}" class="hover:text-white transition-colors">Forms</a></li>
-              <li><a href="{{ url_for('solutions_chat') }}" class="hover:text-white transition-colors">Chat</a></li>
-              <li><a href="{{ url_for('solutions_crm') }}" class="hover:text-white transition-colors">CRM</a></li>
-              <li><a href="{{ url_for('solutions_api') }}" class="hover:text-white transition-colors">API / Webhooks</a></li>
-            </ul>
-          </div>
-
-          <!-- Email -->
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-4">Email</p>
-            <ul class="space-y-2 text-sm">
               <li><a href="{{ url_for('solutions_email_ai_triage') }}" class="hover:text-white transition-colors">AI Email Triage</a></li>
-              <li><a href="{{ url_for('solutions_email_triage_automation') }}" class="hover:text-white transition-colors">Email Triage Automation</a></li>
-              <li><a href="{{ url_for('solutions_email_shared_inbox') }}" class="hover:text-white transition-colors">Shared Inbox</a></li>
+              <li><a href="{{ url_for('solutions_email_draft_replies') }}" class="hover:text-white transition-colors">Draft Replies</a></li>
+              <li><a href="{{ url_for('solutions_email_triage_automation') }}" class="hover:text-white transition-colors">Triage Automation</a></li>
+              <li><a href="{{ url_for('solutions_email_shared_inbox') }}" class="hover:text-white transition-colors">Multi-Inbox</a></li>
               <li><a href="{{ url_for('solutions_email_support_automation') }}" class="hover:text-white transition-colors">Support Automation</a></li>
             </ul>
           </div>
@@ -141,8 +126,6 @@
             <ul class="space-y-2 text-sm">
               <li><a href="{{ url_for('features_page') }}" class="hover:text-white transition-colors">Features</a></li>
               <li><a href="{{ url_for('pricing_page') }}" class="hover:text-white transition-colors">Pricing</a></li>
-              <li><a href="{{ url_for('support_automation') }}" class="hover:text-white transition-colors">Support Automation</a></li>
-              <li><a href="{{ url_for('ai_email_triage') }}" class="hover:text-white transition-colors">AI Email Triage</a></li>
               <li><a href="/security" class="hover:text-white transition-colors">Security</a></li>
               <li><a href="/settings/developer" class="hover:text-white transition-colors">Developer</a></li>
             </ul>
