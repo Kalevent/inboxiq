@@ -23,11 +23,14 @@ grafana:
     server:
       root_url: "https://grafana.kalevent.com"
       domain: "grafana.kalevent.com"
+    users:
+      allow_sign_up: false
+      allow_org_create: false
+    auth:
+      disable_login_form: false
+      password_hint: ""
     smtp:
-      enabled: true
-      host: "email-smtp.us-west-2.amazonaws.com:587"
-      from_address: "noreply@kalevent.com"
-      from_name: "InboxIQ Grafana"
+      enabled: false
 
 prometheus:
   prometheusSpec:
