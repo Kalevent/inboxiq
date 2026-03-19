@@ -1,0 +1,32 @@
+---
+# Exposes port 8000 with a named 'metrics' port for Prometheus scraping
+apiVersion: v1
+kind: Service
+metadata:
+  name: inboxiq-metrics
+  namespace: kaley
+  labels:
+    app: inboxiq-metrics
+spec:
+  selector:
+    app: inboxiq
+  ports:
+    - name: metrics
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: inboxiq-flask
+  namespace: kaley
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: inboxiq-metrics
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s

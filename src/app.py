@@ -108,6 +108,13 @@ def create_app() -> Flask:
   from src.monitoring.observability import init_otel
   init_otel(app, service_name="inboxiq-flask")
 
+  # Prometheus metrics endpoint — exposes /metrics for Prometheus scraping
+  # Tracks request count, latency, and status per endpoint for cost dashboards
+  if os.getenv("PROMETHEUS_METRICS_ENABLED", "false").lower() in ("1", "true", "yes"):
+    from prometheus_flask_exporter import PrometheusMetrics
+    metrics = PrometheusMetrics(app, group_by="endpoint")
+    metrics.info("inboxiq_app_info", "InboxIQ Flask application", version="1.0")
+
   cors_origins_raw = app.config.get("CORS_ORIGINS", "")
   cors_origins = [o.strip() for o in cors_origins_raw.split(",") if o.strip()]
   if cors_origins:

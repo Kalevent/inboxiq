@@ -3,7 +3,7 @@
 
 grafana:
   enabled: true
-  adminPassword: "changeme-on-first-login"
+  adminPassword: "InboxIQ-Grafana-2026!"
   service:
     type: ClusterIP
     port: 80
@@ -82,6 +82,8 @@ alertmanager:
             from: 'noreply@kalevent.com'
             smarthost: 'email-smtp.us-west-2.amazonaws.com:587'
             require_tls: true
+            auth_username_file: '/etc/alertmanager/secrets/alertmanager-smtp-creds/smtp_auth_username'
+            auth_password_file: '/etc/alertmanager/secrets/alertmanager-smtp-creds/smtp_auth_password'
 
 # Critical alerts — OOMKill, pod restarts, memory pressure
 additionalPrometheusRulesMap:

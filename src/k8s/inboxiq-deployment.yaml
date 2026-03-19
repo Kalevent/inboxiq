@@ -43,6 +43,8 @@ spec:
               value: "parentbased_traceidratio"
             - name: OTEL_TRACES_SAMPLER_ARG
               value: "1.0"  # 100% sampling (adjust to 0.1 for 10% in production)
+            - name: PROMETHEUS_METRICS_ENABLED
+              value: "true"
             - name: ENVIRONMENT
               value: "production"
             - name: K8S_CLUSTER_NAME
