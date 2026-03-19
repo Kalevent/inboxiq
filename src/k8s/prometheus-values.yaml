@@ -1,0 +1,137 @@
+# kube-prometheus-stack values for InboxIQ cluster
+# Installs: Prometheus, Grafana, Alertmanager, kube-state-metrics, node-exporter
+
+grafana:
+  enabled: true
+  adminPassword: "changeme-on-first-login"
+  service:
+    type: ClusterIP
+    port: 80
+  # Persist dashboards and config
+  persistence:
+    enabled: true
+    storageClassName: ebs-gp2-csi
+    size: 5Gi
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 50m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+  grafana.ini:
+    server:
+      root_url: "https://grafana.kalevent.com"
+      domain: "grafana.kalevent.com"
+    smtp:
+      enabled: true
+      host: "email-smtp.us-west-2.amazonaws.com:587"
+      from_address: "noreply@kalevent.com"
+      from_name: "InboxIQ Grafana"
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ebs-gp2-csi
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        memory: 64Mi
+        cpu: 20m
+      limits:
+        memory: 128Mi
+        cpu: 100m
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname', 'namespace']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: 'email-security'
+    receivers:
+      - name: 'email-security'
+        email_configs:
+          - to: 'security@kalevent.com'
+            from: 'noreply@kalevent.com'
+            smarthost: 'email-smtp.us-west-2.amazonaws.com:587'
+            require_tls: true
+
+# Critical alerts — OOMKill, pod restarts, memory pressure
+additionalPrometheusRulesMap:
+  inboxiq-alerts:
+    groups:
+      - name: pod-health
+        rules:
+          - alert: PodOOMKilled
+            expr: kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+            for: 0m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Pod OOMKilled: {{ $labels.pod }}"
+              description: "{{ $labels.pod }} was OOMKilled. Increase memory limit."
+
+          - alert: PodRestartingFrequently
+            expr: rate(kube_pod_container_status_restarts_total[15m]) > 0.1
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pod restarting: {{ $labels.pod }}"
+              description: "{{ $labels.pod }} has restarted more than once in 15 minutes."
+
+          - alert: ContainerMemoryHighUsage
+            expr: |
+              (container_memory_working_set_bytes{namespace="kaley", container!=""} /
+               container_spec_memory_limit_bytes{namespace="kaley", container!=""}) > 0.80
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High memory: {{ $labels.pod }}/{{ $labels.container }}"
+              description: "Container is using >80% of its memory limit. Risk of OOMKill."
+
+          - alert: NodeMemoryHighUsage
+            expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.85
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Node memory critical: {{ $labels.node }}"
+              description: "Node is using >85% memory. Add a node or reduce workloads."
+
+kube-state-metrics:
+  resources:
+    requests:
+      memory: 32Mi
+      cpu: 10m
+    limits:
+      memory: 64Mi
+      cpu: 50m
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      memory: 32Mi
+      cpu: 10m
+    limits:
+      memory: 64Mi
+      cpu: 50m
