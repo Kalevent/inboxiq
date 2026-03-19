@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-exporter
+  namespace: kaley
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery-exporter
+  template:
+    metadata:
+      labels:
+        app: celery-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9808"
+    spec:
+      containers:
+        - name: celery-exporter
+          image: danihodovic/celery-exporter:0.10.5
+          args:
+            - "--broker-url=$(CELERY_BROKER_URL)"
+          env:
+            - name: CELERY_BROKER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: inboxiq-env
+                  key: CELERY_BROKER_URL
+          ports:
+            - name: metrics
+              containerPort: 9808
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9808
+            initialDelaySeconds: 10
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: celery-exporter
+  namespace: kaley
+  labels:
+    app: celery-exporter
+spec:
+  selector:
+    app: celery-exporter
+  ports:
+    - name: metrics
+      port: 9808
+      targetPort: 9808
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: celery-exporter
+  namespace: kaley
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: celery-exporter
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
