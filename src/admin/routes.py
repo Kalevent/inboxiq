@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, g  # noqa: F401
 from datetime import datetime
 from sqlalchemy import func
 
@@ -81,7 +81,7 @@ def submit_pitched_topic():
             pitch_notes=request.form.get("pitch_notes", "").strip() or None,
             priority=int(request.form.get("priority", 3)),
             status="pending",
-            submitted_by="admin@kalevent.com",  # TODO: Get from session
+            submitted_by=getattr(g, "current_user", None) and g.current_user.email or "support@kalevent.com",
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
