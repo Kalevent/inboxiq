@@ -18,6 +18,7 @@ from src.dspy.triage_labels import get_triage_labels
 from src.dspy.training.train import train_from_overrides
 from src.dspy import _configure_dspy
 import logging
+from src.monitoring.metrics import track_task
 
 # Default body preview limit (can be overridden per-account via TriageConfig)
 DEFAULT_BODY_PREVIEW_LIMIT = 240
@@ -415,10 +416,11 @@ def process_incoming_email_task(self, payload: dict) -> dict:
       6) merge agent + DSPy decisions
       7) persist ticket with merged decision
     """
-    with tracer.start_as_current_span("celery.process_incoming_email") as span:
-        email_payload = (payload or {}).get("email") or (payload or {})
-        account_id = (payload or {}).get("account_id")
-        user_id = (payload or {}).get("user_id")
+    email_payload = (payload or {}).get("email") or (payload or {})
+    account_id = (payload or {}).get("account_id")
+    user_id = (payload or {}).get("user_id")
+    with track_task("inboxiq.process_incoming_email", account_id=account_id), \
+         tracer.start_as_current_span("celery.process_incoming_email") as span:
 
         # Record task context
         safe_span_attribute(span, "account_id", account_id)

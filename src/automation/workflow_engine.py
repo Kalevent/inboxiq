@@ -23,6 +23,7 @@ from uuid import uuid4
 from src.extensions import db
 from src.models.automation import AutomationRule, AutomationRuleExecution
 from src.monitoring.observability import get_tracer
+from src.monitoring.metrics import record_task_cost
 from src.monitoring.sanitizer import (
     safe_span_attribute,
     sanitize_trigger_context,
@@ -219,6 +220,13 @@ def execute_automation_workflow(
         logger.info(
             f"Workflow {workflow_id} executed: {len(results)} actions, "
             f"success={all_successful}, trace_id={trace_id_hex}"
+        )
+
+        record_task_cost(
+            "automation.workflow",
+            account_id=workflow.account_id,
+            duration_seconds=execution_time_ms / 1000,
+            status="success" if all_successful else "failure",
         )
 
         return {

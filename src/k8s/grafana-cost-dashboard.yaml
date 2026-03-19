@@ -151,6 +151,49 @@ data:
           }]
         },
         {
+          "id": 15,
+          "title": "Cost per Account — Last 24h",
+          "description": "Sum of all task durations per account × cluster cost/sec. Shows which accounts cost the most to serve.",
+          "type": "bargauge",
+          "gridPos": { "x": 0, "y": 26, "w": 24, "h": 8 },
+          "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["sum"] } },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "currencyUSD",
+              "decimals": 6,
+              "thresholds": { "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 0.001}, {"color": "red", "value": 0.01}] }
+            }
+          },
+          "targets": [{
+            "expr": "sum by (account_id) (increase(inboxiq_task_duration_seconds_sum[24h])) * (count(kube_node_info) * 0.0416 / 3600)",
+            "legendFormat": "account {{ account_id }}"
+          }]
+        },
+        {
+          "id": 16,
+          "title": "Task Executions by Account (last 24h)",
+          "type": "bargauge",
+          "gridPos": { "x": 0, "y": 34, "w": 12, "h": 7 },
+          "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["sum"] } },
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 } },
+          "targets": [{
+            "expr": "sum by (account_id) (increase(inboxiq_task_total[24h]))",
+            "legendFormat": "account {{ account_id }}"
+          }]
+        },
+        {
+          "id": 17,
+          "title": "Automation Workflow Cost by Account",
+          "type": "bargauge",
+          "gridPos": { "x": 12, "y": 34, "w": 12, "h": 7 },
+          "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["sum"] } },
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 6 } },
+          "targets": [{
+            "expr": "sum by (account_id) (increase(inboxiq_task_duration_seconds_sum{task_name=\"automation.workflow\"}[24h])) * (count(kube_node_info) * 0.0416 / 3600)",
+            "legendFormat": "account {{ account_id }}"
+          }]
+        },
+        {
           "id": 10,
           "title": "API Endpoint — Requests per Minute",
           "type": "timeseries",
