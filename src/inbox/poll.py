@@ -87,7 +87,9 @@ def writeback_to_provider(
         if not label_id:
             label_id = ensure_gmail_label(token, label_name)
             label_cache[label_name] = label_id
-        apply_label_gmail(token, provider_message_id, label_id)
+        # Remove all OTHER InboxIQ labels in the same API call to prevent duplicates
+        other_inboxiq_ids = [lid for lid in label_cache.values() if lid != label_id]
+        apply_label_gmail(token, provider_message_id, label_id, remove_label_ids=other_inboxiq_ids)
         label_applied = True
         if draft_needed and provider_thread_id:
             create_gmail_draft_reply(token, provider_thread_id, from_email, subject, reply_text)
@@ -452,13 +454,17 @@ def _walk_parts_plain(payload: dict) -> str:
     return ""
 
 
-def apply_label_gmail(access_token: str, message_id: str, label: str, mark_read: bool = False):
+def apply_label_gmail(access_token: str, message_id: str, label: str, mark_read: bool = False, remove_label_ids: list | None = None):
     """
     Apply a label to a Gmail message. Best-effort; failures bubble to caller.
+    remove_label_ids: other InboxIQ label IDs to strip in the same call (prevents duplicates).
     """
     ops = {"addLabelIds": [label]}
+    to_remove = list(remove_label_ids or [])
     if mark_read:
-        ops["removeLabelIds"] = ["UNREAD"]
+        to_remove.append("UNREAD")
+    if to_remove:
+        ops["removeLabelIds"] = to_remove
     resp = requests.post(
         f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}/modify",
         headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
