@@ -49,6 +49,13 @@ def account_allows_api(account_id: int) -> bool:
         # For internal accounts without Stripe, check plan_choice field
         if profile and profile.plan_choice in ("business", "enterprise"):
             return True
+        # Honour extended trial_end (e.g. beta users with 60-day trials)
+        if profile and profile.trial_status == "active" and profile.trial_end:
+            trial_end = profile.trial_end
+            if trial_end.tzinfo is None:
+                trial_end = trial_end.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) <= trial_end:
+                return True
     except Exception:
         # If billing tables are unavailable (e.g., during migrations), fall through to the older rules.
         pass
