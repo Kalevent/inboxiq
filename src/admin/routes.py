@@ -116,7 +116,8 @@ def approve_pitched_topic(topic_id):
         topic.updated_at = datetime.now()
         db.session.commit()
 
-        flash(f"Topic '{topic.title}' approved!", "success")
+        generate_blog_from_pitched_topic.delay(topic_id=str(topic.id))
+        flash(f"Topic '{topic.title}' approved and content generation queued!", "success")
 
     except Exception as e:
         db.session.rollback()
