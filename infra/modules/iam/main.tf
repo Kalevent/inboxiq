@@ -36,6 +36,51 @@ resource "aws_iam_role_policy" "node_s3_uploads" {
   })
 }
 
+# ── Cluster Autoscaler policy ────────────────────────────────
+resource "aws_iam_policy" "cluster_autoscaler" {
+  name        = "inboxiq-cluster-autoscaler"
+  description = "Allows Cluster Autoscaler to scale EKS node group"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "autoscaling:DescribeAutoScalingGroups",
+          "autoscaling:DescribeAutoScalingInstances",
+          "autoscaling:DescribeLaunchConfigurations",
+          "autoscaling:DescribeScalingActivities",
+          "autoscaling:DescribeTags",
+          "ec2:DescribeInstanceTypes",
+          "ec2:DescribeLaunchTemplateVersions",
+          "eks:DescribeNodegroup"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "autoscaling:SetDesiredCapacity",
+          "autoscaling:TerminateInstanceInAutoScalingGroup"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"     = "true"
+            "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/inboxiq-eks" = "owned"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "cluster_autoscaler" {
+  role       = data.aws_iam_role.node_instance.name
+  policy_arn = aws_iam_policy.cluster_autoscaler.arn
+}
+
 # ── SES send email policy ────────────────────────────────────
 resource "aws_iam_role_policy" "node_ses" {
   name = "SES-SendEmail-kalevent"

@@ -30,26 +30,26 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "uploads" {
 resource "aws_cloudfront_distribution" "uploads" {
   enabled         = true
   aliases         = ["files.kalevent.com"]
-  price_class     = "PriceClass_100"
-  comment         = "kalevent-uploads CDN"
+  price_class     = "PriceClass_All"   # Matches existing — global reach
+  comment         = "Uploads CDN for files.kalevent.com"
+  is_ipv6_enabled = true
+
+  # WAF web ACL — protects the distribution; managed outside Terraform
+  web_acl_id = var.cloudfront_waf_acl_arn
 
   origin {
     domain_name              = aws_s3_bucket.uploads.bucket_regional_domain_name
-    origin_id                = "s3-kalevent-uploads"
-    origin_access_control_id = aws_cloudfront_origin_access_control.uploads.id
+    origin_id                = "kalevent-uploads.s3.us-west-2.amazonaws.com-mjg3wnlkurm"
+    origin_access_control_id = var.existing_oac_id   # Use existing OAC — do not recreate
   }
 
   default_cache_behavior {
-    target_origin_id       = "s3-kalevent-uploads"
+    target_origin_id       = "kalevent-uploads.s3.us-west-2.amazonaws.com-mjg3wnlkurm"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
     compress               = true
-
-    forwarded_values {
-      query_string = false
-      cookies { forward = "none" }
-    }
+    cache_policy_id        = "658327ea-f89d-4fab-a63d-7e88639e58f6"   # Managed CachingOptimized
 
     response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
   }
@@ -58,13 +58,20 @@ resource "aws_cloudfront_distribution" "uploads" {
     geo_restriction { restriction_type = "none" }
   }
 
+  # CloudFront requires ACM cert in us-east-1 — use the existing one
   viewer_certificate {
-    acm_certificate_arn      = var.acm_cert_arn
+    acm_certificate_arn      = var.acm_cert_arn_us_east_1
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }
 
-  tags = { Name = "kalevent-uploads-cdn" }
+  tags = { Name = "files-kalevent" }
+
+  lifecycle {
+    # Distribution is live and correctly configured — Terraform is for documentation and disaster recovery.
+    # Security headers, WAF, OAC, and origin are all managed outside Terraform.
+    ignore_changes = all
+  }
 }
 
 resource "aws_cloudfront_origin_access_control" "uploads" {

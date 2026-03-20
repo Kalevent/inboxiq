@@ -9,11 +9,10 @@ module "iam" {
 module "eks" {
   source = "../../modules/eks"
 
-  cluster_role_arn          = module.iam.cluster_service_role_arn
-  node_role_arn             = module.iam.node_instance_role_arn
-  public_subnet_ids         = module.networking.public_subnet_ids
-  private_subnet_ids        = module.networking.private_subnet_ids
-  cluster_security_group_id = "sg-08279dbe2c9bca819"
+  cluster_role_arn   = module.iam.cluster_service_role_arn
+  node_role_arn      = module.iam.node_instance_role_arn
+  public_subnet_ids  = module.networking.public_subnet_ids
+  private_subnet_ids = module.networking.private_subnet_ids
 
   node_desired = 3
   node_min     = 2
@@ -37,6 +36,14 @@ module "dns_acm" {
 }
 
 module "s3_cdn" {
-  source      = "../../modules/s3-cdn"
-  acm_cert_arn = module.dns_acm.cert_arn_root
+  source = "../../modules/s3-cdn"
+
+  # CloudFront requires us-east-1 cert — this is the files.kalevent.com cert
+  acm_cert_arn_us_east_1 = "arn:aws:acm:us-east-1:094985084741:certificate/c61e0862-384e-46e4-a2f2-b20c87813e4c"
+
+  # WAF ACL protecting the CloudFront distribution (created by CloudFront automatically)
+  cloudfront_waf_acl_arn = "arn:aws:wafv2:us-east-1:094985084741:global/webacl/CreatedByCloudFront-6f79819b/dd86375b-b0e2-46ce-a66a-74afb321cfcc"
+
+  # Existing OAC — do not recreate
+  existing_oac_id = "E2DI4G332V6D45"
 }
