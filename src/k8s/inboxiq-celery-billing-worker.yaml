@@ -45,6 +45,16 @@ spec:
                 name: inboxiq-env
             - configMapRef:
                 name: inboxiq-config
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "celery -A src.celery_inboxiq.celery inspect ping -d celery@$HOSTNAME --timeout 5 2>&1 | grep -q OK"
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 15
+            failureThreshold: 3
           resources:
             requests:
               cpu: 50m

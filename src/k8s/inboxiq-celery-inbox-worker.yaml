@@ -56,8 +56,16 @@ spec:
                 name: inboxiq-env
             - configMapRef:
                 name: inboxiq-config
-          # No liveness or readiness probes — python:3.11-slim has neither pgrep nor ps.
-          # If Celery crashes the container exits (non-zero) and Kubernetes restarts it.
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - "celery -A src.celery_inboxiq.celery inspect ping -d celery@$HOSTNAME --timeout 5 2>&1 | grep -q OK"
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 15
+            failureThreshold: 3
           resources:
             requests:
               cpu: 100m
