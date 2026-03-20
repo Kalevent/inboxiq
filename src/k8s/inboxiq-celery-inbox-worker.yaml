@@ -23,7 +23,7 @@ spec:
           image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
           imagePullPolicy: IfNotPresent
           command: ["celery"]
-          args: ["-A", "src.celery_inboxiq.celery", "worker", "--queues=inbox,billing,leads", "--loglevel=info"]
+          args: ["-A", "src.celery_inboxiq.celery", "worker", "--queues=inbox,billing,leads", "--loglevel=info", "-E"]
           env:
             - name: APP_ENV
               value: "production"
