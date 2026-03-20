@@ -1055,7 +1055,7 @@ def admin_account_purge(account_id: int):
     # Delete in FK-safe dependency order
     purge_tables = [
         ("ticket_embeddings", "account_id"),
-        ("draft_reply_feedback", "account_id"),
+        ("draft_reply_feedback", "ticket_fk"),
         ("automation_rule_executions", "account_id"),
         ("automation_rules", "account_id"),
         ("automation_suggestions", "account_id"),
@@ -1086,7 +1086,14 @@ def admin_account_purge(account_id: int):
     ]
     deleted_counts = {}
     for table, col in purge_tables:
-        if col == "user_id":
+        if col == "ticket_fk":
+            # no account_id on this table — delete via ticket ownership
+            result = db.session.execute(
+                text(f"DELETE FROM {table} WHERE ticket_id IN (SELECT id FROM inboxiq_tickets WHERE account_id = :aid)"),  # nosemgrep: python.sqlalchemy.security.audit.avoid-sqlalchemy-text.avoid-sqlalchemy-text
+                {"aid": account_id},
+            )
+            deleted_counts[table] = result.rowcount
+        elif col == "user_id":
             # scope to this account's users
             user_ids = db.session.execute(
                 text("SELECT id FROM users WHERE account_id = :aid"), {"aid": account_id}

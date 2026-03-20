@@ -901,8 +901,13 @@ def create_app() -> Flask:
 
     # Draft acceptance rate
     try:
-      from src.models.tickets import DraftReplyFeedback
-      feedback_rows = DraftReplyFeedback.query.filter_by(account_id=account_id).all()
+      from src.models.tickets import DraftReplyFeedback, Ticket as _FeedbackTicket
+      feedback_rows = (
+          DraftReplyFeedback.query
+          .join(_FeedbackTicket, DraftReplyFeedback.ticket_id == _FeedbackTicket.id)
+          .filter(_FeedbackTicket.account_id == account_id)
+          .all()
+      )
       total_feedback = len(feedback_rows)
       accepted_feedback = sum(1 for f in feedback_rows if f.feedback_type in ("accepted", "edited"))
       draft_acceptance_pct = round(accepted_feedback / total_feedback * 100) if total_feedback else None

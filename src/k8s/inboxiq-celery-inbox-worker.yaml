@@ -58,13 +58,10 @@ spec:
                 name: inboxiq-config
           livenessProbe:
             exec:
-              command:
-                - /bin/sh
-                - -c
-                - "celery -A src.celery_inboxiq.celery inspect ping -d celery@$HOSTNAME --timeout 5 2>&1 | grep -q OK"
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            timeoutSeconds: 15
+              command: ["python", "-c", "import os; os.kill(1, 0)"]
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
             failureThreshold: 3
           resources:
             requests:
