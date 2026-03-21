@@ -41,6 +41,11 @@ grafana:
 prometheus:
   prometheusSpec:
     retention: 15d
+    # Watch ServiceMonitors in all namespaces (celery-exporter + inboxiq-flask are in kaley namespace)
+    serviceMonitorNamespaceSelector: {}
+    serviceMonitorSelector:
+      matchLabels:
+        release: kube-prometheus-stack
     resources:
       requests:
         memory: 256Mi

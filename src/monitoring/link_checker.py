@@ -47,7 +47,6 @@ SKIP_PATTERNS = (
 # Seed URLs — the crawler starts from these.
 SEED_PATHS = [
     "/",
-    "/home",
     "/features",
     "/pricing",
     "/privacy",
@@ -55,7 +54,7 @@ SEED_PATHS = [
     "/contact",
     "/security",
     "/login",
-    "/register",
+    "/signup",
     "/dashboard",
     "/settings",
     "/upgrade",
