@@ -204,7 +204,7 @@ data:
             "graphMode": "none",
             "reduceOptions": {
               "calcs": [
-                "lastNotNull"
+                "last"
               ]
             },
             "orientation": "horizontal",
@@ -245,7 +245,9 @@ data:
           "targets": [
             {
               "expr": "celery_worker_up",
-              "legendFormat": "{{ hostname }}"
+              "legendFormat": "{{ hostname }}",
+              "instant": true,
+              "range": false
             }
           ]
         },
@@ -266,7 +268,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum by (name) (rate(celery_tasks_total{state=\"SUCCESS\"}[5m]) * 60)",
+              "expr": "sum by (name) (rate(celery_task_succeeded_total[5m]) * 60)",
               "legendFormat": "{{ name }}"
             }
           ]
@@ -297,7 +299,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum by (name) (rate(celery_task_runtime_seconds_sum{state=\"SUCCESS\"}[1h])) / sum by (name) (rate(celery_task_runtime_seconds_count{state=\"SUCCESS\"}[1h]))",
+              "expr": "sum by (name) (rate(celery_task_runtime_sum[1h])) / sum by (name) (rate(celery_task_runtime_count[1h]))",
               "legendFormat": "{{ name }}"
             }
           ]
@@ -345,7 +347,7 @@ data:
           },
           "targets": [
             {
-              "expr": "(sum by (name) (rate(celery_task_runtime_seconds_sum{state=\"SUCCESS\"}[1h])) / sum by (name) (rate(celery_task_runtime_seconds_count{state=\"SUCCESS\"}[1h]))) * (count(kube_node_info) * 0.0416 / 3600)",
+              "expr": "(sum by (name) (rate(celery_task_runtime_sum[1h])) / sum by (name) (rate(celery_task_runtime_count[1h]))) * (count(kube_node_info) * 0.0416 / 3600)",
               "legendFormat": "{{ name }}"
             }
           ]
@@ -371,7 +373,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum by (name) (rate(celery_tasks_total{state=\"FAILURE\"}[5m]) * 60)",
+              "expr": "sum by (name) (rate(celery_task_failed_total[5m]) * 60)",
               "legendFormat": "{{ name }}"
             }
           ]
