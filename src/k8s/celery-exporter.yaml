@@ -38,11 +38,20 @@ spec:
               cpu: 100m
               memory: 64Mi
           livenessProbe:
-            httpGet:
-              path: /health
-              port: 9808
-            initialDelaySeconds: 10
-            periodSeconds: 30
+            # Check /metrics instead of /health — /health passes even when the event
+            # stream is stale. If celery_worker_up is absent from /metrics it means
+            # the exporter has lost its Redis event subscription and needs a restart.
+            exec:
+              command:
+                - python3
+                - -c
+                - |
+                  import urllib.request, sys
+                  body = urllib.request.urlopen('http://localhost:9808/metrics', timeout=5).read().decode()
+                  sys.exit(0 if 'celery_worker_up' in body else 1)
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            failureThreshold: 2
 ---
 apiVersion: v1
 kind: Service
