@@ -5,18 +5,65 @@ Kept minimal to mirror the inboxiq-style agent expectations.
 from __future__ import annotations
 
 import html
+import logging
 import os
 import re
 from datetime import datetime
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 from uuid import uuid4
 
+import requests
 from flask import current_app
 
 from src.extensions import db
 from src.models.content import BlogPost
 from src.dspy.config import _configure_dspy
 from src.dspy.signatures import build_blog_writer
+
+_log = logging.getLogger(__name__)
+
+
+def _search_web(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+    """
+    Synchronous SearXNG search. Returns a list of {title, url, snippet} dicts.
+    Returns [] silently on any failure so blog generation always continues.
+    """
+    base_url = os.getenv("SEARXNG_URL", "").rstrip("/")
+    if not base_url:
+        return []
+    try:
+        resp = requests.get(
+            f"{base_url}/search",
+            params={"q": query, "format": "json"},
+            headers={"User-Agent": "InboxIQ-BlogWriter/1.0"},
+            timeout=8,
+        )
+        resp.raise_for_status()
+        results = resp.json().get("results", [])[:max_results]
+        return [
+            {
+                "title": r.get("title", ""),
+                "url": r.get("url", ""),
+                "snippet": (r.get("content") or r.get("snippet") or "")[:300],
+            }
+            for r in results
+            if r.get("title") or r.get("content")
+        ]
+    except Exception as exc:
+        _log.debug("blog search failed (non-fatal): %s", exc)
+        return []
+
+
+def _format_research(results: List[Dict[str, Any]]) -> str:
+    if not results:
+        return ""
+    lines = ["--- Web Research ---"]
+    for r in results:
+        lines.append(f"• {r['title']}")
+        if r["snippet"]:
+            lines.append(f"  {r['snippet']}")
+    lines.append("--- End Research ---")
+    return "\n".join(lines)
 
 
 def _safe_json_dict(data: Any) -> dict:
@@ -108,13 +155,19 @@ def generate_blog_content(brief_data: dict) -> Tuple[str, str, str]:
     journey_stage = _coerce_str(brief_data.get("journey_stage")) or "awareness"
     target_keywords = _coerce_str(brief_data.get("target_keywords"))
 
+    # Research the topic before writing — gives the LLM real-world context
+    # instead of writing from the brief alone.
+    search_query = f"{title} {audience}".strip() or title
+    research = _format_research(_search_web(search_query))
+    enriched_brief = f"{brief}\n\n{research}".strip() if research else brief
+
     try:
         _, _, dspy = _configure_dspy()
         writer = build_blog_writer(dspy)
         result = writer(
             title=title,
             audience=audience,
-            brief=brief,
+            brief=enriched_brief,
             journey_stage=journey_stage,
             feedback=feedback,
             icp=icp,

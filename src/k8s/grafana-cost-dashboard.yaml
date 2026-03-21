@@ -245,11 +245,10 @@ data:
           "targets": [
             {
               "expr": "celery_worker_up",
-              "legendFormat": "{{ hostname }}",
-              "instant": true,
-              "range": false
+              "legendFormat": "{{ hostname }}"
             }
-          ]
+          ],
+          "timeFrom": "5m"
         },
         {
           "id": 5,
@@ -299,7 +298,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum by (name) (rate(celery_task_runtime_sum[1h])) / sum by (name) (rate(celery_task_runtime_count[1h]))",
+              "expr": "sum by (name) (rate(celery_task_runtime_sum[5m])) / sum by (name) (rate(celery_task_runtime_count[5m]))",
               "legendFormat": "{{ name }}"
             }
           ]
@@ -347,7 +346,7 @@ data:
           },
           "targets": [
             {
-              "expr": "(sum by (name) (rate(celery_task_runtime_sum[1h])) / sum by (name) (rate(celery_task_runtime_count[1h]))) * (count(kube_node_info) * 0.0416 / 3600)",
+              "expr": "(sum by (name) (rate(celery_task_runtime_sum[5m])) / sum by (name) (rate(celery_task_runtime_count[5m]))) * (count(kube_node_info) * 0.0416 / 3600)",
               "legendFormat": "{{ name }}"
             }
           ]
