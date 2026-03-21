@@ -75,5 +75,4 @@ spec:
               mountPath: /dspy-artifacts
       volumes:
         - name: dspy-artifacts
-          persistentVolumeClaim:
-            claimName: dspy-artifacts-pvc
+          emptyDir: {}  # EBS PVC caused node-affinity scheduling failures; artifacts recompile on restart

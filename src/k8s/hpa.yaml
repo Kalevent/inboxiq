@@ -45,7 +45,7 @@ spec:
     kind: Deployment
     name: inboxiq-celery-inbox-worker
   minReplicas: 1
-  maxReplicas: 3
+  maxReplicas: 1  # EBS PVC (dspy-artifacts-pvc) is ReadWriteOnce — only 1 node can mount it
   metrics:
     - type: Resource
       resource:

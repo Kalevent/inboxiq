@@ -37,10 +37,9 @@ spec:
             limits:
               cpu: 100m
               memory: 64Mi
-          livenessProbe:
-            # Check /metrics instead of /health — /health passes even when the event
-            # stream is stale. If celery_worker_up is absent from /metrics it means
-            # the exporter has lost its Redis event subscription and needs a restart.
+          # startupProbe gives the exporter up to 5 min to receive its first
+          # worker-heartbeat event before the livenessProbe takes over.
+          startupProbe:
             exec:
               command:
                 - python3
@@ -49,9 +48,20 @@ spec:
                   import urllib.request, sys
                   body = urllib.request.urlopen('http://localhost:9808/metrics', timeout=5).read().decode()
                   sys.exit(0 if 'celery_worker_up' in body else 1)
-            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 10  # 10 × 30s = 5 min window on startup
+          livenessProbe:
+            # Once started, restart if celery_worker_up disappears (stale event stream).
+            exec:
+              command:
+                - python3
+                - -c
+                - |
+                  import urllib.request, sys
+                  body = urllib.request.urlopen('http://localhost:9808/metrics', timeout=5).read().decode()
+                  sys.exit(0 if 'celery_worker_up' in body else 1)
             periodSeconds: 60
-            failureThreshold: 2
+            failureThreshold: 3  # 3 × 60s = 3 min before restart
 ---
 apiVersion: v1
 kind: Service
