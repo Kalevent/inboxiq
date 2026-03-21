@@ -8,8 +8,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1  # Create new pod first for zero-downtime
-      maxUnavailable: 0  # Never allow zero pods running
+      maxSurge: 0       # Don't exceed current replica count (node memory is constrained)
+      maxUnavailable: 1 # Terminate one old pod before creating replacement
   selector:
     matchLabels:
       app: inboxiq-celery-inbox-worker
@@ -66,7 +66,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 512Mi
+              memory: 256Mi
             limits:
               cpu: 500m
               memory: 1Gi

@@ -18,7 +18,8 @@ from src.dspy.triage_labels import get_triage_labels
 from src.dspy.training.train import train_from_overrides
 from src.dspy import _configure_dspy
 import logging
-from src.monitoring.metrics import track_task
+from celery.signals import task_prerun, task_postrun
+from src.monitoring.metrics import record_task_cost
 
 # Default body preview limit (can be overridden per-account via TriageConfig)
 DEFAULT_BODY_PREVIEW_LIMIT = 240
@@ -377,6 +378,39 @@ from src.monitoring.sanitizer import safe_span_attribute
 init_otel(service_name="inboxiq-celery")
 tracer = get_tracer(__name__)
 
+# --- Prometheus task instrumentation (auto-applies to all tasks) ---
+import threading as _threading
+import time as _time
+
+_task_start: dict[str, float] = {}
+_task_start_lock = _threading.Lock()
+
+
+def _extract_account_id(args, kwargs):
+    if "account_id" in kwargs:
+        return kwargs["account_id"]
+    if args and isinstance(args[0], dict):
+        return args[0].get("account_id")
+    return None
+
+
+@task_prerun.connect
+def _on_task_prerun(task_id, **_kw):
+    with _task_start_lock:
+        _task_start[task_id] = _time.perf_counter()
+
+
+@task_postrun.connect
+def _on_task_postrun(task_id, task, args, kwargs, state, **_kw):
+    with _task_start_lock:
+        start = _task_start.pop(task_id, None)
+    if start is None:
+        return
+    elapsed = _time.perf_counter() - start
+    account_id = _extract_account_id(args, kwargs)
+    status = "success" if state == "SUCCESS" else "failure"
+    record_task_cost(task.name, account_id=account_id, duration_seconds=elapsed, status=status)
+
 
 def _redact_body_preview(text: str) -> str:
     if not text:
@@ -419,8 +453,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     email_payload = (payload or {}).get("email") or (payload or {})
     account_id = (payload or {}).get("account_id")
     user_id = (payload or {}).get("user_id")
-    with track_task("inboxiq.process_incoming_email", account_id=account_id), \
-         tracer.start_as_current_span("celery.process_incoming_email") as span:
+    with tracer.start_as_current_span("celery.process_incoming_email") as span:
 
         # Record task context
         safe_span_attribute(span, "account_id", account_id)
