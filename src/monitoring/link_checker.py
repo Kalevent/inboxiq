@@ -86,6 +86,8 @@ class _LinkExtractor(HTMLParser):
 
 def _is_same_origin(url: str, origin: str) -> bool:
     parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return False
     origin_parsed = urlparse(origin)
     return parsed.netloc == origin_parsed.netloc or not parsed.netloc
 
@@ -119,8 +121,9 @@ def run_link_check(base_url: str) -> Dict:
     origin = "{0.scheme}://{0.netloc}".format(urlparse(base_url))
     session = requests.Session()
     session.headers["User-Agent"] = "InboxIQ-LinkChecker/1.0"
-    # Never follow redirects automatically — treat 3xx as a pass, not a chain.
-    session.max_redirects = 0
+    # Redirects are blocked per-request via allow_redirects=False.
+    # Do NOT set session.max_redirects=0 — it causes TooManyRedirects
+    # exceptions even when allow_redirects=False in some requests versions.
 
     visited: Set[str] = set()
     broken: List[Dict] = []

@@ -1,7 +1,7 @@
 # Value Proposition — Sam (ICP 2: Distribution & Trading, Nigeria)
 
 > Status: Draft — 2026-03-20
-> See implementation plan: [sam_warehouse_workflow_plan.md](../inboxiq/sam_warehouse_workflow_plan.md)
+> See implementation plan: [sam_warehouse_workflow_plan.md](sam_warehouse_workflow_plan.md)
 > See primary ICP: [ICP.md](ICP.md)
 
 ---
@@ -26,7 +26,7 @@ Sam is the owner-operator of a distribution and trading company in Nigeria. He b
 
 ## The Problem InboxIQ Solves for Sam
 
-Sam's business is real, profitable, and operationally complex — but it runs almost entirely on paper. Every movement of stock is recorded on a physical card. Every delivery is verified by hand. Every sale exists in a cloud system that syncs twice a day. The auditor arrives monthly to check what happened weeks ago.
+Sam's business is real, profitable, and operationally complex — but it runs almost entirely on physical paper. The invoice is a paper document. The waybill is a paper document from a pre-printed book. The bin card is a physical card recording every stock movement by hand. These three paper documents are the operational backbone of the business. The only digital record is QuickBooks, accessed via Microsoft OneDrive, where sales are entered as a separate step after the paper documents have already been issued. QuickBooks syncs twice a day — meaning it is perpetually behind what has actually happened in the warehouse. The auditor arrives periodically to reconcile the paper trail against the QuickBooks records and check what happened weeks ago.
 
 The result is that Sam is always operating blind. He does not know his real stock position without walking into the warehouse. He does not know if a waybill was matched to an invoice until the auditor tells him. He does not know his buyers' collection status without calling his staff. And when goods are sold but not yet collected, they sit in a grey zone — committed on paper, physically still on the shelf, invisible to any system.
 
@@ -44,7 +44,7 @@ Sam's bin card is a physical card on a shelf. His QuickBooks balance is up to 12
 
 ### 2. Goods sold but not yet collected — invisible to the system
 
-Sam raises an invoice in QuickBooks the moment a sale is agreed. But the buyer may not collect the goods for hours, days, or longer. During that time, those goods still appear on the bin card as available. Another staff member could commit the same goods to a different buyer.
+Sam writes a physical paper invoice and enters the sale into QuickBooks the moment a sale is agreed. But the buyer may not collect the goods for hours, days, or longer. During that time, those goods still appear on the bin card as available. Another staff member could commit the same goods to a different buyer.
 
 **What InboxIQ does**: When an outbound waybill is created, the goods are immediately marked as reserved — visible to everyone as committed and unavailable — until the buyer collects them. Overselling becomes structurally impossible.
 
@@ -62,7 +62,7 @@ The auditor visits periodically. By the time they find a discrepancy — a waybi
 
 When goods leave the warehouse, the bin card is updated manually by a staff member — if they remember, and if the entry is correct. There is no confirmation that the update happened. No one is notified. The system assumes the staff did their job.
 
-**What InboxIQ does**: When a staff member marks a waybill as dispatched on their phone, the bin card updates automatically. Sam and the warehouse manager receive a notification. The buyer is notified that goods are ready or have been dispatched. Every action closes a loop.
+**What InboxIQ does**: Staff raise the waybill in InboxIQ and print a 3-page PDF — one page each for the buyer, the buyer's driver/collector, and the warehouse. Each copy is labelled in large bold text (no colour printing required). The paper flow is identical to the current carbonless waybill book: the buyer takes their copy and their driver's copy when the sale is agreed, and brings them to the warehouse to collect. The warehouse manager keeps the third copy. The difference is the digital record already exists the moment the waybill is printed, and the bin card is already reserved. When the driver leaves, the warehouse staff tap "Mark as Dispatched" — one action that closes the loop. The bin card updates, the buyer is notified, and the audit trail is complete. InboxIQ does not try to replace the paper ceremony. It makes paper the output of the digital system rather than the only record.
 
 ---
 
@@ -108,8 +108,8 @@ InboxIQ does not save Sam hours in an inbox. It saves him **stock losses, buyer 
 
 InboxIQ does not replace QuickBooks. It does not replace his invoicing process. It does not require his warehouse staff to learn a complex new system. It does not require his buyers to create accounts if they do not want to.
 
-- QuickBooks stays. Sam's team continues entering invoices there.
-- Waybills are raised in InboxIQ instead of on paper — same information, digital form.
+- QuickBooks stays. Sam's team continues entering sale and purchase records there.
+- Waybills are raised in InboxIQ instead of on paper — staff print a 3-page PDF (Customer / Driver / Warehouse copies, labeled in bold text, no color printing needed).
 - Bin cards are digital instead of physical — same concept, real-time and accessible from anywhere.
 - Buyers receive notifications through SMS or email — no login required.
 - Staff operate from a simple mobile form on their phones.

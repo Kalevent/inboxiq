@@ -9,14 +9,14 @@
 
 ## 1. Business Overview
 
-Sam's company buys goods from suppliers and sells to buyers. The warehouse is the physical hub. All current processes are paper-based (bin cards, waybills) with QuickBooks as the only digital system, syncing via OneDrive twice a day.
+Sam's company buys goods from suppliers and sells to buyers. The warehouse is the physical hub. All three core documents — the invoice, the waybill, and the bin card — are physical paper. The invoice is a handwritten or pre-printed paper document given to the buyer; the same sale is also entered separately into QuickBooks (Desktop, via Microsoft OneDrive) as a sale record. QuickBooks is the only digital element, syncing to the cloud twice a day. The waybill is issued from a pre-printed carbonless book. The bin card is a physical card on the shelf, updated by hand after each movement.
 
 ### Core Entities
 
 | Entity | Description |
 |---|---|
 | **Waybill** | Document listing goods in a movement (inbound from supplier, outbound to buyer) |
-| **Invoice** | Financial document. Currently raised in QuickBooks. |
+| **Invoice** | Physical paper document given to the buyer. The same sale is also entered separately into QuickBooks as a sale record. |
 | **Bin Card** | Physical card per SKU tracking running stock balance in the warehouse |
 | **Stock Item (SKU)** | A product tracked in inventory |
 | **Supplier** | Entity delivering goods to the warehouse |
@@ -39,14 +39,15 @@ Supplier arrives with truck
   → Goods discharged from truck into warehouse
   → Manager physically checks goods against waybill (qty, SKU)
   → Bin card updated: stock balance increases
-  → Invoice entered into QuickBooks as a purchase
+  → Purchase entered into QuickBooks as a bill/purchase record
   → OneDrive syncs to cloud (up to twice a day)
 ```
 
 ### Flow B — Goods Outbound (Warehouse → Buyer)
 
 ```
-Sam's team raises invoice in QuickBooks (sale recorded)
+Sam's team writes a physical paper invoice → buyer receives invoice + waybill
+  → Sale entered separately into QuickBooks as a sale record
   → Waybill generated for buyer
   → Buyer receives invoice + waybill
   → Buyer brings waybill to warehouse to collect
@@ -68,7 +69,145 @@ Invoice raised in QuickBooks → goods marked as sold
 
 ---
 
-## 3. The Audit Process
+## 3a. Stock States & Bin Card Trigger Rules
+
+This section is the source of truth for how stock moves between states and what triggers each bin card entry. Implement nothing that contradicts these rules.
+
+---
+
+### The three documents and what they own
+
+| Document | System | Owns | Does NOT own |
+|---|---|---|---|
+| Invoice | QuickBooks | Financial record — price, tax, payment terms | Stock levels, goods movement |
+| Waybill | InboxIQ | Logistics record — goods moving, direction, parties | Financial amounts |
+| Bin Card | InboxIQ | Running stock ledger per SKU | Financial or logistics decisions |
+
+**The invoice never touches the bin card directly. The waybill does.**
+
+---
+
+### Stock states per SKU
+
+At any point in time, every unit of a SKU is in exactly one of three states:
+
+| State | Meaning | Visible to staff as |
+|---|---|---|
+| **Available** | In warehouse, uncommitted | Can be sold |
+| **Reserved** | Sold, waybill created, buyer not yet collected | Committed — cannot be sold again |
+| **Dispatched** | Physically left the warehouse | Gone — not in stock |
+
+```
+Available stock = Bin card balance − Reserved quantity
+```
+
+This is what Sam sees on his phone. Not the raw bin card balance — the available balance.
+
+---
+
+### Bin card trigger rules — Outbound (sale to buyer)
+
+| Action | Who does it | Bin card entry | Stock state change |
+|---|---|---|---|
+| Outbound waybill created | Staff (InboxIQ) | No entry yet | Available → Reserved |
+| Waybill marked Dispatched | Warehouse staff (one tap) | −quantity | Reserved → Dispatched |
+| Waybill cancelled | Staff or Sam | No entry | Reserved → Available (released) |
+
+**Rule**: A waybill being created does not reduce the bin card balance. It reserves the quantity. The bin card balance only decreases when the waybill is marked Dispatched.
+
+This means:
+- The bin card balance always reflects physical stock in the warehouse (including reserved goods still on the shelf)
+- The available balance is what staff and Sam act on
+- An auditor can verify: bin card balance − reservations = available at any point in time
+
+---
+
+### Bin card trigger rules — Inbound (supplier delivery)
+
+| Action | Who does it | Bin card entry | Stock state change |
+|---|---|---|---|
+| Inbound waybill created | Warehouse manager (InboxIQ) | No entry yet | — |
+| Goods checked against waybill | Warehouse manager | No entry yet | — |
+| Waybill marked Received | Warehouse manager (one tap) | +quantity received | Stock increases |
+| Discrepancy recorded | Warehouse manager | +quantity actually received | Notes show expected vs received |
+
+**Rule**: The bin card increases only when the waybill is marked Received — not when the truck arrives, not when the waybill is created.
+
+---
+
+### Bin card trigger rules — Adjustments
+
+| Action | Who does it | Bin card entry | Notes |
+|---|---|---|---|
+| Stock count conducted | Warehouse manager / Sam | Adjustment entry (±variance) | Linked to StockCount record |
+| Manual adjustment | Sam only | Adjustment entry with reason | Auditor can see all manual adjustments |
+
+Manual adjustments are always visible to the auditor. There is no way to adjust stock silently.
+
+---
+
+### The full outbound sequence with document trail
+
+```
+1. Sale agreed verbally or in writing
+         ↓
+2. Invoice raised in QuickBooks (financial record created)
+   — Bin card: no change
+   — Stock state: no change
+         ↓
+3. Staff creates outbound waybill in InboxIQ
+   — Enters buyer, SKU(s), quantities, QB invoice reference
+   — Bin card: quantity moves to Reserved
+   — Available stock decreases immediately
+   — PDF generated: 3 copies printed (Customer / Driver / Warehouse)
+         ↓
+4. Driver collects goods from warehouse
+   — Paper copies handed to driver as before
+   — Staff taps "Mark as Dispatched"
+   — Bin card entry: −quantity (Reserved → Dispatched)
+   — Buyer notified via SMS / email
+         ↓
+5. QuickBooks sync (Phase 2+)
+   — InboxIQ reads QB invoice export from OneDrive
+   — Matches waybill invoice_ref to QB invoice number
+   — Flags any waybill with no matching QB invoice (audit alert)
+```
+
+---
+
+### The full inbound sequence with document trail
+
+```
+1. Supplier arrives with goods + their own paper waybill + invoice
+         ↓
+2. Warehouse manager creates inbound waybill in InboxIQ
+   — Enters supplier, SKU(s), quantities expected, supplier waybill reference
+   — Bin card: no change yet
+         ↓
+3. Manager physically checks goods against supplier waybill
+   — Counts goods, checks SKU and condition
+         ↓
+4. Manager taps "Mark as Received" (with actual quantity if different)
+   — Bin card entry: +quantity received
+   — If discrepancy: notes recorded, Sam alerted
+         ↓
+5. Sam enters supplier invoice into QuickBooks as a purchase
+   — InboxIQ inbound waybill linked to QB purchase reference
+```
+
+---
+
+### Edge cases to handle explicitly
+
+| Scenario | Correct behaviour |
+|---|---|
+| Buyer cancels after waybill created | Cancel waybill → reservation released → available stock restored |
+| Partial delivery (supplier short-ships) | Mark received with actual qty → discrepancy note → Sam alerted |
+| Goods returned by buyer | New inbound waybill (direction: return) → bin card increases |
+| Stock count finds variance | Adjustment entry linked to StockCount — never edit existing entries |
+| Staff creates waybill for wrong SKU | Cancel waybill → create new one — no direct editing of dispatched entries |
+
+---
 
 - Auditor visits periodically (not daily)
 - Traces each waybill to its corresponding invoice in QuickBooks
@@ -84,12 +223,146 @@ Invoice raised in QuickBooks → goods marked as sold
 A **warehouse management module** inside InboxIQ that digitises Sam's workflow end to end:
 
 - Digital bin card (replaces physical card)
-- Digital waybill creation and tracking
+- Digital waybill creation with printable PDF output (replaces pre-printed carbonless books)
 - Stock reservation for sold-but-uncollected goods
 - Audit trail — every movement logged with timestamp and user
 - QuickBooks sync awareness (flag unsynced transactions)
 - Auditor dashboard and monthly report generation
 - Multi-channel notifications (buyer, staff, auditor, Sam)
+
+---
+
+## 4a. Printable Waybill — The 3-Copy Paper System
+
+Sam uses a 3-part carbonless waybill book. This is a **trust mechanism**, not a paper habit — each party holds physical proof of a transaction. Regulatory and operational norms in Nigeria distribution make this non-negotiable. Do not try to replace it with digital-only delivery.
+
+**InboxIQ's role**: replace the pre-printed carbonless book with a PDF that staff print. The paper flow is identical. The difference is the digital record is created at the moment of print.
+
+### How the 3 copies work
+
+| Copy | Goes to | Purpose |
+|---|---|---|
+| 1 | Customer / buyer | Their proof of goods received |
+| 2 | Driver | Proof they delivered the goods |
+| 3 | Warehouse manager | Triggers bin card update; retained for auditor |
+
+Inbound (supplier waybill) is the mirror: supplier keeps original, driver returns a signed copy to the supplier as proof of delivery, warehouse manager keeps one for the inbound record.
+
+### Copy identification — text labels, not colour
+
+Colour printing is expensive and unreliable in Nigeria. Do not design around colour-coded copies.
+
+InboxIQ generates a **3-page PDF** from a single waybill record. Each page is identical in content but has a large bold header identifying it:
+
+```
+Page 1: ── CUSTOMER COPY ──
+Page 2: ── COLLECTOR'S COPY ──   (buyer's driver or representative who physically collects)
+Page 3: ── WAREHOUSE COPY ──
+```
+
+Staff print all 3 pages in one black-and-white print job. No handwriting, no colour required. The reference number on all 3 copies ties them together.
+
+### What the PDF must contain
+
+- Sam's company name and logo (letterhead)
+- Waybill number (large, top of page) + QR code linking to the digital waybill record
+- Date, buyer/supplier name, collector name
+- Line items: SKU, description, quantity, unit
+- Signature lines: Collector signs | Warehouse manager signs
+- Copy label at top: `── CUSTOMER COPY ──` / `── COLLECTOR'S COPY ──` / `── WAREHOUSE COPY ──`
+
+### What InboxIQ does NOT track after print
+
+Once the waybill is printed and handed to the collector, the paper flow is Sam's concern. InboxIQ does not model where each copy is physically filed or who passes their copy on.
+
+InboxIQ asks one question later: **did the goods actually leave?**
+That is a two-step action: signature capture → "Mark as Dispatched".
+
+### Printable waybill workflow
+
+```
+Staff raises waybill in InboxIQ (phone or desktop)
+  → Digital record created, bin card marked reserved
+  → Waybill token generated + SMS sent to buyer with secure link
+  → Staff taps "Print Waybill" → 3-page PDF generated (if power/printer available)
+  → Staff prints all 3 pages (black and white)
+  → Buyer takes 2 copies; warehouse keeps 1
+  → [Buyer brings copies to warehouse when collecting — InboxIQ not involved]
+  → Collector arrives — staff verify paper copy OR digital link on collector's phone
+  → Staff tap "Collect Signature" → collector signs on screen
+  → Staff tap "Mark as Dispatched"
+  → Bin card updates: reserved → dispatched
+  → Buyer notified automatically via their preferred channel
+```
+
+---
+
+## 4b. Digital Waybill — No Printer / No Power Fallback
+
+Power cuts are common in Nigeria. If the printer is unavailable, the dispatch flow must not stop.
+
+### How it works
+
+When the waybill is created (bin card marked reserved), InboxIQ immediately generates a **waybill token** — a cryptographically signed, time-limited URL — and sends it to the buyer via SMS:
+
+```
+"Hello Emeka, your goods are ready for collection at Sam's Warehouse.
+Show this link when you arrive: https://app.inboxiq.com/w/WB-0042?token=<t>&exp=<ts>
+This link expires in 7 days. Ref: WB-0042"
+```
+
+The collector shows the link on their phone screen. Warehouse staff tap the transaction on their own phone to verify it matches.
+
+### Token security design
+
+| Property | Implementation |
+|---|---|
+| Signed | HMAC-SHA256(transaction_id + account_id + expiry, server_secret) — any URL modification breaks the signature |
+| Time-limited | Expires 7 days after creation (configurable per account) — old links become invalid |
+| Minimal data exposure | Link page shows goods and quantities only — no prices, no other customers, no stock levels |
+| Does not release goods | Scanning the link shows information only. Goods are released only when warehouse staff tap "Mark as Dispatched" on their authenticated session |
+| Audit log | Every access to the link is logged: timestamp, IP, user agent — visible to Sam and auditor |
+
+Token verification endpoint (unauthenticated, token-protected):
+```
+GET /w/<waybill_ref>?token=<t>&exp=<ts>
+  → Recompute HMAC, verify signature and expiry
+  → Valid: render mobile waybill page (goods + qty only)
+  → Invalid or expired: "This waybill link has expired. Contact the seller."
+```
+
+### Collector signature capture
+
+When the collector is present at the warehouse, staff tap **"Collect Signature"** — the phone screen becomes a signature pad. The collector draws their signature on the screen.
+
+**OTP fallback** (if collector cannot sign): InboxIQ sends a one-time PIN to the buyer's registered phone. The collector reads it out. Staff enter it. The OTP match is stored as the collection acknowledgment.
+
+The signature (PNG) or OTP record is permanently attached to the waybill. The auditor can view or print it alongside the bin card entry.
+
+### Waybill model additions
+
+```
+Waybill:
+  waybill_token           string    (HMAC-signed token, hashed for storage)
+  waybill_token_expires   datetime  (default: 7 days from creation)
+  waybill_sms_sent_at     datetime  (nullable)
+  collector_signature_url string    (S3 URL via files.kalevent.com — nullable)
+  collector_signed_at     datetime  (nullable)
+  dispatch_otp            string    (hashed — cleared after use)
+  dispatch_otp_expires    datetime  (nullable)
+  dispatched_by_user_id   FK → users (nullable)
+```
+
+The `collector_signature_url` uses the existing upload infrastructure (`src/uploads.py`) — stored in S3, served from `files.kalevent.com` with `Content-Disposition: attachment`.
+
+### New API endpoint
+
+```
+GET  /w/<waybill_ref>                   public, token-verified — digital waybill view
+POST /api/v1/warehouse/waybills/<id>/signature   upload collector signature PNG
+POST /api/v1/warehouse/waybills/<id>/otp         generate OTP (sends SMS to buyer)
+POST /api/v1/warehouse/waybills/<id>/otp/verify  verify OTP, record acknowledgment
+```
 
 ---
 
@@ -250,6 +523,7 @@ GET    /api/v1/warehouse/waybills           list (filter by direction, status)
 POST   /api/v1/warehouse/waybills           create waybill
 GET    /api/v1/warehouse/waybills/<id>      get waybill + line items
 PATCH  /api/v1/warehouse/waybills/<id>      update status (received / dispatched)
+GET    /api/v1/warehouse/waybills/<id>/pdf  generate 3-page printable PDF (Customer / Driver / Warehouse copies)
 
 # Reservations (sold but not collected)
 GET    /api/v1/warehouse/reservations       list active reservations
@@ -404,9 +678,15 @@ QuickbooksOnlineConnection:
 - [ ] UI: stock list, waybill create/view, bin card history
 - [ ] Role-based access: owner, warehouse manager, warehouse staff
 
-### Phase 2 — Reservations & Audit Trail
+### Phase 2 — Reservations, Digital Waybill & Audit Trail
+
 - [ ] Model: StockReservation
 - [ ] "Sold but not collected" state on outbound waybills
+- [ ] Waybill token generation (HMAC-signed, time-limited) on waybill creation
+- [ ] SMS delivery of digital waybill link to buyer (Termii)
+- [ ] Public token-verified waybill view endpoint (`GET /w/<ref>?token=...`)
+- [ ] Collector signature capture (signature pad on phone → S3 upload via `src/uploads.py`)
+- [ ] OTP fallback: generate + verify dispatch OTP via SMS
 - [ ] Audit trail view: waybill → invoice_ref linkage
 - [ ] Stock count flow: conduct count, record variance
 
