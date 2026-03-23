@@ -49,6 +49,7 @@ spec:
                   body = urllib.request.urlopen('http://localhost:9808/metrics', timeout=5).read().decode()
                   sys.exit(0 if 'celery_worker_up' in body else 1)
             periodSeconds: 30
+            timeoutSeconds: 10
             failureThreshold: 10  # 10 × 30s = 5 min window on startup
           livenessProbe:
             # Once started, restart if celery_worker_up disappears (stale event stream).
@@ -61,6 +62,7 @@ spec:
                   body = urllib.request.urlopen('http://localhost:9808/metrics', timeout=5).read().decode()
                   sys.exit(0 if 'celery_worker_up' in body else 1)
             periodSeconds: 60
+            timeoutSeconds: 10
             failureThreshold: 3  # 3 × 60s = 3 min before restart
 ---
 apiVersion: v1

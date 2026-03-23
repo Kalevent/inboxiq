@@ -39,9 +39,9 @@ metadata:
     app: phoenix
     component: observability
 spec:
-  replicas: 1  # Single instance (stateful, backed by PVC)
+  replicas: 1
   strategy:
-    type: Recreate  # Use Recreate for stateful apps with PVC
+    type: RollingUpdate
   selector:
     matchLabels:
       app: phoenix
@@ -73,17 +73,14 @@ spec:
             - name: PHOENIX_GRPC_PORT
               value: "4317"
 
-            # Database configuration
-            # Option 1: SQLite (default, simplest for getting started)
-            - name: PHOENIX_WORKING_DIR
-              value: /phoenix/data
-
-            # Option 2: PostgreSQL (recommended for production)
-            # Uncomment these and comment out PHOENIX_WORKING_DIR above
-            # - name: PHOENIX_SQL_DATABASE_URL
-            #   value: postgresql://phoenix:password@postgres:5432/phoenix
-            # - name: PHOENIX_SQL_DATABASE_SCHEMA
-            #   value: public
+            # Database configuration — PostgreSQL (existing RDS, phoenix schema)
+            - name: PHOENIX_SQL_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: inboxiq-env
+                  key: PHOENIX_DATABASE_URL
+            - name: PHOENIX_SQL_DATABASE_SCHEMA
+              value: phoenix
 
             # Authentication — restrict Phoenix UI to authorised users only
             - name: PHOENIX_ENABLE_AUTH
@@ -108,25 +105,31 @@ spec:
             # - name: PHOENIX_ENABLE_CORS
             #   value: "true"
 
-          volumeMounts:
-            - name: phoenix-data
-              mountPath: /phoenix/data
-
           resources:
             requests:
-              memory: "256Mi"  # Reduced for limited cluster
+              memory: "512Mi"
               cpu: "100m"
             limits:
-              memory: "512Mi"  # Reduced for limited cluster
+              memory: "1Gi"
               cpu: "250m"
 
-          # Liveness probe - restart if Phoenix is unhealthy
+          # startupProbe gives Phoenix up to 3 minutes to connect to PostgreSQL and run migrations
+          # before liveness takes over.
+          startupProbe:
+            httpGet:
+              path: /
+              port: 6006
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 18  # 18 × 10s = 3 min max startup window
+
+          # Liveness probe - restart if Phoenix becomes unhealthy after startup
           livenessProbe:
             httpGet:
               path: /
               port: 6006
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
 
@@ -135,15 +138,9 @@ spec:
             httpGet:
               path: /
               port: 6006
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 2
-
-      volumes:
-        - name: phoenix-data
-          persistentVolumeClaim:
-            claimName: phoenix-pvc
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
 
 ---
 # StorageClass using the EBS CSI driver (replaces deprecated kubernetes.io/aws-ebs)

@@ -35,7 +35,7 @@ spec:
             - name: OTEL_TRACES_SAMPLER
               value: "parentbased_traceidratio"
             - name: OTEL_TRACES_SAMPLER_ARG
-              value: "1.0"
+              value: "0.1"
             - name: ENVIRONMENT
               value: "production"
             - name: K8S_CLUSTER_NAME
@@ -55,7 +55,7 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 256Mi
+              memory: 512Mi
             limits:
               cpu: 200m
-              memory: 512Mi
+              memory: 1Gi

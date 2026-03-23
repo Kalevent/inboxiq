@@ -229,7 +229,7 @@ This is a courtesy notification only. It does not contain your pricing, your oth
 
 You currently use QuickBooks Desktop to keep your accounts. You do not need to give that up.
 
-On a schedule you choose — daily, weekly, or monthly — InboxIQ generates a summary file of all your transactions and places it automatically into a folder in your OneDrive. Your accountant opens that file, reviews it, and imports the records into QuickBooks. They continue working in QuickBooks exactly as they do today.
+On a schedule you choose — daily, weekly, or monthly — InboxIQ generates a structured CSV file of all your transactions and places it automatically into a folder in your OneDrive. Your accountant opens that file, reviews it, and imports the records into QuickBooks. They continue working in QuickBooks exactly as they do today.
 
 **What this means for you:**
 
