@@ -267,8 +267,10 @@ def generate_blog_post(
         content_html = sanitize_html(raw_html)
 
         # Calculate read time (average reading speed: 200 words/minute)
+        # DSPy OutputField returns strings — cast defensively
         import math
-        read_time = math.ceil(write_result.word_count / 200) if write_result.word_count else 1
+        _word_count = int(float(str(write_result.word_count).strip())) if write_result.word_count else 0
+        read_time = math.ceil(_word_count / 200) if _word_count else 1
 
         # Ensure slug is unique (avoid collision if same topic re-generated)
         base_slug = seo_result.slug
@@ -294,11 +296,11 @@ def generate_blog_post(
             excerpt=seo_result.meta_description,  # Use meta description as excerpt
             hero_image_url=hero_image_url,
             hero_image_alt=hero_image_alt,
-            word_count=write_result.word_count,
+            word_count=_word_count,
             read_time_minutes=read_time,
             generated_content_id=generated_content.id,
             auto_generated=True,
-            dspy_quality_score=float(seo_result.seo_score) / 100.0,
+            dspy_quality_score=float(str(seo_result.seo_score).strip().rstrip('%')) / 100.0,
             published_at=None,  # set by distribution pipeline on actual publish
             created_at=datetime.now(),
             updated_at=datetime.now()
@@ -603,8 +605,10 @@ def generate_blog_from_pitched_topic(topic_id: str):
         content_html = sanitize_html(raw_html)
 
         # Calculate read time
+        # DSPy OutputField returns strings — cast defensively
         import math
-        read_time = math.ceil(write_result.word_count / 200) if write_result.word_count else 1
+        _word_count = int(float(str(write_result.word_count).strip())) if write_result.word_count else 0
+        read_time = math.ceil(_word_count / 200) if _word_count else 1
 
         # Create blog post entry
         blog_post = BlogPost(
@@ -620,11 +624,11 @@ def generate_blog_from_pitched_topic(topic_id: str):
             excerpt=seo_result.meta_description,
             hero_image_url=hero_image_url,
             hero_image_alt=hero_image_alt,
-            word_count=write_result.word_count,
+            word_count=_word_count,
             read_time_minutes=read_time,
             generated_content_id=generated_content.id,
             auto_generated=True,
-            dspy_quality_score=float(seo_result.seo_score) / 100.0,
+            dspy_quality_score=float(str(seo_result.seo_score).strip().rstrip('%')) / 100.0,
             published_at=None,
             created_at=datetime.now(),
             updated_at=datetime.now()
