@@ -8,34 +8,72 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 </head>
 <body class="bg-slate-950 text-slate-50 antialiased">
-  <main class="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-6">
-    <div class="p-3 bg-yellow-500/10 border border-yellow-500/40 text-yellow-100 rounded">
-      <strong>Draft preview:</strong> visible to authenticated users only. Status: {{ post.status|default("draft") }}.
+  <div class="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
+
+    <!-- Draft banner -->
+    <div class="flex items-center justify-between gap-4 p-3 bg-yellow-500/10 border border-yellow-500/40 text-yellow-100 rounded-lg">
+      <span><strong>Draft preview</strong> — visible to authenticated users only. Status: <strong>{{ post.status|default("draft") }}</strong></span>
+      {% if post.status == "ready" %}
+      <button
+        id="publishBtn"
+        type="button"
+        data-post-id="{{ post.id }}"
+        class="shrink-0 inline-flex items-center gap-2 rounded-lg bg-green-600 hover:bg-green-500 px-4 py-2 text-sm font-semibold text-white"
+      >
+        Publish now
+      </button>
+      {% endif %}
     </div>
 
-    <header class="space-y-2">
-      <p class="text-xs uppercase tracking-wide text-indigo-200">InboxIQ Blog · Draft</p>
-      <h1 class="text-3xl sm:text-4xl font-semibold text-slate-50 leading-tight">{{ post.title }}</h1>
-      <p class="text-sm text-slate-400">Audience: {{ post.audience or "N/A" }}</p>
+    <!-- Post header -->
+    <header class="space-y-3">
+      <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-widest text-indigo-300/80">
+        <span>InboxIQ Blog</span>
+        {% if post.funnel_stage %}<span class="text-slate-400">· {{ post.funnel_stage|upper }}</span>{% endif %}
+      </div>
+      <h1 class="blog-heading text-white tracking-tight text-3xl sm:text-4xl font-semibold leading-tight">{{ post.title }}</h1>
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        {% if post.primary_keyword %}<span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-indigo-100">Keyword: {{ post.primary_keyword }}</span>{% endif %}
+        {% if post.secondary_keywords %}<span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-900/70 border border-slate-800 text-slate-200">Also: {{ post.secondary_keywords|join(', ') }}</span>{% endif %}
+        {% if post.read_time_minutes %}<span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-slate-100">~{{ post.read_time_minutes }} min read</span>{% endif %}
+        {% if post.word_count %}<span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-slate-100">{{ post.word_count }} words</span>{% endif %}
+        {% if post.dspy_quality_score %}<span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-emerald-300">SEO {{ (post.dspy_quality_score * 100)|int }}%</span>{% endif %}
+      </div>
     </header>
 
-    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-lg shadow-slate-900/30 space-y-4">
-      {% if rendered_html %}
-        <article class="prose prose-invert max-w-none">
-          {{ rendered_html|safe }}
-        </article>
-      {% elif markdown %}
-        {% set fallback_html = markdown|replace('\r\n', '\n')|replace('\n\n', '</p><p>')|replace('\n', '<br>') %}
-        <article class="prose prose-invert max-w-none">
-          <p>{{ fallback_html|safe }}</p>
-        </article>
+    <!-- Blog card (mirrors published layout) -->
+    <div class="blog-card rounded-3xl overflow-hidden border border-slate-800 bg-slate-950/70 shadow-2xl shadow-indigo-500/10">
+      {% set hero_src = post.hero_image_url %}
+      {% if hero_src %}
+        <div class="blog-hero relative bg-slate-900">
+          <img src="{{ hero_src }}" alt="{{ post.hero_image_alt or post.title }}" class="absolute inset-0 w-full h-full object-cover z-0">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/30 to-transparent z-10"></div>
+        </div>
       {% else %}
-        <article class="prose prose-invert max-w-none">
-          <p class="text-slate-300">No draft body available.</p>
-        </article>
+        <div class="blog-hero bg-gradient-to-r from-indigo-600/40 via-fuchsia-500/30 to-slate-900 flex items-center justify-center">
+          <span class="text-slate-500 text-sm">No hero image generated yet</span>
+        </div>
       {% endif %}
-    </section>
 
+      <div class="hero-spacer"></div>
+
+      <div class="blog-body-wrap px-5 sm:px-8 pt-8 pb-12">
+        {% if rendered_html %}
+          <div class="blog-body prose prose-invert max-w-3xl prose-headings:font-semibold prose-headings:text-white prose-a:text-indigo-200 prose-li:marker:text-indigo-300">
+            {{ rendered_html|safe }}
+          </div>
+        {% elif markdown %}
+          {% set fallback_html = markdown|replace('\r\n', '\n')|replace('\n\n', '</p><p>')|replace('\n', '<br>') %}
+          <div class="blog-body prose prose-invert max-w-3xl">
+            <p>{{ fallback_html|safe }}</p>
+          </div>
+        {% else %}
+          <p class="text-slate-400">No body content available.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Reviewer toolbox -->
     <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-lg shadow-slate-900/20 space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -97,8 +135,37 @@
         <p id="fbStatus" class="text-xs text-slate-400" aria-live="polite"></p>
       </div>
     </section>
-  </main>
+  </div>
 
   <script src="{{ url_for('static', filename='js/blog_draft_preview.js') }}"></script>
+  <script>
+    // Publish button
+    const publishBtn = document.getElementById('publishBtn');
+    if (publishBtn) {
+      publishBtn.addEventListener('click', async () => {
+        const postId = publishBtn.dataset.postId;
+        publishBtn.disabled = true;
+        publishBtn.textContent = 'Publishing…';
+        try {
+          const token = document.cookie.match(/access_token_cookie=([^;]+)/)?.[1] || '';
+          const resp = await fetch(`/publishing/blog/publish/${postId}`, {
+            method: 'POST',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            window.location.href = `/blog/${data.slug}`;
+          } else {
+            const err = await resp.json();
+            publishBtn.textContent = err.error || 'Publish failed';
+            publishBtn.disabled = false;
+          }
+        } catch (e) {
+          publishBtn.textContent = 'Error — retry';
+          publishBtn.disabled = false;
+        }
+      });
+    }
+  </script>
 </body>
 </html>

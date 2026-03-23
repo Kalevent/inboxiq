@@ -259,9 +259,13 @@ def generate_blog_post(
 
         # Convert markdown to HTML and sanitize against XSS
         from src.sanitize import sanitize_html
+        import re as _re
+
+        # Strip any "Meta Description: ..." line DSPy sometimes prepends
+        _optimized_post = _re.sub(r'^Meta Description:.*\n+', '', seo_result.optimized_post.strip(), flags=_re.IGNORECASE)
 
         md_converter = markdown.Markdown(extensions=['extra', 'codehilite', 'toc'])
-        raw_html = md_converter.convert(seo_result.optimized_post)
+        raw_html = md_converter.convert(_optimized_post)
 
         # Sanitize HTML to prevent XSS attacks (defense-in-depth)
         content_html = sanitize_html(raw_html)
@@ -291,7 +295,7 @@ def generate_blog_post(
             primary_keyword=selected_topic["target_keyword"],
             secondary_keywords=selected_topic.get("secondary_keywords", []),
             content_html=content_html,
-            markdown=seo_result.optimized_post,
+            markdown=_optimized_post,
             meta_description=seo_result.meta_description,
             excerpt=seo_result.meta_description,  # Use meta description as excerpt
             hero_image_url=hero_image_url,
@@ -599,9 +603,13 @@ def generate_blog_from_pitched_topic(topic_id: str):
 
         # Convert markdown to HTML and sanitize against XSS
         from src.sanitize import sanitize_html
+        import re as _re
+
+        # Strip any "Meta Description: ..." line DSPy sometimes prepends
+        _optimized_post = _re.sub(r'^Meta Description:.*\n+', '', seo_result.optimized_post.strip(), flags=_re.IGNORECASE)
 
         md_converter = markdown.Markdown(extensions=['extra', 'codehilite', 'toc'])
-        raw_html = md_converter.convert(seo_result.optimized_post)
+        raw_html = md_converter.convert(_optimized_post)
         content_html = sanitize_html(raw_html)
 
         # Calculate read time
@@ -619,7 +627,7 @@ def generate_blog_from_pitched_topic(topic_id: str):
             primary_keyword=selected_topic["target_keyword"],
             secondary_keywords=selected_topic.get("secondary_keywords", []),
             content_html=content_html,
-            markdown=seo_result.optimized_post,
+            markdown=_optimized_post,
             meta_description=seo_result.meta_description,
             excerpt=seo_result.meta_description,
             hero_image_url=hero_image_url,
