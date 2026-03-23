@@ -393,19 +393,38 @@ updated_at       datetime
 ```
 
 ### 6.2 BinCard (replaces physical card)
+
+**Immutability rules — these are non-negotiable:**
+
+- **No UPDATE ever on any BinCard row.** Once written, a row is permanent.
+- **No DELETE ever on any BinCard row.** Cancellations create a reversal entry.
+- **No `updated_at` column** — its presence would imply rows can be changed.
+- `balance_after` is stored for read speed but always verifiable by replaying the full ordered history. The auditor can confirm it at any time.
+- Any manual correction by Sam is a new adjustment entry — visible to the auditor — never a silent edit.
+
+These rules make the BinCard equivalent to a paper ledger written in ink: the history is permanent, and every change has a date, a name, and a reason.
+
 ```
 id               UUID
 account_id       FK → accounts
 stock_item_id    FK → StockItem
-movement_type    enum: inbound | outbound | adjustment | stock_count
-reference_type   enum: supplier_waybill | buyer_waybill | manual | stock_count
-reference_id     UUID (FK to Waybill or StockCount)
+movement_type    enum: inbound | outbound | adjustment | reversal | stock_count
+reference_type   enum: supplier_waybill | buyer_waybill | manual | stock_count | reversal
+reference_id     UUID (FK to Waybill or StockCount — nullable for manual)
+reversal_of      UUID (FK → BinCard.id — set only when movement_type = reversal)
 quantity         integer (positive = in, negative = out)
-balance_after    integer (running total)
-notes            text
+balance_after    integer (running total — recomputable, stored for speed)
+notes            text   (required for manual and reversal entries)
 created_by       FK → users
 created_at       datetime
 ```
+
+**Enforcement at the application layer:**
+
+- The API exposes no PATCH or DELETE endpoint for BinCard
+- BinCard rows are written only by internal service functions, never directly from user input
+- A `reversal` entry references the original entry via `reversal_of` — the auditor can see exactly what was corrected and why
+- Balance verification endpoint: `GET /api/v1/warehouse/bin-card/<sku_id>/verify` — replays the full entry history and flags any discrepancy between the stored and computed `balance_after`
 
 ### 6.3 Waybill
 ```
