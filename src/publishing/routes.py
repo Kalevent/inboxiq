@@ -324,6 +324,31 @@ def blog_delete(post_id: str):
     return redirect(url_for("publishing.blog_list_view"))
 
 
+@bp.post("/blog/<post_id>/feedback")
+@jwt_required(optional=True)
+def blog_feedback(post_id: str):
+    """Save reviewer feedback (CTA, notes, tags, etc.) to the draft's brief_json."""
+    post = BlogPost.query.filter_by(id=post_id).first()
+    if not post:
+        return jsonify({"error": "Draft not found"}), 404
+    if post.status == "published":
+        return jsonify({"error": "Cannot edit a published post"}), 400
+
+    payload = _safe_json()
+    existing = dict(post.brief_json or {})
+    for key in ("cta", "notes", "subtitle", "tags", "title"):
+        if key in payload:
+            existing[key] = payload[key]
+    post.brief_json = existing
+    try:
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to save feedback: {exc}"}), 500
+
+    return jsonify({"saved": True})
+
+
 @bp.post("/blog/<post_id>/regenerate")
 @jwt_required(optional=True)
 def blog_regenerate(post_id: str):
@@ -345,6 +370,16 @@ def blog_regenerate(post_id: str):
         return jsonify({"error": "No pitched topic linked — cannot regenerate automatically."}), 400
 
     try:
+        # Carry saved reviewer feedback into the topic's pitch_notes for the next generation
+        saved_feedback = post.brief_json or {}
+        if saved_feedback.get("notes") or saved_feedback.get("cta"):
+            notes_parts = []
+            if saved_feedback.get("notes"):
+                notes_parts.append(saved_feedback["notes"])
+            if saved_feedback.get("cta"):
+                notes_parts.append(f"CTA: {saved_feedback['cta']}")
+            topic.pitch_notes = "\n".join(notes_parts)
+
         # Reset topic so the task can produce a new draft
         topic.status = "approved"
         topic.generated_content_id = None

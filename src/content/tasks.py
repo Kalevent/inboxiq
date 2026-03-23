@@ -498,9 +498,12 @@ def generate_blog_from_pitched_topic(topic_id: str):
 
     try:
         # Convert pitched topic into the format expected by content generation
+        description = pitched_topic.description or ""
+        if pitched_topic.pitch_notes:
+            description = f"{description}\n\nReviewer notes: {pitched_topic.pitch_notes}".strip()
         selected_topic = {
             "title": pitched_topic.title,
-            "description": pitched_topic.description or "",
+            "description": description,
             "target_keyword": pitched_topic.target_keyword or pitched_topic.title.lower(),
             "secondary_keywords": pitched_topic.secondary_keywords or [],
             "target_stage": pitched_topic.funnel_stage or "discovery",
