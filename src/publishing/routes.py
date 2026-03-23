@@ -368,6 +368,8 @@ def blog_draft_preview(post_id: str):
     if not post:
         post = BlogPost.query.filter_by(slug=post_id).first()
     if not post:
+        post = BlogPost.query.filter_by(generated_content_id=post_id).first()
+    if not post:
         return jsonify({"error": "Draft not found"}), 404
     # If it is already published, bounce to the public page so Preview still works for slugs.
     if post.status == "published":
