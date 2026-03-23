@@ -53,7 +53,6 @@ mcp = FastMCP("enrichment-v2-mcp")
 
 # External API keys (optional)
 CLEARBIT_API_KEY = os.getenv("CLEARBIT_API_KEY")
-HUNTER_API_KEY = os.getenv("HUNTER_API_KEY")
 
 
 def get_conn():
@@ -263,29 +262,7 @@ def verify_contact(
         result["email_status"] = "invalid"
         return result
 
-    # Try Hunter.io verification if available
-    if HUNTER_API_KEY:
-        try:
-            response = requests.get(
-                f"https://api.hunter.io/v2/email-verifier",
-                params={"email": email, "api_key": HUNTER_API_KEY},
-                timeout=10
-            )
-
-            if response.status_code == 200:
-                data = response.json().get("data", {})
-                result.update({
-                    "verification_method": "hunter.io",
-                    "email_valid": data.get("result") == "deliverable",
-                    "email_status": data.get("result"),
-                    "score": data.get("score"),
-                    "mx_records": data.get("mx_records", False),
-                    "smtp_check": data.get("smtp_check", False)
-                })
-        except Exception as e:
-            result["verification_error"] = str(e)
-
-    # Fallback: basic MX record check
+    # MX record check (free, no API credits)
     if result["email_status"] == "unknown":
         domain = email.split("@")[1]
         try:

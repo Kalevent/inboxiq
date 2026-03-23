@@ -3,9 +3,9 @@ Celery tasks for automated email outreach campaigns.
 """
 from celery import shared_task
 from src.outreach.email import process_campaign_outreach, process_followup_emails
-from src.models.campaigns import EmailCampaign
+from src.models.campaigns import EmailCampaign, EmailOutreach
 from src.extensions import db
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 @shared_task(name="outreach.send_campaign_emails", bind=True, max_retries=3, queue="leads")
@@ -75,3 +75,59 @@ def track_email_event(outreach_id: str, event_type: str, timestamp: str = None):
     except Exception as e:
         db.session.rollback()
         return {"error": str(e)}
+
+
+@shared_task(name="outreach.scan_for_replies", queue="leads")
+def scan_for_replies():
+    """
+    Detect inbound replies by matching Ticket.from_email against EmailOutreach.recipient_email
+    for the same account. Marks matched outreaches as replied and cancels their follow-ups.
+
+    Runs periodically (every 4 hours). Only scans outreaches sent within the last 90 days
+    to keep the query bounded.
+    """
+    from src.models.tickets import Ticket
+
+    cutoff = datetime.now() - timedelta(days=90)
+
+    open_outreaches = db.session.query(EmailOutreach).filter(
+        EmailOutreach.status.in_(["sent", "delivered", "opened"]),
+        EmailOutreach.sent_at >= cutoff,
+    ).all()
+
+    # Track (campaign_id, recipient_email) so total_replied is incremented only once per lead
+    counted_pairs: set = set()
+    matched = 0
+
+    for outreach in open_outreaches:
+        campaign = db.session.get(EmailCampaign, outreach.campaign_id)
+        if not campaign or not campaign.account_id:
+            continue
+
+        reply = db.session.query(Ticket).filter(
+            Ticket.account_id == campaign.account_id,
+            Ticket.from_email == outreach.recipient_email,
+            Ticket.created_at > outreach.sent_at,
+        ).first()
+
+        if not reply:
+            continue
+
+        outreach.status = "replied"
+        outreach.replied_at = reply.created_at
+        outreach.next_followup_at = None
+
+        pair = (outreach.campaign_id, outreach.recipient_email)
+        if pair not in counted_pairs:
+            campaign.total_replied += 1
+            counted_pairs.add(pair)
+
+        matched += 1
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    return {"scanned": len(open_outreaches), "replies_found": matched}

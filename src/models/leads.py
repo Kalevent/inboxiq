@@ -71,6 +71,7 @@ class Lead(db.Model):
     recommended_assets_json = db.Column("recommended_assets", db.JSON, nullable=True, comment="DSPy recommendations")
 
     deleted = db.Column(db.Boolean, server_default="false", nullable=False, comment="Soft delete flag")
+    outreach_unsubscribed_at = db.Column(db.DateTime(timezone=True), nullable=True, comment="Set when lead opts out of outreach emails")
 
     created_at = db.Column(db.DateTime(timezone=True), nullable=True)
     updated_at = db.Column(db.DateTime(timezone=True), nullable=True)

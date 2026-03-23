@@ -53,6 +53,10 @@ def enrich_lead_with_email(self, lead_id: str, domain: str) -> Dict[str, Any]:
     if not lead:
         return {"error": f"Lead {lead_id} not found"}
 
+    # Skip if lead already has a usable email — no credit needed
+    if lead.email and "@" in lead.email:
+        return {"success": True, "lead_id": lead_id, "skip": True, "reason": "email_already_known"}
+
     # Check cache first
     cache = HunterDomainCache.query.filter_by(domain=domain).first()
     emails = None
@@ -103,20 +107,19 @@ def enrich_lead_with_email(self, lead_id: str, domain: str) -> Dict[str, Any]:
             data = response.json()
             emails = data.get("data", {}).get("emails", [])
 
-            # Store in cache (even if empty, to avoid re-checking)
+            # Store in cache — longer TTL for empty results (don't re-check blank domains)
+            ttl_days = 90 if emails else 180
             if cache:
-                # Update existing cache
                 cache.emails = emails
                 cache.email_count = len(emails)
                 cache.created_at = datetime.now(tz.utc)
-                cache.expires_at = datetime.now(tz.utc) + timedelta(days=30)
+                cache.expires_at = datetime.now(tz.utc) + timedelta(days=ttl_days)
             else:
-                # Create new cache entry
                 cache = HunterDomainCache(
                     domain=domain,
                     emails=emails,
                     email_count=len(emails),
-                    expires_at=datetime.now(tz.utc) + timedelta(days=30)
+                    expires_at=datetime.now(tz.utc) + timedelta(days=ttl_days)
                 )
                 db.session.add(cache)
             db.session.commit()

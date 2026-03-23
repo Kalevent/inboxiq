@@ -261,6 +261,58 @@ def list_outreaches(campaign_id):
     }), 200
 
 
+@v1.route("/outreach/unsubscribe/<token>", methods=["GET"])
+def unsubscribe(token):
+    """
+    Public unsubscribe endpoint — no auth required.
+    Marks the lead as unsubscribed and cancels any pending follow-ups.
+    """
+    outreach = db.session.query(EmailOutreach).filter(
+        EmailOutreach.unsubscribe_token == token
+    ).first()
+
+    if not outreach:
+        return (
+            '<html><body style="font-family:Arial,sans-serif;text-align:center;padding:60px;">'
+            '<h2>Link not found</h2><p>This unsubscribe link is invalid or has already been used.</p>'
+            '</body></html>',
+            404,
+            {"Content-Type": "text/html"},
+        )
+
+    lead = db.session.get(Lead, outreach.lead_id)
+    if lead and not lead.outreach_unsubscribed_at:
+        lead.outreach_unsubscribed_at = datetime.now()
+
+    # Mark this outreach and cancel pending follow-ups for this recipient
+    outreach.status = "unsubscribed"
+    outreach.next_followup_at = None
+
+    pending_followups = db.session.query(EmailOutreach).filter(
+        EmailOutreach.campaign_id == outreach.campaign_id,
+        EmailOutreach.recipient_email == outreach.recipient_email,
+        EmailOutreach.status == "pending",
+    ).all()
+    for fo in pending_followups:
+        fo.status = "unsubscribed"
+        fo.next_followup_at = None
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    return (
+        '<html><body style="font-family:Arial,sans-serif;text-align:center;padding:60px;">'
+        '<h2>You have been unsubscribed</h2>'
+        '<p>You will no longer receive emails from this sender.</p>'
+        '</body></html>',
+        200,
+        {"Content-Type": "text/html"},
+    )
+
+
 @v1.route("/outreach/track/<outreach_id>/open", methods=["GET"])
 def track_open(outreach_id):
     """

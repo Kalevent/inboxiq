@@ -4,13 +4,30 @@ Sends personalized emails to leads with tracking and automated follow-ups.
 """
 import os
 import re
+import html as _html
 import boto3
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
+from uuid import uuid4
 from jinja2 import Template
 from src.extensions import db
 from src.models.campaigns import EmailCampaign, EmailOutreach
 from src.models.leads import Lead
+
+
+def _text_to_html(text: str) -> str:
+    """Convert a plain-text email body to a minimal HTML MIME part."""
+    escaped = _html.escape(text)
+    paragraphs = escaped.split('\n\n')
+    parts = [
+        '<p style="margin:0 0 12px 0;">' + p.replace('\n', '<br>') + '</p>'
+        for p in paragraphs if p.strip()
+    ]
+    return (
+        '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#333333;">'
+        + ''.join(parts)
+        + '</div>'
+    )
 
 
 def get_ses_client():
@@ -94,7 +111,8 @@ def send_email_via_ses(
     subject: str,
     body_text: str,
     body_html: Optional[str] = None,
-    tracking_pixel_url: Optional[str] = None
+    tracking_pixel_url: Optional[str] = None,
+    unsubscribe_url: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Send email via AWS SES.
@@ -115,6 +133,16 @@ def send_email_via_ses(
 
     # Build source address
     source = f"{from_name} <{from_email}>" if from_name else from_email
+
+    # Append unsubscribe footer to both body variants
+    if unsubscribe_url:
+        body_text = body_text + f"\n\n--\nTo stop receiving these emails: {unsubscribe_url}"
+        if body_html:
+            body_html += (
+                '<p style="font-size:11px;color:#999999;margin-top:24px;">'
+                f'To stop receiving these emails, <a href="{unsubscribe_url}" style="color:#999999;">unsubscribe here</a>.'
+                '</p>'
+            )
 
     # Add tracking pixel to HTML body
     if body_html and tracking_pixel_url:
@@ -203,7 +231,8 @@ def create_outreach_for_lead(
         body_html=body_html,
         recipient_email=lead.email,
         recipient_name=variables['FirstName'],
-        status='pending'
+        status='pending',
+        unsubscribe_token=str(uuid4()),
     )
 
     db.session.add(outreach)
@@ -223,10 +252,19 @@ def send_outreach_email(outreach: EmailOutreach, campaign: EmailCampaign) -> boo
     Returns:
         True if sent successfully, False otherwise
     """
+    app_url = os.getenv('APP_URL', 'https://api.kalevent.com')
+
+    # Build HTML body from text if not already set
+    html_body = outreach.body_html or _text_to_html(outreach.body_text)
+
     # Generate tracking pixel URL
-    tracking_pixel_url = None
-    if os.getenv('APP_URL'):
-        tracking_pixel_url = f"{os.getenv('APP_URL')}/api/v1/outreach/track/{outreach.id}/open"
+    tracking_pixel_url = f"{app_url}/api/v1/outreach/track/{outreach.id}/open"
+
+    # Build unsubscribe URL
+    unsubscribe_url = (
+        f"{app_url}/api/v1/outreach/unsubscribe/{outreach.unsubscribe_token}"
+        if outreach.unsubscribe_token else None
+    )
 
     # Send email
     result = send_email_via_ses(
@@ -235,8 +273,9 @@ def send_outreach_email(outreach: EmailOutreach, campaign: EmailCampaign) -> boo
         to_email=outreach.recipient_email,
         subject=outreach.subject,
         body_text=outreach.body_text,
-        body_html=outreach.body_html,
-        tracking_pixel_url=tracking_pixel_url
+        body_html=html_body,
+        tracking_pixel_url=tracking_pixel_url,
+        unsubscribe_url=unsubscribe_url,
     )
 
     if result['success']:
@@ -290,9 +329,10 @@ def process_campaign_outreach(campaign_id: str, max_emails: int = 10) -> Dict[st
         db.session.commit()
         return {"message": "Campaign completed (max recipients reached)", "sent": 0}
 
-    # Find leads to contact
+    # Find leads to contact — skip unsubscribed
     query = db.session.query(Lead).filter(
         Lead.email.isnot(None),
+        Lead.outreach_unsubscribed_at.is_(None),
         ~Lead.email.startswith('contact@')  # Filter out generic emails at DB level
     )
 

@@ -124,6 +124,9 @@ def make_celery(app) -> Celery:
     lead_discovery_max_leads = int(os.getenv("LEAD_DISCOVERY_MAX_LEADS", "50"))
     lead_discovery_hour = int(os.getenv("LEAD_DISCOVERY_HOUR", "2"))  # 2am daily
 
+    # Outreach follow-ups and reply detection
+    outreach_enabled = _parse_bool(os.getenv("OUTREACH_ENABLED"), True)
+
     # Trial onboarding configuration
     trial_onboarding_enabled = _parse_bool(os.getenv("TRIAL_ONBOARDING_ENABLED"), True)
     trial_onboarding_hour = int(os.getenv("TRIAL_ONBOARDING_HOUR", "8"))  # 8am daily
@@ -352,6 +355,23 @@ def make_celery(app) -> Celery:
                 if nurture_campaigns_enabled
                 else {}
             ),
+            # Outreach: follow-ups every 4 hours, reply scan every 4 hours (offset by 2h)
+            **(
+                {
+                    "outreach_process_followups": {
+                        "task": "outreach.process_followups",
+                        "schedule": crontab(minute=0, hour="*/4"),
+                        "options": {"queue": "leads"},
+                    },
+                    "outreach_scan_for_replies": {
+                        "task": "outreach.scan_for_replies",
+                        "schedule": crontab(minute=0, hour="2,6,10,14,18,22"),
+                        "options": {"queue": "leads"},
+                    },
+                }
+                if outreach_enabled
+                else {}
+            ),
         },
     )
 
@@ -369,7 +389,7 @@ def make_celery(app) -> Celery:
 
 app = create_app()
 celery = make_celery(app)
-celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing"])
+celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach"])
 
 # Initialize OpenTelemetry for Celery workers
 from src.monitoring.observability import init_otel, get_tracer

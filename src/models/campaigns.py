@@ -160,7 +160,7 @@ class EmailOutreach(db.Model):
 
     # Delivery status
     status = db.Column(
-        db.Enum("pending", "sent", "delivered", "opened", "clicked", "replied", "bounced", "failed", name="outreach_status_enum"),
+        db.Enum("pending", "sent", "delivered", "opened", "clicked", "replied", "bounced", "failed", "unsubscribed", name="outreach_status_enum"),
         server_default="pending",
         nullable=False
     )
@@ -184,6 +184,9 @@ class EmailOutreach(db.Model):
     # Error handling
     error_message = db.Column(db.Text, nullable=True)
     retry_count = db.Column(db.Integer, server_default="0", nullable=False)
+
+    # Unsubscribe
+    unsubscribe_token = db.Column(db.String(64), nullable=True, unique=True, index=True, comment="Token embedded in unsubscribe link — one per outreach record")
 
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
