@@ -20,7 +20,7 @@ from src.publishing.service import (
     publish_blog,
     _read_icp,
 )
-from src.models.content import BlogPost
+from src.models.content import BlogPost, PitchedBlogTopic
 
 def _safe_json() -> dict[str, Any]:
     try:
@@ -322,6 +322,44 @@ def blog_delete(post_id: str):
     if request.headers.get("Accept", "").startswith("application/json") or request.is_json:
         return jsonify({"deleted": True, "id": post_id})
     return redirect(url_for("publishing.blog_list_view"))
+
+
+@bp.post("/blog/<post_id>/regenerate")
+@jwt_required(optional=True)
+def blog_regenerate(post_id: str):
+    """Delete this draft and re-queue generation from its pitched topic."""
+    post = BlogPost.query.filter_by(id=post_id).first()
+    if not post:
+        return jsonify({"error": "Draft not found"}), 404
+    if post.status == "published":
+        return jsonify({"error": "Cannot regenerate a published post"}), 400
+
+    # Find the pitched topic that produced this post
+    topic = None
+    if post.generated_content_id:
+        topic = PitchedBlogTopic.query.filter_by(
+            generated_content_id=post.generated_content_id
+        ).first()
+
+    if not topic:
+        return jsonify({"error": "No pitched topic linked — cannot regenerate automatically."}), 400
+
+    try:
+        # Reset topic so the task can produce a new draft
+        topic.status = "approved"
+        topic.generated_content_id = None
+        db.session.delete(post)
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"error": f"Failed to reset draft: {exc}"}), 500
+
+    try:
+        from src.content.tasks import generate_blog_from_pitched_topic
+        task = generate_blog_from_pitched_topic.delay(topic_id=str(topic.id))
+        return jsonify({"queued": True, "topic_id": str(topic.id), "task_id": task.id}), 202
+    except Exception as exc:
+        return jsonify({"error": f"Failed to queue regeneration: {exc}"}), 500
 
 
 @bp.get("/blogs")

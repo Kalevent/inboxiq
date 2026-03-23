@@ -13,16 +13,28 @@
     <!-- Draft banner -->
     <div class="flex items-center justify-between gap-4 p-3 bg-yellow-500/10 border border-yellow-500/40 text-yellow-100 rounded-lg">
       <span><strong>Draft preview</strong> — visible to authenticated users only. Status: <strong>{{ post.status|default("draft") }}</strong></span>
-      {% if post.status == "ready" %}
-      <button
-        id="publishBtn"
-        type="button"
-        data-post-id="{{ post.id }}"
-        class="shrink-0 inline-flex items-center gap-2 rounded-lg bg-green-600 hover:bg-green-500 px-4 py-2 text-sm font-semibold text-white"
-      >
-        Publish now
-      </button>
-      {% endif %}
+      <div class="flex items-center gap-2 shrink-0">
+        {% if post.status == "ready" %}
+        <button
+          id="publishBtn"
+          type="button"
+          data-post-id="{{ post.id }}"
+          class="inline-flex items-center gap-2 rounded-lg bg-green-600 hover:bg-green-500 px-4 py-2 text-sm font-semibold text-white"
+        >
+          Publish now
+        </button>
+        {% endif %}
+        {% if post.status != "published" %}
+        <button
+          id="regenerateBtn"
+          type="button"
+          data-post-id="{{ post.id }}"
+          class="inline-flex items-center gap-2 rounded-lg bg-slate-700 hover:bg-slate-600 px-4 py-2 text-sm font-semibold text-white"
+        >
+          Regenerate
+        </button>
+        {% endif %}
+      </div>
     </div>
 
     <!-- Post header -->
@@ -147,11 +159,7 @@
         publishBtn.disabled = true;
         publishBtn.textContent = 'Publishing…';
         try {
-          const token = document.cookie.match(/access_token_cookie=([^;]+)/)?.[1] || '';
-          const resp = await fetch(`/publishing/blog/publish/${postId}`, {
-            method: 'POST',
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-          });
+          const resp = await fetch(`/publishing/blog/publish/${postId}`, { method: 'POST' });
           if (resp.ok) {
             const data = await resp.json();
             window.location.href = `/blog/${data.slug}`;
@@ -163,6 +171,30 @@
         } catch (e) {
           publishBtn.textContent = 'Error — retry';
           publishBtn.disabled = false;
+        }
+      });
+    }
+
+    // Regenerate button
+    const regenerateBtn = document.getElementById('regenerateBtn');
+    if (regenerateBtn) {
+      regenerateBtn.addEventListener('click', async () => {
+        if (!confirm('This will delete the current draft and re-queue generation. Continue?')) return;
+        const postId = regenerateBtn.dataset.postId;
+        regenerateBtn.disabled = true;
+        regenerateBtn.textContent = 'Queuing…';
+        try {
+          const resp = await fetch(`/publishing/blog/${postId}/regenerate`, { method: 'POST' });
+          if (resp.ok) {
+            regenerateBtn.textContent = 'Queued — check back in ~2 min';
+          } else {
+            const err = await resp.json();
+            regenerateBtn.textContent = err.error || 'Failed';
+            regenerateBtn.disabled = false;
+          }
+        } catch (e) {
+          regenerateBtn.textContent = 'Error — retry';
+          regenerateBtn.disabled = false;
         }
       });
     }
