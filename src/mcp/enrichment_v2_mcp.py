@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from typing import Any, Dict, List, Optional
 import requests
 import psycopg2
@@ -54,6 +55,45 @@ mcp = FastMCP("enrichment-v2-mcp")
 # External API keys (optional)
 CLEARBIT_API_KEY = os.getenv("CLEARBIT_API_KEY")
 HUNTER_API_KEY = os.getenv("HUNTER_API_KEY")
+
+# Free plan limits: 25 domain searches / month, 50 verifications / month
+_HUNTER_FREE_LIMITS = {"searches": 25, "verifications": 50}
+_hunter_credits_cache: dict = {"data": None, "fetched_at": 0.0}
+_HUNTER_CREDITS_TTL = 3600  # re-check once per hour
+
+
+def _get_hunter_credits() -> dict:
+    """
+    Return remaining Hunter.io credits from the /v2/account endpoint.
+    Result is cached for 1 hour so the check itself costs nothing.
+    Returns {"searches": 0, "verifications": 0} on any failure.
+    """
+    now = time.time()
+    if _hunter_credits_cache["data"] and (now - _hunter_credits_cache["fetched_at"]) < _HUNTER_CREDITS_TTL:
+        return _hunter_credits_cache["data"]
+
+    if not HUNTER_API_KEY:
+        return {"searches": 0, "verifications": 0}
+
+    try:
+        resp = requests.get(
+            "https://api.hunter.io/v2/account",
+            params={"api_key": HUNTER_API_KEY},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            req = resp.json().get("data", {}).get("requests", {})
+            credits = {
+                "searches": req.get("searches", {}).get("available", 0),
+                "verifications": req.get("verifications", {}).get("available", 0),
+            }
+            _hunter_credits_cache["data"] = credits
+            _hunter_credits_cache["fetched_at"] = now
+            return credits
+    except Exception:
+        pass
+
+    return {"searches": 0, "verifications": 0}
 
 
 def get_conn():
@@ -263,8 +303,8 @@ def verify_contact(
         result["email_status"] = "invalid"
         return result
 
-    # Hunter.io verification (uses free tier credits)
-    if HUNTER_API_KEY:
+    # Hunter.io verification — only if free credits remain
+    if HUNTER_API_KEY and _get_hunter_credits()["verifications"] > 0:
         try:
             response = requests.get(
                 "https://api.hunter.io/v2/email-verifier",

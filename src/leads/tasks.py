@@ -49,6 +49,21 @@ def enrich_lead_with_email(self, lead_id: str, domain: str) -> Dict[str, Any]:
             "skip": True  # Don't retry
         }
 
+    # Check remaining free-tier credits before making any API call
+    def _hunter_searches_available() -> int:
+        try:
+            resp = requests.get(
+                "https://api.hunter.io/v2/account",
+                params={"api_key": api_key},
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                req = resp.json().get("data", {}).get("requests", {})
+                return req.get("searches", {}).get("available", 0)
+        except Exception:
+            pass
+        return 0
+
     lead = db.session.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         return {"error": f"Lead {lead_id} not found"}
@@ -67,6 +82,15 @@ def enrich_lead_with_email(self, lead_id: str, domain: str) -> Dict[str, Any]:
         emails = cache.emails or []
         from_cache = True
     else:
+        # Check remaining free-tier credits before making the API call
+        if _hunter_searches_available() == 0:
+            return {
+                "success": False,
+                "error": "Hunter.io monthly search credits exhausted",
+                "lead_id": lead_id,
+                "skip": True,
+            }
+
         # Cache miss or expired - call Hunter.io API
         try:
             # Call Hunter.io Domain Search API
