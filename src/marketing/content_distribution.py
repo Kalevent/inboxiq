@@ -21,7 +21,7 @@ from src.sanitize import sanitize_html
 logger = logging.getLogger(__name__)
 
 
-@celery.task(name="marketing.publish_blog_post")
+@celery.task(name="marketing.publish_blog_post", queue="leads")
 def publish_blog_post(blog_post_id: str) -> Dict[str, Any]:
     """
     Publish a blog post and trigger distribution channels.
@@ -58,7 +58,11 @@ def publish_blog_post(blog_post_id: str) -> Dict[str, Any]:
         # Mark as published
         post.status = "published"
         post.published_at = datetime.now(timezone.utc)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
 
         logger.info(f"Published blog post: {post.title} ({post.id})")
 
@@ -105,7 +109,7 @@ def publish_blog_post(blog_post_id: str) -> Dict[str, Any]:
         return {"status": "error", "error": str(e)}
 
 
-@celery.task(name="marketing.distribute_to_social")
+@celery.task(name="marketing.distribute_to_social", queue="leads")
 def distribute_to_social(blog_post_id: str) -> Dict[str, Any]:
     """
     Distribute blog post to social media channels (LinkedIn, Twitter).
@@ -150,7 +154,7 @@ def distribute_to_social(blog_post_id: str) -> Dict[str, Any]:
     }
 
 
-@celery.task(name="marketing.send_blog_newsletter")
+@celery.task(name="marketing.send_blog_newsletter", queue="leads")
 def send_blog_newsletter(blog_post_id: str) -> Dict[str, Any]:
     """
     Send email newsletter to subscribers about new blog post.
@@ -211,7 +215,7 @@ def send_blog_newsletter(blog_post_id: str) -> Dict[str, Any]:
     }
 
 
-@celery.task(name="marketing.submit_to_search_engines")
+@celery.task(name="marketing.submit_to_search_engines", queue="leads")
 def submit_to_search_engines(blog_post_id: str) -> Dict[str, Any]:
     """
     Submit blog post URL to search engines for indexing.
