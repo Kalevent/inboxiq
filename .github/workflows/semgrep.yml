@@ -1,16 +1,6 @@
 name: semgrep
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'src/**'
   schedule:
     # Weekly scan every Monday at 03:00 UTC
     - cron: '0 3 * * 1'
