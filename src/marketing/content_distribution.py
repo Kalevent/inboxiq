@@ -94,6 +94,13 @@ def publish_blog_post(blog_post_id: str) -> Dict[str, Any]:
             logger.error(f"Failed to queue search engine submission: {e}")
             distribution_results["seo"] = {"status": "error", "error": str(e)}
 
+        # Mark distribution as initiated
+        try:
+            post.distributed_at = datetime.now(timezone.utc)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
         return {
             "status": "published",
             "blog_post_id": blog_post_id,

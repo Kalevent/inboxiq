@@ -53,9 +53,29 @@ def pitched_topics():
 
     counts = {row.status: row.count for row in status_counts}
 
+    # Attach blog post pipeline status for generated topics
+    from src.models.content import BlogPost
+    generated_content_ids = [t.generated_content_id for t in topics if t.generated_content_id]
+    blog_post_map = {}
+    if generated_content_ids:
+        posts = BlogPost.query.filter(BlogPost.generated_content_id.in_(generated_content_ids)).all()
+        for p in posts:
+            blog_post_map[p.generated_content_id] = {
+                "status": p.status,
+                "slug": p.slug,
+                "published_at": p.published_at.isoformat() if p.published_at else None,
+                "distributed_at": p.distributed_at.isoformat() if p.distributed_at else None,
+            }
+
+    topic_dicts = []
+    for t in topics:
+        d = t.to_dict()
+        d["blog_post"] = blog_post_map.get(t.generated_content_id)
+        topic_dicts.append(d)
+
     return render_template(
         "admin/pitched_topics.html",
-        topics=[t.to_dict() for t in topics],
+        topics=topic_dicts,
         counts=counts
     )
 

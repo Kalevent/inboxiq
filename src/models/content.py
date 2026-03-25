@@ -44,6 +44,7 @@ class BlogPost(db.Model):
     dspy_quality_score = db.Column(db.Float, nullable=True)
 
     published_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    distributed_at = db.Column(db.DateTime(timezone=True), nullable=True, comment="Set when distribution tasks are queued")
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
