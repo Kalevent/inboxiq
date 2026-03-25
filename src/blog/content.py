@@ -255,62 +255,6 @@ Soft CTA: we built a unified intake brain so every request—email, form, CRM, c
   <p class="mt-4 text-indigo-200">We built a unified intake brain so every request—email, form, CRM, chat, or compliance—gets the same smart triage. <a href="/blog/single-intake-api-design" class="font-semibold">See how the Intake API works</a>.</p>
 </section>
   """.strip()
-  article_twelve_body = """
-Treating forms as “special” creates chaos: tickets without context, priority inflation, and duplicate work across email, CRM, and chat. Every request—email, form, CRM webhook, chat handoff—deserves the same triage path.
-
-Why forms create hidden cost:
-- Action-required vs FYI is unclear, so everything becomes a ticket.
-- Priority inflation: every submitter selects “urgent.”
-- Engineer burnout: missing context forces back-and-forth and interrupts deep work.
-- Ops overhead: duplicate tickets for the same issue across form + email + chat.
-
-The fix: one intake and one decision layer:
-- Normalize all sources through a single Intake API/webhook.
-- Classify intent and action_required before ticket creation.
-- Score priority with sentiment, account tier, SLA, and outage/security signals.
-- Dedupe across email/form/chat/CRM so one issue = one thread.
-- Route by rules, not source; reserve tickets for action_required.
-
-Operational guardrails:
-- Reject or quarantine low-quality/empty form submits.
-- Enforce required fields by intent (impact, steps, account).
-- Auto-acknowledge with next steps; keep FYI as signal, not work.
-- Alert on priority creep (too many “P1” from the same source).
-
-Result: one clean queue, fewer escalations, and happier engineers.
-  """
-  article_twelve_html = """
-<section class="prose prose-invert max-w-none">
-  <p>Treating forms as “special” creates chaos: tickets without context, priority inflation, and duplicate work across email, CRM, and chat. Every request—email, form, CRM webhook, chat handoff—deserves the same triage path.</p>
-
-  <h2>Why forms create hidden cost</h2>
-  <ul>
-    <li><strong>Action-required vs FYI is unclear:</strong> everything becomes a ticket.</li>
-    <li><strong>Priority inflation:</strong> every submitter selects “urgent.”</li>
-    <li><strong>Engineer burnout:</strong> missing context forces back-and-forth and interrupts deep work.</li>
-    <li><strong>Ops overhead:</strong> duplicate tickets for the same issue across form + email + chat.</li>
-  </ul>
-
-  <h2>The fix: one intake and one decision layer</h2>
-  <ul>
-    <li>Normalize all sources through a single Intake API/webhook.</li>
-    <li>Classify intent and action_required before ticket creation.</li>
-    <li>Score priority with sentiment, account tier, SLA, and outage/security signals.</li>
-    <li>Dedupe across email/form/chat/CRM so one issue = one thread.</li>
-    <li>Route by rules, not source; reserve tickets for action_required.</li>
-  </ul>
-
-  <h2>Operational guardrails</h2>
-  <ul>
-    <li>Reject or quarantine low-quality/empty form submits.</li>
-    <li>Enforce required fields by intent (impact, steps, account).</li>
-    <li>Auto-acknowledge with next steps; keep FYI as signal, not work.</li>
-    <li>Alert on priority creep (too many “P1” from the same source).</li>
-  </ul>
-
-  <p class="mt-4 text-indigo-200">One clean queue, fewer escalations, and happier engineers. <a href="/blog/what-is-unified-intake" class="font-semibold">See unified intake in action</a>.</p>
-</section>
-  """.strip()
   article_thirteen_body = """
 Building one Intake API for every request forced clear choices: a single route, strong auth, and a rule that only action_required creates tickets.
 
@@ -1471,28 +1415,6 @@ Repurpose this article on Medium, Indie Hackers, and as a shortened LinkedIn pie
       "word_count": _word_count(article_eleven_body),
       "read_time_minutes": _minutes_to_read(_word_count(article_eleven_body)),
       "meta_description": "Unified intake is one endpoint and one decision engine for email, forms, CRM, chat, and compliance. See why it replaces shared inboxes.",
-      "published_at": datetime.now(),
-    },
-    {
-      "title": "From Email to Forms to CRM: Why All Requests Deserve the Same Triage",
-      "slug": "same-triage-all-requests",
-      "status": "published",
-      "funnel_stage": "mofu",
-      "primary_keyword": "intake triage",
-      "secondary_keywords": ["form triage", "crm triage", "support automation"],
-      "summary": "Treating forms as special is a mistake. Every request should flow through the same triage path with clear action_required and priority.",
-      "excerpt": "Forms, email, CRM, and chat all deserve the same triage. One intake layer stops priority inflation and duplicate work.",
-      "hero_image_url": hero_image_static,
-      "hero_image_alt": "Consistent triage illustration for InboxIQ blog",
-      "content_html": article_twelve_html,
-      "internal_links": [
-        {"href": "/blog/what-is-unified-intake", "label": "Unified intake", "rel": "next"},
-        {"href": "/blog/single-intake-api-design", "label": "How we built the Intake API", "rel": "next"},
-      ],
-      "canonical_url": "/blog/same-triage-all-requests",
-      "word_count": _word_count(article_twelve_body),
-      "read_time_minutes": _minutes_to_read(_word_count(article_twelve_body)),
-      "meta_description": "Forms aren’t special. Email, forms, CRM, and chat should share one triage layer to stop priority inflation and duplicate tickets.",
       "published_at": datetime.now(),
     },
     {
