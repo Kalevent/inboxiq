@@ -294,6 +294,16 @@
                   </form>
                 {% endif %}
 
+                <!-- Distribute (for published but not yet distributed) -->
+                {% if topic.blog_post and topic.blog_post.status == 'published' and not topic.blog_post.distributed_at %}
+                  <form method="post" action="/admin/pitched-topics/{{ topic.id }}/distribute" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs px-3 py-2 shadow">
+                      Distribute
+                    </button>
+                  </form>
+                {% endif %}
+
                 <!-- View generated / published content -->
                 {% if topic.status == 'generated' %}
                   {% if topic.blog_post and topic.blog_post.status == 'published' and topic.blog_post.slug %}

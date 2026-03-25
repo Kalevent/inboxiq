@@ -201,6 +201,47 @@ def generate_from_pitched_topic(topic_id):
     return redirect(url_for("admin.pitched_topics"))
 
 
+@bp.route("/pitched-topics/<topic_id>/distribute", methods=["POST"])
+@login_required_settings
+def distribute_pitched_topic(topic_id):
+    """Manually trigger distribution for a published blog post from a pitched topic."""
+    from src.models.content import BlogPost
+    from src.marketing.content_distribution import (
+        distribute_to_social, send_blog_newsletter, submit_to_search_engines,
+    )
+    from datetime import datetime, timezone
+
+    topic = db.session.query(PitchedBlogTopic).filter(PitchedBlogTopic.id == topic_id).first()
+    if not topic or not topic.generated_content_id:
+        flash("Topic not found or has no generated content", "error")
+        return redirect(url_for("admin.pitched_topics"))
+
+    post = BlogPost.query.filter_by(generated_content_id=topic.generated_content_id).first()
+    if not post:
+        flash("No blog post found for this topic", "error")
+        return redirect(url_for("admin.pitched_topics"))
+
+    if post.status != "published":
+        flash("Blog post must be published before distributing", "error")
+        return redirect(url_for("admin.pitched_topics"))
+
+    try:
+        distribute_to_social.delay(post.id)
+        send_blog_newsletter.delay(post.id)
+        submit_to_search_engines.delay(post.id)
+        post.distributed_at = datetime.now(timezone.utc)
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
+        flash(f"Distribution queued for '{post.title}'", "success")
+    except Exception as e:
+        flash(f"Failed to queue distribution: {e}", "error")
+
+    return redirect(url_for("admin.pitched_topics"))
+
+
 @bp.route("/pitched-topics/<topic_id>/delete", methods=["POST"])
 @login_required_settings
 def delete_pitched_topic(topic_id):
