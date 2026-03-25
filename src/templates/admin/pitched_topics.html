@@ -228,30 +228,19 @@
               {% set s = topic.status %}
               <div class="flex flex-col gap-1">
                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs border
-                  {% if s == 'generated' %}
-                    bg-emerald-500/10 text-emerald-200 border-emerald-400/40
-                  {% elif s == 'approved' %}
-                    bg-indigo-500/10 text-indigo-200 border-indigo-400/40
-                  {% elif s == 'rejected' %}
-                    bg-rose-500/10 text-rose-200 border-rose-400/40
-                  {% else %}
-                    bg-yellow-500/10 text-yellow-200 border-yellow-400/40
-                  {% endif %}
-                ">
+                  {% if s == 'generated' %}bg-emerald-500/10 text-emerald-200 border-emerald-400/40
+                  {% elif s == 'approved' %}bg-indigo-500/10 text-indigo-200 border-indigo-400/40
+                  {% elif s == 'rejected' %}bg-rose-500/10 text-rose-200 border-rose-400/40
+                  {% else %}bg-yellow-500/10 text-yellow-200 border-yellow-400/40{% endif %}">
                   {% if s == 'generated' %}Generated
                   {% elif s == 'approved' %}Approved
                   {% elif s == 'rejected' %}Rejected
                   {% else %}Pending{% endif %}
                 </span>
-                {% if topic.blog_post %}
-                  {% if topic.blog_post.status == 'published' %}
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs border bg-sky-500/10 text-sky-200 border-sky-400/40">Published</span>
-                  {% elif topic.blog_post.status == 'ready' %}
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs border bg-yellow-500/10 text-yellow-200 border-yellow-400/40">Ready</span>
-                  {% endif %}
+                {% if topic.blog_post and topic.blog_post.status == 'published' %}
                   {% if topic.blog_post.distributed_at %}
                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs border bg-violet-500/10 text-violet-200 border-violet-400/40">Distributed</span>
-                  {% elif topic.blog_post.status == 'published' %}
+                  {% else %}
                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs border bg-slate-700/50 text-slate-400 border-slate-600/40">Not distributed</span>
                   {% endif %}
                 {% endif %}
@@ -306,19 +295,15 @@
                 {% endif %}
 
                 <!-- View generated / published content -->
-                {% if topic.status == 'generated' and topic.blog_post %}
-                  {% if topic.blog_post.status == 'published' and topic.blog_post.slug %}
+                {% if topic.status == 'generated' %}
+                  {% if topic.blog_post and topic.blog_post.status == 'published' and topic.blog_post.slug %}
                     <a href="/blog/{{ topic.blog_post.slug }}"
                        class="rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-200 text-xs px-3 py-2 border border-sky-400/40"
-                       target="_blank" rel="noopener">
-                      View Live
-                    </a>
+                       target="_blank" rel="noopener">View Live</a>
                   {% elif topic.generated_content_id %}
                     <a href="/publishing/blog/draft/{{ topic.generated_content_id }}"
                        class="rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-200 text-xs px-3 py-2 border border-emerald-400/40"
-                       target="_blank" rel="noopener">
-                      View Draft
-                    </a>
+                       target="_blank" rel="noopener">View Draft</a>
                   {% endif %}
                 {% endif %}
 

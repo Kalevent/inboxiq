@@ -297,12 +297,10 @@ def blog_publish(post_id: str):
     except Exception as exc:  # pragma: no cover - defensive
         return jsonify({"error": f"Failed to publish: {exc}"}), 500
 
-    # Trigger distribution pipeline (social, newsletter, search engine)
+    # Trigger distribution pipeline (social, newsletter, search engines)
     try:
         from src.marketing.content_distribution import (
-            distribute_to_social,
-            send_blog_newsletter,
-            submit_to_search_engines,
+            distribute_to_social, send_blog_newsletter, submit_to_search_engines,
         )
         from datetime import datetime, timezone
         distribute_to_social.delay(post.id)
@@ -310,10 +308,11 @@ def blog_publish(post_id: str):
         submit_to_search_engines.delay(post.id)
         post.distributed_at = datetime.now(timezone.utc)
         try:
-            from src.extensions import db
-            db.session.commit()
+            from src.extensions import db as _db
+            _db.session.commit()
         except Exception:
-            db.session.rollback()
+            from src.extensions import db as _db
+            _db.session.rollback()
     except Exception as exc:
         import logging
         logging.getLogger(__name__).error("Distribution queue failed after publish: %s", exc)

@@ -63,7 +63,6 @@ def pitched_topics():
             blog_post_map[p.generated_content_id] = {
                 "status": p.status,
                 "slug": p.slug,
-                "published_at": p.published_at.isoformat() if p.published_at else None,
                 "distributed_at": p.distributed_at.isoformat() if p.distributed_at else None,
             }
 
