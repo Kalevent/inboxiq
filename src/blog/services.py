@@ -1,6 +1,5 @@
 from flask import current_app
 from src.models.content import BlogPost
-from src.blog.content import get_fallback_posts, get_fallback_post_by_slug
 
 import html
 import re
@@ -125,9 +124,9 @@ def load_blog_posts():
         data["internal_links"] = _resolve_internal_links(data.get("internal_links"))
         safe_posts.append(data)
       return safe_posts
-  except Exception as exc:  # table may not exist yet
-    current_app.logger.warning("BlogPost query failed; using fallback seed content: %s", exc)
-  return get_fallback_posts()
+  except Exception as exc:
+    current_app.logger.error("BlogPost query failed: %s", exc)
+  return []
 
 
 def load_blog_post(slug: str):
@@ -141,6 +140,6 @@ def load_blog_post(slug: str):
       data["content_html"] = _sanitize_html(cleaned_html)
       data["internal_links"] = _resolve_internal_links(data.get("internal_links"))
       return data
-  except Exception as exc:  # table may not exist yet
-    current_app.logger.warning("BlogPost lookup failed for slug %s; using fallback: %s", slug, exc)
-  return get_fallback_post_by_slug(slug)
+  except Exception as exc:
+    current_app.logger.error("BlogPost lookup failed for slug %s: %s", slug, exc)
+  return None
