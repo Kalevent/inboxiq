@@ -1466,7 +1466,6 @@ Repurpose this article on Medium, Indie Hackers, and as a shortened LinkedIn pie
       "content_html": article_eleven_html,
       "internal_links": [
         {"href": "/blog/single-intake-api-design", "label": "How we built the Intake API", "rel": "next"},
-        {"href": "/blog/same-triage-all-requests", "label": "Same triage for every source", "rel": "next"},
       ],
       "canonical_url": "/blog/what-is-unified-intake",
       "word_count": _word_count(article_eleven_body),

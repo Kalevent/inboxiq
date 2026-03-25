@@ -276,8 +276,17 @@ def generate_blog_post(
         _word_count = int(float(str(write_result.word_count).strip())) if write_result.word_count else 0
         read_time = math.ceil(_word_count / 200) if _word_count else 1
 
-        # Ensure slug is unique (avoid collision if same topic re-generated)
         base_slug = seo_result.slug
+
+        # Skip if a published or ready post on this topic already exists
+        existing = db.session.query(BlogPost).filter(
+            BlogPost.slug == base_slug,
+            BlogPost.status.in_(["published", "ready"])
+        ).first()
+        if existing:
+            return {"status": "skipped", "reason": "duplicate", "existing_slug": existing.slug}
+
+        # Ensure slug is unique against drafts too
         unique_slug = base_slug
         suffix = 1
         while db.session.query(BlogPost).filter(BlogPost.slug == unique_slug).first():

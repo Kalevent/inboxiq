@@ -317,6 +317,7 @@ async function loadPublishedPosts() {
             <div class="flex gap-2 ml-3">
               <a href="/blog/${post.slug}" target="_blank" class="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200">View</a>
               <a href="/api/v1/publishing/blogs/${post.id}" target="_blank" class="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200">JSON</a>
+              <button onclick="deletePublishedPost('${post.id}', '${post.slug}')" class="text-xs px-2 py-1 rounded bg-rose-700/60 hover:bg-rose-600 text-rose-200">Delete</button>
             </div>
           </div>
         </div>
@@ -325,6 +326,25 @@ async function loadPublishedPosts() {
 
   } catch (err) {
     container.innerHTML = `<div class="text-red-400 text-sm">Error loading posts: ${err.message}</div>`;
+  }
+}
+
+async function deletePublishedPost(postId, slug) {
+  if (!confirm(`Delete "${slug}"?\n\nThis removes it from the database and the public blog. This cannot be undone.`)) return;
+  try {
+    const csrf = (document.cookie.match(/csrf_access_token=([^;]+)/) || [])[1] || '';
+    const resp = await fetch(`/api/v1/admin/content/published-posts/${postId}`, {
+      method: 'DELETE',
+      headers: { 'X-CSRF-TOKEN': decodeURIComponent(csrf) },
+    });
+    if (resp.ok) {
+      loadPublishedPosts();
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      alert('Delete failed: ' + (err.error || resp.status));
+    }
+  } catch (e) {
+    alert('Delete failed: ' + e.message);
   }
 }
 

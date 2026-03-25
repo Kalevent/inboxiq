@@ -627,6 +627,25 @@ def admin_published_posts():
         return jsonify({"error": "admin_published_posts_failed"}), 500
 
 
+@v1.route("/admin/content/published-posts/<post_id>", methods=["DELETE"])
+@jwt_required()
+def admin_delete_published_post(post_id):
+    """Hard-delete a blog post by admin (including published posts)."""
+    from src.models.content import BlogPost
+    from src.extensions import db
+    post = BlogPost.query.filter_by(id=post_id).first()
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+    try:
+        db.session.delete(post)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    current_app.logger.info("admin_deleted_blog_post slug=%s id=%s", post.slug, post_id)
+    return jsonify({"deleted": True, "slug": post.slug})
+
+
 @v1.route("/admin/content/generate-blog", methods=["POST"])
 @jwt_required()
 def admin_generate_blog():

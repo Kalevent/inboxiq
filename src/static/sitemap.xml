@@ -122,10 +122,7 @@
     <loc>https://kalevent.com/blog/what-is-unified-intake</loc>
     <priority>0.5</priority>
   </url>
-  <url>
-    <loc>https://kalevent.com/blog/same-triage-all-requests</loc>
-    <priority>0.5</priority>
-  </url>
+
   <url>
     <loc>https://kalevent.com/blog/single-intake-api-design</loc>
     <priority>0.5</priority>
