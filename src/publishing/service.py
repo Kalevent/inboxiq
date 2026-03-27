@@ -249,6 +249,7 @@ def _generate_meta_description(post: BlogPost) -> str:
     return fallback
 
 
+
 def publish_blog(post_id: str) -> BlogPost:
     post = BlogPost.query.filter_by(id=post_id).first()
     if not post:
