@@ -154,6 +154,14 @@ def distribute_to_social(blog_post_id: str) -> Dict[str, Any]:
         logger.error(f"Twitter distribution failed: {e}")
         results["twitter"] = {"status": "error", "error": str(e)}
 
+    # Distribute to Facebook
+    try:
+        facebook_result = _post_to_facebook(post, social_content.get("facebook"))
+        results["facebook"] = facebook_result
+    except Exception as e:
+        logger.error(f"Facebook distribution failed: {e}")
+        results["facebook"] = {"status": "error", "error": str(e)}
+
     return {
         "status": "completed",
         "blog_post_id": blog_post_id,
@@ -354,6 +362,12 @@ def _generate_social_content(post: BlogPost) -> Dict[str, Any]:
                 "cta": email_data.get("cta", "Read Full Article")
             }
 
+        # Facebook always gets content (not gated on DSPy strategy)
+        result["facebook"] = {
+            "text": f"📖 New on our blog: {post.title}\n\n{excerpt}\n\nRead the full article 👇",
+            "url": post_url
+        }
+
         logger.info(f"Generated intelligent social content for {post.title}: platforms={list(result.keys())}")
 
         return result
@@ -373,6 +387,10 @@ def _generate_social_content(post: BlogPost) -> Dict[str, Any]:
                     excerpt[:250] + "...",
                     f"Read the full article: {post_url}"
                 ],
+                "url": post_url
+            },
+            "facebook": {
+                "text": f"📖 New on our blog: {post.title}\n\n{excerpt}\n\nRead the full article 👇",
                 "url": post_url
             }
         }
@@ -545,6 +563,69 @@ def _post_to_twitter(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[
         logger.info(f"Twitter thread posted: {len(tweet_ids)} tweet(s), first={tweet_ids[0]}")
         return {"status": "ok", "platform": "twitter", "tweet_ids": tweet_ids}
     return {"status": "error", "platform": "twitter", "error": "no tweets posted"}
+
+
+def _post_to_facebook(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Post to a Facebook Page via Graph API.
+    Token is read from the facebook_social InboxConnection (set via Settings → Integrations).
+    Posts to the first connected page unless FACEBOOK_PAGE_ID env var overrides.
+    """
+    if not content:
+        return {"status": "skipped", "reason": "no_content"}
+
+    import os
+    import requests as http
+    from src.crypto import decrypt_value
+
+    conn = InboxConnection.query.filter_by(provider="facebook_social", status="connected").first()
+    if not conn or not conn.metadata_json:
+        logger.warning("Facebook not connected — go to Settings → Integrations to connect")
+        return {"status": "skipped", "reason": "not_connected"}
+
+    # Pick page: env override first, then first page in stored list
+    override_page_id = os.getenv("FACEBOOK_PAGE_ID")
+    page_token = None
+    page_id = None
+
+    pages = conn.metadata_json.get("pages", [])
+    if override_page_id:
+        for p in pages:
+            if p.get("id") == override_page_id:
+                page_id = p["id"]
+                enc = p.get("access_token_enc")
+                page_token = decrypt_value(enc) if enc else None
+                break
+    elif pages:
+        p = pages[0]
+        page_id = p.get("id")
+        enc = p.get("access_token_enc")
+        page_token = decrypt_value(enc) if enc else None
+
+    if not page_id or not page_token:
+        logger.warning("Facebook: no page token found — reconnect in Settings → Integrations")
+        return {"status": "skipped", "reason": "no_page_token"}
+
+    text = content.get("text", "")
+    post_url = content.get("url", "")
+
+    body: Dict[str, Any] = {"message": text, "access_token": page_token}
+    if post_url:
+        body["link"] = post_url
+
+    try:
+        resp = http.post(
+            f"https://graph.facebook.com/v19.0/{page_id}/feed",
+            data=body,
+            timeout=15,
+        )
+        resp.raise_for_status()
+        fb_post_id = resp.json().get("id", "")
+        logger.info(f"Facebook post created: {fb_post_id}")
+        return {"status": "ok", "platform": "facebook", "post_id": fb_post_id}
+    except Exception as exc:
+        logger.error(f"Facebook API error: {exc}")
+        return {"status": "error", "platform": "facebook", "error": str(exc)}
 
 
 def _generate_newsletter_html(post: BlogPost) -> str:

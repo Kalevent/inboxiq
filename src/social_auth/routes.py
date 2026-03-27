@@ -9,21 +9,14 @@ Twitter (X) OAuth 2.0 + PKCE flow:
   GET /social_auth/twitter            → redirect to Twitter for authorisation
   GET /social_auth/twitter/callback   → exchange code for token, save encrypted
 
-Multi-tenant: each account connects its own token. The logged-in user's
-account_id is embedded in the HMAC-signed state token at OAuth start and
-extracted at callback — no session or DEFAULT_ACCOUNT_ID needed.
-
-State token format (pipe-separated, base64url-encoded):
-  nonce | unix_timestamp | account_id | pkce_verifier
-  (pkce_verifier is empty for LinkedIn)
+Facebook OAuth 2.0 flow:
+  GET /social_auth/facebook           → redirect to Facebook for authorisation
+  GET /social_auth/facebook/callback  → exchange code for token, save encrypted
 
 Required env vars:
-  LINKEDIN_CLIENT_ID
-  LINKEDIN_CLIENT_SECRET
-  LINKEDIN_REDIRECT_URI   (e.g. https://kalevent.com/social_auth/linkedin/callback)
-  TWITTER_CLIENT_ID       (OAuth 2.0 client ID from Developer Portal)
-  TWITTER_CLIENT_SECRET   (OAuth 2.0 client secret)
-  TWITTER_REDIRECT_URI    (e.g. https://kalevent.com/social_auth/twitter/callback)
+  LINKEDIN_CLIENT_ID, LINKEDIN_CLIENT_SECRET, LINKEDIN_REDIRECT_URI
+  TWITTER_CLIENT_ID, TWITTER_CLIENT_SECRET, TWITTER_REDIRECT_URI
+  FACEBOOK_CLIENT_ID, FACEBOOK_CLIENT_SECRET, FACEBOOK_REDIRECT_URI
 """
 import base64
 import hashlib
@@ -53,6 +46,12 @@ _TW_TOKEN_URL = "https://api.twitter.com/2/oauth2/token"
 _TW_USERINFO_URL = "https://api.twitter.com/2/users/me"
 _TW_SCOPE = "tweet.read tweet.write users.read offline.access"
 _TW_PROVIDER = "twitter_social"
+
+_FB_AUTH_URL = "https://www.facebook.com/v19.0/dialog/oauth"
+_FB_TOKEN_URL = "https://graph.facebook.com/v19.0/oauth/access_token"
+_FB_ME_URL = "https://graph.facebook.com/v19.0/me"
+_FB_SCOPE = "pages_manage_posts,pages_read_engagement,pages_show_list"
+_FB_PROVIDER = "facebook_social"
 
 
 # ── HMAC state helpers (no session needed) ───────────────────────────────────
@@ -121,6 +120,13 @@ def _tw_callback_uri():
     if override:
         return override
     return url_for("social_auth.twitter_callback", _external=True)
+
+
+def _fb_callback_uri():
+    override = os.getenv("FACEBOOK_REDIRECT_URI")
+    if override:
+        return override
+    return url_for("social_auth.facebook_callback", _external=True)
 
 
 def _pkce_pair():
@@ -382,6 +388,139 @@ def twitter_callback():
     current_app.logger.info(f"Twitter connected: account={account_id} username=@{twitter_username}")
     display = f"@{twitter_username}" if twitter_username else "your account"
     return _page(True, f"X (Twitter) connected as {display}.", "Twitter")
+
+
+# ── Facebook start ────────────────────────────────────────────────────────────
+
+@bp.route("/facebook")
+@login_required_settings
+def facebook_start():
+    """Kick off Facebook OAuth for the logged-in account."""
+    client_id = current_app.config.get("FACEBOOK_CLIENT_ID") or os.getenv("FACEBOOK_CLIENT_ID")
+    if not client_id:
+        current_app.logger.error("Facebook OAuth: FACEBOOK_CLIENT_ID not configured")
+        return "Configuration error.", 500
+
+    account_id = g.current_account_id
+    if not account_id:
+        return _page(False, "Could not determine your account. Please log in again.", "Facebook")
+
+    state = _make_state(account_id)
+    params = {
+        "client_id": client_id,
+        "redirect_uri": _fb_callback_uri(),
+        "scope": _FB_SCOPE,
+        "state": state,
+        "response_type": "code",
+    }
+    return redirect(_FB_AUTH_URL + "?" + urllib.parse.urlencode(params))
+
+
+# ── Facebook callback ──────────────────────────────────────────────────────────
+
+@bp.route("/facebook/callback")
+def facebook_callback():
+    """Facebook sends the browser here with ?code=... after the user approves."""
+
+    error = request.args.get("error")
+    if error:
+        desc = request.args.get("error_description") or request.args.get("error_reason") or error
+        return _page(False, f"Facebook denied: {desc}", "Facebook")
+
+    code = request.args.get("code")
+    state = request.args.get("state")
+
+    if not state:
+        return _page(False, "Missing state parameter.", "Facebook")
+
+    valid, account_id, _ = _verify_state(state)
+    if not valid or not account_id:
+        return _page(False, "Invalid state — possible CSRF. Please try again.", "Facebook")
+
+    if not code:
+        return _page(False, "No authorization code returned by Facebook.", "Facebook")
+
+    client_id = current_app.config.get("FACEBOOK_CLIENT_ID") or os.getenv("FACEBOOK_CLIENT_ID")
+    client_secret = current_app.config.get("FACEBOOK_CLIENT_SECRET") or os.getenv("FACEBOOK_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        current_app.logger.error("Facebook OAuth: credentials not configured")
+        return _page(False, "Server configuration error. Contact the administrator.", "Facebook")
+
+    # Exchange code → access_token
+    try:
+        token_resp = requests.get(
+            _FB_TOKEN_URL,
+            params={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": _fb_callback_uri(),
+                "code": code,
+            },
+            timeout=10,
+        )
+        if not token_resp.ok:
+            current_app.logger.error(
+                f"Facebook token exchange HTTP {token_resp.status_code}: {token_resp.text}"
+            )
+        token_resp.raise_for_status()
+        token_data = token_resp.json()
+    except Exception as exc:
+        current_app.logger.exception(f"Facebook token exchange failed: {exc}")
+        return _page(False, "Connection failed. Please try again.", "Facebook")
+
+    access_token = token_data.get("access_token")
+    if not access_token:
+        current_app.logger.error("Facebook: no access_token in response")
+        return _page(False, "Connection failed. Please try again.", "Facebook")
+
+    # Fetch user info and pages
+    fb_user_id = None
+    fb_name = None
+    pages = []
+    try:
+        me = requests.get(
+            _FB_ME_URL,
+            params={"fields": "id,name", "access_token": access_token},
+            timeout=10,
+        ).json()
+        fb_user_id = me.get("id")
+        fb_name = me.get("name")
+
+        # Fetch pages the user manages
+        pages_resp = requests.get(
+            f"https://graph.facebook.com/v19.0/{fb_user_id}/accounts",
+            params={"access_token": access_token},
+            timeout=10,
+        ).json()
+        pages = pages_resp.get("data", [])
+    except Exception:
+        pass
+
+    # Persist encrypted token (user token + page tokens)
+    try:
+        metadata = {
+            "access_token_enc": encrypt_value(access_token),
+            "fb_user_id": fb_user_id,
+            "fb_name": fb_name,
+            "scope": _FB_SCOPE,
+            "pages": [
+                {
+                    "id": p.get("id"),
+                    "name": p.get("name"),
+                    "access_token_enc": encrypt_value(p["access_token"]) if p.get("access_token") else None,
+                }
+                for p in pages
+            ],
+        }
+        _save_connection(account_id, _FB_PROVIDER, metadata)
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception(f"Facebook save failed for account={account_id}: {exc}")
+        return _page(False, "Connection failed. Please try again.", "Facebook")
+
+    current_app.logger.info(f"Facebook connected: account={account_id} user={fb_name} pages={len(pages)}")
+    page_info = f" with {len(pages)} page(s)" if pages else ""
+    return _page(True, f"Facebook connected as {fb_name or 'your account'}{page_info}.", "Facebook")
 
 
 # ── Minimal result page ───────────────────────────────────────────────────────
