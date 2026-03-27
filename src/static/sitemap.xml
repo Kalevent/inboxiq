@@ -1,170 +1,284 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Core -->
   <url>
     <loc>https://kalevent.com/</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://kalevent.com/login</loc>
-    <priority>0.7</priority>
+    <loc>https://kalevent.com/features</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
   </url>
+  <url>
+    <loc>https://kalevent.com/pricing</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/signup</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Top-level marketing pages -->
+  <url>
+    <loc>https://kalevent.com/email-triage</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/ai-email-triage</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/shared-inbox</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/support-automation</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Solutions -->
   <url>
     <loc>https://kalevent.com/solutions/unified-intake</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/decisions</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/voice</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/social</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/forms</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/chat</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/crm</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/api</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/email/ai-triage</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/email/triage-automation</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/email/shared-inbox</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/solutions/email/support-automation</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/use-cases/support</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/use-cases/healthcare-triage</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/use-cases/claims</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/use-cases/hr</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/use-cases/finance</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/playbook/unified-support-triage</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/playbook/unified-sales-intake</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/playbook/unified-ops-intake</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/playbook/unified-intake-system</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/docs</loc>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/security</loc>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://kalevent.com/solutions/decisions</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/voice</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/social</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/forms</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/chat</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/crm</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/api</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Email solutions -->
+  <url>
+    <loc>https://kalevent.com/solutions/email/ai-triage</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/email/triage-automation</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/email/draft-replies</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/email/shared-inbox</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/solutions/email/support-automation</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Use cases -->
+  <url>
+    <loc>https://kalevent.com/use-cases/support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/use-cases/healthcare-triage</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/use-cases/claims</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/use-cases/hr</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/use-cases/finance</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Playbooks -->
+  <url>
+    <loc>https://kalevent.com/playbook/unified-support-triage</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/playbook/unified-sales-intake</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/playbook/unified-ops-intake</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/playbook/unified-intake-system</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Blog -->
+  <url>
+    <loc>https://kalevent.com/blog</loc>
+    <lastmod>2026-03-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/what-is-unified-intake</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/single-intake-api-design</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/feedback-not-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/support-intake-not-tickets</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/form-noise-support-tickets</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/too-many-support-emails</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/ai-email-triage</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/stop-missing-customer-emails</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/cost-of-slow-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/email-to-ticket-automation</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/ai-support-agent</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kalevent.com/blog/triage-1000-customer-emails</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Docs -->
+  <url>
+    <loc>https://kalevent.com/docs</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Legal & support -->
+  <url>
+    <loc>https://kalevent.com/security</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://kalevent.com/privacy</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://kalevent.com/terms</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://kalevent.com/contact</loc>
-    <priority>0.4</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/what-is-unified-intake</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 
-  <url>
-    <loc>https://kalevent.com/blog/single-intake-api-design</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/feedback-not-support</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/support-intake-not-tickets</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/form-noise-support-tickets</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/too-many-support-emails</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/ai-email-triage</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/stop-missing-customer-emails</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/cost-of-slow-support</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/email-to-ticket-automation</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/ai-support-agent</loc>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://kalevent.com/blog/triage-1000-customer-emails</loc>
-    <priority>0.5</priority>
-  </url>
 </urlset>

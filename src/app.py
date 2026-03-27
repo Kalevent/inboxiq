@@ -454,6 +454,22 @@ def create_app() -> Flask:
     # Serve SEO-friendly robots.txt at the root.
     return current_app.send_static_file("robots.txt")
 
+  # Old website URLs — return 410 Gone so Google de-indexes them faster than a 404
+  @app.route("/en-gb/", defaults={"path": ""})
+  @app.route("/en-gb/<path:path>")
+  @app.route("/en-us/", defaults={"path": ""})
+  @app.route("/en-us/<path:path>")
+  @app.route("/es-es/", defaults={"path": ""})
+  @app.route("/es-es/<path:path>")
+  @app.route("/fr-fr/", defaults={"path": ""})
+  @app.route("/fr-fr/<path:path>")
+  @app.route("/set_locale/")
+  @app.route("/careers")
+  @app.route("/crm/", defaults={"path": ""})
+  @app.route("/crm/<path:path>")
+  def old_site_gone(**_):
+    return "", 410
+
   @app.route("/sitemap.xml")
   def sitemap():
     """
