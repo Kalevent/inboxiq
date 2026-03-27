@@ -314,9 +314,10 @@ async function loadPublishedPosts() {
                 <div>Words: <span class="text-slate-300">${post.word_count || 0}</span> | Stage: <span class="text-slate-300">${post.funnel_stage || 'N/A'}</span> | Keyword: <span class="text-slate-300">${post.primary_keyword || 'N/A'}</span></div>
               </div>
             </div>
-            <div class="flex gap-2 ml-3">
+            <div class="flex gap-2 ml-3 flex-wrap justify-end">
               <a href="/blog/${post.slug}" target="_blank" class="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200">View</a>
               <a href="/api/v1/publishing/blogs/${post.id}" target="_blank" class="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200">JSON</a>
+              <button onclick="distributePost('${post.id}', this)" class="text-xs px-2 py-1 rounded ${post.distributed_at ? 'bg-green-700/40 text-green-300' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}">${post.distributed_at ? '✓ Distributed' : 'Distribute'}</button>
               <button onclick="deletePublishedPost('${post.id}', '${post.slug}')" class="text-xs px-2 py-1 rounded bg-rose-700/60 hover:bg-rose-600 text-rose-200">Delete</button>
             </div>
           </div>
@@ -326,6 +327,32 @@ async function loadPublishedPosts() {
 
   } catch (err) {
     container.innerHTML = `<div class="text-red-400 text-sm">Error loading posts: ${err.message}</div>`;
+  }
+}
+
+async function distributePost(postId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Distributing…';
+  try {
+    const csrf = (document.cookie.match(/csrf_access_token=([^;]+)/) || [])[1] || '';
+    const resp = await fetch(`/publishing/blog/${postId}/distribute`, {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': decodeURIComponent(csrf) },
+      credentials: 'include',
+    });
+    if (resp.ok) {
+      btn.textContent = '✓ Distributed';
+      btn.className = btn.className.replace('bg-indigo-600 hover:bg-indigo-500 text-white', 'bg-green-700/40 text-green-300');
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      alert('Distribute failed: ' + (err.error || resp.status));
+      btn.textContent = 'Distribute';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    alert('Distribute failed: ' + e.message);
+    btn.textContent = 'Distribute';
+    btn.disabled = false;
   }
 }
 

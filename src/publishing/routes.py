@@ -321,6 +321,40 @@ def blog_publish(post_id: str):
     return jsonify({"id": post.id, "slug": post.slug, "status": post.status, "published_at": published_at})
 
 
+@bp.post("/blog/<post_id>/distribute")
+@jwt_required(optional=True)
+def blog_distribute(post_id: str):
+    """Manually trigger social distribution for an already-published post."""
+    from src.models.content import BlogPost
+    from src.extensions import db
+    from datetime import datetime, timezone
+
+    post = db.session.get(BlogPost, post_id)
+    if not post:
+        return jsonify({"error": "Post not found"}), 404
+    if post.status != "published":
+        return jsonify({"error": "Post is not published"}), 400
+
+    try:
+        from src.marketing.content_distribution import (
+            distribute_to_social, send_blog_newsletter, submit_to_search_engines,
+        )
+        distribute_to_social.delay(post.id)
+        send_blog_newsletter.delay(post.id)
+        submit_to_search_engines.delay(post.id)
+        post.distributed_at = datetime.now(timezone.utc)
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("Manual distribution failed: %s", exc)
+        return jsonify({"error": str(exc)}), 500
+
+    return jsonify({"status": "queued", "post_id": post.id, "slug": post.slug})
+
+
 @bp.post("/blog/<post_id>/delete")
 @jwt_required(optional=True)
 def blog_delete(post_id: str):

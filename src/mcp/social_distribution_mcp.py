@@ -53,30 +53,59 @@ def post_to_linkedin(
             "error": "Text is required and must be ≤3000 characters"
         }
 
-    # Get LinkedIn credentials from environment
+    import requests as http
+
     access_token = os.getenv("LINKEDIN_ACCESS_TOKEN")
     if not access_token:
-        return {
-            "status": "error",
-            "error": "LINKEDIN_ACCESS_TOKEN not configured"
-        }
+        return {"status": "error", "error": "LINKEDIN_ACCESS_TOKEN not configured"}
 
-    # TODO: Implement LinkedIn Share API v2 integration
-    # Endpoint: POST https://api.linkedin.com/v2/ugcPosts
-    # Documentation: https://docs.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/ugc-post-api
+    org_id = account_id or os.getenv("LINKEDIN_ORG_ID", "")
+    if not org_id:
+        return {"status": "error", "error": "LINKEDIN_ORG_ID not configured"}
 
-    logger.info(f"LinkedIn post request: {text[:100]}...")
+    media = []
+    if url:
+        media.append({
+            "status": "READY",
+            "originalUrl": url,
+            "title": {"text": url},
+        })
 
-    # Placeholder response
-    return {
-        "status": "not_implemented",
-        "message": "LinkedIn API integration pending",
-        "would_post": {
-            "text": text,
-            "url": url,
-            "image_url": image_url
-        }
+    body: Dict[str, Any] = {
+        "author": f"urn:li:organization:{org_id}",
+        "lifecycleState": "PUBLISHED",
+        "specificContent": {
+            "com.linkedin.ugc.ShareContent": {
+                "shareCommentary": {"text": text},
+                "shareMediaCategory": "ARTICLE" if media else "NONE",
+                **({"media": media} if media else {}),
+            }
+        },
+        "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"},
     }
+
+    try:
+        resp = http.post(
+            "https://api.linkedin.com/v2/ugcPosts",
+            json=body,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+                "X-Restli-Protocol-Version": "2.0.0",
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        post_id = resp.json().get("id", "")
+        logger.info(f"LinkedIn post created: {post_id}")
+        return {
+            "status": "success",
+            "post_id": post_id,
+            "url": f"https://www.linkedin.com/feed/update/{post_id}",
+        }
+    except Exception as exc:
+        logger.error(f"LinkedIn API error: {exc}")
+        return {"status": "error", "error": str(exc)}
 
 
 def post_to_twitter(
@@ -124,34 +153,49 @@ def post_to_twitter(
                     "error": f"Thread tweet #{i+1} exceeds 280 characters"
                 }
 
-    # Get Twitter credentials from environment
+    import requests as http
+    from requests_oauthlib import OAuth1
+
     api_key = os.getenv("TWITTER_API_KEY")
     api_secret = os.getenv("TWITTER_API_SECRET")
     access_token = os.getenv("TWITTER_ACCESS_TOKEN")
     access_secret = os.getenv("TWITTER_ACCESS_SECRET")
 
     if not all([api_key, api_secret, access_token, access_secret]):
+        return {"status": "error", "error": "Twitter API credentials not fully configured"}
+
+    auth = OAuth1(api_key, api_secret, access_token, access_secret)
+    tweets = thread if thread else [text]
+    tweet_ids = []
+    reply_to = reply_to_id
+
+    for tweet_text in tweets:
+        body: Dict[str, Any] = {"text": tweet_text[:280]}
+        if reply_to:
+            body["reply"] = {"in_reply_to_tweet_id": reply_to}
+        try:
+            resp = http.post(
+                "https://api.twitter.com/2/tweets",
+                json=body,
+                auth=auth,
+                timeout=15,
+            )
+            resp.raise_for_status()
+            tweet_id = resp.json().get("data", {}).get("id")
+            tweet_ids.append(tweet_id)
+            reply_to = tweet_id
+        except Exception as exc:
+            logger.error(f"Twitter API error on tweet {len(tweet_ids)+1}: {exc}")
+            break
+
+    if tweet_ids:
+        logger.info(f"Twitter thread posted: {len(tweet_ids)} tweet(s)")
         return {
-            "status": "error",
-            "error": "Twitter API credentials not fully configured"
+            "status": "success",
+            "tweet_ids": tweet_ids,
+            "urls": [f"https://twitter.com/i/web/status/{tid}" for tid in tweet_ids],
         }
-
-    # TODO: Implement Twitter API v2 integration
-    # Endpoint: POST https://api.twitter.com/2/tweets
-    # Documentation: https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
-
-    logger.info(f"Twitter post request: {(text or thread[0] if thread else '')[:100]}...")
-
-    # Placeholder response
-    return {
-        "status": "not_implemented",
-        "message": "Twitter API integration pending",
-        "would_post": {
-            "text": text,
-            "thread": thread,
-            "media_urls": media_urls
-        }
-    }
+    return {"status": "error", "error": "no tweets posted"}
 
 
 def schedule_social_post(

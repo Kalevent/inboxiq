@@ -15,7 +15,7 @@ from typing import Dict, List, Any, Optional
 from src.celery_inboxiq import celery
 from src.extensions import db
 from src.models.content import BlogPost, GeneratedContent
-from src.models.core import Account
+from src.models.core import Account, InboxConnection
 from src.sanitize import sanitize_html
 
 logger = logging.getLogger(__name__)
@@ -423,50 +423,128 @@ def _split_into_twitter_thread(text: str, url: str, max_length: int = 280) -> Li
     return thread if thread else [text[:max_length]]
 
 
+def _get_social_token(provider: str) -> Optional[str]:
+    """Decrypt and return the stored OAuth access token for a social provider."""
+    from src.crypto import decrypt_value
+    conn = InboxConnection.query.filter_by(provider=provider, status="connected").first()
+    if not conn or not conn.metadata_json:
+        return None
+    enc = conn.metadata_json.get("access_token_enc")
+    return decrypt_value(enc) if enc else None
+
+
 def _post_to_linkedin(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Post to LinkedIn via API.
-
-    Returns:
-        Dict with posting result
+    Post to LinkedIn company page via UGC Posts API.
+    Token is read from the linkedin_social InboxConnection (set via Settings → Integrations).
+    LINKEDIN_ORG_ID env var must be set to the numeric company page ID.
     """
     if not content:
         return {"status": "skipped", "reason": "no_content"}
 
-    # TODO: Implement LinkedIn API integration
-    # Would use LinkedIn Share API: https://docs.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/share-api
+    import os
+    import requests as http
 
-    logger.info(f"Would post to LinkedIn: {content.get('text', '')[:100]}...")
+    token = _get_social_token("linkedin_social")
+    if not token:
+        logger.warning("LinkedIn not connected — go to Settings → Integrations to connect")
+        return {"status": "skipped", "reason": "not_connected"}
 
-    return {
-        "status": "not_implemented",
-        "platform": "linkedin",
-        "message": "LinkedIn API integration pending"
+    org_id = os.getenv("LINKEDIN_ORG_ID", "")
+    if not org_id:
+        logger.warning("LINKEDIN_ORG_ID not set")
+        return {"status": "skipped", "reason": "not_configured"}
+
+    text = content.get("text", "")
+    hashtags = content.get("hashtags", "")
+    post_url = content.get("url", "")
+    full_text = f"{text}\n\n{hashtags}".strip() if hashtags else text
+
+    body = {
+        "author": f"urn:li:organization:{org_id}",
+        "lifecycleState": "PUBLISHED",
+        "specificContent": {
+            "com.linkedin.ugc.ShareContent": {
+                "shareCommentary": {"text": full_text},
+                "shareMediaCategory": "ARTICLE",
+                "media": [
+                    {
+                        "status": "READY",
+                        "originalUrl": post_url,
+                        "title": {"text": post.title or ""},
+                        "description": {"text": (post.excerpt or post.summary or "")[:200]},
+                    }
+                ],
+            }
+        },
+        "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"},
     }
+
+    try:
+        resp = http.post(
+            "https://api.linkedin.com/v2/ugcPosts",
+            json=body,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "X-Restli-Protocol-Version": "2.0.0",
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        post_id = resp.json().get("id", "")
+        logger.info(f"LinkedIn post created: {post_id}")
+        return {"status": "ok", "platform": "linkedin", "post_id": post_id}
+    except Exception as exc:
+        logger.error(f"LinkedIn API error: {exc}")
+        return {"status": "error", "platform": "linkedin", "error": str(exc)}
 
 
 def _post_to_twitter(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Post thread to Twitter via API.
-
-    Returns:
-        Dict with posting result
+    Post a tweet (or thread) via Twitter API v2.
+    Token is read from the twitter_social InboxConnection (set via Settings → Integrations).
     """
     if not content:
         return {"status": "skipped", "reason": "no_content"}
 
-    # TODO: Implement Twitter API integration
-    # Would use Twitter API v2: https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
+    import requests as http
+
+    token = _get_social_token("twitter_social")
+    if not token:
+        logger.warning("Twitter not connected — go to Settings → Integrations to connect")
+        return {"status": "skipped", "reason": "not_connected"}
 
     thread = content.get("thread", [])
-    logger.info(f"Would post Twitter thread with {len(thread)} tweets")
+    if not thread:
+        return {"status": "skipped", "reason": "no_thread"}
 
-    return {
-        "status": "not_implemented",
-        "platform": "twitter",
-        "message": "Twitter API integration pending",
-        "thread_length": len(thread)
-    }
+    tweet_ids = []
+    reply_to = None
+
+    for tweet_text in thread:
+        body: Dict[str, Any] = {"text": tweet_text[:280]}
+        if reply_to:
+            body["reply"] = {"in_reply_to_tweet_id": reply_to}
+        try:
+            resp = http.post(
+                "https://api.twitter.com/2/tweets",
+                json=body,
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=15,
+            )
+            resp.raise_for_status()
+            tweet_id = resp.json().get("data", {}).get("id")
+            tweet_ids.append(tweet_id)
+            reply_to = tweet_id
+        except Exception as exc:
+            logger.error(f"Twitter API error on tweet {len(tweet_ids)+1}: {exc}")
+            break
+
+    if tweet_ids:
+        logger.info(f"Twitter thread posted: {len(tweet_ids)} tweet(s), first={tweet_ids[0]}")
+        return {"status": "ok", "platform": "twitter", "tweet_ids": tweet_ids}
+    return {"status": "error", "platform": "twitter", "error": "no tweets posted"}
 
 
 def _generate_newsletter_html(post: BlogPost) -> str:
