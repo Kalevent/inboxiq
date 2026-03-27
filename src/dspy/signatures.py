@@ -327,6 +327,31 @@ def build_email_summarizer(dspy: Any) -> Any:
     return EmailSummarizerModule()
 
 
+def build_meta_description_generator(dspy: Any) -> Any:
+    """Generate a concise SEO meta description for a blog post."""
+
+    class MetaDescriptionSignature(dspy.Signature):
+        """Write a compelling SEO meta description for a B2B SaaS blog post.
+        Output exactly one sentence, 140-160 characters, no quotes."""
+
+        title = dspy.InputField(desc="Blog post title")
+        excerpt = dspy.InputField(desc="First 300 characters of the post body")
+        primary_keyword = dspy.InputField(desc="Target SEO keyword (may be empty)")
+        meta_description = dspy.OutputField(
+            desc="SEO meta description: 140-160 chars, includes the keyword naturally, ends with a period"
+        )
+
+    class MetaDescriptionModule(dspy.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.predict = dspy.Predict(MetaDescriptionSignature)
+
+        def forward(self, title: str, excerpt: str, primary_keyword: str = "") -> Any:
+            return self.predict(title=title, excerpt=excerpt, primary_keyword=primary_keyword)
+
+    return MetaDescriptionModule()
+
+
 def build_blog_writer(dspy: Any) -> Any:
     """
     Multi-stage B2B SaaS blog writer pipeline.

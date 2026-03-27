@@ -18,7 +18,7 @@ from flask import current_app
 from src.extensions import db
 from src.models.content import BlogPost
 from src.dspy.config import _configure_dspy
-from src.dspy.signatures import build_blog_writer
+from src.dspy.signatures import build_blog_writer, build_meta_description_generator
 
 _log = logging.getLogger(__name__)
 
@@ -229,6 +229,26 @@ def create_blog_draft(data: dict, run_async: bool = False) -> Tuple[BlogPost, di
     return post, {"queued": False}
 
 
+def _generate_meta_description(post: BlogPost) -> str:
+    """Generate a 140-160 char SEO meta description via DSPy. Falls back to excerpt."""
+    excerpt = post.excerpt or _derive_excerpt(post.markdown or "")
+    fallback = excerpt[:160].rsplit(" ", 1)[0] if len(excerpt) > 160 else excerpt
+    try:
+        _, _, dspy = _configure_dspy()
+        generator = build_meta_description_generator(dspy)
+        result = generator(
+            title=post.title or "",
+            excerpt=excerpt[:300],
+            primary_keyword=post.primary_keyword or "",
+        )
+        generated = (result.meta_description or "").strip().strip('"').strip("'")
+        if 100 <= len(generated) <= 200:
+            return generated
+    except Exception as exc:
+        _log.debug("meta_description generation failed (non-fatal): %s", exc)
+    return fallback
+
+
 def publish_blog(post_id: str) -> BlogPost:
     post = BlogPost.query.filter_by(id=post_id).first()
     if not post:
@@ -240,10 +260,17 @@ def publish_blog(post_id: str) -> BlogPost:
     if not post.content_html:
         post.content_html = post.rendered_html or _render_markdown(post.markdown or "")
 
+    if not post.meta_description:
+        post.meta_description = _generate_meta_description(post)
+
     post.status = "published"
     post.published_at = datetime.utcnow()
     post.updated_at = datetime.utcnow()
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return post
 
 
