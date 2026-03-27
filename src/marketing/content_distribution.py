@@ -508,7 +508,7 @@ def _post_to_twitter(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[
     api_key = os.getenv("TWITTER_API_KEY", "")
     api_secret = os.getenv("TWITTER_API_SECRET", "")
     access_token = os.getenv("TWITTER_ACCESS_TOKEN", "")
-    access_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET", "")
+    access_secret = os.getenv("TWITTER_ACCESS_SECRET", "")
 
     if not all([api_key, api_secret, access_token, access_secret]):
         logger.warning("Twitter not configured: missing API credentials")
