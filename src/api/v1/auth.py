@@ -435,7 +435,7 @@ def google_inbox_start():
         "scope": " ".join(GOOGLE_GMAIL_SCOPES),
         "access_type": "offline",
         "include_granted_scopes": "true",
-        "prompt": "consent",
+        "prompt": "select_account consent",
         "state": _make_connect_state(get_jwt_identity()),
     }
     return redirect(f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}")
