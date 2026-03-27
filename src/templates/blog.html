@@ -1,108 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blog · Kalevent / InboxIQ</title>
-  <link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
-  />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
-</head>
-<body class="bg-slate-950 text-slate-50 antialiased">
-  <div class="min-h-screen flex flex-col">
-    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
-      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="{{ url_for('root') }}" class="flex items-center gap-2 hover:opacity-90">
-          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
-          <div>
-            <div class="font-semibold text-lg tracking-tight">Kalevent</div>
-            <div class="text-xs text-slate-400">InboxIQ – Your Inbox, Smarter</div>
-          </div>
-        </a>
-        <a href="{{ url_for('login_page') }}" class="hidden sm:inline-flex text-xs px-3 py-1.5 rounded-full border border-slate-700 text-slate-200 hover:bg-slate-800">
-          Log in
+{% extends "marketing/base.html" %}
+
+{% block title %}Blog · Kalevent / InboxIQ{% endblock %}
+{% block meta_description %}Product updates, customer support playbooks, and engineering notes on building a reliable AI inbox.{% endblock %}
+{% block canonical %}https://kalevent.com/blog{% endblock %}
+
+{% block content %}
+<div class="bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950">
+  {% if posts is not defined %}
+    {% set posts = [] %}
+  {% endif %}
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
+    <div class="mb-8">
+      <p class="blog-meta uppercase tracking-[0.2em] text-indigo-300/80 mb-3">Blog</p>
+      <h1 class="blog-heading text-white tracking-tight">Insights from the InboxIQ team</h1>
+      <p class="blog-body-text text-slate-300 mt-3 max-w-3xl">
+        Product updates, customer support playbooks, and engineering notes on building a reliable AI inbox.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-5 mb-10">
+      <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 space-y-3 shadow-lg shadow-indigo-500/5">
+        <div class="blog-meta uppercase tracking-wide text-indigo-200/80">Product</div>
+        <h2 class="blog-card-title text-white">Release highlights</h2>
+        <p class="blog-body-text text-slate-300">See what shipped across InboxIQ: new routing rules, performance improvements, and UX polish.</p>
+        <a href="#latest-posts" class="blog-button-text text-indigo-200 hover:text-white inline-flex items-center gap-2">Read updates →</a>
+      </div>
+      <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 space-y-3 shadow-lg shadow-indigo-500/5">
+        <div class="blog-meta uppercase tracking-wide text-emerald-200/80">Playbooks</div>
+        <h2 class="blog-card-title text-white">Support excellence</h2>
+        <p class="blog-body-text text-slate-300">Playbooks for faster replies, better triage, and happier customers—powered by AI but built for humans.</p>
+        <a href="#latest-posts" class="blog-button-text text-indigo-200 hover:text-white inline-flex items-center gap-2">See tips →</a>
+      </div>
+      <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 space-y-3 shadow-lg shadow-indigo-500/5">
+        <div class="blog-meta uppercase tracking-wide text-sky-200/80">Engineering</div>
+        <h2 class="blog-card-title text-white">Under the hood</h2>
+        <p class="blog-body-text text-slate-300">Architecture, reliability lessons, and how we keep latency low while processing thousands of emails.</p>
+        <a href="#latest-posts" class="blog-button-text text-indigo-200 hover:text-white inline-flex items-center gap-2">Explore posts →</a>
+      </div>
+    </div>
+
+    <div id="latest-posts" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-indigo-500/10">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <div class="blog-meta uppercase tracking-[0.2em] text-indigo-200/80 mb-1">Latest posts</div>
+          <h2 class="blog-subheading text-white">Fresh from the team</h2>
+        </div>
+        <a href="{{ url_for('contact') }}" class="blog-button-text text-indigo-200 hover:text-white inline-flex items-center gap-2">
+          Pitch us a topic →
         </a>
       </div>
-    </header>
-
-    <main class="flex-1 bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950">
-      {% if posts is not defined %}
-        {% set posts = [] %}
-      {% endif %}
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
-        <div class="mb-8">
-          <p class="blog-meta uppercase tracking-[0.2em] text-indigo-300/80 mb-3">Blog</p>
-          <h1 class="blog-heading text-white tracking-tight">Insights from the InboxIQ team</h1>
-          <p class="blog-body-text text-slate-300 mt-3 max-w-3xl">
-            Product updates, customer support playbooks, and engineering notes on building a reliable AI inbox.
-          </p>
-        </div>
-
-        <div class="grid md:grid-cols-3 gap-5 mb-10">
-          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 space-y-3 shadow-lg shadow-indigo-500/5">
-            <div class="blog-meta uppercase tracking-wide text-indigo-200/80">Product</div>
-            <h2 class="blog-card-title text-white">Release highlights</h2>
-            <p class="blog-body-text text-slate-300">See what shipped across InboxIQ: new routing rules, performance improvements, and UX polish.</p>
-            <a href="#latest-posts" class="blog-button-text text-indigo-200 hover:text-white inline-flex items-center gap-2">Read updates →</a>
-          </div>
-          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 space-y-3 shadow-lg shadow-indigo-500/5">
-            <div class="blog-meta uppercase tracking-wide text-emerald-200/80">Playbooks</div>
-            <h2 class="blog-card-title text-white">Support excellence</h2>
-            <p class="blog-body-text text-slate-300">Playbooks for faster replies, better triage, and happier customers—powered by AI but built for humans.</p>
-            <a href="#latest-posts" class="blog-button-text text-indigo-200 hover:text-white inline-flex items-center gap-2">See tips →</a>
-          </div>
-          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 space-y-3 shadow-lg shadow-indigo-500/5">
-            <div class="blog-meta uppercase tracking-wide text-sky-200/80">Engineering</div>
-            <h2 class="blog-card-title text-white">Under the hood</h2>
-            <p class="blog-body-text text-slate-300">Architecture, reliability lessons, and how we keep latency low while processing thousands of emails.</p>
-            <a href="#latest-posts" class="blog-button-text text-indigo-200 hover:text-white inline-flex items-center gap-2">Explore posts →</a>
-          </div>
-        </div>
-
-        <div id="latest-posts" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-indigo-500/10">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <div class="blog-meta uppercase tracking-[0.2em] text-indigo-200/80 mb-1">Latest posts</div>
-              <h2 class="blog-subheading text-white">Fresh from the team</h2>
-            </div>
-            <a href="{{ url_for('contact') }}" class="blog-button-text text-indigo-200 hover:text-white inline-flex items-center gap-2">
-              Pitch us a topic →
-            </a>
-          </div>
-          <div class="space-y-4">
-            {% for post in posts %}
-              <article class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-800 rounded-xl px-4 py-3 bg-slate-950/50">
-                <div class="space-y-1">
-                  <div class="blog-meta text-indigo-200/80 uppercase tracking-wide">
-                    {% if post.funnel_stage %}{{ post.funnel_stage|upper }}{% else %}Playbook{% endif %}
-                  </div>
-                  <h3 class="blog-card-title text-white">
-                    {% set is_published = post.status in ['published', 'Published'] %}
-                    {% if is_published and post.slug %}
-                      <a href="{{ url_for('blog.blog_post', slug=post.slug) }}" class="hover:text-indigo-200">{{ post.title }}</a>
-                    {% else %}
-                      {{ post.title }}
-                    {% endif %}
-                  </h3>
-                  <p class="blog-body-text text-slate-300">{{ post.summary or post.excerpt }}</p>
-                </div>
-                {% if post.read_time_minutes %}
-                  <span class="blog-meta text-slate-400 whitespace-nowrap">{{ post.read_time_minutes }} min read</span>
+      <div class="space-y-4">
+        {% for post in posts %}
+          <article class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-800 rounded-xl px-4 py-3 bg-slate-950/50">
+            <div class="space-y-1">
+              <div class="blog-meta text-indigo-200/80 uppercase tracking-wide">
+                {% if post.funnel_stage %}{{ post.funnel_stage|upper }}{% else %}Playbook{% endif %}
+              </div>
+              <h3 class="blog-card-title text-white">
+                {% set is_published = post.status in ['published', 'Published'] %}
+                {% if is_published and post.slug %}
+                  <a href="{{ url_for('blog.blog_post', slug=post.slug) }}" class="hover:text-indigo-200">{{ post.title }}</a>
+                {% else %}
+                  {{ post.title }}
                 {% endif %}
-              </article>
-            {% endfor %}
-          </div>
-          <div class="mt-6 flex flex-wrap items-center gap-3 text-slate-300">
-            <a href="{{ url_for('upgrade') }}" class="blog-button-text inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 text-white">
-              Try InboxIQ
-            </a>
-            <span class="blog-meta text-slate-500">Want coverage on a topic? Email <a href="mailto:support@kalevent.com" class="text-indigo-200 hover:text-white">support@kalevent.com</a>.</span>
-          </div>
-        </div>
+              </h3>
+              <p class="blog-body-text text-slate-300">{{ post.summary or post.excerpt }}</p>
+            </div>
+            {% if post.read_time_minutes %}
+              <span class="blog-meta text-slate-400 whitespace-nowrap">{{ post.read_time_minutes }} min read</span>
+            {% endif %}
+          </article>
+        {% endfor %}
       </div>
-    </main>
+      <div class="mt-6 flex flex-wrap items-center gap-3 text-slate-300">
+        <a href="{{ url_for('upgrade') }}" class="blog-button-text inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 text-white">
+          Try InboxIQ
+        </a>
+        <span class="blog-meta text-slate-500">Want coverage on a topic? Email <a href="mailto:support@kalevent.com" class="text-indigo-200 hover:text-white">support@kalevent.com</a>.</span>
+      </div>
+    </div>
   </div>
-</body>
-</html>
+</div>
+{% endblock %}

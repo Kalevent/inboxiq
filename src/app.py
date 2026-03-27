@@ -467,6 +467,8 @@ def create_app() -> Flask:
   @app.route("/careers")
   @app.route("/crm/", defaults={"path": ""})
   @app.route("/crm/<path:path>")
+  @app.route("/month")
+  @app.route("/year")
   def old_site_gone(**_):
     return "", 410
 
