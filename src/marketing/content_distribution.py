@@ -425,48 +425,126 @@ def _split_into_twitter_thread(text: str, url: str, max_length: int = 280) -> Li
 
 def _post_to_linkedin(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Post to LinkedIn via API.
+    Post to LinkedIn company page via UGC Posts API.
 
-    Returns:
-        Dict with posting result
+    Required env vars:
+        LINKEDIN_ACCESS_TOKEN  — OAuth 2.0 token with w_organization_social scope
+        LINKEDIN_ORG_ID        — numeric company page ID (e.g. 93141581)
     """
     if not content:
         return {"status": "skipped", "reason": "no_content"}
 
-    # TODO: Implement LinkedIn API integration
-    # Would use LinkedIn Share API: https://docs.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/share-api
+    import os
+    import requests as http
 
-    logger.info(f"Would post to LinkedIn: {content.get('text', '')[:100]}...")
+    token = os.getenv("LINKEDIN_ACCESS_TOKEN", "")
+    org_id = os.getenv("LINKEDIN_ORG_ID", "")
+    if not token or not org_id:
+        logger.warning("LinkedIn not configured: missing LINKEDIN_ACCESS_TOKEN or LINKEDIN_ORG_ID")
+        return {"status": "skipped", "reason": "not_configured"}
 
-    return {
-        "status": "not_implemented",
-        "platform": "linkedin",
-        "message": "LinkedIn API integration pending"
+    text = content.get("text", "")
+    hashtags = content.get("hashtags", "")
+    post_url = content.get("url", "")
+    full_text = f"{text}\n\n{hashtags}".strip() if hashtags else text
+
+    body = {
+        "author": f"urn:li:organization:{org_id}",
+        "lifecycleState": "PUBLISHED",
+        "specificContent": {
+            "com.linkedin.ugc.ShareContent": {
+                "shareCommentary": {"text": full_text},
+                "shareMediaCategory": "ARTICLE",
+                "media": [
+                    {
+                        "status": "READY",
+                        "originalUrl": post_url,
+                        "title": {"text": post.title or ""},
+                        "description": {"text": (post.excerpt or post.summary or "")[:200]},
+                    }
+                ],
+            }
+        },
+        "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"},
     }
+
+    try:
+        resp = http.post(
+            "https://api.linkedin.com/v2/ugcPosts",
+            json=body,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "X-Restli-Protocol-Version": "2.0.0",
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        post_id = resp.json().get("id", "")
+        logger.info(f"LinkedIn post created: {post_id}")
+        return {"status": "ok", "platform": "linkedin", "post_id": post_id}
+    except Exception as exc:
+        logger.error(f"LinkedIn API error: {exc}")
+        return {"status": "error", "platform": "linkedin", "error": str(exc)}
 
 
 def _post_to_twitter(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Post thread to Twitter via API.
+    Post a tweet (or thread) via Twitter API v2 using OAuth 1.0a.
 
-    Returns:
-        Dict with posting result
+    Required env vars:
+        TWITTER_API_KEY             — consumer key
+        TWITTER_API_SECRET          — consumer secret
+        TWITTER_ACCESS_TOKEN        — access token
+        TWITTER_ACCESS_TOKEN_SECRET — access token secret
     """
     if not content:
         return {"status": "skipped", "reason": "no_content"}
 
-    # TODO: Implement Twitter API integration
-    # Would use Twitter API v2: https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
+    import os
+    import requests as http
+    from requests_oauthlib import OAuth1
 
+    api_key = os.getenv("TWITTER_API_KEY", "")
+    api_secret = os.getenv("TWITTER_API_SECRET", "")
+    access_token = os.getenv("TWITTER_ACCESS_TOKEN", "")
+    access_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET", "")
+
+    if not all([api_key, api_secret, access_token, access_secret]):
+        logger.warning("Twitter not configured: missing API credentials")
+        return {"status": "skipped", "reason": "not_configured"}
+
+    auth = OAuth1(api_key, api_secret, access_token, access_secret)
     thread = content.get("thread", [])
-    logger.info(f"Would post Twitter thread with {len(thread)} tweets")
+    if not thread:
+        return {"status": "skipped", "reason": "no_thread"}
 
-    return {
-        "status": "not_implemented",
-        "platform": "twitter",
-        "message": "Twitter API integration pending",
-        "thread_length": len(thread)
-    }
+    tweet_ids = []
+    reply_to = None
+
+    for tweet_text in thread:
+        body: Dict[str, Any] = {"text": tweet_text[:280]}
+        if reply_to:
+            body["reply"] = {"in_reply_to_tweet_id": reply_to}
+        try:
+            resp = http.post(
+                "https://api.twitter.com/2/tweets",
+                json=body,
+                auth=auth,
+                timeout=15,
+            )
+            resp.raise_for_status()
+            tweet_id = resp.json().get("data", {}).get("id")
+            tweet_ids.append(tweet_id)
+            reply_to = tweet_id
+        except Exception as exc:
+            logger.error(f"Twitter API error on tweet {len(tweet_ids)+1}: {exc}")
+            break
+
+    if tweet_ids:
+        logger.info(f"Twitter thread posted: {len(tweet_ids)} tweet(s), first={tweet_ids[0]}")
+        return {"status": "ok", "platform": "twitter", "tweet_ids": tweet_ids}
+    return {"status": "error", "platform": "twitter", "error": "no tweets posted"}
 
 
 def _generate_newsletter_html(post: BlogPost) -> str:
