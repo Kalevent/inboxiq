@@ -72,6 +72,10 @@ def capture_lead(slug: str):
     else:
         data = request.form.to_dict()
 
+    # Honeypot: bots fill hidden fields, humans don't
+    if data.get("website"):
+        return jsonify({"status": "ok"}), 201  # silent reject
+
     name = (data.get("name") or "").strip()
     email = (data.get("email") or "").strip().lower()
 

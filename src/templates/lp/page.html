@@ -73,6 +73,11 @@
             <input type="hidden" name="utm_term"     value="{{ utm.utm_term }}">
             <input type="hidden" name="utm_content"  value="{{ utm.utm_content }}">
 
+            <!-- Honeypot: bots fill this, humans don't -->
+            <div style="position:absolute;left:-9999px;opacity:0;pointer-events:none" aria-hidden="true">
+              <input type="text" name="website" tabindex="-1" autocomplete="off">
+            </div>
+
             <div>
               <label class="block text-sm font-medium text-slate-300 mb-1" for="lp-name">Full name <span class="text-rose-400">*</span></label>
               <input id="lp-name" name="name" type="text" autocomplete="name" required
