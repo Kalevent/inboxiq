@@ -314,5 +314,65 @@ def cli_seed_missing_blog_posts():
     click.echo(f"created {slug}")
 
 
+@app.cli.command("backfill-meta-descriptions")
+@click.option("--dry-run", is_flag=True, default=False, help="Preview without saving.")
+def cli_backfill_meta_descriptions(dry_run: bool):
+    """
+    Generate SEO meta descriptions for all published blog posts that don't have one.
+    Safe to re-run: skips posts that already have a meta_description.
+    """
+    from src.models.content import BlogPost
+    from src.publishing.service import _generate_meta_description
+
+    posts = (
+        BlogPost.query
+        .filter(BlogPost.status == "published")
+        .filter(
+            (BlogPost.meta_description == None) |  # noqa: E711
+            (BlogPost.meta_description == "")
+        )
+        .order_by(BlogPost.published_at.asc())
+        .all()
+    )
+
+    if not posts:
+        click.echo("All published posts already have meta descriptions.")
+        return
+
+    click.echo(f"Found {len(posts)} post(s) missing meta descriptions.")
+    if dry_run:
+        click.echo("Dry run — no changes will be saved.\n")
+
+    updated = 0
+    skipped = 0
+    for post in posts:
+        try:
+            desc = _generate_meta_description(post)
+            if not desc:
+                click.echo(f"  skip  [{post.slug}] — could not generate description")
+                skipped += 1
+                continue
+
+            click.echo(f"  ok    [{post.slug}]\n        {desc}")
+
+            if not dry_run:
+                post.meta_description = desc
+                try:
+                    db.session.commit()
+                except Exception as exc:
+                    db.session.rollback()
+                    click.echo(f"  ERROR [{post.slug}] DB commit failed: {exc}")
+                    skipped += 1
+                    continue
+
+            updated += 1
+
+        except Exception as exc:
+            click.echo(f"  ERROR [{post.slug}] {exc}")
+            skipped += 1
+
+    click.echo(f"\nDone. updated={updated}  skipped={skipped}  dry_run={dry_run}")
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
