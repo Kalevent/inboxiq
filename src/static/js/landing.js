@@ -197,7 +197,8 @@
     ctaButton.textContent = 'Sending...';
 
     try {
-      const payload = { name: email, email, company, source: 'homepage_cta' };
+      const website = (document.getElementById('ctaWebsite')?.value || '').trim();
+      const payload = { name: email, email, company, source: 'homepage_cta', website: website || null };
       const response = await fetch('/api/v1/enterprise/inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },

@@ -66,6 +66,10 @@
           <h2 class="text-xl font-semibold text-white mb-6">Get early access</h2>
 
           <form id="lp-form" class="space-y-4" novalidate>
+            <!-- honeypot: hidden from real users, bots fill it in -->
+            <div style="position:absolute;left:-9999px;opacity:0;pointer-events:none" aria-hidden="true">
+              <input id="lp-website" type="text" name="website" tabindex="-1" autocomplete="off">
+            </div>
             <!-- UTM passthrough hidden fields -->
             <input type="hidden" name="utm_source"   value="{{ utm.utm_source }}">
             <input type="hidden" name="utm_medium"   value="{{ utm.utm_medium }}">
