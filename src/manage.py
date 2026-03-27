@@ -314,5 +314,37 @@ def cli_seed_missing_blog_posts():
     click.echo(f"created {slug}")
 
 
+@app.cli.command("backfill-meta-descriptions")
+@click.option("--dry-run", is_flag=True, default=False, help="Preview without saving.")
+def cli_backfill_meta_descriptions(dry_run: bool):
+    """Generate and save SEO meta descriptions for published posts that are missing them."""
+    from src.models.content import BlogPost
+    from src.publishing.service import _generate_meta_description
+
+    posts = (
+        BlogPost.query.filter(BlogPost.status == "published")
+        .filter((BlogPost.meta_description == None) | (BlogPost.meta_description == ""))  # noqa: E711
+        .order_by(BlogPost.published_at.asc())
+        .all()
+    )
+    if not posts:
+        click.echo("No posts missing meta descriptions.")
+        return
+
+    click.echo(f"Found {len(posts)} posts missing meta descriptions.")
+    for post in posts:
+        desc = _generate_meta_description(post)
+        if dry_run:
+            click.echo(f"[dry-run] {post.slug}: {desc!r}")
+        else:
+            post.meta_description = desc
+            try:
+                db.session.commit()
+                click.echo(f"OK {post.slug}: {desc!r}")
+            except Exception as exc:
+                db.session.rollback()
+                click.echo(f"ERR {post.slug}: {exc}")
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
