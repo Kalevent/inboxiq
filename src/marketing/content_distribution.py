@@ -15,7 +15,7 @@ from typing import Dict, List, Any, Optional
 from src.celery_inboxiq import celery
 from src.extensions import db
 from src.models.content import BlogPost, GeneratedContent
-from src.models.core import Account
+from src.models.core import Account, InboxConnection
 from src.sanitize import sanitize_html
 
 logger = logging.getLogger(__name__)
@@ -423,13 +423,21 @@ def _split_into_twitter_thread(text: str, url: str, max_length: int = 280) -> Li
     return thread if thread else [text[:max_length]]
 
 
+def _get_social_token(provider: str) -> Optional[str]:
+    """Decrypt and return the stored OAuth access token for a social provider."""
+    from src.crypto import decrypt_value
+    conn = InboxConnection.query.filter_by(provider=provider, status="connected").first()
+    if not conn or not conn.metadata_json:
+        return None
+    enc = conn.metadata_json.get("access_token_enc")
+    return decrypt_value(enc) if enc else None
+
+
 def _post_to_linkedin(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Post to LinkedIn company page via UGC Posts API.
-
-    Required env vars:
-        LINKEDIN_ACCESS_TOKEN  — OAuth 2.0 token with w_organization_social scope
-        LINKEDIN_ORG_ID        — numeric company page ID (e.g. 93141581)
+    Token is read from the linkedin_social InboxConnection (set via Settings → Integrations).
+    LINKEDIN_ORG_ID env var must be set to the numeric company page ID.
     """
     if not content:
         return {"status": "skipped", "reason": "no_content"}
@@ -437,10 +445,14 @@ def _post_to_linkedin(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict
     import os
     import requests as http
 
-    token = os.getenv("LINKEDIN_ACCESS_TOKEN", "")
+    token = _get_social_token("linkedin_social")
+    if not token:
+        logger.warning("LinkedIn not connected — go to Settings → Integrations to connect")
+        return {"status": "skipped", "reason": "not_connected"}
+
     org_id = os.getenv("LINKEDIN_ORG_ID", "")
-    if not token or not org_id:
-        logger.warning("LinkedIn not configured: missing LINKEDIN_ACCESS_TOKEN or LINKEDIN_ORG_ID")
+    if not org_id:
+        logger.warning("LINKEDIN_ORG_ID not set")
         return {"status": "skipped", "reason": "not_configured"}
 
     text = content.get("text", "")
@@ -490,31 +502,19 @@ def _post_to_linkedin(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict
 
 def _post_to_twitter(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Post a tweet (or thread) via Twitter API v2 using OAuth 1.0a.
-
-    Required env vars:
-        TWITTER_API_KEY             — consumer key
-        TWITTER_API_SECRET          — consumer secret
-        TWITTER_ACCESS_TOKEN        — access token
-        TWITTER_ACCESS_TOKEN_SECRET — access token secret
+    Post a tweet (or thread) via Twitter API v2.
+    Token is read from the twitter_social InboxConnection (set via Settings → Integrations).
     """
     if not content:
         return {"status": "skipped", "reason": "no_content"}
 
-    import os
     import requests as http
-    from requests_oauthlib import OAuth1
 
-    api_key = os.getenv("TWITTER_API_KEY", "")
-    api_secret = os.getenv("TWITTER_API_SECRET", "")
-    access_token = os.getenv("TWITTER_ACCESS_TOKEN", "")
-    access_secret = os.getenv("TWITTER_ACCESS_SECRET", "")
+    token = _get_social_token("twitter_social")
+    if not token:
+        logger.warning("Twitter not connected — go to Settings → Integrations to connect")
+        return {"status": "skipped", "reason": "not_connected"}
 
-    if not all([api_key, api_secret, access_token, access_secret]):
-        logger.warning("Twitter not configured: missing API credentials")
-        return {"status": "skipped", "reason": "not_configured"}
-
-    auth = OAuth1(api_key, api_secret, access_token, access_secret)
     thread = content.get("thread", [])
     if not thread:
         return {"status": "skipped", "reason": "no_thread"}
@@ -530,7 +530,7 @@ def _post_to_twitter(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[
             resp = http.post(
                 "https://api.twitter.com/2/tweets",
                 json=body,
-                auth=auth,
+                headers={"Authorization": f"Bearer {token}"},
                 timeout=15,
             )
             resp.raise_for_status()
