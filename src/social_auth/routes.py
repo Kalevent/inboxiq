@@ -45,7 +45,7 @@ from src.social_auth import bp
 
 _AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization"
 _TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
-_SCOPE = "openid profile email w_member_social"
+_SCOPE = "openid profile email w_member_social w_organization_social"
 _PROVIDER = "linkedin_social"
 
 _TW_AUTH_URL = "https://twitter.com/i/oauth2/authorize"
