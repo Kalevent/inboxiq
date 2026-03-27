@@ -124,11 +124,13 @@ def settings_page(tab):
   crm_prefill = {}
   linkedin_connection = None
   twitter_connection = None
+  facebook_connection = None
   inbox_connections = []
   if tab == "integrations" and account_id:
     crm_connection = InboxConnection.query.filter_by(account_id=account_id, provider="crm").first()
     linkedin_connection = InboxConnection.query.filter_by(account_id=account_id, provider="linkedin_social").first()
     twitter_connection = InboxConnection.query.filter_by(account_id=account_id, provider="twitter_social").first()
+    facebook_connection = InboxConnection.query.filter_by(account_id=account_id, provider="facebook_social").first()
     inbox_connections = InboxConnection.query.filter(
       InboxConnection.account_id == account_id,
       InboxConnection.provider.in_(["gmail", "outlook"]),
@@ -186,6 +188,7 @@ def settings_page(tab):
     crm_prefill=crm_prefill,
     linkedin_connection=linkedin_connection,
     twitter_connection=twitter_connection,
+    facebook_connection=facebook_connection,
     inbox_connections=inbox_connections,
     developer_access_request=developer_access_request,
     registered_apps=registered_apps,
@@ -628,7 +631,7 @@ def integrations_social_disconnect():
     from src.models import InboxConnection
     account_id = getattr(g, "current_account_id", None)
     provider = request.form.get("provider", "").strip()
-    if provider not in ("linkedin_social", "twitter_social") or not account_id:
+    if provider not in ("linkedin_social", "twitter_social", "facebook_social") or not account_id:
         return redirect(url_for("settings.settings_page", tab="integrations"))
 
     conn = InboxConnection.query.filter_by(account_id=account_id, provider=provider).first()
@@ -749,6 +752,7 @@ def integrations_webhooks():
   crm_prefill = {}
   linkedin_connection = None
   twitter_connection = None
+  facebook_connection = None
   if account_id:
     # Load CRM connection data
     crm_connection = InboxConnection.query.filter_by(account_id=account_id, provider="crm").first()
@@ -766,6 +770,7 @@ def integrations_webhooks():
       }
     linkedin_connection = InboxConnection.query.filter_by(account_id=account_id, provider="linkedin_social").first()
     twitter_connection = InboxConnection.query.filter_by(account_id=account_id, provider="twitter_social").first()
+    facebook_connection = InboxConnection.query.filter_by(account_id=account_id, provider="facebook_social").first()
   if request.method == "POST":
     action = (request.form.get("action") or "").strip()
     label = (request.form.get("label") or "").strip() or None
@@ -878,6 +883,7 @@ def integrations_webhooks():
         crm_saved=True,
         linkedin_connection=linkedin_connection,
         twitter_connection=twitter_connection,
+        facebook_connection=facebook_connection,
       )
     if action == "add_provider" and account_id:
       import re
