@@ -1357,6 +1357,10 @@
         </button>
       </div>
       <form id="eiInquiryForm" novalidate class="space-y-3">
+        <!-- honeypot: hidden from real users, bots fill it in -->
+        <div style="position:absolute;left:-9999px;opacity:0;pointer-events:none" aria-hidden="true">
+          <input id="eiWebsite" type="text" name="website" tabindex="-1" autocomplete="off">
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label for="eiName" class="text-xs text-slate-300">Full name <span class="text-red-400">*</span></label>

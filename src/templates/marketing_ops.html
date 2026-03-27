@@ -895,6 +895,8 @@
                 ${savingsBtn}
                 <button onclick="notifyEngineering('${i.id}')"
                         class="text-emerald-400 hover:text-emerald-300 text-xs underline">Notify</button>
+                <button onclick="deleteInquiry('${i.id}')"
+                        class="text-red-400 hover:text-red-300 text-xs underline">Delete</button>
               </td>
             </tr>`;
         }).join('');
@@ -925,6 +927,20 @@
         document.getElementById('eiNotesModal').classList.add('hidden');
         loadEnterpriseInquiries();
       } catch (err) { console.error('Save inquiry failed:', err); }
+    }
+
+    async function deleteInquiry(inquiryId) {
+      if (!confirm('Delete this inquiry? This cannot be undone.')) return;
+      const csrfToken = getCsrfToken();
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+      try {
+        const r = await fetch(`/api/v1/admin/enterprise/inquiries/${inquiryId}`, {
+          method: 'DELETE', headers, credentials: 'include',
+        });
+        if (!r.ok) { const d = await r.json().catch(() => ({})); alert('Delete failed: ' + (d.error || r.status)); return; }
+        loadEnterpriseInquiries();
+      } catch (err) { alert('Error: ' + err.message); }
     }
 
     async function notifyEngineering(inquiryId) {

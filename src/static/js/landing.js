@@ -398,6 +398,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var phone     = (document.getElementById('eiPhone').value || '').trim();
     var employees = parseInt(document.getElementById('eiEmployees').value, 10) || null;
     var message   = (document.getElementById('eiMessage').value || '').trim();
+    var website   = (document.getElementById('eiWebsite')?.value || '').trim();
 
     if (!name || !email || !email.includes('@')) {
       setStatus('error', 'Please enter your full name and a valid work email.');
@@ -419,6 +420,7 @@ document.addEventListener('DOMContentLoaded', function () {
           phone:          phone    || null,
           employee_count: employees,
           message:        message  || null,
+          website:        website  || null,
         }),
       });
       var data = await r.json();

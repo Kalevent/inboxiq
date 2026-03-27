@@ -813,6 +813,10 @@ def submit_enterprise_inquiry():
     """
     body = request.get_json(silent=True) or {}
 
+    # Honeypot: real browsers leave this empty; bots fill it in
+    if body.get("website"):
+        return jsonify({"status": "received"}), 201  # silent reject
+
     name = sanitize_html((body.get("name") or "").strip())
     email = (body.get("email") or "").strip().lower()
     if not name or not email or "@" not in email:
@@ -958,6 +962,26 @@ def update_enterprise_inquiry(inquiry_id: str):
 
     db.session.commit()
     return jsonify(_inquiry_to_dict(inq)), 200
+
+
+@v1.route("/admin/enterprise/inquiries/<inquiry_id>", methods=["DELETE"])
+@jwt_required()
+def delete_enterprise_inquiry(inquiry_id: str):
+    """Hard-delete an enterprise inquiry. Admin only."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
+
+    inq = db.session.get(EnterpriseInquiry, inquiry_id)
+    if not inq:
+        return jsonify({"error": "not found"}), 404
+
+    try:
+        db.session.delete(inq)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    return jsonify({"deleted": True}), 200
 
 
 @v1.route("/admin/enterprise/inquiries/<inquiry_id>/notify-engineering", methods=["POST"])
