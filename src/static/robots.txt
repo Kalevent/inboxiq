@@ -1,5 +1,15 @@
 User-agent: *
 Allow: /
+# Old website URLs — permanently removed
+Disallow: /en-gb/
+Disallow: /en-us/
+Disallow: /es-es/
+Disallow: /fr-fr/
+Disallow: /set_locale/
+Disallow: /careers
+Disallow: /about
+Disallow: /crm/
+# App internals
 Disallow: /api/
 Disallow: /auth/
 Disallow: /admin
