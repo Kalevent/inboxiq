@@ -112,7 +112,11 @@ def create_app() -> Flask:
   # Tracks request count, latency, and status per endpoint for cost dashboards
   if os.getenv("PROMETHEUS_METRICS_ENABLED", "false").lower() in ("1", "true", "yes"):
     from prometheus_flask_exporter import PrometheusMetrics
-    metrics = PrometheusMetrics(app, group_by="endpoint")
+    from prometheus_client import CollectorRegistry
+    # Use a fresh registry per worker to avoid duplicate-timeseries errors
+    # when gunicorn forks multiple workers in the same process space.
+    _prom_registry = CollectorRegistry(auto_describe=False)
+    metrics = PrometheusMetrics(app, registry=_prom_registry, group_by="endpoint")
     metrics.info("inboxiq_app_info", "InboxIQ Flask application", version="1.0")
 
   cors_origins_raw = app.config.get("CORS_ORIGINS", "")
