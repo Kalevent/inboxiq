@@ -33,12 +33,16 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 _CONNECT_STATE_TTL = 600  # 10 minutes
 
 
-def _make_connect_state(user_id: str | int) -> str:
-    """Embed a signed user_id in the OAuth state so the callback works even when
-    the JWT cookie cannot be read (e.g. password-auth users on a different subdomain)."""
+def _make_connect_state(user_id: str | int, next_dest: str = "") -> str:
+    """Embed a signed user_id (and optional next destination) in the OAuth state so
+    the callback works even when the JWT cookie cannot be read."""
     secret = current_app.config.get("SECRET_KEY", "")
     ts = int(time.time())
-    payload = f"connect_inbox:{user_id}:{ts}"
+    # Only include next_dest in payload when provided — keeps legacy 4-part format intact
+    if next_dest:
+        payload = f"connect_inbox:{user_id}:{ts}:{next_dest}"
+    else:
+        payload = f"connect_inbox:{user_id}:{ts}"
     sig = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()[:24]
     return f"{payload}:{sig}"
 
@@ -48,19 +52,38 @@ def _parse_connect_state(state: str) -> str | None:
     Returns None if the state is invalid, tampered, or expired."""
     try:
         parts = state.split(":")
-        if len(parts) != 4 or parts[0] != "connect_inbox":
+        if parts[0] != "connect_inbox":
             return None
-        _, user_id, ts_str, sig = parts
+        if len(parts) == 4:
+            # Legacy format: connect_inbox:user_id:ts:sig
+            _, user_id, ts_str, sig = parts
+            payload = f"connect_inbox:{user_id}:{ts_str}"
+        elif len(parts) == 5:
+            # Extended format: connect_inbox:user_id:ts:next_dest:sig
+            _, user_id, ts_str, next_dest, sig = parts
+            payload = f"connect_inbox:{user_id}:{ts_str}:{next_dest}"
+        else:
+            return None
         if int(time.time()) - int(ts_str) > _CONNECT_STATE_TTL:
             return None
         secret = current_app.config.get("SECRET_KEY", "")
-        payload = f"connect_inbox:{user_id}:{ts_str}"
         expected = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()[:24]
         if not hmac.compare_digest(sig, expected):
             return None
         return user_id
     except Exception:
         return None
+
+
+def _get_connect_next(state: str) -> str:
+    """Extract the next destination from a connect state. Returns '' if not present."""
+    try:
+        parts = state.split(":")
+        if len(parts) == 5 and parts[0] == "connect_inbox":
+            return parts[3]
+    except Exception:
+        pass
+    return ""
 
 # Sign-in only — no restricted scopes, no Google verification required
 GOOGLE_SIGNIN_SCOPES = ["openid", "email", "profile"]
@@ -428,6 +451,10 @@ def google_inbox_start():
     if not client_id or not redirect_uri:
         return jsonify({"error": "Google OAuth not configured"}), 500
 
+    next_dest = request.args.get("next", "")
+    if next_dest not in ("dashboard",):
+        next_dest = ""
+
     params = {
         "response_type": "code",
         "client_id": client_id,
@@ -436,7 +463,7 @@ def google_inbox_start():
         "access_type": "offline",
         "include_granted_scopes": "true",
         "prompt": "select_account consent",
-        "state": _make_connect_state(get_jwt_identity()),
+        "state": _make_connect_state(get_jwt_identity(), next_dest),
     }
     return redirect(f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}")
 
@@ -485,6 +512,8 @@ def google_callback():
         try:
             _store_connection("gmail", email, access_token, refresh_token, user_id)
             current_app.logger.info("gmail inbox connected: user_id=%s email=%s", user_id, email)
+            if _get_connect_next(state) == "dashboard":
+                return redirect(url_for("dashboard_home"))
             return redirect(url_for("settings.settings_page", tab="integrations") + "&status=connected")
         except RuntimeError as exc:
             current_app.logger.warning("gmail connect failed (login_required): user_id=%s", user_id)
@@ -534,13 +563,17 @@ def outlook_inbox_start():
     if not client_id or not redirect_uri:
         return jsonify({"error": "Microsoft OAuth not configured"}), 500
 
+    next_dest = request.args.get("next", "")
+    if next_dest not in ("dashboard",):
+        next_dest = ""
+
     params = {
         "client_id": client_id,
         "response_type": "code",
         "redirect_uri": redirect_uri,
         "scope": " ".join(MS_MAIL_SCOPES),
         "response_mode": "query",
-        "state": _make_connect_state(get_jwt_identity()),
+        "state": _make_connect_state(get_jwt_identity(), next_dest),
         "prompt": "consent",
     }
     return redirect(f"{MS_AUTH_URL}?{urllib.parse.urlencode(params)}")
@@ -592,6 +625,8 @@ def outlook_callback():
         try:
             _store_connection("outlook", email, access_token, refresh_token, user_id)
             current_app.logger.info("outlook inbox connected: user_id=%s email=%s", user_id, email)
+            if _get_connect_next(state) == "dashboard":
+                return redirect(url_for("dashboard_home"))
             return redirect(url_for("settings.settings_page", tab="integrations") + "&status=connected")
         except RuntimeError as exc:
             current_app.logger.warning("outlook connect failed (login_required): user_id=%s", user_id)
