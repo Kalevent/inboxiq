@@ -163,7 +163,7 @@ def create_app() -> Flask:
   def inject_user_meta():
     user = getattr(g, "current_user", None)
     email = getattr(user, "email", None)
-    default_admin = "support@kalevent.com"
+    default_admin = "kofi@kalevent.com"
     allowed = set(
         e.strip().lower()
         for e in (app.config.get("ADMIN_EMAILS", "") or default_admin).split(",")
@@ -1012,7 +1012,7 @@ def create_app() -> Flask:
   def admin_page():
     user = getattr(g, "current_user", None)
     email = getattr(user, "email", "").lower() if user else ""
-    default_admin = "support@kalevent.com"
+    default_admin = "kofi@kalevent.com"
     allowed = set(
       e.strip().lower()
       for e in (current_app.config.get("ADMIN_EMAILS", "") or default_admin).split(",")

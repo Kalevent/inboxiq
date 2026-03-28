@@ -327,7 +327,7 @@ def generate_blog_post(
             from src.notifications.emails import send_content_review_email
             import os
 
-            notification_email = os.getenv("ADMIN_EMAILS", "support@kalevent.com").split(",")[0].strip()
+            notification_email = os.getenv("ADMIN_EMAILS", "kofi@kalevent.com").split(",")[0].strip()
             blog_url = f"{os.getenv('API_BASE_URL', 'https://api.kalevent.com')}/blog/{seo_result.slug}"
 
             send_content_review_email(
@@ -667,7 +667,7 @@ def generate_blog_from_pitched_topic(topic_id: str):
         try:
             from src.notifications.emails import send_content_review_email
 
-            notification_email = os.getenv("ADMIN_EMAILS", "support@kalevent.com").split(",")[0].strip()
+            notification_email = os.getenv("ADMIN_EMAILS", "kofi@kalevent.com").split(",")[0].strip()
             blog_url = f"{os.getenv('API_BASE_URL', 'https://api.kalevent.com')}/blog/{seo_result.slug}"
 
             send_content_review_email(
