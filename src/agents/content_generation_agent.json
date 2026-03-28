@@ -49,7 +49,7 @@
     "auto_publish_enabled": true,
     "notification_on_complete": true,
     "notification_channels": ["email"],
-    "notification_email": "support@kalevent.com",
+    "notification_email": "kofi@kalevent.com",
     "notification_includes": ["content_preview", "seo_metrics", "feedback_link"],
     "approval_required_for": []
   },

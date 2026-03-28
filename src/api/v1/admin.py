@@ -32,7 +32,7 @@ def _require_admin():
     """Simple admin gate based on email allowlist."""
     user_id = get_jwt_identity()
     user = db.session.get(User, user_id) if user_id else None
-    default_admin = "support@kalevent.com"
+    default_admin = "kofi@kalevent.com"
     allowed = set(
         e.strip().lower()
         for e in (current_app.config.get("ADMIN_EMAILS", "") or default_admin).split(",")
