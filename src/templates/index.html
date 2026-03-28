@@ -1101,12 +1101,16 @@
           </div>
           <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-4 flex items-center justify-center">
             <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-700">
-              <button class="flex flex-col items-center justify-center gap-3">
-                <div class="h-14 w-14 rounded-full bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/40">
-                  <span class="ml-1 border-l-[10px] border-l-white border-y-[7px] border-y-transparent"></span>
-                </div>
-                <span class="text-xs text-slate-300">Play demo video</span>
-              </button>
+              <video
+                controls
+                preload="metadata"
+                class="w-full h-full rounded-xl object-cover"
+                poster="{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}"
+              >
+                <source src="{{ url_for('static', filename='demo/InboxIQ.mp4') }}" type="video/mp4" />
+                <source src="{{ url_for('static', filename='demo/InboxIQ.mov') }}" type="video/quicktime" />
+                Your browser does not support the video tag.
+              </video>
             </div>
           </div>
         </div>
@@ -1183,7 +1187,7 @@
               <a href="https://x.com/kaleventHQ" target="_blank" rel="noopener" aria-label="X (Twitter)" class="hover:text-white"><i class="fab fa-twitter"></i></a>
               <a href="https://www.instagram.com/kaleventcanvas/" target="_blank" rel="noopener" aria-label="Instagram" class="hover:text-white"><i class="fab fa-instagram"></i></a>
               <a href="https://www.linkedin.com/company/kalevent/" target="_blank" rel="noopener" aria-label="LinkedIn" class="hover:text-white"><i class="fab fa-linkedin-in"></i></a>
-              <a href="https://www.youtube.com/@InboxIQ" target="_blank" rel="noopener" aria-label="YouTube" class="hover:text-white"><i class="fab fa-youtube"></i></a>
+              <a href="https://www.youtube.com/@InboxIQApp" target="_blank" rel="noopener" aria-label="YouTube" class="hover:text-white"><i class="fab fa-youtube"></i></a>
               <a href="https://www.reddit.com/user/InboxiqHQ/" target="_blank" rel="noopener" aria-label="Reddit" class="hover:text-white"><i class="fab fa-reddit"></i></a>
               <a href="https://wa.me/447593092262?text=Hi%20Kalevent%20team" target="_blank" rel="noopener" aria-label="WhatsApp" class="hover:text-white"><i class="fab fa-whatsapp"></i></a>
             </div>
@@ -1251,7 +1255,7 @@
             <a href="https://www.facebook.com/InboxiqHQ/" target="_blank" rel="noopener" class="hover:text-white">Facebook</a>
             <a href="https://x.com/kaleventHQ" target="_blank" rel="noopener" class="hover:text-white">X</a>
             <a href="https://www.linkedin.com/company/inboxiq-ai/" target="_blank" rel="noopener" class="hover:text-white">LinkedIn</a>
-            <a href="https://www.youtube.com/@InboxiqHQ" target="_blank" rel="noopener" class="hover:text-white">YouTube</a>
+            <a href="https://www.youtube.com/@InboxIQApp" target="_blank" rel="noopener" class="hover:text-white">YouTube</a>
             <a href="https://www.reddit.com/user/CivilBerry1660/" target="_blank" rel="noopener" class="hover:text-white">Reddit</a>
             <a href="https://wa.me/447593092262?text=Hi%20Kalevent%20team" target="_blank" rel="noopener" class="hover:text-white">WhatsApp</a>
           </div>
