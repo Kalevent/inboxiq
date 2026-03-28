@@ -514,13 +514,13 @@ def google_callback():
             current_app.logger.info("gmail inbox connected: user_id=%s email=%s", user_id, email)
             if _get_connect_next(state) == "dashboard":
                 return redirect(url_for("dashboard_home"))
-            return redirect(url_for("settings.settings_page", tab="integrations") + "&status=connected")
+            return redirect(url_for("settings.settings_page", tab="integrations") + "?status=connected")
         except RuntimeError as exc:
             current_app.logger.warning("gmail connect failed (login_required): user_id=%s", user_id)
-            return redirect(url_for("settings.settings_page", tab="integrations") + "&status=error&reason=login_required")
+            return redirect(url_for("settings.settings_page", tab="integrations") + "?status=error&reason=login_required")
         except Exception as exc:
             current_app.logger.exception("gmail connect failed: user_id=%s error=%s", user_id, exc)
-            return redirect(url_for("settings.settings_page", tab="integrations") + "&status=error&reason=connection_failed")
+            return redirect(url_for("settings.settings_page", tab="integrations") + "?status=error&reason=connection_failed")
 
     # state == "signin" (default): sign-up or log-in flow — no Gmail scopes requested
     if not user_id:
@@ -627,13 +627,13 @@ def outlook_callback():
             current_app.logger.info("outlook inbox connected: user_id=%s email=%s", user_id, email)
             if _get_connect_next(state) == "dashboard":
                 return redirect(url_for("dashboard_home"))
-            return redirect(url_for("settings.settings_page", tab="integrations") + "&status=connected")
+            return redirect(url_for("settings.settings_page", tab="integrations") + "?status=connected")
         except RuntimeError as exc:
             current_app.logger.warning("outlook connect failed (login_required): user_id=%s", user_id)
-            return redirect(url_for("settings.settings_page", tab="integrations") + "&status=error&reason=login_required")
+            return redirect(url_for("settings.settings_page", tab="integrations") + "?status=error&reason=login_required")
         except Exception as exc:
             current_app.logger.exception("outlook connect failed: user_id=%s error=%s", user_id, exc)
-            return redirect(url_for("settings.settings_page", tab="integrations") + "&status=error&reason=connection_failed")
+            return redirect(url_for("settings.settings_page", tab="integrations") + "?status=error&reason=connection_failed")
 
     # state == "signin": sign-up or log-in flow — no mail scopes requested
     if not user_id:
