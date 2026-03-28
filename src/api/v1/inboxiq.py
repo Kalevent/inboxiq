@@ -1559,7 +1559,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                 try:
                     from src.inbox.poll import writeback_to_provider as _wb
                     _decision = existing.decision or {}
-                    _reply_text = _decision.get("reply_text")
+                    _reply_text = None  # Never re-create drafts during label healing — only fix the label
                     _meta = conn.metadata_json or {}
                     _label_cache = _meta.setdefault("label_ids", {})
                     # Normalize old stored categories to canonical InboxIQ labels.

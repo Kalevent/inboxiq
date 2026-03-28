@@ -560,7 +560,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
                 _has_inboxiq_label = bool(_inboxiq_ids & set(_provider_label_ids))
                 if not _has_inboxiq_label:
                     _decision = existing.decision or {}
-                    _reply_text = _decision.get("reply_text")
+                    _reply_text = None  # Never re-create drafts during label healing — only fix the label
                     try:
                         _writeback_to_provider(
                             provider=normalized.get("provider"),
