@@ -598,7 +598,10 @@ def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results
                 lead.last_engagement_at = datetime.now()
 
                 # Boost intent score for strong buying signals
-                if signal_type == "hiring" and lead.intent_score:
+                # first_support_hire is the strongest ICP signal — higher boost
+                if signal_type == "first_support_hire" and lead.intent_score:
+                    lead.intent_score = min(lead.intent_score + 4, 10)
+                elif signal_type == "hiring" and lead.intent_score:
                     lead.intent_score = min(lead.intent_score + 2, 10)
 
                 results["leads_updated"] += 1
