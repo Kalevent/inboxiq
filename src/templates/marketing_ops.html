@@ -452,40 +452,77 @@
       });
     });
 
+    let _discoveredLeads = [];
+
     async function loadRecentLeads() {
       const container = document.getElementById('recentLeadsList');
+      const countEl = document.getElementById('leadsCount');
       container.innerHTML = '<div class="text-slate-400 text-xs">Loading...</div>';
       try {
-        const response = await fetch('/api/v1/admin/funnel/leads?limit=10&source=buying_signal_discovery', { credentials: 'include' });
+        const response = await fetch('/api/v1/admin/funnel/leads?limit=50', { credentials: 'include' });
         const data = await response.json();
         if (data.error) { container.innerHTML = `<div class="text-red-400 text-xs">${data.error}</div>`; return; }
         if (data.leads.length === 0) {
           container.innerHTML = '<div class="text-slate-400 text-xs">No leads discovered yet. Click "Discover Leads Now" to start.</div>';
+          document.getElementById('exportLeadsBtn').classList.add('hidden');
           return;
         }
+        _discoveredLeads = data.leads;
+        if (countEl) countEl.textContent = `${data.leads.length} leads`;
+        document.getElementById('exportLeadsBtn').classList.remove('hidden');
+
+        const escapeHtml = (text) => text ? text.replace(/[<>&"']/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]) : '';
         container.innerHTML = data.leads.map(lead => {
           const url = lead.url;
-          const escapeHtml = (text) => text ? text.replace(/[<>&"']/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]) : '';
+          const company = lead.company_name || lead.name || 'Unknown';
+          const linkedinSearchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' founder CEO')}&origin=GLOBAL_SEARCH_HEADER`;
           return `
-          <div class="bg-slate-800/50 rounded-lg p-2 text-xs hover:bg-slate-800/70 transition-colors ${url ? 'cursor-pointer' : ''}"
-               ${url ? `onclick="window.open('${escapeHtml(url)}', '_blank')"` : ''}>
-            <div class="flex items-center justify-between">
-              <div class="flex-1">
-                <span class="font-semibold text-slate-200">${escapeHtml(lead.name || 'Unknown')}</span>
-                ${lead.company_name ? `<span class="text-slate-400"> @ ${escapeHtml(lead.company_name)}</span>` : ''}
+          <div class="bg-slate-800/50 rounded-lg p-2 text-xs hover:bg-slate-800/70 transition-colors">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <span class="font-semibold text-slate-200">${escapeHtml(company)}</span>
+                ${lead.email ? `<span class="text-slate-400 ml-1">· ${escapeHtml(lead.email)}</span>` : ''}
               </div>
-              <span class="text-xs px-2 py-1 rounded ${lead.current_funnel_stage === 'visits' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-500/20 text-emerald-300'}">${lead.current_funnel_stage}</span>
+              <span class="shrink-0 text-xs px-2 py-0.5 rounded ${lead.current_funnel_stage === 'visits' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-emerald-500/20 text-emerald-300'}">${lead.current_funnel_stage}</span>
             </div>
-            ${lead.notes_preview ? `<div class="text-slate-400 mt-1 line-clamp-2">${escapeHtml(lead.notes_preview)}</div>` : ''}
-            <div class="text-slate-500 text-[10px] mt-1 flex items-center justify-between">
-              <span>${new Date(lead.created_at).toLocaleString()} • ${lead.source}</span>
-              ${url ? '<span class="text-indigo-400">→ Click to view</span>' : ''}
+            ${lead.notes_preview ? `<div class="text-slate-400 mt-1 line-clamp-1">${escapeHtml(lead.notes_preview)}</div>` : ''}
+            <div class="mt-1.5 flex items-center gap-3">
+              ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300">🌐 Website</a>` : ''}
+              <a href="${linkedinSearchUrl}" target="_blank" rel="noopener" class="text-blue-400 hover:text-blue-300">🔗 Find on LinkedIn</a>
+              <span class="text-slate-600 ml-auto">${new Date(lead.created_at).toLocaleDateString()}</span>
             </div>
           </div>`;
         }).join('');
         container.innerHTML += `<div class="text-slate-500 text-xs mt-2 text-center">Total in database: ${data.total_in_db} leads</div>`;
       } catch (err) { container.innerHTML = `<div class="text-red-400 text-xs">Error: ${err.message}</div>`; }
     }
+
+    function exportLeadsCSV() {
+      if (!_discoveredLeads.length) return;
+      const headers = ['Company', 'Contact Name', 'Email', 'Website', 'LinkedIn Search', 'Stage', 'Source', 'Discovered'];
+      const rows = _discoveredLeads.map(l => {
+        const company = l.company_name || l.name || '';
+        const linkedinSearch = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company + ' founder CEO')}`;
+        return [
+          company,
+          l.name || '',
+          l.email || '',
+          l.url || '',
+          linkedinSearch,
+          l.current_funnel_stage || '',
+          l.source || '',
+          l.created_at ? new Date(l.created_at).toLocaleDateString() : '',
+        ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+      });
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `inboxiq-leads-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+    }
+
+    document.getElementById('exportLeadsBtn').addEventListener('click', exportLeadsCSV);
 
     // ── Marketing ─────────────────────────────────────────────────────────
     async function loadMarketingData() {

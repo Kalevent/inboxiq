@@ -269,14 +269,33 @@ async def find_buying_signals(
         # Define search queries for different signal types.
         # Hiring query deliberately avoids job boards — we want the company's own
         # site or news coverage so we get the actual company domain.
+        #
+        # first_support_hire is the strongest ICP trigger: a founder-led SaaS posting
+        # their very first customer support role signals they have inbox pain today and
+        # haven't yet bought a support tool. This is the primary signal for InboxIQ.
+        _exclude_job_boards = (
+            " -site:linkedin.com -site:greenhouse.io -site:indeed.com"
+            " -site:glassdoor.com -site:lever.co -site:ziprecruiter.com"
+            " -site:wellfound.com -site:angel.co -site:workable.com"
+        )
         queries = {
+            "first_support_hire": (
+                f'"{niche}" "customer support" OR "customer success" "hiring" OR "join us"'
+                ' "first" OR "founding" OR "early" -"senior" -"manager" -"lead" -"head of"'
+                + _exclude_job_boards
+            ),
             "hiring": (
                 f'"{niche}" "is hiring" OR "we\'re hiring" OR "join our team"'
-                " -site:linkedin.com -site:greenhouse.io -site:indeed.com"
-                " -site:glassdoor.com -site:lever.co -site:ziprecruiter.com"
+                + _exclude_job_boards
             ),
-            "funding": f'"{niche}" companies "raised funding" OR "series A" OR "series B" OR "seed round"',
-            "expansion": f'"{niche}" companies "opening office" OR "expanding team" OR "new location"',
+            "funding": (
+                f'"{niche}" "raised funding" OR "series A" OR "series B" OR "seed round"'
+                + _exclude_job_boards
+            ),
+            "expansion": (
+                f'"{niche}" "opening office" OR "expanding team" OR "new location"'
+                + _exclude_job_boards
+            ),
         }
 
         search_query = queries.get(signal_type, queries["hiring"])
