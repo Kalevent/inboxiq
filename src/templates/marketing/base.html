@@ -24,19 +24,17 @@
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Kalevent","url":"https://kalevent.com","logo":"https://kalevent.com/static/social_media/inboxiq-unified-triage-hero.png","sameAs":[],"description":"InboxIQ — AI-powered unified email triage, automation, and inbox intelligence for B2B SaaS teams."}</script>
 
   {% block extra_head %}{% endblock %}
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GT-NGWSGC7G');</script>
-  <!-- End Google Tag Manager -->
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6FVRWTF5GB"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6FVRWTF5GB');
+  </script>
+  <!-- End Google Analytics -->
 </head>
 <body class="marketing-body antialiased">
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GT-NGWSGC7G"
-  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
   <div class="min-h-screen flex flex-col">
     <header class="marketing-header border-b border-slate-800/10 bg-slate-950/70 backdrop-blur">
       <div class="marketing-shell flex items-center justify-between py-4">
