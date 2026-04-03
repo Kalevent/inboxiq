@@ -107,6 +107,14 @@ A customer emails Monday with a problem. Oliver asks for their account number Tu
 
 **What InboxIQ does**: Reads the full prior conversation — not just the latest message — before drafting a reply. It knows this is a follow-up, what was already asked, and what was said before. The draft references thread context.
 
+### 8. Meeting scheduling is still manual and creates back-and-forth
+
+A prospect emails asking for a demo. A customer asks for a call to discuss their account. Oliver or a team member has to check their calendar, find a time, write it out, send it, wait for a reply, confirm. This loop takes 3–6 emails and days of elapsed time. Calendly links help but require the sender to visit a separate URL.
+
+**What InboxIQ does**: When an inbound email contains a meeting or scheduling request — *"can we book a demo?"*, *"when are you available?"*, *"let's get on a call"* — the AI detects the intent and the draft reply automatically includes available time slots pulled directly from the connected calendar. No Calendly link. No separate tool. The slots appear in the draft, ready to send.
+
+Supports both Google Calendar and Microsoft Outlook Calendar — Oliver connects whichever he already uses via Settings → Integrations. The AI reads his real availability and surfaces it inline.
+
 ---
 
 ## The 3 reasons people will say no
@@ -252,6 +260,7 @@ The honest message: setup takes about 2 hours. After that, the daily workflow is
 | Freshdesk (Freddy AI) | May replace for teams who adopted Freshdesk for simplicity but don't use its full suite |
 | Intercom (Fin AI) | Not a direct replacement — Intercom is chat-first and priced for larger teams |
 | Copy-paste reply templates | Replaced — AI generates contextual drafts using full thread history |
+| Calendly / cal.com | Replaced — AI detects meeting requests and includes available slots directly in the draft reply; no separate scheduling link required |
 | Junior support hire (planned) | Deferred — handle the same volume with existing team |
 
 InboxIQ is not trying to replace Zendesk for a 10-person support team. It is the tool for the company that is not there yet.
