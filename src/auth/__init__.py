@@ -91,6 +91,11 @@ def login():
     if not user:
         _log_login_attempt(outcome="fail", email=email, account_id=account_id, reason="user not found")
         return jsonify({"error": "invalid credentials"}), 401
+    # Users without an account_id are incomplete stubs (e.g., OAuth user created before
+    # account flush completed). They cannot log in with a password — send them to signup.
+    if not user.account_id:
+        _log_login_attempt(outcome="fail", email=email, account_id=None, user_id=user.id, reason="no_account")
+        return jsonify({"error": "no_account"}), 403
     valid_password, algo = verify_password(user.password_hash, password)
     if not valid_password:
         _log_login_attempt(outcome="fail", email=email, account_id=account_id, user_id=user.id, reason="bad password")

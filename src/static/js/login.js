@@ -48,6 +48,11 @@
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.error === 'no_account') {
+          setStatus('info', 'No account found. Redirecting you to sign up...');
+          setTimeout(() => { window.location.href = '/?open_trial=1'; }, 1200);
+          return;
+        }
         throw new Error(data.error || 'Unable to log in right now.');
       }
 

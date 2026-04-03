@@ -1759,14 +1759,16 @@ def get_my_connection():
             InboxConnection.query.filter_by(account_id=account_id, status="connected").all()
         )
     if not conn:
-        conn = _pick_connection(
-            InboxConnection.query.filter_by(user_id=user_id, status="connected").all()
-        )
+        # Fallback: find by user_id, but only if the connection genuinely belongs to
+        # this account (account_id matches or is NULL). Never adopt a connection that
+        # already belongs to a different account — that would cross account boundaries.
+        candidate_conns = InboxConnection.query.filter_by(user_id=user_id, status="connected").all()
+        safe_conns = [c for c in candidate_conns if not c.account_id or c.account_id == account_id]
+        conn = _pick_connection(safe_conns)
     if not conn:
         return jsonify({"error": "No connected inbox found"}), 404
-    if account_id and not conn.account_id:
-        conn.account_id = account_id
-        db.session.commit()
+    # Do NOT reassign account_id here — silently mutating a connection's account could
+    # move it from one account to another. Missing account_id should be fixed at write time.
     meta = conn.metadata_json or {}
     last_poll_at = meta.get("last_poll_at")
     last_poll_status = meta.get("last_poll_status")
