@@ -1,5 +1,5 @@
 (() => {
-  const emailsInput = document.getElementById('emailsPerMonth');
+  const emailsInput = document.getElementById('emailsPerWeek');
   const minutesInput = document.getElementById('minutesPerEmail');
   const hourlyInput = document.getElementById('hourlyRate');
   const resultsEl = document.getElementById('roiResults');
@@ -84,33 +84,35 @@
   }
 
   function calculateROI() {
-    const emails = parseFloat(emailsInput?.value) || 2000;
-    const minutesPerEmail = parseFloat(minutesInput?.value) || 2;
-    const hourlyRate = parseFloat(hourlyInput?.value) || 20;
-    const proPrice = 29;
+    const emailsPerWeek = parseFloat(emailsInput?.value) || 80;
+    const minutesPerEmail = parseFloat(minutesInput?.value) || 4;
+    const hourlyRate = parseFloat(hourlyInput?.value) || 25;
+    const proPrice = 99;
+    const hireCost = 2917; // £35k/year junior hire ÷ 12
 
-    const minutesSavedPerEmail = minutesPerEmail * 0.8;
-    const totalMinutesSaved = emails * minutesSavedPerEmail;
-    const hoursSaved = totalMinutesSaved / 60;
+    // InboxIQ drafts ~80% of repetitive emails; review time ~10% of original compose time
+    const emailsHandledPerMonth = emailsPerWeek * 4 * 0.8;
+    const minutesSavedPerEmail = minutesPerEmail * 0.9; // draft replaces ~90% of compose time
+    const hoursSaved = (emailsHandledPerMonth * minutesSavedPerEmail) / 60;
     const costSaved = hoursSaved * hourlyRate;
+    const monthlyNet = costSaved - proPrice;
 
-    let paybackText;
-    if (costSaved > 0) {
-      const monthlyNet = costSaved - proPrice;
-      const paybackDays = monthlyNet > 0 ? Math.max(1, Math.round(30 * (proPrice / costSaved))) : null;
-      paybackText = paybackDays
-        ? `InboxIQ typically pays for itself in about ${paybackDays} day${paybackDays === 1 ? '' : 's'} of use.`
-        : 'With these inputs, InboxIQ nearly breaks even. Try increasing your email volume or hourly rate to see potential savings.';
+    let conclusion;
+    if (monthlyNet > 0) {
+      const paybackDays = Math.max(1, Math.round(30 * (proPrice / costSaved)));
+      conclusion = `InboxIQ pays for itself in about <strong>${paybackDays} day${paybackDays === 1 ? '' : 's'}</strong> each month.`;
     } else {
-      paybackText = 'Please check your inputs—savings appear to be zero.';
+      conclusion = 'With these inputs InboxIQ nearly breaks even — try increasing your weekly email volume.';
     }
 
     if (resultsEl) {
       resultsEl.innerHTML = `
-        <p><strong>Estimated hours saved per month:</strong> ${hoursSaved.toFixed(1)} hours</p>
-        <p><strong>Estimated labour cost saved per month:</strong> £${costSaved.toFixed(0)}</p>
-        <p><strong>Pro plan cost:</strong> £${proPrice}/month</p>
-        <p>${paybackText}</p>
+        <p><strong>Hours saved per month:</strong> ${hoursSaved.toFixed(1)} hrs</p>
+        <p><strong>Labour cost saved per month:</strong> £${costSaved.toFixed(0)}</p>
+        <p><strong>Pro plan:</strong> £${proPrice}/month &nbsp;·&nbsp; <strong>Net saving:</strong> £${Math.max(0, monthlyNet).toFixed(0)}/month</p>
+        <hr class="border-slate-700 my-2"/>
+        <p class="text-slate-300"><strong>vs. a support hire:</strong> InboxIQ handles this volume for £${proPrice}/month vs. ~£${hireCost.toLocaleString()}/month for a junior hire.</p>
+        <p class="mt-2">${conclusion}</p>
       `;
     }
   }
@@ -223,6 +225,86 @@
   if (ctaForm) {
     ctaForm.addEventListener('submit', handleCtaSubmit);
   }
+})();
+
+// ── Demo Gate ─────────────────────────────────────────────────────────────
+(function () {
+  var playBtn    = document.getElementById('demoPlayBtn');
+  var container  = document.getElementById('demoVideoContainer');
+  var modal      = document.getElementById('demoGateModal');
+  var form       = document.getElementById('demoGateForm');
+  var emailInput = document.getElementById('demoGateEmail');
+  var submitBtn  = document.getElementById('demoGateSubmit');
+  var errorEl    = document.getElementById('demoGateError');
+  var closeBtn   = document.getElementById('demoGateClose');
+
+  if (!playBtn || !container || !modal) return;
+
+  var SESSION_KEY = 'demo_unlocked';
+
+  function playVideo() {
+    var src = container.dataset.videoSrc;
+    if (!src) return;
+    // Replace play button with actual <video> element
+    container.innerHTML = '';
+    var video = document.createElement('video');
+    video.src = src;
+    video.controls = true;
+    video.muted = true;       // required for autoplay in Chrome
+    video.playsInline = true;
+    video.className = 'w-full h-full object-cover';
+    var poster = container.dataset.posterSrc;
+    if (poster) video.poster = poster;
+    container.style.backgroundImage = '';  // remove thumbnail bg once video loads
+    container.appendChild(video);
+    video.play().catch(function () { /* user can press play manually */ });
+  }
+
+  playBtn.addEventListener('click', function () {
+    // If already unlocked this session, play immediately
+    if (sessionStorage.getItem(SESSION_KEY)) {
+      playVideo();
+      return;
+    }
+    modal.style.display = 'flex';
+    emailInput.focus();
+  });
+
+  closeBtn.addEventListener('click', function () {
+    modal.style.display = 'none';
+  });
+
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) modal.style.display = 'none';
+  });
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var email = (emailInput.value || '').trim().toLowerCase();
+    if (!email) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Just a sec...';
+    errorEl.classList.add('hidden');
+
+    try {
+      var resp = await fetch('/api/v1/enterprise/inquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ name: email, email: email, source: 'demo_gate' }),
+      });
+      if (!resp.ok) throw new Error('Request failed');
+      sessionStorage.setItem(SESSION_KEY, '1');
+      modal.style.display = 'none';
+      playVideo();
+    } catch (_) {
+      errorEl.textContent = 'Something went wrong — please try again.';
+      errorEl.classList.remove('hidden');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Watch demo →';
+    }
+  });
 })();
 
 // ── Free Trial Modal ───────────────────────────────────────────────────────
