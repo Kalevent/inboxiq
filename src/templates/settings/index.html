@@ -1567,6 +1567,32 @@
                     </div>
                   </div>
 
+                  <div class="rounded-2xl border {% if outlook_cal_connection and outlook_cal_connection.status == 'connected' %}border-emerald-700/40 bg-emerald-950/10{% else %}border-slate-800 bg-slate-900/70{% endif %} p-5">
+                    <div class="flex items-center gap-2">
+                      <svg class="w-4 h-4 text-[#0078D4]" viewBox="0 0 24 24" fill="currentColor"><path d="M21.17 3H12.5L11 4.5l-1.5-1.5H2.83A1.83 1.83 0 0 0 1 4.83v14.34A1.83 1.83 0 0 0 2.83 21h18.34A1.83 1.83 0 0 0 23 19.17V4.83A1.83 1.83 0 0 0 21.17 3zm-9.67 2h1l1.5 1.5L15.5 5h1v2h-5V5zm7 11H5.5v-1h13v1zm0-3H5.5v-1h13v1zm0-3H5.5V9h13v1z"/></svg>
+                      <div class="text-sm font-semibold text-slate-100">Outlook Calendar</div>
+                      {% if outlook_cal_connection and outlook_cal_connection.status == 'connected' %}
+                        <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Connected</span>
+                      {% endif %}
+                    </div>
+                    <p class="text-sm text-slate-300 mt-2">Connect your Microsoft Outlook Calendar to schedule meetings and webinars directly from InboxIQ.</p>
+                    <div class="mt-4 flex gap-2 flex-wrap">
+                      <a href="{{ url_for('social_auth.outlook_cal_start') }}"
+                         class="rounded-xl px-4 py-2 text-sm font-semibold {% if outlook_cal_connection and outlook_cal_connection.status == 'connected' %}border border-slate-700 bg-slate-950/40 hover:bg-slate-900 text-slate-200{% else %}bg-[#0078D4] hover:bg-[#005fa3] text-white{% endif %}">
+                        {% if outlook_cal_connection and outlook_cal_connection.status == 'connected' %}Reconnect{% else %}Connect Outlook Calendar{% endif %}
+                      </a>
+                      {% if outlook_cal_connection and outlook_cal_connection.status == 'connected' %}
+                      <form method="POST" action="{{ url_for('settings.integrations_social_disconnect') }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="provider" value="outlook_cal" />
+                        <button type="submit" class="rounded-xl px-4 py-2 text-sm font-semibold border border-red-800/50 text-red-400 hover:bg-red-900/20 transition-colors">
+                          Disconnect
+                        </button>
+                      </form>
+                      {% endif %}
+                    </div>
+                  </div>
+
                   <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2 settings-span-2">
                     <div class="text-sm font-semibold text-slate-100">Webhook / API</div>
                     <p class="text-sm text-slate-300 mt-2">

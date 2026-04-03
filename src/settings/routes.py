@@ -126,6 +126,7 @@ def settings_page(tab):
   twitter_connection = None
   facebook_connection = None
   gcal_connection = None
+  outlook_cal_connection = None
   inbox_connections = []
   if tab == "integrations" and account_id:
     crm_connection = InboxConnection.query.filter_by(account_id=account_id, provider="crm").first()
@@ -133,6 +134,7 @@ def settings_page(tab):
     twitter_connection = InboxConnection.query.filter_by(account_id=account_id, provider="twitter_social").first()
     facebook_connection = InboxConnection.query.filter_by(account_id=account_id, provider="facebook_social").first()
     gcal_connection = InboxConnection.query.filter_by(account_id=account_id, provider="gcal").first()
+    outlook_cal_connection = InboxConnection.query.filter_by(account_id=account_id, provider="outlook_cal").first()
     inbox_connections = InboxConnection.query.filter(
       InboxConnection.account_id == account_id,
       InboxConnection.provider.in_(["gmail", "outlook"]),
@@ -192,6 +194,7 @@ def settings_page(tab):
     twitter_connection=twitter_connection,
     facebook_connection=facebook_connection,
     gcal_connection=gcal_connection,
+    outlook_cal_connection=outlook_cal_connection,
     inbox_connections=inbox_connections,
     developer_access_request=developer_access_request,
     registered_apps=registered_apps,
@@ -634,7 +637,7 @@ def integrations_social_disconnect():
     from src.models import InboxConnection
     account_id = getattr(g, "current_account_id", None)
     provider = request.form.get("provider", "").strip()
-    if provider not in ("linkedin_social", "twitter_social", "facebook_social", "gcal") or not account_id:
+    if provider not in ("linkedin_social", "twitter_social", "facebook_social", "gcal", "outlook_cal") or not account_id:
         return redirect(url_for("settings.settings_page", tab="integrations"))
 
     conn = InboxConnection.query.filter_by(account_id=account_id, provider=provider).first()
@@ -757,6 +760,7 @@ def integrations_webhooks():
   twitter_connection = None
   facebook_connection = None
   gcal_connection = None
+  outlook_cal_connection = None
   if account_id:
     # Load CRM connection data
     crm_connection = InboxConnection.query.filter_by(account_id=account_id, provider="crm").first()
@@ -776,6 +780,7 @@ def integrations_webhooks():
     twitter_connection = InboxConnection.query.filter_by(account_id=account_id, provider="twitter_social").first()
     facebook_connection = InboxConnection.query.filter_by(account_id=account_id, provider="facebook_social").first()
     gcal_connection = InboxConnection.query.filter_by(account_id=account_id, provider="gcal").first()
+    outlook_cal_connection = InboxConnection.query.filter_by(account_id=account_id, provider="outlook_cal").first()
   if request.method == "POST":
     action = (request.form.get("action") or "").strip()
     label = (request.form.get("label") or "").strip() or None
@@ -890,6 +895,7 @@ def integrations_webhooks():
         twitter_connection=twitter_connection,
         facebook_connection=facebook_connection,
         gcal_connection=gcal_connection,
+        outlook_cal_connection=outlook_cal_connection,
       )
     if action == "add_provider" and account_id:
       import re
@@ -1854,4 +1860,5 @@ def _developer_page(*, account_id, account, developer_access_request, registered
     twitter_connection=None,
     facebook_connection=None,
     gcal_connection=None,
+    outlook_cal_connection=None,
   )
