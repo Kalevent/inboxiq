@@ -1541,6 +1541,32 @@
                     </div>
                   </div>
 
+                  <div class="rounded-2xl border {% if gcal_connection and gcal_connection.status == 'connected' %}border-emerald-700/40 bg-emerald-950/10{% else %}border-slate-800 bg-slate-900/70{% endif %} p-5">
+                    <div class="flex items-center gap-2">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.5 3h-2.25V1.5h-1.5V3h-7.5V1.5h-1.5V3H4.5A1.5 1.5 0 0 0 3 4.5v15A1.5 1.5 0 0 0 4.5 21h15a1.5 1.5 0 0 0 1.5-1.5v-15A1.5 1.5 0 0 0 19.5 3zm0 16.5h-15V9h15v10.5zm0-12h-15V4.5h2.25V6h1.5V4.5h7.5V6h1.5V4.5h2.25V7.5z" fill="#4285F4"/></svg>
+                      <div class="text-sm font-semibold text-slate-100">Google Calendar</div>
+                      {% if gcal_connection and gcal_connection.status == 'connected' %}
+                        <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Connected</span>
+                      {% endif %}
+                    </div>
+                    <p class="text-sm text-slate-300 mt-2">Connect your Google Calendar to schedule meetings and webinars directly from InboxIQ.</p>
+                    <div class="mt-4 flex gap-2 flex-wrap">
+                      <a href="{{ url_for('social_auth.gcal_start') }}"
+                         class="rounded-xl px-4 py-2 text-sm font-semibold {% if gcal_connection and gcal_connection.status == 'connected' %}border border-slate-700 bg-slate-950/40 hover:bg-slate-900 text-slate-200{% else %}bg-[#4285F4] hover:bg-[#3367D6] text-white{% endif %}">
+                        {% if gcal_connection and gcal_connection.status == 'connected' %}Reconnect{% else %}Connect Google Calendar{% endif %}
+                      </a>
+                      {% if gcal_connection and gcal_connection.status == 'connected' %}
+                      <form method="POST" action="{{ url_for('settings.integrations_social_disconnect') }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="provider" value="gcal" />
+                        <button type="submit" class="rounded-xl px-4 py-2 text-sm font-semibold border border-red-800/50 text-red-400 hover:bg-red-900/20 transition-colors">
+                          Disconnect
+                        </button>
+                      </form>
+                      {% endif %}
+                    </div>
+                  </div>
+
                   <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2 settings-span-2">
                     <div class="text-sm font-semibold text-slate-100">Webhook / API</div>
                     <p class="text-sm text-slate-300 mt-2">
