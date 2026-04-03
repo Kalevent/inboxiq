@@ -1555,7 +1555,18 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                 # "Label_" prefix check incorrectly matches any user-created Gmail label.
                 _inboxiq_ids = set((conn.metadata_json or {}).get("label_ids", {}).values())
                 _has_inboxiq_label = bool(_inboxiq_ids & set(_provider_label_ids))
-            if not _has_inboxiq_label and existing.category:
+            # Skip healing if the user has manually corrected this ticket's label —
+            # re-applying the old category would undo their correction.
+            _user_corrected = False
+            try:
+                from src.models.tickets import ClassificationCorrection
+                _user_corrected = ClassificationCorrection.query.filter_by(
+                    ticket_id=existing.id
+                ).first() is not None
+            except Exception:
+                pass
+
+            if not _has_inboxiq_label and existing.category and not _user_corrected:
                 try:
                     from src.inbox.poll import writeback_to_provider as _wb
                     _decision = existing.decision or {}
