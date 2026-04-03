@@ -172,6 +172,42 @@ def compute_reply_confidence(result: Any) -> float:
     return 0.8
 
 
+def fetch_calendar_slots(subject: str, body: str, account_id: int | None) -> str:
+    """
+    If the email looks like a meeting request AND the account has Google Calendar
+    connected, return a formatted available-slots string to include in the draft.
+
+    Returns empty string when:
+    - account_id is None
+    - email is not a meeting request
+    - gcal not connected for this account
+    - Calendar API call fails (non-fatal)
+
+    Args:
+        subject: Email subject line
+        body: Email body text
+        account_id: Account ID to look up gcal connection
+
+    Returns:
+        Human-readable availability string, or ""
+    """
+    if not account_id:
+        return ""
+    try:
+        from src.integrations.gcal import is_meeting_request, get_available_slots_text as gcal_slots
+        from src.integrations.outlook_cal import get_available_slots_text as outlook_slots
+        if not is_meeting_request(subject, body):
+            return ""
+        # Try Google Calendar first, fall back to Outlook Calendar
+        slots = gcal_slots(account_id)
+        if not slots:
+            slots = outlook_slots(account_id)
+        return slots
+    except Exception as exc:
+        logger.warning("fetch_calendar_slots failed account=%s: %s", account_id, exc)
+        return ""
+
+
 # Aliases for backward compatibility
 _draft_reply_enabled = draft_reply_enabled
 _fetch_kb_context = fetch_kb_context

@@ -637,6 +637,121 @@ def gcal_callback():
     return _page(True, "Google Calendar connected successfully.", "Google Calendar")
 
 
+# ── Microsoft Outlook Calendar ───────────────────────────────────────────────
+
+_OUTLOOK_CAL_AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+_OUTLOOK_CAL_TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+_OUTLOOK_CAL_SCOPE = "openid offline_access https://graph.microsoft.com/Calendars.ReadWrite"
+_OUTLOOK_CAL_PROVIDER = "outlook_cal"
+
+
+def _outlook_cal_callback_uri():
+    override = os.getenv("OUTLOOK_CAL_REDIRECT_URI")
+    if override:
+        return override
+    return url_for("social_auth.outlook_cal_callback", _external=True)
+
+
+@bp.route("/outlook_cal")
+@login_required_settings
+def outlook_cal_start():
+    """Kick off Microsoft Calendar OAuth for the logged-in account."""
+    client_id = current_app.config.get("MICROSOFT_CLIENT_ID") or os.getenv("MICROSOFT_CLIENT_ID")
+    if not client_id:
+        current_app.logger.error("Outlook Calendar OAuth: MICROSOFT_CLIENT_ID not configured")
+        return "Configuration error.", 500
+
+    account_id = g.current_account_id
+    if not account_id:
+        return _page(False, "Could not determine your account. Please log in again.", "Outlook Calendar")
+
+    state = _make_state(account_id)
+    params = {
+        "response_type": "code",
+        "client_id": client_id,
+        "redirect_uri": _outlook_cal_callback_uri(),
+        "scope": _OUTLOOK_CAL_SCOPE,
+        "state": state,
+        "response_mode": "query",
+    }
+    return redirect(_OUTLOOK_CAL_AUTH_URL + "?" + urllib.parse.urlencode(params))
+
+
+@bp.route("/outlook_cal/callback")
+def outlook_cal_callback():
+    """Microsoft sends the browser here with ?code=... after the user approves."""
+
+    error = request.args.get("error")
+    if error:
+        desc = request.args.get("error_description") or error
+        return _page(False, f"Microsoft denied: {desc}", "Outlook Calendar")
+
+    code = request.args.get("code")
+    state = request.args.get("state")
+
+    if not state:
+        return _page(False, "Missing state parameter.", "Outlook Calendar")
+
+    valid, account_id, _ = _verify_state(state)
+    if not valid or not account_id:
+        return _page(False, "Invalid state — possible CSRF. Please try again.", "Outlook Calendar")
+
+    if not code:
+        return _page(False, "No authorization code returned by Microsoft.", "Outlook Calendar")
+
+    client_id = current_app.config.get("MICROSOFT_CLIENT_ID") or os.getenv("MICROSOFT_CLIENT_ID")
+    client_secret = current_app.config.get("MICROSOFT_CLIENT_SECRET") or os.getenv("MICROSOFT_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        current_app.logger.error("Outlook Calendar OAuth: credentials not configured")
+        return _page(False, "Server configuration error. Contact the administrator.", "Outlook Calendar")
+
+    # Exchange code → tokens
+    try:
+        token_resp = requests.post(
+            _OUTLOOK_CAL_TOKEN_URL,
+            data={
+                "grant_type": "authorization_code",
+                "code": code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": _outlook_cal_callback_uri(),
+                "scope": _OUTLOOK_CAL_SCOPE,
+            },
+            timeout=10,
+        )
+        if not token_resp.ok:
+            current_app.logger.error(
+                f"Outlook Calendar token exchange HTTP {token_resp.status_code}: {token_resp.text}"
+            )
+        token_resp.raise_for_status()
+        token_data = token_resp.json()
+    except Exception as exc:
+        current_app.logger.exception(f"Outlook Calendar token exchange failed: {exc}")
+        return _page(False, "Connection failed. Please try again.", "Outlook Calendar")
+
+    access_token = token_data.get("access_token")
+    if not access_token:
+        current_app.logger.error("Outlook Calendar: no access_token in response")
+        return _page(False, "Connection failed. Please try again.", "Outlook Calendar")
+
+    refresh_token = token_data.get("refresh_token")
+
+    try:
+        _save_connection(account_id, _OUTLOOK_CAL_PROVIDER, {
+            "access_token_enc": encrypt_value(access_token),
+            "refresh_token_enc": encrypt_value(refresh_token) if refresh_token else None,
+            "expires_in": token_data.get("expires_in"),
+            "scope": _OUTLOOK_CAL_SCOPE,
+        })
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception(f"Outlook Calendar save failed for account={account_id}: {exc}")
+        return _page(False, "Connection failed. Please try again.", "Outlook Calendar")
+
+    current_app.logger.info(f"Outlook Calendar connected: account={account_id}")
+    return _page(True, "Outlook Calendar connected successfully.", "Outlook Calendar")
+
+
 # ── Minimal result page ───────────────────────────────────────────────────────
 
 def _page(success: bool, message: str, platform: str = "LinkedIn") -> str:

@@ -23,6 +23,7 @@ from src.dspy.signatures import build_triage_module, build_decision_program
 from src.dspy.draft_reply import (
     draft_reply_enabled,
     fetch_kb_context,
+    fetch_calendar_slots,
     sanitize_reply,
     compute_reply_confidence,
 )
@@ -199,6 +200,14 @@ def _run_dspy_triage_impl(
         subject = payload.get("subject", "")
         body = payload.get("body") or payload.get("text") or ""
         kb_context_list = fetch_kb_context(subject, body, account_id, limit=3)
+        # If the email is a meeting request and the account has Google Calendar
+        # connected, surface available slots so the draft reply can include them.
+        calendar_slots = fetch_calendar_slots(subject, body, account_id)
+        if calendar_slots:
+            kb_context_list.append({
+                "type": "calendar_availability",
+                "content": calendar_slots,
+            })
         kb_context_json = json.dumps(kb_context_list)
 
     # Run DSPy decision program
