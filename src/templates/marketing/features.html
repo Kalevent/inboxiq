@@ -45,7 +45,7 @@ InboxIQ triage, labels, drafts, and automation run inside Gmail and Outlook — 
     <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
       {% set layers = [
         ("01", "Triage", "Classify every email by intent, detect urgency, assign ownership — automatically."),
-        ("02", "Draft replies", "KB-grounded reply drafts ready for your review. You send. InboxIQ never sends."),
+        ("02", "Draft replies", "KB-grounded reply drafts ready for your review — including available meeting slots for scheduling requests. You send. InboxIQ never sends."),
         ("03", "Automation", "Rule-based actions triggered by triage output: archive, label, forward, notify."),
         ("04", "Multi-inbox", "Invite your whole team with one link. Each inbox is independent, per-inbox pricing."),
         ("05", "Analytics", "Top topics, response times, team activity. Know what's eating your time."),
@@ -137,6 +137,7 @@ InboxIQ triage, labels, drafts, and automation run inside Gmail and Outlook — 
         <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span>Grounded retrieval — answers come from <em>your</em> docs, not hallucinated</span></li>
         <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span>KB gap detection — repeated questions with no article trigger a notification</span></li>
         <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span>Feedback loop — accept/reject trains the model on your tone</span></li>
+        <li class="flex gap-2"><span class="text-emerald-400 mt-0.5">&#10003;</span><span><strong class="text-white">AI meeting scheduling</strong> — detects scheduling requests and includes available slots from your Google or Outlook Calendar inline in the draft. No Calendly required.</span></li>
       </ul>
     </div>
   </section>
@@ -322,6 +323,7 @@ InboxIQ triage, labels, drafts, and automation run inside Gmail and Outlook — 
             ("Multi-inbox invite link", True, False, False, False),
             ("Per-inbox pricing (not per-seat)", True, False, False, False),
             ("Audit trail of AI decisions", True, False, True, False),
+            ("AI meeting scheduling from email", True, False, False, False),
             ("Human always sends (no auto-send)", True, True, False, "Optional"),
           ] %}
           {% for row in comparisons %}
