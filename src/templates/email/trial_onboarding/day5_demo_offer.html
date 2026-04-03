@@ -3,89 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Need Help? Let's Talk</title>
+    <title>2 days left — are the drafts saving you time?</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
     <table role="presentation" style="width: 100%; border-collapse: collapse;">
         <tr>
             <td align="center" style="padding: 40px 20px;">
                 <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
                     <tr>
-                        <td style="padding: 40px 40px 20px; text-align: center;">
-                            <div style="font-size: 48px; margin-bottom: 15px;">👋</div>
-                            <h1 style="margin: 0 0 10px; font-size: 26px; font-weight: 600; color: #1a1a1a;">Want a personalized demo?</h1>
-                            <p style="margin: 0; font-size: 16px; color: #666;">Only 2 days left in your trial</p>
+                        <td style="padding: 40px 40px 20px;">
+                            <p style="margin: 0 0 6px; font-size: 13px; color: #6366f1; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Day 5 of your trial</p>
+                            <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: #111827; line-height: 1.3;">{% if first_name %}{{ first_name }}, are{% else %}Are{% endif %} the draft replies landing in your Gmail?</h1>
                         </td>
                     </tr>
 
+                    <!-- Body -->
                     <tr>
-                        <td style="padding: 20px 40px;">
-                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #333;">
-                                Hi {{first_name or 'there'}},
+                        <td style="padding: 10px 40px 30px;">
+                            <p style="margin: 0 0 18px; font-size: 15px; line-height: 1.7; color: #374151;">
+                                Two days left. Here's what InboxIQ should be doing for you right now: every time a real customer email arrives, a draft reply is waiting inside Gmail before you even open the thread. You review, edit if needed, and send — in under 30 seconds.
+                            </p>
+                            <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: #374151;">
+                                If you haven't seen drafts yet, the most common reason is the connected inbox receives mostly automated mail. The fix is one step:
                             </p>
 
-                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #333;">
-                                You're on day 5 of your InboxIQ trial. How's it going so far?
-                            </p>
-
-                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #333;">
-                                I'd love to jump on a quick 15-minute call to:
-                            </p>
-
-                            <ul style="margin: 0 0 25px; padding-left: 20px;">
-                                <li style="margin-bottom: 12px; font-size: 16px; line-height: 1.6; color: #333;">
-                                    <strong>Show you advanced features</strong> tailored to your workflow
-                                </li>
-                                <li style="margin-bottom: 12px; font-size: 16px; line-height: 1.6; color: #333;">
-                                    <strong>Answer any questions</strong> about setup or automation rules
-                                </li>
-                                <li style="margin-bottom: 12px; font-size: 16px; line-height: 1.6; color: #333;">
-                                    <strong>Help you get maximum value</strong> from InboxIQ before your trial ends
-                                </li>
-                            </ul>
-
-                            <div style="background-color: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 20px; margin: 25px 0;">
-                                <p style="margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #15803d;">
-                                    📅 Book a 15-Minute Demo
-                                </p>
-                                <p style="margin: 0 0 15px; font-size: 14px; line-height: 1.5; color: #166534;">
-                                    Choose a time that works for you — no obligation, just helpful guidance.
-                                </p>
-                                <p style="margin: 0; text-align: center;">
-                                    <a href="https://calendly.com/kofi-kalevent/15min" style="display: inline-block; padding: 12px 28px; background-color: #16a34a; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">Pick a Time →</a>
-                                </p>
+                            <!-- Action box -->
+                            <div style="margin: 0 0 28px; padding: 20px 24px; background-color: #eef2ff; border-radius: 8px; border-left: 4px solid #6366f1;">
+                                <p style="margin: 0 0 10px; font-size: 15px; font-weight: 700; color: #1e1b4b;">Connect your support@ or sales@ inbox</p>
+                                <p style="margin: 0 0 10px; font-size: 14px; line-height: 1.6; color: #3730a3;">That's where real customer emails land. InboxIQ connects as many inboxes as you need from one account — each one gets its own drafts.</p>
+                                <p style="margin: 0; font-size: 13px; color: #4338ca;">Settings → Integrations → Connect Gmail or Outlook</p>
                             </div>
 
-                            <p style="margin: 25px 0 20px; font-size: 16px; line-height: 1.6; color: #333;">
-                                <strong>Prefer to explore on your own?</strong> No problem! Here are some helpful resources:
+                            <!-- What a draft looks like -->
+                            <div style="margin: 0 0 28px; padding: 20px 24px; background-color: #fafafa; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <p style="margin: 0 0 10px; font-size: 15px; font-weight: 700; color: #111827;">What happens when it's working</p>
+                                <p style="margin: 0 0 8px; font-size: 14px; line-height: 1.6; color: #374151;">A customer emails asking about pricing. InboxIQ reads the thread, checks your knowledge base, and creates a draft reply already in the Gmail compose box — labelled <strong>InboxIQ</strong>. You open it, glance at the draft, hit send. That's it.</p>
+                                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #374151;">For meeting requests: InboxIQ detects the scheduling intent and inserts your available calendar slots directly into the draft — no Calendly link, no back-and-forth.</p>
+                            </div>
+
+                            <!-- Scheduling callout -->
+                            <div style="margin: 0 0 28px; padding: 20px 24px; background-color: #f0fdf4; border-radius: 8px; border-left: 4px solid #22c55e;">
+                                <p style="margin: 0 0 8px; font-size: 15px; font-weight: 700; color: #14532d;">Don't forget: AI meeting scheduling</p>
+                                <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #166534;">Connect Google Calendar or Outlook Calendar in Settings → Integrations and InboxIQ will start embedding your availability in every demo-request or call-request reply automatically.</p>
+                            </div>
+
+                            <!-- CTA -->
+                            <p style="margin: 0 0 28px; text-align: center;">
+                                <a href="https://kalevent.com/settings?tab=integrations" style="display: inline-block; padding: 14px 32px; background-color: #6366f1; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">Connect your support inbox →</a>
                             </p>
 
-                            <ul style="margin: 0 0 25px; padding-left: 20px;">
-                                <li style="margin-bottom: 10px; font-size: 14px; line-height: 1.6;">
-                                    <a href="https://kalevent.com/docs" style="color: #4F46E5; text-decoration: none; font-weight: 500;">📚 Documentation</a> — Step-by-step guides
-                                </li>
-                                <li style="margin-bottom: 10px; font-size: 14px; line-height: 1.6;">
-                                    <a href="https://kalevent.com/playbook/unified-support-triage" style="color: #4F46E5; text-decoration: none; font-weight: 500;">📖 Support Triage Playbook</a> — Best practices
-                                </li>
-                                <li style="margin-bottom: 10px; font-size: 14px; line-height: 1.6;">
-                                    <a href="mailto:support@kalevent.com" style="color: #4F46E5; text-decoration: none; font-weight: 500;">✉️ Email me</a> — I respond within 2 hours
-                                </li>
-                            </ul>
-
-                            <p style="margin: 25px 0 0; font-size: 14px; line-height: 1.6; color: #666; font-style: italic;">
-                                Looking forward to helping you succeed!
+                            <p style="margin: 0; font-size: 14px; line-height: 1.7; color: #6b7280;">
+                                If anything looks off or you have questions, just reply here — I read every one.<br>
+                                <strong>Kofi</strong>, InboxIQ
                             </p>
                         </td>
                     </tr>
 
+                    <!-- Footer -->
                     <tr>
-                        <td style="padding: 30px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
-                            <p style="margin: 0; font-size: 14px; color: #666;">
-                                Kofi from Kalevent<br>
-                                <a href="mailto:support@kalevent.com" style="color: #4F46E5; text-decoration: none;">support@kalevent.com</a>
+                        <td style="padding: 20px 40px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                                InboxIQ by Kalevent &middot; <a href="https://kalevent.com" style="color: #6366f1; text-decoration: none;">kalevent.com</a>
                             </p>
                         </td>
                     </tr>
+
                 </table>
             </td>
         </tr>
