@@ -158,6 +158,21 @@ def _find_or_create_user(email: str, display_name: str | None) -> tuple[User, bo
     db.session.flush()
     user = User(email=email, password_hash=None, account_id=account.id, created_at=now, updated_at=now)
     db.session.add(user)
+    db.session.flush()
+    # Create billing profile with explicit 7-day trial so the fallback default is never relied on
+    try:
+        from src.models.billing import CustomerBillingProfile
+        billing_profile = CustomerBillingProfile(
+            account_id=account.id,
+            email=email,
+            trial_start=now,
+            trial_end=now + timedelta(days=7),
+            trial_status="active",
+            subscription_status="trialing",
+        )
+        db.session.add(billing_profile)
+    except Exception:
+        pass  # Non-fatal — access_control falls back gracefully
     db.session.commit()
     return user, True
 

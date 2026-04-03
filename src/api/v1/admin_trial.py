@@ -63,12 +63,12 @@ def get_trial_metrics():
     for user in active_trials:
         days_since_signup = (now - user.created_at).days if user.created_at else 0
 
-        # Use actual trial_end from billing profile; fall back to 14-day default
+        # Use actual trial_end from billing profile; fall back to 7-day default
         if user.trial_end:
             trial_end_dt = user.trial_end if user.trial_end.tzinfo else user.trial_end.replace(tzinfo=timezone.utc)
             trial_days_remaining = max(0, (trial_end_dt - now).days)
         else:
-            trial_days_remaining = max(0, 14 - days_since_signup)
+            trial_days_remaining = max(0, 7 - days_since_signup)
 
         # Determine which emails should have been sent
         expected_emails = []
