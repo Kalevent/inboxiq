@@ -523,6 +523,120 @@ def facebook_callback():
     return _page(True, f"Facebook connected as {fb_name or 'your account'}{page_info}.", "Facebook")
 
 
+# ── Google Calendar ───────────────────────────────────────────────────────────
+
+_GCAL_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+_GCAL_TOKEN_URL = "https://oauth2.googleapis.com/token"
+_GCAL_SCOPE = "https://www.googleapis.com/auth/calendar"
+_GCAL_PROVIDER = "gcal"
+
+
+def _gcal_callback_uri():
+    override = os.getenv("GCAL_REDIRECT_URI")
+    if override:
+        return override
+    return url_for("social_auth.gcal_callback", _external=True)
+
+
+@bp.route("/gcal")
+@login_required_settings
+def gcal_start():
+    """Kick off Google Calendar OAuth for the logged-in account."""
+    client_id = current_app.config.get("GOOGLE_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID")
+    if not client_id:
+        current_app.logger.error("Google Calendar OAuth: GOOGLE_CLIENT_ID not configured")
+        return "Configuration error.", 500
+
+    account_id = g.current_account_id
+    if not account_id:
+        return _page(False, "Could not determine your account. Please log in again.", "Google Calendar")
+
+    state = _make_state(account_id)
+    params = {
+        "response_type": "code",
+        "client_id": client_id,
+        "redirect_uri": _gcal_callback_uri(),
+        "scope": _GCAL_SCOPE,
+        "state": state,
+        "access_type": "offline",
+        "prompt": "consent",
+    }
+    return redirect(_GCAL_AUTH_URL + "?" + urllib.parse.urlencode(params))
+
+
+@bp.route("/gcal/callback")
+def gcal_callback():
+    """Google sends the browser here with ?code=... after the user approves."""
+
+    error = request.args.get("error")
+    if error:
+        return _page(False, f"Google denied: {error}", "Google Calendar")
+
+    code = request.args.get("code")
+    state = request.args.get("state")
+
+    if not state:
+        return _page(False, "Missing state parameter.", "Google Calendar")
+
+    valid, account_id, _ = _verify_state(state)
+    if not valid or not account_id:
+        return _page(False, "Invalid state — possible CSRF. Please try again.", "Google Calendar")
+
+    if not code:
+        return _page(False, "No authorization code returned by Google.", "Google Calendar")
+
+    client_id = current_app.config.get("GOOGLE_CLIENT_ID") or os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = current_app.config.get("GOOGLE_CLIENT_SECRET") or os.getenv("GOOGLE_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        current_app.logger.error("Google Calendar OAuth: credentials not configured")
+        return _page(False, "Server configuration error. Contact the administrator.", "Google Calendar")
+
+    # Exchange code → tokens
+    try:
+        token_resp = requests.post(
+            _GCAL_TOKEN_URL,
+            data={
+                "grant_type": "authorization_code",
+                "code": code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": _gcal_callback_uri(),
+            },
+            timeout=10,
+        )
+        if not token_resp.ok:
+            current_app.logger.error(
+                f"Google Calendar token exchange HTTP {token_resp.status_code}: {token_resp.text}"
+            )
+        token_resp.raise_for_status()
+        token_data = token_resp.json()
+    except Exception as exc:
+        current_app.logger.exception(f"Google Calendar token exchange failed: {exc}")
+        return _page(False, "Connection failed. Please try again.", "Google Calendar")
+
+    access_token = token_data.get("access_token")
+    if not access_token:
+        current_app.logger.error("Google Calendar: no access_token in response")
+        return _page(False, "Connection failed. Please try again.", "Google Calendar")
+
+    refresh_token = token_data.get("refresh_token")
+
+    try:
+        _save_connection(account_id, _GCAL_PROVIDER, {
+            "access_token_enc": encrypt_value(access_token),
+            "refresh_token_enc": encrypt_value(refresh_token) if refresh_token else None,
+            "expires_in": token_data.get("expires_in"),
+            "scope": _GCAL_SCOPE,
+        })
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception(f"Google Calendar save failed for account={account_id}: {exc}")
+        return _page(False, "Connection failed. Please try again.", "Google Calendar")
+
+    current_app.logger.info(f"Google Calendar connected: account={account_id}")
+    return _page(True, "Google Calendar connected successfully.", "Google Calendar")
+
+
 # ── Minimal result page ───────────────────────────────────────────────────────
 
 def _page(success: bool, message: str, platform: str = "LinkedIn") -> str:
