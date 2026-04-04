@@ -856,6 +856,25 @@ html:not(.dark) .marketing-main .inbox-mockup .border-slate-700 { border-color: 
 html:not(.dark) .marketing-main .inbox-mockup .border-slate-800 { border-color: #1e293b !important; }
 html:not(.dark) .marketing-main .inbox-mockup .divide-slate-800 > * + * { border-color: #1e293b !important; }
 
+/* ── Blog pages: light-mode overrides ───────────────────────────────── */
+html:not(.dark) .marketing-main .blog-heading        { color: #020617 !important; }
+html:not(.dark) .marketing-main .blog-subheading     { color: #020617 !important; }
+html:not(.dark) .marketing-main .blog-card-title     { color: #020617 !important; }
+html:not(.dark) .marketing-main .blog-body-text      { color: #475569 !important; }
+html:not(.dark) .marketing-main .blog-meta           { color: #64748b !important; }
+html:not(.dark) .marketing-main .blog-button-text    { color: #4f46e5 !important; }
+
+html:not(.dark) .marketing-main .blog-body           { color: #1e293b !important; }
+html:not(.dark) .marketing-main .blog-body p         { color: #475569 !important; }
+html:not(.dark) .marketing-main .blog-body h1,
+html:not(.dark) .marketing-main .blog-body h2,
+html:not(.dark) .marketing-main .blog-body h3        { color: #020617 !important; }
+html:not(.dark) .marketing-main .blog-body strong    { color: #020617 !important; }
+html:not(.dark) .marketing-main .blog-body a         { color: #4f46e5 !important; }
+html:not(.dark) .marketing-main .blog-body li        { color: #475569 !important; }
+
+html:not(.dark) .marketing-main .blog-card           { background: #ffffff !important; border-color: #e2e8f0 !important; box-shadow: 0 1px 3px rgba(15,23,42,0.06) !important; }
+
 /* Dark mode: restore marketing body gradient */
 html.dark .marketing-body {
   background:

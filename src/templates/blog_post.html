@@ -41,61 +41,67 @@
 {% endblock %}
 
 {% block content %}
-<div class="bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950">
-  <article class="blog-article max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-12 lg:py-16 space-y-8">
-    <div class="space-y-3">
-      <div class="flex flex-wrap items-center gap-3 blog-meta uppercase tracking-[0.22em] text-indigo-300/80">
-        <a href="/blog" class="hover:text-white">InboxIQ Blog</a>
-        {% if post.funnel_stage %}<span class="text-slate-400">· {{ post.funnel_stage|upper }}</span>{% endif %}
-      </div>
-      <h1 class="blog-heading text-white tracking-tight">{{ post.title }}</h1>
-      <div class="flex flex-wrap items-center gap-2 blog-meta">
-        {% if post.primary_keyword %}<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-indigo-100">Keyword: {{ post.primary_keyword }}</span>{% endif %}
-        {% if post.secondary_keywords %}<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/70 border border-slate-800 text-slate-200">Also: {{ post.secondary_keywords|join(', ') }}</span>{% endif %}
-        {% if post.read_time_minutes %}<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-slate-100">~{{ post.read_time_minutes }} min read</span>{% endif %}
-        {% if post.word_count %}<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-slate-100">{{ post.word_count }} words</span>{% endif %}
-      </div>
-    </div>
+<article class="blog-article max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-12 lg:py-16 space-y-8">
 
-    <div class="blog-card rounded-3xl overflow-hidden border border-slate-800 bg-slate-950/70 shadow-2xl shadow-indigo-500/10">
-      {% set hero_src = post.hero_image_url or fallback_hero %}
-      {% if hero_src and hero_src.startswith('static/') %}
-        {% set hero_src = '/' + hero_src %}
+  <div class="space-y-3">
+    <div class="flex flex-wrap items-center gap-3 blog-meta uppercase tracking-[0.22em] text-indigo-300/80">
+      <a href="/blog" class="hover:text-white">InboxIQ Blog</a>
+      {% if post.funnel_stage %}<span class="text-slate-400">· {{ post.funnel_stage|upper }}</span>{% endif %}
+    </div>
+    <h1 class="blog-heading text-white tracking-tight">{{ post.title }}</h1>
+    <div class="flex flex-wrap items-center gap-2 blog-meta">
+      {% if post.primary_keyword %}
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-indigo-100">Keyword: {{ post.primary_keyword }}</span>
       {% endif %}
-      {% if hero_src %}
-        <div class="blog-hero relative bg-slate-900">
-          <img src="{{ hero_src }}" alt="{{ post.hero_image_alt or post.title or 'Unified triage layer hero' }}" class="absolute inset-0 w-full h-full object-cover z-0">
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/30 to-transparent z-10"></div>
-        </div>
-      {% else %}
-        <div class="blog-hero bg-gradient-to-r from-indigo-600/40 via-fuchsia-500/30 to-slate-900"></div>
+      {% if post.secondary_keywords %}
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/70 border border-slate-800 text-slate-200">Also: {{ post.secondary_keywords|join(', ') }}</span>
       {% endif %}
-
-      <div class="hero-spacer"></div>
-
-      <div class="blog-body-wrap px-5 sm:px-8 pt-8 pb-12">
-        <div class="blog-body prose prose-invert max-w-3xl prose-headings:font-semibold prose-headings:text-white prose-a:text-indigo-200 prose-li:marker:text-indigo-300">
-          {{ post.content_html | safe }}
-        </div>
-      </div>
+      {% if post.read_time_minutes %}
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-slate-100">~{{ post.read_time_minutes }} min read</span>
+      {% endif %}
+      {% if post.word_count %}
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-slate-100">{{ post.word_count }} words</span>
+      {% endif %}
     </div>
+  </div>
 
-    {% set cta_links = post.internal_links or [
-      {"href": "/ai-email-triage", "label": "See the demo", "rel": "cta"},
-      {"href": "/email-triage", "label": "AI Email Triage", "rel": "cta"},
-    ] %}
-    {% if cta_links %}
-    <div class="bg-slate-900/70 border border-indigo-500/30 rounded-2xl p-5 sm:p-6 shadow-lg shadow-indigo-500/10">
-      <div class="text-sm font-semibold text-indigo-100 mb-3">Continue reading</div>
-      <div class="flex flex-wrap gap-3 text-sm">
-        {% for link in cta_links %}
-          <a href="{{ link.href }}" class="blog-button-text inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-100 border border-indigo-400/40 hover:bg-indigo-500/20">
-            {{ link.label }} →
-          </a>
-        {% endfor %}
+  <div class="blog-card rounded-3xl overflow-hidden border border-slate-800 bg-slate-950/70">
+    {% set hero_src = post.hero_image_url or fallback_hero %}
+    {% if hero_src and hero_src.startswith('static/') %}{% set hero_src = '/' + hero_src %}{% endif %}
+    {% if hero_src %}
+      <div class="blog-hero relative bg-slate-900">
+        <img src="{{ hero_src }}" alt="{{ post.hero_image_alt or post.title or 'Blog hero' }}" class="absolute inset-0 w-full h-full object-cover z-0">
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/30 to-transparent z-10"></div>
       </div>
-    </div>
+    {% else %}
+      <div class="blog-hero bg-gradient-to-r from-indigo-600/40 via-fuchsia-500/30 to-slate-900"></div>
     {% endif %}
-  </article>
-</div>
+
+    <div class="hero-spacer"></div>
+
+    <div class="blog-body-wrap px-5 sm:px-8 pt-8 pb-12">
+      <div class="blog-body prose max-w-3xl">
+        {{ post.content_html | safe }}
+      </div>
+    </div>
+  </div>
+
+  {% set cta_links = post.internal_links or [
+    {"href": "/ai-email-triage", "label": "See the demo", "rel": "cta"},
+    {"href": "/email-triage", "label": "AI Email Triage", "rel": "cta"},
+  ] %}
+  {% if cta_links %}
+  <div class="marketing-card rounded-2xl p-5 sm:p-6">
+    <p class="text-sm font-semibold text-indigo-100 mb-3">Continue reading</p>
+    <div class="flex flex-wrap gap-3 text-sm">
+      {% for link in cta_links %}
+        <a href="{{ link.href }}" class="blog-button-text inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-100 border border-indigo-400/40 hover:bg-indigo-500/20">
+          {{ link.label }} →
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</article>
 {% endblock %}
