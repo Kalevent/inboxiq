@@ -805,18 +805,65 @@ html:not(.dark) .marketing-footer a:hover { color: #020617 !important; }
 html:not(.dark) .marketing-footer p { color: #64748b !important; }
 html:not(.dark) .marketing-footer span { color: #64748b !important; }
 
-/* Marketing main content area: reset dark Tailwind classes */
-html:not(.dark) .marketing-main .text-white   { color: #020617 !important; }
+/* ── Marketing content: comprehensive light mode overrides ────────────── */
+
+/* marketing-card component → white card per figma.md */
+html:not(.dark) .marketing-main .marketing-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06) !important;
+}
+
+/* marketing-* named classes */
+html:not(.dark) .marketing-main .marketing-title   { color: #020617 !important; }
+html:not(.dark) .marketing-main .marketing-subtitle { color: #475569 !important; }
+html:not(.dark) .marketing-main .marketing-kicker   { color: #4f46e5 !important; }
+
+/* Text: dark-on-dark → dark-on-light */
+html:not(.dark) .marketing-main .text-white     { color: #020617 !important; }
 html:not(.dark) .marketing-main .text-slate-100 { color: #1e293b !important; }
 html:not(.dark) .marketing-main .text-slate-200 { color: #334155 !important; }
 html:not(.dark) .marketing-main .text-slate-300 { color: #475569 !important; }
 html:not(.dark) .marketing-main .text-slate-400 { color: #64748b !important; }
-html:not(.dark) .marketing-main .text-indigo-300 { color: #4f46e5 !important; }
+html:not(.dark) .marketing-main .text-slate-500 { color: #64748b !important; }
+html:not(.dark) .marketing-main .text-indigo-100 { color: #4338ca !important; }
 html:not(.dark) .marketing-main .text-indigo-200 { color: #4f46e5 !important; }
-html:not(.dark) .marketing-main .border-slate-800 { border-color: #e2e8f0 !important; }
-html:not(.dark) .marketing-main .border-slate-700 { border-color: #e2e8f0 !important; }
-html:not(.dark) .marketing-main .bg-slate-950 { background-color: #ffffff !important; }
-html:not(.dark) .marketing-main .bg-slate-900 { background-color: #f1f5f9 !important; }
+html:not(.dark) .marketing-main .text-indigo-300 { color: #4f46e5 !important; }
+html:not(.dark) .marketing-main .text-indigo-400 { color: #4f46e5 !important; }
+
+/* Borders */
+html:not(.dark) .marketing-main .border-slate-700  { border-color: #e2e8f0 !important; }
+html:not(.dark) .marketing-main .border-slate-800  { border-color: #e2e8f0 !important; }
+
+/* Inline dark backgrounds → light surfaces */
+html:not(.dark) .marketing-main .bg-slate-950      { background-color: #f8fafc !important; }
+html:not(.dark) .marketing-main .bg-slate-900      { background-color: #f1f5f9 !important; }
+html:not(.dark) .marketing-main .bg-slate-800      { background-color: #f1f5f9 !important; }
+html:not(.dark) .marketing-main .bg-slate-800\/50  { background-color: #f8fafc !important; }
+html:not(.dark) .marketing-main .bg-slate-800\/30  { background-color: transparent !important; }
+html:not(.dark) .marketing-main .bg-slate-700      { background-color: #e2e8f0 !important; }
+
+/* Badge tints: dark-variant → light-variant */
+html:not(.dark) .marketing-main .bg-indigo-500\/10 { background-color: #eef2ff !important; }
+html:not(.dark) .marketing-main .text-indigo-200.bg-indigo-500\/10 { color: #4f46e5 !important; }
+
+/* ── Preserve intentionally-dark UI mockups (Gmail/Outlook inbox previews) ── */
+html:not(.dark) .marketing-main .inbox-mockup,
+html:not(.dark) .marketing-main .inbox-mockup * { all: revert-layer; }
+html:not(.dark) .marketing-main .inbox-mockup { display: block; }
+
+html:not(.dark) .marketing-main .inbox-mockup .bg-slate-950  { background-color: #020617 !important; }
+html:not(.dark) .marketing-main .inbox-mockup .bg-slate-900  { background-color: #0f172a !important; }
+html:not(.dark) .marketing-main .inbox-mockup .bg-slate-800\/50 { background-color: rgba(30,41,59,0.5) !important; }
+html:not(.dark) .marketing-main .inbox-mockup .bg-slate-700  { background-color: #334155 !important; }
+html:not(.dark) .marketing-main .inbox-mockup .text-white    { color: #ffffff !important; }
+html:not(.dark) .marketing-main .inbox-mockup .text-slate-300 { color: #cbd5e1 !important; }
+html:not(.dark) .marketing-main .inbox-mockup .text-slate-400 { color: #94a3b8 !important; }
+html:not(.dark) .marketing-main .inbox-mockup .text-slate-500 { color: #64748b !important; }
+html:not(.dark) .marketing-main .inbox-mockup .text-slate-600 { color: #475569 !important; }
+html:not(.dark) .marketing-main .inbox-mockup .border-slate-700 { border-color: #334155 !important; }
+html:not(.dark) .marketing-main .inbox-mockup .border-slate-800 { border-color: #1e293b !important; }
+html:not(.dark) .marketing-main .inbox-mockup .divide-slate-800 > * + * { border-color: #1e293b !important; }
 
 /* Dark mode: restore marketing body gradient */
 html.dark .marketing-body {
