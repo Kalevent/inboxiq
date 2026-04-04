@@ -18,6 +18,15 @@ spec:
       labels:
         app: inboxiq
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: inboxiq
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: inboxiq
           image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:20260215-144250-otel-fix
