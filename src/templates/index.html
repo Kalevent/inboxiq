@@ -890,45 +890,6 @@
         </div>
       </section>
 
-      <!-- ── Demo Video ──────────────────────────────────────────────────── -->
-      <section id="demo" class="dm-section-white border-b border-slate-200 bg-white">
-        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16 grid lg:grid-cols-2 gap-10 items-center">
-          <div class="dm-demo-card bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-center">
-            <div id="demoVideoContainer"
-                 class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center border border-slate-200"
-                 data-video-src="{{ url_for('static', filename='demo/InboxIQ.mp4') }}"
-                 data-poster-src="{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}"
-                 style="background-image:url('{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}');background-size:cover;background-position:center;">
-              <button id="demoPlayBtn" class="flex flex-col items-center justify-center gap-3 group">
-                <div class="h-14 w-14 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/40 group-hover:bg-indigo-500 transition">
-                  <span class="ml-1 border-l-[10px] border-l-white border-y-[7px] border-y-transparent"></span>
-                </div>
-                <span class="text-xs text-slate-600">Play demo video</span>
-              </button>
-            </div>
-          </div>
-          <div>
-            <h2 class="dm-heading text-xl md:text-2xl font-semibold text-slate-950 mb-3">
-              See a draft reply appear in Gmail in 60 seconds
-            </h2>
-            <p class="dm-body text-sm text-slate-600 mb-4 max-w-md">
-              This short demo shows an inbound support email arriving, InboxIQ classifying it, and a draft reply — grounded in the knowledge base — appearing in the Gmail thread. No new tool opened.
-            </p>
-            <ul class="space-y-2 text-xs text-slate-600">
-              <li class="dm-body">&#10003; Email arrives, AI label applied instantly inside Gmail</li>
-              <li class="dm-body">&#10003; Draft grounded in your knowledge base, full thread context read</li>
-              <li class="dm-body">&#10003; Meeting request detected — available calendar slots included</li>
-              <li class="dm-body">&#10003; You review in 30 seconds and send from your own inbox</li>
-            </ul>
-            <div class="mt-6">
-              <button onclick="document.getElementById('trialModalTrigger').click()"
-                      class="dm-btn-dark inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800">
-                Start free trial →
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <!-- ── CTA ────────────────────────────────────────────────────────── -->
       <section id="cta" class="bg-slate-950">
@@ -940,9 +901,9 @@
                     class="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3 text-base font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-slate-100">
               Start free trial
             </button>
-            <a href="#demo" class="inline-flex items-center justify-center rounded-2xl border border-slate-700 px-6 py-3 text-base font-semibold text-white transition hover:border-slate-500 hover:bg-slate-900">
+            <button onclick="document.getElementById('demoGateModal').style.display='flex'" class="inline-flex items-center justify-center rounded-2xl border border-slate-700 px-6 py-3 text-base font-semibold text-white transition hover:border-slate-500 hover:bg-slate-900">
               Watch 60s demo
-            </a>
+            </button>
           </div>
 
           <div class="mt-12 border-t border-slate-800 pt-10">
