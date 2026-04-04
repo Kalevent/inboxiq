@@ -4,10 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contact · Kalevent / InboxIQ</title>
-  <link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
-  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cookie-consent.css') }}">
 </head>
@@ -24,7 +21,7 @@
         </a>
         <div class="flex items-center gap-3">
           <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
-          <a href="{{ url_for('login_page') }}" class="hidden sm:inline-flex text-xs px-3 py-1.5 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50">
+          <a href="{{ url_for('login_page') }}" class="hidden sm:inline-flex text-xs px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50">
             Log in
           </a>
         </div>
@@ -32,68 +29,86 @@
     </header>
 
     <main class="flex-1">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
-        <div class="mb-8">
-          <p class="text-xs uppercase tracking-[0.2em] text-indigo-300/80 mb-3">Contact</p>
-          <h1 class="text-3xl sm:text-4xl font-semibold text-white tracking-tight">We’re here to help</h1>
-          <p class="text-slate-300 mt-3 max-w-2xl text-sm sm:text-base">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
+
+        <div class="mb-10">
+          <p class="text-xs uppercase tracking-[0.2em] text-indigo-500 mb-3">Contact</p>
+          <h1 class="text-3xl sm:text-4xl font-semibold text-slate-950 tracking-tight">We're here to help</h1>
+          <p class="text-slate-500 mt-3 max-w-2xl text-sm sm:text-base">
             Reach out for support, sales, or general questions. We typically respond within one business day.
           </p>
         </div>
 
-        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/10 p-6 sm:p-8">
-          <div class="grid md:grid-cols-2 gap-6">
-            <div class="space-y-4">
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 sm:p-8">
+          <div class="grid md:grid-cols-2 gap-8">
+
+            <div class="space-y-6">
               <div>
-                <div class="text-sm text-slate-400">Email</div>
-                <a class="text-lg font-semibold text-indigo-200 hover:text-white" href="mailto:support@kalevent.com">
+                <div class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1">Email</div>
+                <a class="text-base font-semibold text-indigo-600 hover:text-indigo-500" href="mailto:support@kalevent.com">
                   support@kalevent.com
                 </a>
               </div>
+
               <div>
-                <div class="text-sm text-slate-400">Address</div>
-                <p class="text-slate-200 text-sm leading-relaxed">
+                <div class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-1">Address</div>
+                <p class="text-slate-600 text-sm leading-relaxed">
                   Kalevent Limited<br />
                   Company Number 15288801<br />
-                  Future Space UWE North Gate, Filton Road, Bristol BS34 8RB
+                  Future Space UWE North Gate, Filton Road,<br />
+                  Bristol BS34 8RB
                 </p>
               </div>
+
               <div>
-                <div class="text-sm text-slate-400 mb-1">Other channels</div>
-                <div class="flex flex-wrap gap-3 text-sm text-indigo-200">
-                  <a href="https://x.com/kaleventHQ" target="_blank" rel="noopener" class="hover:text-white">X</a>
-                  <a href="https://www.linkedin.com/company/kalevent/" target="_blank" rel="noopener" class="hover:text-white">LinkedIn</a>
-                  <a href="https://wa.me/447593092262?text=Hi%20Kalevent%20team" target="_blank" rel="noopener" class="hover:text-white">WhatsApp</a>
+                <div class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">Other channels</div>
+                <div class="flex flex-wrap gap-3 text-sm">
+                  <a href="https://x.com/kaleventHQ" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors">X / Twitter</a>
+                  <a href="https://www.linkedin.com/company/kalevent/" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors">LinkedIn</a>
+                  <a href="https://wa.me/447593092262?text=Hi%20Kalevent%20team" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors">WhatsApp</a>
                 </div>
               </div>
             </div>
 
-            <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-5 space-y-4">
-              <div class="text-sm text-slate-300">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+              <div class="text-sm font-semibold text-slate-700">What to include in your message</div>
+              <p class="text-sm text-slate-500">
                 For product questions, onboarding, or enterprise requests, email us and include your workspace name for a faster response.
-              </div>
-              <ul class="space-y-2 text-sm text-slate-200">
-                <li class="flex gap-2">
-                  <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+              </p>
+              <ul class="space-y-2.5 text-sm text-slate-600">
+                <li class="flex gap-2.5">
+                  <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400"></span>
                   Support hours: Monday–Friday, 9am–6pm UK time
                 </li>
-                <li class="flex gap-2">
-                  <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                <li class="flex gap-2.5">
+                  <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400"></span>
                   Expected response: within one business day
                 </li>
-                <li class="flex gap-2">
-                  <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
-                  If urgent, include “Priority” in your subject line
+                <li class="flex gap-2.5">
+                  <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400"></span>
+                  If urgent, include "Priority" in your subject line
                 </li>
               </ul>
-              <div class="text-xs text-slate-500">
+              <div class="text-xs text-slate-400 pt-1">
                 We never share your contact details or conversation history outside of Kalevent.
               </div>
             </div>
+
           </div>
         </div>
+
       </div>
     </main>
+
+    <footer class="border-t border-slate-200 bg-white">
+      <div class="max-w-4xl mx-auto px-4 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <a href="/" class="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900">
+          <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white text-xs">KI</span>
+          <span>Kalevent</span>
+        </a>
+        <span class="text-xs text-slate-400">&copy; 2025 Kalevent. All rights reserved.</span>
+      </div>
+    </footer>
   </div>
   <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
 </body>
