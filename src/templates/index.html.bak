@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Your Inbox, Smarter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/tailwind.min.css') }}"
+  />
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/custom.css', v='landing-menu-1') }}"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cookie-consent.css') }}">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1M5W9KQ1HJ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1M5W9KQ1HJ');
+  </script>
+  <!-- End Google Analytics -->
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+    <header class="landing-header border-b border-slate-800 bg-slate-950/80 backdrop-blur relative z-30" style="z-index: 7000;">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-2 hover:opacity-90">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">
+            KI
+          </div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Your Inbox, Smarter</div>
+          </div>
+        </a>
+        <nav class="hidden md:flex items-center gap-6 text-sm text-slate-300">
+          <div class="landing-menu-wrap group" style="position: relative; z-index: 8000;">
+            <button data-dropdown="solutions-header" class="inline-flex items-center gap-1 hover:text-white focus:outline-none">
+              <span>Solutions</span>
+              <span class="text-[10px] text-slate-400">▼</span>
+            </button>
+            <div data-dropdown-menu="solutions-header" class="landing-menu absolute left-0 mt-2 hidden min-w-[200px] rounded-lg border border-slate-800 bg-slate-900 shadow-lg backdrop-blur group-hover:block group-focus-within:block z-50" style="z-index: 9000;">
+              <a href="/solutions/email/ai-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">AI Email Triage</a>
+              <a href="/solutions/email/draft-replies" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Draft Replies</a>
+              <a href="/solutions/email/triage-automation" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Email Triage Automation</a>
+              <a href="/solutions/email/shared-inbox" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Shared Inbox</a>
+              <a href="/solutions/email/support-automation" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Support Automation</a>
+            </div>
+          </div>
+          <div class="landing-menu-wrap group" style="position: relative; z-index: 8000;">
+            <button data-dropdown="use-cases-header" class="inline-flex items-center gap-1 hover:text-white focus:outline-none">
+              <span>Use cases</span>
+              <span class="text-[10px] text-slate-400">▼</span>
+            </button>
+            <div data-dropdown-menu="use-cases-header" class="landing-menu absolute left-0 mt-2 hidden min-w-[200px] rounded-lg border border-slate-800 bg-slate-900 shadow-lg backdrop-blur group-hover:block group-focus-within:block z-50" style="z-index: 9000;">
+              <a href="/use-cases/support" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Support Triage</a>
+              <a href="/use-cases/healthcare-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Healthcare Triage (Referrals)</a>
+              <a href="/use-cases/claims" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Insurance Claims</a>
+              <a href="/use-cases/hr" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">HR Requests</a>
+              <a href="/use-cases/finance" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Finance Approvals</a>
+            </div>
+          </div>
+          <a href="/features" class="hover:text-white">Features</a>
+          <a href="#benefits" class="hover:text-white">Benefits</a>
+          <a href="#testimonials" class="hover:text-white">Testimonials</a>
+          <a href="/pricing" class="hover:text-white">Pricing</a>
+          <a href="#roi" class="hover:text-white">ROI</a>
+          {% if current_user.is_authenticated %}
+            <a href="/upgrade" class="hover:text-indigo-200 font-semibold">Upgrade</a>
+          {% endif %}
+        </nav>
+        <div class="flex items-center gap-3">
+          <a href="/login" class="hidden sm:inline-flex text-sm px-3 py-1.5 rounded-full border border-slate-600 text-slate-200 hover:bg-slate-800">
+            Log in
+          </a>
+          <button id="trialModalTrigger" class="inline-flex text-sm px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 font-semibold">
+            Start Free Trial
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <section class="relative overflow-hidden border-b border-slate-800">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-fuchsia-500/5 to-slate-900/60 pointer-events-none"></div>
+        <div class="max-w-6xl mx-auto px-4 py-16 lg:py-24 relative z-10 grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <span class="inline-flex items-center gap-2 rounded-full border border-indigo-400/40 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-200 mb-4">
+              Now live • Gmail &amp; Outlook · no new tool to open
+            </span>
+            <h1 class="text-3xl md:text-5xl font-semibold tracking-tight mb-4">
+              AI triage and draft replies,<br />
+              <span class="text-indigo-300">inside your Gmail or Outlook.</span>
+            </h1>
+            <p class="text-slate-300 text-sm md:text-base max-w-xl mb-6">
+              InboxIQ sits under your inbox — reads every email, places a draft reply in the thread, and applies AI labels automatically. Your team stays in Gmail.
+            </p>
+            <ul class="text-slate-400 text-xs md:text-sm max-w-xl mb-4 space-y-1.5">
+              <li class="flex items-start gap-2">
+                <span class="text-indigo-400 mt-0.5">•</span>
+                <span>AI labels applied inside Gmail &amp; Outlook automatically</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-indigo-400 mt-0.5">•</span>
+                <span>Draft replies grounded in your knowledge base</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-indigo-400 mt-0.5">•</span>
+                <span>Learns from corrections — gets smarter every week</span>
+              </li>
+            </ul>
+
+            <ul class="flex flex-wrap gap-3 text-xs text-slate-300 mb-6">
+              <li class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/70 border border-slate-700">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> 7-day free trial
+              </li>
+              <li class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/70 border border-slate-700">
+                No credit card required
+              </li>
+              <li class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/70 border border-slate-700">
+                Works with Gmail &amp; Outlook
+              </li>
+            </ul>
+
+            <p class="mb-5 text-xs text-slate-400">
+              🔒 <a href="{{ url_for('security') }}" class="underline underline-offset-2 hover:text-white">Cloud &middot; BYOL &middot; Self-hosted <span class="text-slate-500">(soon)</span> &middot; Air-gapped <span class="text-slate-500">(soon)</span> &mdash; your data, your infrastructure</a>
+            </p>
+
+            <div class="flex flex-wrap items-center gap-4 mb-4">
+              <a href="#cta" class="inline-flex items-center justify-center px-5 py-3 rounded-full bg-indigo-500 hover:bg-indigo-400 font-semibold text-sm">
+                Start Free Trial →
+              </a>
+              <a href="#demo" class="inline-flex items-center gap-2 text-sm text-slate-200 hover:text-white">
+                ▶ Watch 60s demo
+              </a>
+            </div>
+            <p class="text-xs text-slate-500">
+              Connect your inbox and see AI draft replies in Gmail within 20 minutes.
+            </p>
+            <div class="mt-4 flex flex-wrap items-center gap-4 text-[13px] text-indigo-200">
+              <a class="inline-flex items-center gap-1 hover:text-white underline underline-offset-4" href="{{ url_for('solutions_email_draft_replies') }}">
+                See how draft replies work
+              </a>
+              <a class="inline-flex items-center gap-1 hover:text-white underline underline-offset-4" href="{{ url_for('solutions_email_shared_inbox') }}">
+                Shared inbox without leaving Gmail
+              </a>
+            </div>
+          </div>
+
+          <div class="relative">
+            <div class="absolute -inset-6 bg-indigo-500/10 blur-3xl rounded-full"></div>
+            <div class="relative bg-slate-900/80 border border-slate-700 rounded-2xl shadow-2xl shadow-indigo-500/15 p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <div class="h-2 w-2 rounded-full bg-red-500"></div>
+                  <div class="h-2 w-2 rounded-full bg-amber-400"></div>
+                  <div class="h-2 w-2 rounded-full bg-emerald-400"></div>
+                </div>
+                <div class="text-xs text-slate-400">InboxIQ · Gmail Inbox</div>
+              </div>
+
+              <div class="space-y-3 text-xs">
+                <div class="bg-slate-900 rounded-xl p-3 border border-slate-700/70">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="font-semibold text-slate-100">james@acmecorp.com · Billing query</span>
+                    <span class="text-[10px] text-slate-400">just now</span>
+                  </div>
+                  <p class="text-slate-300 text-[11px]">
+                    “Hi, I haven't received my invoice for last month. Can you resend it to my new address?”
+                  </p>
+                  <div class="mt-2 flex flex-wrap gap-2 text-[10px]">
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-200 border border-amber-500/40">
+                      InboxIQ/Billing
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-200 border border-rose-500/40">
+                      Draft ready
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200">Gmail</span>
+                    <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200">P3</span>
+                    <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200">Billing</span>
+                    <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200">KB matched</span>
+                    <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-200">Thread: 1</span>
+                  </div>
+                </div>
+
+                <div class="bg-slate-900/80 rounded-xl p-3 border border-emerald-500/40">
+                  <div class="flex justify-between items-center mb-1">
+                    <span class="font-semibold text-emerald-200">Draft reply · placed in thread</span>
+                    <span class="text-[10px] text-emerald-300">InboxIQ</span>
+                  </div>
+                  <dl class="grid grid-cols-2 gap-2 text-[11px]">
+                    <div>
+                      <dt class="text-slate-400">Category</dt>
+                      <dd class="text-slate-100">Billing</dd>
+                    </div>
+                    <div>
+                      <dt class="text-slate-400">Priority</dt>
+                      <dd class="text-emerald-200">P3</dd>
+                    </div>
+                    <div>
+                      <dt class="text-slate-400">Label</dt>
+                      <dd class="text-slate-100">InboxIQ/Billing</dd>
+                    </div>
+                    <div>
+                      <dt class="text-slate-400">Draft</dt>
+                      <dd class="text-slate-100">Ready to send</dd>
+                    </div>
+                  </dl>
+                  <div class="mt-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-200 border border-indigo-400/40 text-[10px]">
+                      Review &amp; send →
+                    </span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 mt-3">
+                  <div class="bg-slate-900/70 rounded-xl p-2 text-[11px] border border-slate-700">
+                    <div class="text-slate-400">Emails/week</div>
+                    <div class="text-slate-100 font-semibold">47</div>
+                  </div>
+                  <div class="bg-slate-900/70 rounded-xl p-2 text-[11px] border border-slate-700">
+                    <div class="text-slate-400">Drafts accepted</div>
+                    <div class="text-slate-100 font-semibold">89%</div>
+                  </div>
+                  <div class="bg-slate-900/70 rounded-xl p-2 text-[11px] border border-slate-700">
+                    <div class="text-slate-400">Hours saved</div>
+                    <div class="text-emerald-300 font-semibold">8.2h</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="feature" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16 grid lg:grid-cols-2 gap-10 items-start">
+          <div>
+            <h2 class="text-xl md:text-2xl font-semibold mb-3">
+              Stop writing the same replies from scratch<br />
+              <span class="text-indigo-300">Delay your first support hire.</span>
+            </h2>
+            <p class="text-sm text-slate-300 mb-4 max-w-lg">
+              InboxIQ drafts repetitive customer emails directly inside Gmail or Outlook. You stay in your inbox. No new tool. No dashboard to learn. The draft is waiting in the thread before you open it.
+            </p>
+            <p class="text-sm text-slate-400 mb-6 max-w-lg">
+              Connect your support@, sales@, and founder inboxes. AI classifies every email, grounds the draft in your knowledge base, and handles meeting requests by including available calendar slots inline.
+            </p>
+            <ul class="space-y-2 text-sm text-slate-200">
+              <li class="flex gap-2">
+                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                Drafts grounded in your knowledge base and past replies.
+              </li>
+              <li class="flex gap-2">
+                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                AI labels appear inside Gmail — no separate inbox to check.
+              </li>
+              <li class="flex gap-2">
+                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                You always send. InboxIQ never replies on your behalf.
+              </li>
+            </ul>
+          </div>
+          <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+            <h3 class="text-sm font-semibold text-slate-100 mb-3">How it works in 3 steps</h3>
+            <ol class="space-y-4 text-sm text-slate-300">
+              <li class="flex gap-3">
+                <span class="font-semibold text-indigo-300">1.</span>
+                <div class="space-y-1">
+                  <div class="font-semibold text-slate-100">Connect Gmail or Outlook in 2 minutes</div>
+                  <p>OAuth sign-in. No password sharing. Labels and draft replies start appearing in your inbox immediately.</p>
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <span class="font-semibold text-indigo-300">2.</span>
+                <div class="space-y-1">
+                  <div class="font-semibold text-slate-100">AI reads every email and prepares a draft</div>
+                  <p>Full thread context, your knowledge base, and calendar availability — the draft is ready before you open the email.</p>
+                </div>
+              </li>
+              <li class="flex gap-3">
+                <span class="font-semibold text-indigo-300">3.</span>
+                <div class="space-y-1">
+                  <div class="font-semibold text-slate-100">Review in 30 seconds and send from your inbox</div>
+                  <p>Edit or approve the draft and hit send — exactly as you do today, just without composing from scratch every time.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- Integrations Section -->
+      <section id="integrations" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16">
+          <div class="text-center max-w-3xl mx-auto mb-10">
+            <h2 class="text-2xl md:text-3xl font-semibold mb-3">
+              Integrations<br />
+              <span class="text-indigo-300">Connect your workflow</span>
+            </h2>
+            <p class="text-sm text-slate-300 max-w-2xl mx-auto">
+              InboxIQ works inside Gmail and Outlook. Connect your knowledge base, calendar, and automation rules — no new tool, no migration.
+            </p>
+          </div>
+
+          <!-- Currently Integrated Apps — anticlockwise auto-scroll ticker -->
+          <style>
+            #int-ticker{overflow:hidden;position:relative}
+            #int-ticker::before,#int-ticker::after{content:'';position:absolute;top:0;bottom:0;width:100px;z-index:2;pointer-events:none}
+            #int-ticker::before{left:0;background:linear-gradient(to right,#020617 20%,transparent)}
+            #int-ticker::after{right:0;background:linear-gradient(to left,#020617 20%,transparent)}
+            .int-row{display:flex;gap:10px;width:max-content;margin-bottom:10px}
+            .int-row:last-child{margin-bottom:0}
+            .int-row>div{flex-shrink:0;padding:10px 12px!important;min-width:108px!important;max-width:108px!important}
+            .int-row .h-16.w-16{height:40px!important;width:40px!important}
+            .int-row .w-14{width:32px!important;height:32px!important}
+            .int-row .h-14{height:32px!important;width:32px!important}
+            .int-row .w-8.h-8{width:22px!important;height:22px!important}
+            .int-row .gap-3{gap:6px!important}
+            .int-row .mb-1{margin-bottom:2px!important}
+            .int-row-l{animation:int-l 35s linear infinite}
+            .int-row-r{animation:int-r 35s linear infinite}
+            .int-row:hover{animation-play-state:paused}
+            @keyframes int-l{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+            @keyframes int-r{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+          </style>
+          <div id="int-ticker">
+          <div class="int-row int-row-l" id="int-row-1">
+            <!-- Gmail -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <path d="M24 12L4 24L24 36L44 24L24 12Z" fill="#EA4335"/>
+                    <path d="M4 24L24 36V44L4 32V24Z" fill="#FBBC05"/>
+                    <path d="M44 24L24 36V44L44 32V24Z" fill="#34A853"/>
+                    <path d="M24 12V20L44 32V24L24 12Z" fill="#4285F4"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Gmail</div>
+                  <div class="text-xs text-slate-400">Google Workspace email</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Google Calendar -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="4" fill="white"/>
+                    <rect x="8" y="8" width="32" height="32" rx="2" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+                    <rect x="8" y="8" width="32" height="10" rx="2" fill="#4285F4"/>
+                    <rect x="8" y="14" width="32" height="4" fill="#4285F4"/>
+                    <rect x="14" y="6" width="3" height="6" rx="1.5" fill="#4285F4"/>
+                    <rect x="31" y="6" width="3" height="6" rx="1.5" fill="#4285F4"/>
+                    <text x="24" y="34" font-size="12" font-weight="bold" fill="#4285F4" text-anchor="middle" font-family="sans-serif">31</text>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Google Calendar</div>
+                  <div class="text-xs text-slate-400">Meeting scheduling</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Outlook -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="4" fill="#0078D4"/>
+                    <path d="M24 14C17.4 14 12 19.4 12 26C12 32.6 17.4 38 24 38C30.6 38 36 32.6 36 26C36 19.4 30.6 14 24 14ZM24 32C20.7 32 18 29.3 18 26C18 22.7 20.7 20 24 20C27.3 20 30 22.7 30 26C30 29.3 27.3 32 24 32Z" fill="white"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Outlook</div>
+                  <div class="text-xs text-slate-400">Microsoft 365 email</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Outlook Calendar -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="4" fill="#0078D4"/>
+                    <rect x="10" y="14" width="28" height="24" rx="2" fill="white"/>
+                    <rect x="10" y="14" width="28" height="8" fill="#0078D4"/>
+                    <rect x="16" y="10" width="3" height="8" rx="1.5" fill="white"/>
+                    <rect x="29" y="10" width="3" height="8" rx="1.5" fill="white"/>
+                    <text x="24" y="34" font-size="10" font-weight="bold" fill="#0078D4" text-anchor="middle" font-family="sans-serif">CAL</text>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Outlook Calendar</div>
+                  <div class="text-xs text-slate-400">Meeting scheduling</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Knowledge Base -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <div class="w-14 h-14 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                    <svg class="w-8 h-8 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Knowledge Base</div>
+                  <div class="text-xs text-slate-400">Upload docs &amp; URLs</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Zendesk -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="8" fill="#03363D"/>
+                    <path d="M12 16H24V28L12 16ZM24 16H36L24 28V16ZM12 32H24L12 20V32ZM24 32H36V20L24 32Z" fill="white" opacity="0.9"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Zendesk</div>
+                  <div class="text-xs text-slate-400">KB import</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Intercom -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="8" fill="#1F8FEB"/>
+                    <path d="M14 26C14 26 14 22 14 20C14 16 16 14 20 14C22 14 24 14 24 14C28 14 30 16 30 20C30 22 30 26 30 26M16 20V26M20 18V28M24 18V28M28 20V26" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 32C12 32 14 30 16 30C18 30 20 32 20 32M24 32C24 32 26 30 28 30C30 30 32 32 32 32" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Intercom</div>
+                  <div class="text-xs text-slate-400">KB import</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notion -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="8" fill="#FFFFFF"/>
+                    <path d="M14 12H30L36 18V38H18L12 32V12H14ZM14 12V32L18 36M30 12V18H36" stroke="#37352F" stroke-width="2" stroke-linejoin="round"/>
+                    <rect x="18" y="20" width="12" height="2" rx="1" fill="#37352F"/>
+                    <rect x="18" y="25" width="10" height="2" rx="1" fill="#37352F"/>
+                    <rect x="18" y="30" width="8" height="2" rx="1" fill="#37352F"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Notion</div>
+                  <div class="text-xs text-slate-400">KB import</div>
+                </div>
+              </div>
+            </div>
+
+          
+
+          </div>
+          <div class="int-row int-row-r" id="int-row-2">
+            <!-- GitBook -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="8" fill="#FBFBFB"/>
+                    <path d="M14 34C14 34 14 16 14 14C14 13 15 12 16 12H32C33 12 34 13 34 14V26C34 27 33 28 32 28H18L14 34Z" fill="#3884FF"/>
+                    <rect x="19" y="18" width="10" height="2" rx="1" fill="white"/>
+                    <rect x="19" y="23" width="8" height="2" rx="1" fill="white"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">GitBook</div>
+                  <div class="text-xs text-slate-400">KB import</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- HelpScout -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="8" fill="#1292EE"/>
+                    <path d="M24 12C17 12 12 17 12 24C12 27.5 13.5 30.5 16 32.5V38L20 35.5C21.3 36 22.6 36.5 24 36.5C31 36.5 36 31.5 36 24C36 17 31 12 24 12Z" fill="white"/>
+                    <path d="M20 22V26M24 20V26M28 22V26" stroke="#1292EE" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Help Scout</div>
+                  <div class="text-xs text-slate-400">KB import</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Confluence -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="8" fill="#0052CC"/>
+                    <path d="M12 32C12 32 16 26 20 24C24 22 28 24 32 20C36 16 36 12 36 12" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M36 16C36 16 32 22 28 24C24 26 20 24 16 28C12 32 12 36 12 36" stroke="#4C9AFF" stroke-width="3" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Confluence</div>
+                  <div class="text-xs text-slate-400">KB import</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Webhooks & API -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <div class="w-14 h-14 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                    <svg class="w-8 h-8 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Webhooks &amp; API</div>
+                  <div class="text-xs text-slate-400">Automation rules</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slack -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="8" fill="#611f69"/>
+                    <rect x="20" y="12" width="8" height="8" rx="2" fill="#ECB22E"/>
+                    <rect x="12" y="20" width="8" height="8" rx="2" fill="#E01E5A"/>
+                    <rect x="28" y="20" width="8" height="8" rx="2" fill="#36C5F0"/>
+                    <rect x="20" y="28" width="8" height="8" rx="2" fill="#2EB67D"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">Slack</div>
+                  <div class="text-xs text-slate-400">Routing &amp; alerts</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- HubSpot -->
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-6 hover:border-indigo-500/40 transition-all hover:shadow-lg hover:shadow-indigo-500/10">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex items-center justify-center h-16 w-16">
+                  <svg class="w-14 h-14" viewBox="0 0 48 48" fill="none">
+                    <rect width="48" height="48" rx="8" fill="#FF5C35"/>
+                    <circle cx="30" cy="18" r="4" fill="white"/>
+                    <circle cx="18" cy="30" r="4" fill="white"/>
+                    <path d="M30 18L26 22M18 30L22 26M22 26C23 25 25 25 26 26C27 27 27 29 26 30" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="text-center">
+                  <div class="font-semibold text-slate-100 mb-1">HubSpot</div>
+                  <div class="text-xs text-slate-400">CRM context</div>
+                </div>
+              </div>
+            </div>
+
+          
+
+          </div>
+          </div>
+          <script>(function(){['int-row-1','int-row-2'].forEach(function(id){var r=document.getElementById(id);if(r)r.innerHTML+=r.innerHTML;});})()</script>
+
+          <!-- Integration features -->
+          <div class="mt-12 max-w-3xl mx-auto">
+            <div class="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-fuchsia-500/10 border border-slate-700 rounded-2xl p-6">
+              <div class="text-center mb-6">
+                <h3 class="text-lg font-semibold text-slate-100 mb-2">Need a custom integration?</h3>
+                <p class="text-sm text-slate-400">
+                  Connect any tool via our REST API and webhooks. Send data from your CRM, helpdesk, or custom systems directly into InboxIQ.
+                </p>
+              </div>
+
+              <div class="grid md:grid-cols-3 gap-4 text-xs">
+                <div class="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
+                  <div class="font-semibold text-slate-200 mb-1">REST API</div>
+                  <p class="text-slate-400">POST messages from any source</p>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
+                  <div class="font-semibold text-slate-200 mb-1">Webhooks</div>
+                  <p class="text-slate-400">Real-time event notifications</p>
+                </div>
+                <div class="bg-slate-900/50 border border-slate-700 rounded-xl p-4">
+                  <div class="font-semibold text-slate-200 mb-1">Token Auth</div>
+                  <p class="text-slate-400">Secure API key authentication</p>
+                </div>
+              </div>
+
+              <div class="mt-6 text-center">
+                <a href="#cta" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold transition-colors">
+                  Start Free Trial →
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="benefits" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16">
+          <h2 class="text-xl md:text-2xl font-semibold mb-6">
+            Six reasons founders stay in Gmail instead of hiring support
+          </h2>
+          <div class="grid md:grid-cols-3 gap-6">
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+              <h3 class="font-semibold mb-2 text-slate-100 text-sm">1. Stop composing the same reply for the 50th time</h3>
+              <p class="text-xs text-slate-300">
+                InboxIQ classifies every inbound email and places a draft in the thread — grounded in your knowledge base and past replies — before you even open it.
+              </p>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+              <h3 class="font-semibold mb-2 text-slate-100 text-sm">2. Handle volume growth without a support hire</h3>
+              <p class="text-xs text-slate-300">
+                Growing from 200 to 500 customers doubles email load. InboxIQ handles the increase without adding headcount — at 3% the cost of a junior hire.
+              </p>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+              <h3 class="font-semibold mb-2 text-slate-100 text-sm">3. Customers get a reply at 11pm on a Friday</h3>
+              <p class="text-xs text-slate-300">
+                A draft appears the moment an email arrives — any time of day. High-confidence replies can send automatically; everything else waits for your approval.
+              </p>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+              <h3 class="font-semibold mb-2 text-slate-100 text-sm">4. Connect support@, sales@, and your inbox — together</h3>
+              <p class="text-xs text-slate-300">
+                One account connects multiple inboxes. Labels and drafts appear inside each person's Gmail independently. No password sharing, no shared login.
+              </p>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+              <h3 class="font-semibold mb-2 text-slate-100 text-sm">5. AI detects meeting requests and includes your availability</h3>
+              <p class="text-xs text-slate-300">
+                When an email asks for a demo or call, the draft reply includes available slots pulled from Google or Outlook Calendar. No Calendly link. No back-and-forth.
+              </p>
+            </div>
+            <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5">
+              <h3 class="font-semibold mb-2 text-slate-100 text-sm">6. See what customers are actually asking about</h3>
+              <p class="text-xs text-slate-300">
+                InboxIQ surfaces top contact topics — this week, this month, trending up or down. One click opens Automation Studio pre-filled with the topic as a trigger.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="testimonials" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16">
+          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+            <h2 class="text-xl md:text-2xl font-semibold">Founders already using InboxIQ</h2>
+            <p class="text-xs text-slate-400 max-w-md">
+              Still doing support from Gmail. Now with an AI teammate handling the repetitive replies.
+            </p>
+          </div>
+          <div class="grid md:grid-cols-3 gap-6 text-sm">
+            <figure class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5 flex flex-col justify-between">
+              <blockquote class="text-slate-200 mb-4">
+                "We were spending 2–3 hours a day on support emails we had answered a hundred times. InboxIQ drafts them before I open the thread. I review and send in seconds."
+              </blockquote>
+              <figcaption class="text-xs text-slate-400">
+                — Oliver T., Founder @ a B2B SaaS tool
+              </figcaption>
+            </figure>
+            <figure class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5 flex flex-col justify-between">
+              <blockquote class="text-slate-200 mb-4">
+                "I connected support@ and my personal inbox in under 5 minutes. The AI already knows our product from the help docs I uploaded. Drafts are 90% usable out of the box."
+              </blockquote>
+              <figcaption class="text-xs text-slate-400">
+                — Jake L., Founder @ QuickServe
+              </figcaption>
+            </figure>
+            <figure class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5 flex flex-col justify-between">
+              <blockquote class="text-slate-200 mb-4">
+                "A customer asked for a demo at 9pm. The draft reply had three available slots from my calendar already included. I sent it in 30 seconds. They booked the next morning."
+              </blockquote>
+              <figcaption class="text-xs text-slate-400">
+                — Maria S., Founder @ Finlytics
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16">
+          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+            <div>
+              <h2 class="text-xl md:text-2xl font-semibold mb-2">Simple, transparent pricing</h2>
+              <p class="text-xs text-slate-400 max-w-md">
+                Start free for 7 days. Upgrade only when InboxIQ is saving your team real time every day.
+              </p>
+            </div>
+            <p class="text-xs text-slate-400">
+              All paid plans include: AI draft replies, meeting scheduling, and Gmail &amp; Outlook labels.
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-6 text-sm">
+            <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-5 flex flex-col">
+              <div class="mb-4">
+                <h3 class="font-semibold text-slate-100 mb-1 text-sm">Free Trial</h3>
+                <p class="text-xs text-slate-400">Full access · 7 days</p>
+              </div>
+              <div class="mb-4">
+                <span class="text-2xl font-semibold text-slate-100">£0</span>
+                <span class="text-xs text-slate-400"> / 7 days</span>
+              </div>
+              <ul class="space-y-2 text-xs text-slate-300 mb-4">
+                <li>✔ No credit card required</li>
+                <li>✔ All Pro features included</li>
+                <li>✔ Up to 1,000 AI actions</li>
+              </ul>
+              <a href="#cta" class="mt-auto inline-flex justify-center px-3 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold">
+                Start Free Trial
+              </a>
+            </div>
+
+            <div class="bg-indigo-900/40 border border-indigo-400 rounded-2xl p-5 flex flex-col relative">
+              <div class="absolute -top-3 right-4 px-2 py-0.5 rounded-full bg-amber-400 text-[10px] font-semibold text-slate-950">
+                Most Popular
+              </div>
+              <div class="mb-4">
+                <h3 class="font-semibold text-slate-50 mb-1 text-sm">Pro</h3>
+                <p class="text-xs text-slate-300">For founders still doing support from Gmail</p>
+              </div>
+              <div class="mb-4">
+                <span class="text-2xl font-semibold text-slate-50">£29</span>
+                <span class="text-xs text-slate-300"> / month per inbox</span>
+              </div>
+              <ul class="space-y-2 text-xs text-slate-100 mb-4">
+                <li>✔ AI draft replies — grounded in your knowledge base</li>
+                <li>✔ AI meeting scheduling — slots included in draft</li>
+                <li>✔ Gmail &amp; Outlook labels applied automatically</li>
+                <li>✔ Connect support@, sales@, and founder inboxes</li>
+                <li>✔ Up to 3,000 AI actions/month</li>
+              </ul>
+              <a href="#cta" class="mt-auto inline-flex justify-center px-3 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 text-xs font-semibold">
+                Start with Pro
+              </a>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-5 flex flex-col">
+              <div class="mb-4">
+                <h3 class="font-semibold text-slate-100 mb-1 text-sm">Business</h3>
+                <p class="text-xs text-slate-400">For teams handling higher volume</p>
+              </div>
+              <div class="mb-4">
+                <span class="text-2xl font-semibold text-slate-100">£99</span>
+                <span class="text-xs text-slate-400"> / month per inbox</span>
+              </div>
+              <ul class="space-y-2 text-xs text-slate-300 mb-4">
+                <li>✔ Everything in Pro</li>
+                <li>✔ Auto-send for high-confidence replies</li>
+                <li>✔ Account-scoped AI tuning &amp; evaluation metrics</li>
+                <li>✔ Up to 15,000 AI actions/month</li>
+                <li>✔ Automation Studio — advanced routing rules</li>
+                <li>✔ Team analytics &amp; reply quality QA</li>
+                <li>✔ API access &amp; priority support</li>
+              </ul>
+              <a href="#cta" class="mt-auto inline-flex justify-center px-3 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-semibold">
+                Talk to sales
+              </a>
+            </div>
+          </div>
+
+          <div class="mt-6 text-xs text-slate-400">
+            Need custom volumes, multiple inboxes or compliance requirements? <span class="text-indigo-300 underline">Contact us for Enterprise pricing.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="roi" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16 grid lg:grid-cols-2 gap-10 items-start">
+          <div>
+            <h2 class="text-xl md:text-2xl font-semibold mb-3">How much is the inbox costing you right now?</h2>
+            <p class="text-sm text-slate-300 mb-4 max-w-md">
+              See how much time InboxIQ saves each month — and whether it defers your first support hire.
+            </p>
+            <p class="text-xs text-slate-500 max-w-md">
+              Based on your weekly email volume and reply time. The VP benchmark: 80 repetitive emails/week at 4 minutes each = 21 hours/month.
+            </p>
+          </div>
+
+          <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-5 text-sm">
+            <div class="grid gap-4 mb-5">
+              <div>
+                <label for="emailsPerWeek" class="block text-xs text-slate-300 mb-1">Repetitive support emails per week</label>
+                <input
+                  id="emailsPerWeek"
+                  type="number"
+                  class="w-full rounded-md bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="e.g. 80"
+                />
+              </div>
+              <div>
+                <label for="minutesPerEmail" class="block text-xs text-slate-300 mb-1">Minutes to write each reply from scratch</label>
+                <input
+                  id="minutesPerEmail"
+                  type="number"
+                  step="0.5"
+                  class="w-full rounded-md bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Default: 4"
+                />
+              </div>
+              <div>
+                <label for="hourlyRate" class="block text-xs text-slate-300 mb-1">Your hourly cost (£)</label>
+                <input
+                  id="hourlyRate"
+                  type="number"
+                  step="1"
+                  class="w-full rounded-md bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Default: 25"
+                />
+              </div>
+            </div>
+
+            <button
+              id="roiButton"
+              class="w-full inline-flex justify-center px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 text-xs font-semibold mb-4"
+            >
+              Calculate ROI
+            </button>
+
+            <div id="roiResults" class="text-xs text-slate-200 space-y-2">
+              <p class="text-slate-400">Fill in your numbers and click "Calculate ROI".</p>
+            </div>
+
+            <p class="mt-4 text-[10px] text-slate-500">
+              * Assumes InboxIQ drafts replies for 80% of repetitive emails, reducing compose time by 90%. Compared against the Pro plan (£99/month).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="demo" class="border-b border-slate-800 bg-slate-950">
+        <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16 grid lg:grid-cols-2 gap-10 items-center">
+          <div class="bg-slate-900/80 border border-slate-700 rounded-2xl p-4 flex items-center justify-center">
+            <div id="demoVideoContainer"
+                 class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-700"
+                 data-video-src="{{ url_for('static', filename='demo/InboxIQ.mp4') }}"
+                 data-poster-src="{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}"
+                 style="background-image:url('{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}');background-size:cover;background-position:center;">
+              <button id="demoPlayBtn" class="flex flex-col items-center justify-center gap-3 group">
+                <div class="h-14 w-14 rounded-full bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/40 group-hover:bg-indigo-400 transition">
+                  <span class="ml-1 border-l-[10px] border-l-white border-y-[7px] border-y-transparent"></span>
+                </div>
+                <span class="text-xs text-slate-300">Play demo video</span>
+              </button>
+            </div>
+          </div>
+          <div>
+            <h2 class="text-xl md:text-2xl font-semibold mb-3">
+              See a draft reply appear in Gmail in 60 seconds
+            </h2>
+            <p class="text-sm text-slate-300 mb-4 max-w-md">
+              This short demo shows an inbound support email arriving, InboxIQ classifying it, and a draft reply — grounded in the knowledge base — appearing in the Gmail thread. No new tool opened.
+            </p>
+            <ul class="space-y-2 text-xs text-slate-300">
+              <li>&#10003; Email arrives, AI label applied instantly inside Gmail</li>
+              <li>&#10003; Draft grounded in your knowledge base, full thread context read</li>
+              <li>&#10003; Meeting request detected — available calendar slots included</li>
+              <li>&#10003; You review in 30 seconds and send from your own inbox</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="cta" class="bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600">
+        <div class="max-w-6xl mx-auto px-4 py-10 text-center text-sm space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold mb-2 text-white">See InboxIQ working inside your inbox</h2>
+            <p class="text-slate-100 mb-2 max-w-2xl mx-auto">
+              Leave your details and we'll be in touch to show you how InboxIQ works inside your Gmail or Outlook.
+            </p>
+          </div>
+
+          <form id="ctaForm" class="max-w-3xl mx-auto grid sm:grid-cols-[1.5fr,1.5fr,auto] gap-3 text-left">
+            <!-- honeypot: hidden from real users, bots fill it in -->
+            <div style="position:absolute;left:-9999px;opacity:0;pointer-events:none" aria-hidden="true">
+              <input id="ctaWebsite" type="text" name="website" tabindex="-1" autocomplete="off">
+            </div>
+            <div>
+              <label for="ctaEmail" class="text-xs text-indigo-100">Work email</label>
+              <input
+                id="ctaEmail"
+                name="email"
+                type="email"
+                required
+                autocomplete="off"
+                class="cta-input mt-1 w-full rounded-full border bg-white px-4 py-3 text-base font-semibold placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-white/80"
+                placeholder="you@company.com"
+              />
+            </div>
+            <div>
+              <label for="ctaAccountName" class="text-xs text-indigo-100">Company name</label>
+              <input
+                id="ctaAccountName"
+                name="account_name"
+                type="text"
+                required
+                autocomplete="organization"
+                class="cta-input mt-1 w-full rounded-full border bg-white px-4 py-3 text-base font-semibold placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-white/80"
+                placeholder="Acme"
+              />
+            </div>
+            <div class="flex items-end">
+              <button
+                id="ctaButton"
+                type="submit"
+                class="w-full inline-flex items-center justify-center rounded-full bg-white text-indigo-700 font-semibold text-sm px-6 py-3 hover:bg-indigo-50 transition disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                Talk to sales →
+              </button>
+            </div>
+          </form>
+
+          <div id="ctaStatus" class="hidden max-w-3xl mx-auto text-left text-sm text-white rounded-2xl border border-white/30 bg-white/10 px-4 py-3"></div>
+        </div>
+      </section>
+
+    <!-- Demo Gate Modal -->
+    <div id="demoGateModal" style="display:none" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <h3 class="text-base font-semibold text-slate-100 mb-1">Watch the 60-second demo</h3>
+        <p class="text-xs text-slate-400 mb-4">Enter your work email and the demo plays instantly.</p>
+        <form id="demoGateForm" class="space-y-3">
+          <input
+            id="demoGateEmail"
+            type="email"
+            required
+            placeholder="you@company.com"
+            class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          />
+          <button
+            id="demoGateSubmit"
+            type="submit"
+            class="w-full inline-flex justify-center rounded-full bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-semibold px-4 py-2 transition disabled:opacity-60"
+          >
+            Watch demo →
+          </button>
+        </form>
+        <p id="demoGateError" class="hidden mt-2 text-xs text-red-400"></p>
+        <button id="demoGateClose" class="mt-3 w-full text-xs text-slate-500 hover:text-slate-300">Cancel</button>
+      </div>
+    </div>
+    </main>
+
+    <footer class="border-t border-slate-800 bg-slate-950">
+      <div class="max-w-6xl mx-auto px-4 py-8 flex flex-col gap-4 text-[11px] text-slate-400">
+        <div class="flex flex-col md:flex-row items-center md:items-start justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+            <div>
+              <div class="font-semibold text-slate-100 text-sm">Kalevent · InboxIQ</div>
+              <div class="text-slate-500 text-[11px]">AI support automation for customer email</div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 text-slate-300">
+            <span class="hidden md:inline text-slate-400">Connect with us on social media:</span>
+            <div class="flex items-center gap-3 text-base">
+              <a href="https://www.facebook.com/Inboxiq/" target="_blank" rel="noopener" aria-label="Facebook" class="hover:text-white"><i class="fab fa-facebook-f"></i></a>
+              <a href="https://x.com/kaleventHQ" target="_blank" rel="noopener" aria-label="X (Twitter)" class="hover:text-white"><i class="fab fa-twitter"></i></a>
+              <a href="https://www.instagram.com/kaleventcanvas/" target="_blank" rel="noopener" aria-label="Instagram" class="hover:text-white"><i class="fab fa-instagram"></i></a>
+              <a href="https://www.linkedin.com/company/kalevent/" target="_blank" rel="noopener" aria-label="LinkedIn" class="hover:text-white"><i class="fab fa-linkedin-in"></i></a>
+              <a href="https://www.youtube.com/@InboxIQApp" target="_blank" rel="noopener" aria-label="YouTube" class="hover:text-white"><i class="fab fa-youtube"></i></a>
+              <a href="https://www.reddit.com/user/InboxiqHQ/" target="_blank" rel="noopener" aria-label="Reddit" class="hover:text-white"><i class="fab fa-reddit"></i></a>
+              <a href="https://wa.me/447593092262?text=Hi%20Kalevent%20team" target="_blank" rel="noopener" aria-label="WhatsApp" class="hover:text-white"><i class="fab fa-whatsapp"></i></a>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3 text-slate-400">
+          <div class="flex flex-wrap items-center gap-3">
+            <span>© <span id="yearSpan"></span> Kalevent · InboxIQ</span>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <div class="landing-menu-wrap group" style="position: relative; z-index: 8000;">
+              <button data-dropdown="solutions-footer" class="inline-flex items-center gap-1 hover:text-white focus:outline-none">
+                <span>Solutions</span>
+                <span class="text-[10px] text-slate-500">▼</span>
+              </button>
+              <div data-dropdown-menu="solutions-footer" class="landing-menu absolute left-0 mt-2 hidden min-w-[240px] rounded-lg border border-slate-800 bg-slate-900 shadow-lg backdrop-blur group-hover:block group-focus-within:block z-50">
+                <a href="/solutions/unified-intake" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Unified Intake</a>
+                <a href="/solutions/decisions" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Decisions</a>
+                <div class="px-4 pt-2 text-[11px] uppercase tracking-wide text-slate-500">Channels</div>
+                <a href="/solutions/voice" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Voice (IVR)</a>
+                <a href="/solutions/social" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Social</a>
+                <a href="/solutions/forms" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Forms</a>
+                <a href="/solutions/chat" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Chat</a>
+                <a href="/solutions/crm" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">CRM</a>
+                <a href="/solutions/api" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">API / Webhooks</a>
+                <div class="px-4 pt-2 text-[11px] uppercase tracking-wide text-slate-500">Email</div>
+                <a href="/solutions/email/ai-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">AI Email Triage</a>
+                <a href="/solutions/email/triage-automation" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Email Triage Automation</a>
+                <a href="/solutions/email/shared-inbox" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Shared Inbox</a>
+                <a href="/solutions/email/support-automation" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Support Automation</a>
+              </div>
+            </div>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <div class="landing-menu-wrap group" style="position: relative; z-index: 8000;">
+              <button data-dropdown="use-cases-footer" class="inline-flex items-center gap-1 hover:text-white focus:outline-none">
+                <span>Use cases</span>
+                <span class="text-[10px] text-slate-500">▼</span>
+              </button>
+              <div data-dropdown-menu="use-cases-footer" class="landing-menu absolute left-0 mt-2 hidden min-w-[220px] rounded-lg border border-slate-800 bg-slate-900 shadow-lg backdrop-blur group-hover:block group-focus-within:block z-50">
+                <a href="/use-cases/support" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Support Triage</a>
+                <a href="/use-cases/healthcare-triage" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Healthcare Triage (Referrals)</a>
+                <a href="/use-cases/claims" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Insurance Claims</a>
+                <a href="/use-cases/hr" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">HR Requests</a>
+                <a href="/use-cases/finance" class="block px-4 py-2 hover:bg-slate-800 hover:text-white">Finance Approvals</a>
+              </div>
+            </div>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('kb.kb_home') }}" class="hover:text-white">Help</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('blog.blog_index') }}" class="hover:text-white">Blog</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('privacy') }}" class="hover:text-white">Privacy</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('terms') }}" class="hover:text-white">Terms</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('contact') }}" class="hover:text-white">Contact</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('security') }}" class="hover:text-white">Security</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="{{ url_for('privacy') }}#cookies" class="hover:text-white">Cookies</a>
+            <span class="hidden md:inline text-slate-600">•</span>
+            <a href="/docs" class="hover:text-white">Developer</a>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 text-slate-300 text-[11px]">
+            <span class="text-slate-500">Connect:</span>
+            <a href="https://www.facebook.com/InboxiqHQ/" target="_blank" rel="noopener" class="hover:text-white">Facebook</a>
+            <a href="https://x.com/kaleventHQ" target="_blank" rel="noopener" class="hover:text-white">X</a>
+            <a href="https://www.linkedin.com/company/inboxiq-ai/" target="_blank" rel="noopener" class="hover:text-white">LinkedIn</a>
+            <a href="https://www.youtube.com/@InboxIQApp" target="_blank" rel="noopener" class="hover:text-white">YouTube</a>
+            <a href="https://www.reddit.com/user/CivilBerry1660/" target="_blank" rel="noopener" class="hover:text-white">Reddit</a>
+            <a href="https://wa.me/447593092262?text=Hi%20Kalevent%20team" target="_blank" rel="noopener" class="hover:text-white">WhatsApp</a>
+          </div>
+          <div class="text-[10px] text-slate-500"></div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/landing.js', v='landing-menu-5') }}"></script>
+  <script src="{{ url_for('static', filename='js/cookie-consent.js') }}"></script>
+
+  <!-- InboxIQ Native Chat Widget -->
+  <script>
+    (function(w,d,s){
+      w.InboxIQ=w.InboxIQ||{};
+      w.InboxIQ.account='{{ g.current_account_id if g and g.current_account_id else "2" }}';
+      w.InboxIQ.config={
+        welcomeMessage:'Hi! 👋 Welcome to InboxIQ. How can we help you today?',
+        captureLeads:true,
+        requireEmail:true,
+        primaryColor:'#6366f1',
+        logoUrl:'{{ url_for("static", filename="social_media/inboxiq-logo.svg") }}'
+      };
+      var f=d.getElementsByTagName(s)[0],j=d.createElement(s);
+      j.async=true;
+      j.src='{{ url_for("static", filename="js/chat-widget.js") }}';
+      f.parentNode.insertBefore(j,f);
+    })(window,document,'script');
+  </script>
+
+  <!-- ── Free Trial Modal ──────────────────────────────────────────────── -->
+  <div id="trialModal" role="dialog" aria-modal="true" aria-labelledby="tmTitle"
+       style="display:none" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div id="tmBackdrop" class="absolute inset-0 bg-slate-950/80"></div>
+    <div class="relative z-10 w-full rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl"
+         style="max-width:30rem">
+      <div class="mb-5 flex items-start justify-between">
+        <div>
+          <h2 id="tmTitle" class="text-base font-semibold text-slate-50">Start your 7-day free trial</h2>
+          <p class="mt-1 text-xs text-slate-400">No credit card required. Sign up with Google, Microsoft, or email.</p>
+        </div>
+        <button id="tmClose" type="button" aria-label="Close"
+                class="ml-3 rounded p-1 text-slate-400 hover:text-slate-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+               stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div style="margin-bottom:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+          <a href="/api/v1/auth/google/start" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.625rem 0.75rem;border-radius:0.5rem;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:0.875rem;font-weight:500;text-decoration:none">
+            <svg style="width:1rem;height:1rem;flex-shrink:0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Sign up with Google
+          </a>
+          <a href="/api/v1/auth/outlook/start" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.625rem 0.75rem;border-radius:0.5rem;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:0.875rem;font-weight:500;text-decoration:none">
+            <svg style="width:1rem;height:1rem;flex-shrink:0" viewBox="0 0 23 23"><path fill="#f3f3f3" d="M0 0h23v23H0z"/><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+            Sign up with Microsoft
+          </a>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+          <div style="flex:1;height:1px;background:#1e293b"></div>
+          <span style="font-size:0.75rem;color:#64748b">or sign up with email</span>
+          <div style="flex:1;height:1px;background:#1e293b"></div>
+        </div>
+      </div>
+      <form id="tmForm" novalidate class="space-y-3">
+        <div>
+          <label for="tmEmail" class="text-xs text-slate-300">Work email <span class="text-red-400">*</span></label>
+          <input id="tmEmail" type="email" maxlength="200" required autocomplete="email"
+                 placeholder="you@company.com"
+                 class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+        </div>
+        <div>
+          <label for="tmAccountName" class="text-xs text-slate-300">Account name <span class="text-red-400">*</span></label>
+          <input id="tmAccountName" type="text" maxlength="120" required autocomplete="organization"
+                 placeholder="Acme Ltd"
+                 class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-indigo-500 focus:outline-none">
+        </div>
+        <div id="tmStatus" style="display:none" class="rounded-lg px-3 py-2 text-xs"></div>
+        <button id="tmButton" type="submit"
+                class="w-full rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+          Start Free Trial →
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Enterprise Inquiry Modal ──────────────────────────────────────── -->
+  <div id="enterpriseModal" role="dialog" aria-modal="true" aria-labelledby="eiModalTitle"
+       style="display:none" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div id="eiModalBackdrop" class="absolute inset-0 bg-slate-950/80"></div>
+    <div class="relative z-10 w-full rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-xl"
+         style="max-width:32rem">
+      <div class="mb-4 flex items-start justify-between">
+        <div>
+          <h2 id="eiModalTitle" class="text-base font-semibold text-slate-50">Talk to our sales team</h2>
+          <p class="mt-1 text-xs text-slate-400">Tell us about your organisation and we'll be in touch within one business day.</p>
+        </div>
+        <button id="eiModalClose" type="button" aria-label="Close"
+                class="ml-3 rounded p-1 text-slate-400 hover:text-slate-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+               stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <form id="eiInquiryForm" novalidate class="space-y-3">
+        <!-- honeypot: hidden from real users, bots fill it in -->
+        <div style="position:absolute;left:-9999px;opacity:0;pointer-events:none" aria-hidden="true">
+          <input id="eiWebsite" type="text" name="website" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="eiName" class="text-xs text-slate-300">Full name <span class="text-red-400">*</span></label>
+            <input id="eiName" type="text" maxlength="120" required autocomplete="name"
+                   placeholder="Jane Smith"
+                   class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="eiEmailInput" class="text-xs text-slate-300">Work email <span class="text-red-400">*</span></label>
+            <input id="eiEmailInput" type="email" maxlength="200" required autocomplete="email"
+                   placeholder="jane@company.com"
+                   class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="eiCompany" class="text-xs text-slate-300">Company</label>
+            <input id="eiCompany" type="text" maxlength="120" autocomplete="organization"
+                   placeholder="Acme Ltd"
+                   class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="eiPhone" class="text-xs text-slate-300">Phone <span class="text-slate-500">(optional)</span></label>
+            <input id="eiPhone" type="tel" maxlength="30" autocomplete="tel"
+                   placeholder="+44 7700 000000"
+                   class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none">
+          </div>
+        </div>
+        <div>
+          <label for="eiEmployees" class="text-xs text-slate-300">Team size</label>
+          <select id="eiEmployees"
+                  class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none">
+            <option value="">Select…</option>
+            <option value="10">1–10 employees</option>
+            <option value="50">11–50 employees</option>
+            <option value="200">51–200 employees</option>
+            <option value="500">201–500 employees</option>
+            <option value="1000">500+ employees</option>
+          </select>
+        </div>
+        <div>
+          <label for="eiMessage" class="text-xs text-slate-300">What are you hoping to solve? <span class="text-slate-500">(optional)</span></label>
+          <textarea id="eiMessage" rows="3" maxlength="1000"
+                    placeholder="e.g. We have 5 shared inboxes across departments…"
+                    style="resize:none"
+                    class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"></textarea>
+        </div>
+        <div id="eiFormStatus" style="display:none" class="rounded-lg px-3 py-2 text-xs"></div>
+        <button id="eiSubmitBtn" type="submit"
+                class="w-full rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-sm font-semibold text-white">
+          Send inquiry →
+        </button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
