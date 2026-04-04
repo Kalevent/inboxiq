@@ -941,7 +941,7 @@
       </section>
 
     <!-- Demo Gate Modal -->
-    <div id="demoGateModal" style="display:none" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+    <div id="demoGateModal" style="display:none" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" data-video-src="{{ url_for('static', filename='demo/InboxIQ.mp4') }}" data-poster-src="{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}">
       <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
         <h3 class="text-base font-semibold text-slate-100 mb-1">Watch the 60-second demo</h3>
         <p class="text-xs text-slate-400 mb-4">Enter your work email and the demo plays instantly.</p>

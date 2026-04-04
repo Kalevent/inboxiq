@@ -228,8 +228,6 @@
 
 // ── Demo Gate ─────────────────────────────────────────────────────────────
 (function () {
-  var playBtn    = document.getElementById('demoPlayBtn');
-  var container  = document.getElementById('demoVideoContainer');
   var modal      = document.getElementById('demoGateModal');
   var form       = document.getElementById('demoGateForm');
   var emailInput = document.getElementById('demoGateEmail');
@@ -237,72 +235,79 @@
   var errorEl    = document.getElementById('demoGateError');
   var closeBtn   = document.getElementById('demoGateClose');
 
-  if (!playBtn || !container || !modal) return;
+  if (!modal) return;
 
   var SESSION_KEY = 'demo_unlocked';
 
-  function playVideo() {
-    var src = container.dataset.videoSrc;
-    if (!src) return;
-    // Replace play button with actual <video> element
-    container.innerHTML = '';
-    var video = document.createElement('video');
-    video.src = src;
-    video.controls = true;
-    video.muted = true;       // required for autoplay in Chrome
-    video.playsInline = true;
-    video.className = 'w-full h-full object-cover';
-    var poster = container.dataset.posterSrc;
-    if (poster) video.poster = poster;
-    container.style.backgroundImage = '';  // remove thumbnail bg once video loads
-    container.appendChild(video);
-    video.play().catch(function () { /* user can press play manually */ });
+  // Video src: prefer data attribute on modal, fall back to known static path
+  function playVideoInModal() {
+    var src = modal.dataset.videoSrc || '/static/demo/InboxIQ.mp4';
+    var poster = modal.dataset.posterSrc || '/static/demo/inboxiq-dashboard.png';
+    var inner = modal.querySelector('div');
+    // Expand modal panel to fit video
+    inner.style.maxWidth = '860px';
+    inner.innerHTML =
+      '<button id="demoGateClose2" style="float:right;font-size:1.2rem;color:#94a3b8;background:none;border:none;cursor:pointer;margin-bottom:8px">✕</button>' +
+      '<video src="' + src + '" poster="' + poster + '" controls autoplay playsinline muted' +
+      ' style="width:100%;border-radius:12px;display:block"></video>';
+    document.getElementById('demoGateClose2').addEventListener('click', function () {
+      modal.style.display = 'none';
+    });
   }
 
-  playBtn.addEventListener('click', function () {
-    // If already unlocked this session, play immediately
-    if (sessionStorage.getItem(SESSION_KEY)) {
-      playVideo();
-      return;
-    }
+  // If already unlocked this session, open straight to video
+  function openModal() {
     modal.style.display = 'flex';
-    emailInput.focus();
-  });
+    if (sessionStorage.getItem(SESSION_KEY)) {
+      playVideoInModal();
+    } else if (emailInput) {
+      emailInput.focus();
+    }
+  }
 
-  closeBtn.addEventListener('click', function () {
-    modal.style.display = 'none';
-  });
+  // Legacy play button (kept for backwards compat, may not exist)
+  var playBtn = document.getElementById('demoPlayBtn');
+  if (playBtn) playBtn.addEventListener('click', openModal);
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function () { modal.style.display = 'none'; });
+  }
 
   modal.addEventListener('click', function (e) {
     if (e.target === modal) modal.style.display = 'none';
   });
 
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    var email = (emailInput.value || '').trim().toLowerCase();
-    if (!email) return;
+  if (form) {
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var email = (emailInput.value || '').trim().toLowerCase();
+      if (!email) return;
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Just a sec...';
-    errorEl.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Just a sec...';
+      errorEl.classList.add('hidden');
 
-    try {
-      var resp = await fetch('/api/v1/enterprise/inquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ name: email, email: email, source: 'demo_gate' }),
-      });
-      if (!resp.ok) throw new Error('Request failed');
-      sessionStorage.setItem(SESSION_KEY, '1');
-      modal.style.display = 'none';
-      playVideo();
-    } catch (_) {
-      errorEl.textContent = 'Something went wrong — please try again.';
-      errorEl.classList.remove('hidden');
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Watch demo →';
-    }
+      try {
+        var resp = await fetch('/api/v1/enterprise/inquiry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ name: email, email: email, source: 'demo_gate' }),
+        });
+        if (!resp.ok) throw new Error('Request failed');
+        sessionStorage.setItem(SESSION_KEY, '1');
+        playVideoInModal();
+      } catch (_) {
+        errorEl.textContent = 'Something went wrong — please try again.';
+        errorEl.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Watch demo →';
+      }
+    });
+  }
+
+  // Wire any "Watch 60s demo" buttons that open the modal directly
+  document.querySelectorAll('[data-open-demo]').forEach(function (btn) {
+    btn.addEventListener('click', openModal);
   });
 })();
 
