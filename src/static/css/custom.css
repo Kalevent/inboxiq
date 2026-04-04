@@ -788,13 +788,7 @@ html:not(.dark) .marketing-body {
   background: #f8fafc;
   color: #0f172a;
 }
-html:not(.dark) .marketing-header {
-  background-color: rgba(255,255,255,0.92) !important;
-  border-bottom: 1px solid #e2e8f0;
-  backdrop-filter: blur(12px);
-}
-html:not(.dark) .marketing-nav a { color: #475569 !important; }
-html:not(.dark) .marketing-nav a:hover { color: #020617 !important; }
+/* header text/bg now handled via dark: variants in marketing/base.html */
 html:not(.dark) .marketing-footer {
   background-color: #ffffff !important;
   border-top-color: #e2e8f0 !important;
@@ -848,10 +842,7 @@ html:not(.dark) .marketing-main .bg-indigo-500\/10 { background-color: #eef2ff !
 html:not(.dark) .marketing-main .text-indigo-200.bg-indigo-500\/10 { color: #4f46e5 !important; }
 
 /* ── Preserve intentionally-dark UI mockups (Gmail/Outlook inbox previews) ── */
-html:not(.dark) .marketing-main .inbox-mockup,
-html:not(.dark) .marketing-main .inbox-mockup * { all: revert-layer; }
-html:not(.dark) .marketing-main .inbox-mockup { display: block; }
-
+html:not(.dark) .marketing-main .inbox-mockup                { background-color: #0f172a !important; border-color: rgba(51,65,85,0.5) !important; color: #e2e8f0 !important; }
 html:not(.dark) .marketing-main .inbox-mockup .bg-slate-950  { background-color: #020617 !important; }
 html:not(.dark) .marketing-main .inbox-mockup .bg-slate-900  { background-color: #0f172a !important; }
 html:not(.dark) .marketing-main .inbox-mockup .bg-slate-800\/50 { background-color: rgba(30,41,59,0.5) !important; }
@@ -873,12 +864,7 @@ html.dark .marketing-body {
     linear-gradient(180deg, #0b1224 0%, #0f172a 50%, #0b1224 100%);
   color: #e2e8f0;
 }
-html.dark .marketing-header {
-  background-color: rgba(2,6,23,0.75) !important;
-  border-bottom-color: rgba(30,41,59,0.5) !important;
-}
-html.dark .marketing-nav a { color: #cbd5e1 !important; }
-html.dark .marketing-nav a:hover { color: #ffffff !important; }
+/* header dark mode handled via dark: variants in marketing/base.html */
 html.dark .marketing-footer { background-color: transparent !important; border-top-color: rgba(30,41,59,0.4) !important; color: #94a3b8 !important; }
 html.dark .marketing-footer a { color: #94a3b8 !important; }
 html.dark .marketing-footer a:hover { color: #ffffff !important; }
