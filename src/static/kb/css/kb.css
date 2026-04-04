@@ -320,3 +320,53 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   .kb-prev-next { grid-template-columns: 1fr; }
   .kb-cta-bar-content { flex-direction: column; align-items: flex-start; }
 }
+
+/* ── Light mode (default) — dark mode toggled via html.dark ─────────── */
+html:not(.dark) {
+  --bg:          #f8fafc;
+  --bg-card:     #ffffff;
+  --bg-hover:    #f1f5f9;
+  --border:      #e2e8f0;
+  --border-mid:  #cbd5e1;
+  --text:        #0f172a;
+  --text-muted:  #475569;
+  --text-faint:  #94a3b8;
+  --accent:      #4f46e5;
+  --accent-hover:#4338ca;
+  --accent-light:#eef2ff;
+  --shadow:      0 1px 3px rgba(15,23,42,.08);
+}
+html:not(.dark) body { background: var(--bg); color: var(--text); }
+html:not(.dark) .kb-header { background: rgba(255,255,255,0.92); border-bottom-color: var(--border); }
+html:not(.dark) .kb-logo-name { color: #020617; }
+html:not(.dark) .kb-logo-label { color: #64748b; }
+html:not(.dark) .kb-logo-divider { color: #cbd5e1; }
+html:not(.dark) .kb-search-input { background: #f1f5f9; border-color: var(--border); color: #0f172a; }
+html:not(.dark) .kb-search-input::placeholder { color: #94a3b8; }
+html:not(.dark) .kb-search-input:focus { border-color: #4f46e5; background: #ffffff; }
+html:not(.dark) .kb-btn-primary { background: #4f46e5; color: #ffffff; }
+html:not(.dark) .kb-btn-primary:hover { background: #4338ca; }
+html:not(.dark) .kb-btn-secondary { background: #f1f5f9; border-color: var(--border); color: #334155; }
+html:not(.dark) .kb-btn-secondary:hover { background: #e2e8f0; }
+html:not(.dark) .kb-footer { background: #ffffff; border-top-color: var(--border); }
+html:not(.dark) .kb-footer-copy { color: #64748b; }
+html:not(.dark) .kb-footer-nav a { color: #64748b; }
+html:not(.dark) .kb-footer-nav a:hover { color: #020617; }
+
+/* Dark mode toggle button for KB */
+.kb-dark-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.kb-dark-toggle:hover { background: var(--bg-hover); color: var(--text); }

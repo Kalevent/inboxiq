@@ -9,25 +9,29 @@
     href="{{ url_for('static', filename='css/tailwind.min.css') }}"
   />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cookie-consent.css') }}">
 </head>
-<body class="bg-slate-950 text-slate-50 antialiased">
+<body class="pub-page bg-slate-50 text-slate-900 antialiased">
   <div class="min-h-screen flex flex-col">
-    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+    <header class="border-b border-slate-200 bg-white/90 backdrop-blur">
       <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
         <a href="{{ url_for('root') }}" class="flex items-center gap-2 hover:opacity-90">
-          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div class="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white">KI</div>
           <div>
             <div class="font-semibold text-lg tracking-tight">Kalevent</div>
             <div class="text-xs text-slate-400">InboxIQ – Your Inbox, Smarter</div>
           </div>
         </a>
-        <a href="{{ url_for('login_page') }}" class="hidden sm:inline-flex text-xs px-3 py-1.5 rounded-full border border-slate-700 text-slate-200 hover:bg-slate-800">
-          Log in
-        </a>
+        <div class="flex items-center gap-3">
+          <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
+          <a href="{{ url_for('login_page') }}" class="hidden sm:inline-flex text-xs px-3 py-1.5 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50">
+            Log in
+          </a>
+        </div>
       </div>
     </header>
 
-    <main class="flex-1 bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950">
+    <main class="flex-1">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
         <div class="mb-8">
           <p class="text-xs uppercase tracking-[0.2em] text-indigo-300/80 mb-3">Contact</p>
@@ -91,5 +95,6 @@
       </div>
     </main>
   </div>
+  <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
 </body>
 </html>

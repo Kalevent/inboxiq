@@ -40,7 +40,7 @@
     <header class="marketing-header border-b border-slate-800/10 bg-slate-950/70 backdrop-blur">
       <div class="marketing-shell flex items-center justify-between py-4">
         <a href="/" class="flex items-center gap-2 font-semibold text-lg text-white hover:text-indigo-100">
-          <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500 text-white">KI</span>
+          <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white">KI</span>
           <span>Kalevent</span>
         </a>
         <div class="flex items-center gap-5 text-sm text-slate-200">
@@ -94,8 +94,9 @@
             {% endif %}
           </nav>
           <div class="cta-group items-center ml-8">
+            <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
             <a href="{{ url_for('login_page') }}" class="text-slate-200 hover:text-white pl-3">Log in</a>
-            <a href="{{ url_for('signup_page') }}" class="px-3 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-400 shadow-lg shadow-indigo-500/30">Get started</a>
+            <a href="{{ url_for('signup_page') }}" class="px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/30">Get started</a>
           </div>
         </div>
       </div>
@@ -105,7 +106,7 @@
       {% block content %}{% endblock %}
     </main>
 
-    <footer class="marketing-footer border-t border-slate-800/20 bg-slate-950/90 text-slate-400">
+    <footer class="marketing-footer border-t border-slate-200 bg-white text-slate-500">
       <div class="marketing-shell py-12">
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10">
 
@@ -168,5 +169,6 @@
   </div>
 
   {% block extra_scripts %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
 </body>
 </html>

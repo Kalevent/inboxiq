@@ -671,3 +671,178 @@
   background-color: #3b82f6; /* blue-500 */
   border-color: rgba(59, 130, 246, 0.75);
 }
+
+
+/* ============================================================
+   DARK MODE TOGGLE — shared across all public pages
+   Uses: html.dark  (class toggled by dark-mode.js)
+         body.pub-page  (added to all public-facing pages)
+   Design tokens follow figma.md design kit:
+     Light base: #f8fafc / #ffffff
+     Headings:   #020617  (slate-950)
+     Body text:  #475569  (slate-600)
+     Muted:      #64748b  (slate-500)
+     Accent:     #4f46e5  (indigo-600)
+     Borders:    #e2e8f0  (slate-200)
+   ============================================================ */
+
+/* ── Toggle button (shared across all pages) ─────────────────────────── */
+.dark-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.dark-mode-toggle:hover { background: #f1f5f9; color: #0f172a; }
+html.dark .dark-mode-toggle {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+html.dark .dark-mode-toggle:hover { color: #f1f5f9; }
+
+/* ── pub-page: light mode base ──────────────────────────────────────── */
+body.pub-page {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* ── pub-page: light mode — reverse dark Tailwind classes ──────────── */
+
+/* Backgrounds */
+html:not(.dark) body.pub-page,
+html:not(.dark) body.pub-page > div { background-color: #f8fafc; }
+
+html:not(.dark) .pub-page header {
+  background-color: rgba(255,255,255,0.92) !important;
+  border-bottom-color: #e2e8f0 !important;
+  backdrop-filter: blur(12px);
+}
+html:not(.dark) .pub-page main {
+  background: #f8fafc !important;
+}
+html:not(.dark) .pub-page footer {
+  background-color: #ffffff !important;
+  border-top-color: #e2e8f0 !important;
+}
+
+/* Card backgrounds */
+html:not(.dark) .pub-page .bg-slate-950 { background-color: #ffffff !important; }
+html:not(.dark) .pub-page .bg-slate-900 { background-color: #f1f5f9 !important; }
+
+/* Text */
+html:not(.dark) .pub-page .text-white   { color: #020617 !important; }
+html:not(.dark) .pub-page .text-slate-100 { color: #1e293b !important; }
+html:not(.dark) .pub-page .text-slate-200 { color: #334155 !important; }
+html:not(.dark) .pub-page .text-slate-300 { color: #475569 !important; }
+html:not(.dark) .pub-page .text-slate-400 { color: #64748b !important; }
+html:not(.dark) .pub-page .text-slate-500 { color: #64748b !important; }
+html:not(.dark) .pub-page .text-indigo-300 { color: #4f46e5 !important; }
+html:not(.dark) .pub-page .text-indigo-200 { color: #4f46e5 !important; }
+html:not(.dark) .pub-page .text-indigo-400 { color: #4f46e5 !important; }
+html:not(.dark) .pub-page .text-cyan-300   { color: #0e7490 !important; }
+html:not(.dark) .pub-page .text-emerald-300 { color: #059669 !important; }
+html:not(.dark) .pub-page .text-amber-400  { color: #d97706 !important; }
+
+/* Borders */
+html:not(.dark) .pub-page .border-slate-800 { border-color: #e2e8f0 !important; }
+html:not(.dark) .pub-page .border-slate-700 { border-color: #e2e8f0 !important; }
+html:not(.dark) .pub-page .border-slate-600 { border-color: #cbd5e1 !important; }
+
+/* Nav links in light mode */
+html:not(.dark) .pub-page nav a { color: #475569 !important; }
+html:not(.dark) .pub-page nav a:hover { color: #020617 !important; }
+html:not(.dark) .pub-page nav .border-slate-700 { border-color: #cbd5e1 !important; background-color: #f8fafc !important; color: #334155 !important; }
+
+/* Footer links */
+html:not(.dark) .pub-page footer a { color: #64748b !important; }
+html:not(.dark) .pub-page footer a:hover { color: #020617 !important; }
+html:not(.dark) .pub-page footer .text-slate-700 { color: #cbd5e1 !important; } /* dividers */
+
+/* ── pub-page: dark mode — restore original dark design ─────────────── */
+html.dark body.pub-page { background-color: #020617; color: #f1f5f9; }
+html.dark .pub-page header {
+  background-color: rgba(2,6,23,0.85) !important;
+  border-bottom-color: #1e293b !important;
+}
+html.dark .pub-page main { background: inherit !important; }
+html.dark .pub-page footer {
+  background-color: #020617 !important;
+  border-top-color: #1e293b !important;
+}
+html.dark .pub-page nav a { color: #cbd5e1 !important; }
+html.dark .pub-page nav a:hover { color: #ffffff !important; }
+
+/* ── marketing/base.html: light-mode base ───────────────────────────── */
+html:not(.dark) .marketing-body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+html:not(.dark) .marketing-header {
+  background-color: rgba(255,255,255,0.92) !important;
+  border-bottom: 1px solid #e2e8f0;
+  backdrop-filter: blur(12px);
+}
+html:not(.dark) .marketing-nav a { color: #475569 !important; }
+html:not(.dark) .marketing-nav a:hover { color: #020617 !important; }
+html:not(.dark) .marketing-footer {
+  background-color: #ffffff !important;
+  border-top-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+html:not(.dark) .marketing-footer a { color: #64748b !important; }
+html:not(.dark) .marketing-footer a:hover { color: #020617 !important; }
+html:not(.dark) .marketing-footer p { color: #64748b !important; }
+html:not(.dark) .marketing-footer span { color: #64748b !important; }
+
+/* Marketing main content area: reset dark Tailwind classes */
+html:not(.dark) .marketing-main .text-white   { color: #020617 !important; }
+html:not(.dark) .marketing-main .text-slate-100 { color: #1e293b !important; }
+html:not(.dark) .marketing-main .text-slate-200 { color: #334155 !important; }
+html:not(.dark) .marketing-main .text-slate-300 { color: #475569 !important; }
+html:not(.dark) .marketing-main .text-slate-400 { color: #64748b !important; }
+html:not(.dark) .marketing-main .text-indigo-300 { color: #4f46e5 !important; }
+html:not(.dark) .marketing-main .text-indigo-200 { color: #4f46e5 !important; }
+html:not(.dark) .marketing-main .border-slate-800 { border-color: #e2e8f0 !important; }
+html:not(.dark) .marketing-main .border-slate-700 { border-color: #e2e8f0 !important; }
+html:not(.dark) .marketing-main .bg-slate-950 { background-color: #ffffff !important; }
+html:not(.dark) .marketing-main .bg-slate-900 { background-color: #f1f5f9 !important; }
+
+/* Dark mode: restore marketing body gradient */
+html.dark .marketing-body {
+  background:
+    radial-gradient(120% 120% at 20% 20%, rgba(99, 102, 241, 0.14), transparent 42%),
+    radial-gradient(90% 90% at 80% 5%, rgba(236, 72, 153, 0.12), transparent 36%),
+    linear-gradient(180deg, #0b1224 0%, #0f172a 50%, #0b1224 100%);
+  color: #e2e8f0;
+}
+html.dark .marketing-header {
+  background-color: rgba(2,6,23,0.75) !important;
+  border-bottom-color: rgba(30,41,59,0.5) !important;
+}
+html.dark .marketing-nav a { color: #cbd5e1 !important; }
+html.dark .marketing-nav a:hover { color: #ffffff !important; }
+html.dark .marketing-footer { background-color: transparent !important; border-top-color: rgba(30,41,59,0.4) !important; color: #94a3b8 !important; }
+html.dark .marketing-footer a { color: #94a3b8 !important; }
+html.dark .marketing-footer a:hover { color: #ffffff !important; }
+
+/* ── Dropdown menus: light mode ──────────────────────────────────────── */
+html:not(.dark) .pub-page .landing-menu,
+html:not(.dark) .marketing-body .landing-menu {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+html:not(.dark) .pub-page .landing-menu a,
+html:not(.dark) .marketing-body .landing-menu a { color: #475569 !important; }
+html:not(.dark) .pub-page .landing-menu a:hover,
+html:not(.dark) .marketing-body .landing-menu a:hover { background-color: #f8fafc !important; color: #020617 !important; }

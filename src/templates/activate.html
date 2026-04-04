@@ -10,9 +10,9 @@
   />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
 </head>
-<body class="bg-slate-950 text-slate-50 antialiased">
+<body class="pub-page bg-slate-50 text-slate-900 antialiased">
   <div class="min-h-screen flex flex-col">
-    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+    <header class="border-b border-slate-200 bg-white/90 backdrop-blur">
       <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
         <a href="/" class="flex items-center gap-2 hover:opacity-90">
           <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">
@@ -20,28 +20,31 @@
           </div>
           <div>
             <div class="font-semibold text-lg tracking-tight">Kalevent</div>
-            <div class="text-xs text-slate-400">InboxIQ – Your Inbox, Smarter</div>
+            <div class="text-xs text-slate-500">InboxIQ – Your Inbox, Smarter</div>
           </div>
         </a>
-        <a href="/" class="text-sm text-slate-300 hover:text-white">← Back to site</a>
+        <div class="flex items-center gap-3">
+          <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+          <a href="/" class="text-sm text-slate-600 hover:text-slate-900">← Back to site</a>
+        </div>
       </div>
     </header>
 
     <main class="flex-1 flex items-center justify-center px-4">
-      <div class="max-w-xl w-full bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-2xl shadow-indigo-500/15">
+      <div class="max-w-xl w-full bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl shadow-indigo-100 dark:shadow-indigo-500/15">
         <div class="mb-4">
-          <p class="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full border border-indigo-400/40 bg-indigo-500/10 text-indigo-200">
+          <p class="inline-flex items-center gap-2 text-xs px-3 py-1 rounded-full border border-indigo-300 dark:border-indigo-400/40 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-200">
             Activation required
           </p>
           <h1 class="text-2xl font-semibold mt-2">Activate your InboxIQ account</h1>
-          <p class="text-sm text-slate-300 mt-1">Set a password to complete your signup and sign in to your workspace.</p>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">Set a password to complete your signup and sign in to your workspace.</p>
         </div>
 
         <form id="activateForm" class="space-y-4">
           <input type="hidden" id="activationToken" name="token" value="{{ request.args.get('token', '') }}" />
 
           <div>
-            <label for="password" class="text-sm text-slate-200">New password</label>
+            <label for="password" class="text-sm text-slate-700 dark:text-slate-200">New password</label>
             <input
               id="password"
               name="password"
@@ -49,13 +52,13 @@
               required
               minlength="8"
               autocomplete="new-password"
-              class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+              class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/70 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
               placeholder="••••••••"
             />
           </div>
 
           <div>
-            <label for="passwordConfirm" class="text-sm text-slate-200">Confirm password</label>
+            <label for="passwordConfirm" class="text-sm text-slate-700 dark:text-slate-200">Confirm password</label>
             <input
               id="passwordConfirm"
               name="passwordConfirm"
@@ -63,7 +66,7 @@
               required
               minlength="8"
               autocomplete="new-password"
-              class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+              class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/70 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
               placeholder="Repeat password"
             />
           </div>
@@ -77,38 +80,39 @@
           </button>
         </form>
 
-        <div id="activateStatus" class="hidden mt-4 text-sm text-slate-300 rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-3"></div>
+        <div id="activateStatus" class="hidden mt-4 text-sm text-slate-600 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 px-3 py-3"></div>
 
-        <div class="mt-6 border-t border-slate-800 pt-4 space-y-3">
-          <p class="text-sm text-slate-200 font-semibold">Need a new activation link?</p>
-          <p class="text-xs text-slate-400">Tokens expire quickly. Enter your signup email and we'll resend it.</p>
+        <div class="mt-6 border-t border-slate-200 dark:border-slate-800 pt-4 space-y-3">
+          <p class="text-sm text-slate-800 dark:text-slate-200 font-semibold">Need a new activation link?</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Tokens expire quickly. Enter your signup email and we'll resend it.</p>
           <form id="resendForm" class="space-y-3">
             <div>
-              <label for="resendEmail" class="text-sm text-slate-200">Signup email</label>
+              <label for="resendEmail" class="text-sm text-slate-700 dark:text-slate-200">Signup email</label>
               <input
                 id="resendEmail"
                 name="resendEmail"
                 type="email"
                 autocomplete="email"
                 required
-                class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
+                class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/70 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/30"
                 placeholder="you@company.com"
               />
             </div>
             <button
               id="resendButton"
               type="submit"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-xl border border-indigo-400/60 bg-slate-900/60 hover:bg-slate-900 text-sm font-semibold text-indigo-100 px-4 py-2 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              class="w-full inline-flex justify-center items-center gap-2 rounded-xl border border-indigo-300 dark:border-indigo-400/60 bg-indigo-50 dark:bg-slate-900/60 hover:bg-indigo-100 dark:hover:bg-slate-900 text-sm font-semibold text-indigo-700 dark:text-indigo-100 px-4 py-2 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Resend activation link
             </button>
           </form>
-          <div id="resendStatus" class="hidden text-sm text-slate-300 rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-3"></div>
+          <div id="resendStatus" class="hidden text-sm text-slate-600 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 px-3 py-3"></div>
         </div>
       </div>
     </main>
   </div>
 
   <script src="{{ url_for('static', filename='js/activate.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
 </body>
 </html>

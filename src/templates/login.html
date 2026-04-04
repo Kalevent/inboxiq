@@ -18,21 +18,22 @@
   </script>
   <!-- End Google Analytics -->
 </head>
-<body class="bg-slate-950 text-slate-50 antialiased">
+<body class="pub-page bg-slate-50 text-slate-900 antialiased">
   <div class="min-h-screen flex flex-col">
-    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+    <header class="border-b border-slate-200 bg-white/90 backdrop-blur">
       <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         <a href="{{ url_for('root') }}" class="flex items-center gap-2">
-          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">
+          <div class="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white">
             IQ
           </div>
           <div>
-            <div class="font-semibold text-lg tracking-tight">InboxIQ</div>
+            <div class="font-semibold text-lg tracking-tight text-slate-900">InboxIQ</div>
           </div>
         </a>
         <nav class="flex items-center gap-3 text-sm text-slate-300">
           <a href="/" class="px-3 py-1.5 rounded-full border border-slate-700 bg-slate-900/60 hover:bg-slate-800">← Back to site</a>
           <a href="#workspace" class="hidden sm:inline hover:text-white">Workspace tips</a>
+          <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
         </nav>
       </div>
     </header>
@@ -163,6 +164,7 @@
     </main>
   </div>
 
+  <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
   <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 </body>
 </html>

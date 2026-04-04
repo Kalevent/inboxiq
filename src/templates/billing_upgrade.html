@@ -19,52 +19,55 @@
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-50 antialiased">
+<body class="pub-page bg-slate-50 text-slate-900 antialiased">
   <div class="min-h-screen flex flex-col">
-    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+    <header class="border-b border-slate-200 bg-white/90 backdrop-blur">
       <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         <a href="/" class="flex items-center gap-2 hover:opacity-90">
           <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
           <div>
             <div class="font-semibold text-lg tracking-tight">Kalevent</div>
-            <div class="text-xs text-slate-400">InboxIQ – Your Inbox, Smarter</div>
+            <div class="text-xs text-slate-500">InboxIQ – Your Inbox, Smarter</div>
           </div>
         </a>
-        <a href="/dashboard" class="text-sm px-3 py-1.5 rounded-full border border-slate-700 text-slate-200 hover:bg-slate-800">
-          Dashboard
-        </a>
+        <div class="flex items-center gap-3">
+          <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
+          <a href="/dashboard" class="text-sm px-3 py-1.5 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-100">
+            Dashboard
+          </a>
+        </div>
       </div>
     </header>
 
     <main class="flex-1">
-      <section class="bg-gradient-to-br from-indigo-600/30 via-slate-900 to-slate-950 border-b border-slate-800">
+      <section class="bg-gradient-to-br from-indigo-100/60 via-slate-50 to-white dark:from-indigo-600/30 dark:via-slate-900 dark:to-slate-950 border-b border-slate-200 dark:border-slate-800">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 grid lg:grid-cols-2 gap-10 items-start">
           <div class="space-y-4">
-            <p class="text-xs uppercase tracking-[0.25em] text-indigo-200/90">Upgrade</p>
+            <p class="text-xs uppercase tracking-[0.25em] text-indigo-600 dark:text-indigo-200/90">Upgrade</p>
             <h1 class="text-3xl sm:text-4xl font-semibold leading-tight">Keep your AI Support Agent running.</h1>
-            <p class="text-slate-300 text-sm sm:text-base max-w-xl">
+            <p class="text-slate-600 dark:text-slate-300 text-sm sm:text-base max-w-xl">
               Add a payment method and pick your plan before your trial ends. Secure card capture via Stripe; fallback to Barclays if needed.
             </p>
             <div class="grid sm:grid-cols-2 gap-4">
-              <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
+              <div class="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
                 <div class="flex items-center justify-between mb-2">
-                  <h3 class="text-lg font-semibold text-white">Pro</h3>
-                  <span class="text-xs px-2 py-1 rounded-full bg-indigo-500/20 text-indigo-200">Most popular</span>
+                  <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Pro</h3>
+                  <span class="text-xs px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200">Most popular</span>
                 </div>
-                <div class="text-2xl font-semibold text-indigo-100">£29 <span class="text-sm text-slate-400">/ inbox / month</span></div>
-                <ul class="text-sm text-slate-300 space-y-2 mt-3">
+                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100">£29 <span class="text-sm text-slate-500 dark:text-slate-400">/ inbox / month</span></div>
+                <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mt-3">
                   <li>✓ Automatic triage & ticket creation</li>
                   <li>✓ Sentiment & priority</li>
                   <li>✓ Up to 3,000 AI actions/month</li>
                 </ul>
               </div>
-              <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-5">
+              <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
                 <div class="flex items-center justify-between mb-2">
-                  <h3 class="text-lg font-semibold text-white">Business</h3>
-                  <span class="text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-100">Teams</span>
+                  <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Business</h3>
+                  <span class="text-xs px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-100">Teams</span>
                 </div>
-                <div class="text-2xl font-semibold text-indigo-100">£99 <span class="text-sm text-slate-400">/ inbox / month</span></div>
-                <ul class="text-sm text-slate-300 space-y-2 mt-3">
+                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100">£99 <span class="text-sm text-slate-500 dark:text-slate-400">/ inbox / month</span></div>
+                <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mt-3">
                   <li>✓ Everything in Pro</li>
                   <li>✓ Up to 15,000 AI actions/month</li>
                   <li>✓ Multi-agent routing + SLA alerts</li>
@@ -73,40 +76,40 @@
             </div>
           </div>
 
-          <div class="bg-slate-900/70 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/10 p-6 space-y-4">
+          <div class="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl shadow-indigo-100 dark:shadow-indigo-500/10 p-6 space-y-4">
             <div>
-              <h2 class="text-lg font-semibold text-white">Secure checkout</h2>
-              <p class="text-sm text-slate-300">Cards are tokenized with Stripe Elements. No card data is stored on our servers.</p>
+              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Secure checkout</h2>
+              <p class="text-sm text-slate-600 dark:text-slate-300">Cards are tokenized with Stripe Elements. No card data is stored on our servers.</p>
             </div>
             <form id="billingForm" class="space-y-3">
               <div>
-                <label class="text-xs text-slate-400">Work email</label>
+                <label class="text-xs text-slate-500">Work email</label>
                 <input required name="email" type="email" autocomplete="email" value="{{ current_user.email if current_user else '' }}" class="checkout-input w-full mt-1 rounded-lg px-3 py-2 text-sm" placeholder="you@company.com" />
               </div>
               <div>
-                <label class="text-xs text-slate-400">Plan</label>
+                <label class="text-xs text-slate-500">Plan</label>
                 <select name="plan_choice" class="checkout-input w-full mt-1 rounded-lg px-3 py-2 text-sm">
                   <option value="pro" selected>Pro – £29 / inbox / month</option>
                   <option value="business">Business – £99 / inbox / month</option>
                 </select>
               </div>
               <div>
-                <label class="text-xs text-slate-400">Payment provider</label>
+                <label class="text-xs text-slate-500">Payment provider</label>
                 <select name="provider" class="checkout-input w-full mt-1 rounded-lg px-3 py-2 text-sm">
                   <option value="stripe" selected>Stripe (default)</option>
                   <option value="barclay">Barclays (hosted)</option>
                 </select>
               </div>
               <div id="stripeCardBlock" class="space-y-2">
-                <label class="text-xs text-slate-400">Card details</label>
+                <label class="text-xs text-slate-500">Card details</label>
                 <div id="card-element" class="rounded-lg bg-slate-950/70 border border-slate-700 px-3 py-3 text-sm text-slate-100"></div>
-                <div id="card-errors" class="text-[12px] text-rose-300"></div>
+                <div id="card-errors" class="text-[12px] text-rose-500 dark:text-rose-300"></div>
               </div>
-              <button id="billingSubmit" type="submit" class="w-full mt-2 inline-flex justify-center items-center gap-2 rounded-full bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed">
+              <button id="billingSubmit" type="submit" class="w-full mt-2 inline-flex justify-center items-center gap-2 rounded-full bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed">
                 Start Pro with this card
               </button>
-              <p class="text-[11px] text-slate-500">We never store card details. Tokens are processed via Stripe; Barclays hosted checkout is available as fallback.</p>
-              <div id="billingStatus" class="hidden rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"></div>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500">We never store card details. Tokens are processed via Stripe; Barclays hosted checkout is available as fallback.</p>
+              <div id="billingStatus" class="hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm"></div>
             </form>
           </div>
         </div>
@@ -114,6 +117,7 @@
     </main>
   </div>
 
+  <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
   <script src="https://js.stripe.com/v3/"></script>
   <script>
     // Prefer same-origin (works locally over https://127.0.0.1:8000) and fall back to explicit API base if provided.
