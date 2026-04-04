@@ -372,10 +372,10 @@ def create_app() -> Flask:
   def use_case_finance():
     return render_template("marketing/use_case_finance.html")
 
-  # Solutions (decision-centric + unified intake)
+  # Solutions (decision-centric + unified intake — redirected)
   @app.get("/solutions/unified-intake")
   def solutions_unified_intake():
-    return render_template("marketing/solutions_unified_intake.html")
+    return redirect("/solutions/email/ai-triage", 301)
 
   @app.get("/solutions/decisions")
   def solutions_decisions():
@@ -427,19 +427,19 @@ def create_app() -> Flask:
   
   @app.get("/playbook/unified-support-triage")
   def playbook():
-    return render_template("marketing/unified-support-triage.html")
-  
+    return redirect("/solutions/email/ai-triage", 301)
+
   @app.get("/playbook/unified-sales-intake")
   def playbook_sales():
-    return render_template("marketing/unified-sales-intake.html")
+    return redirect("/solutions/email/ai-triage", 301)
 
   @app.get("/playbook/unified-ops-intake")
   def playbook_ops():
-    return render_template("marketing/unified-ops-intake.html")
+    return redirect("/solutions/email/ai-triage", 301)
 
   @app.get("/playbook/unified-intake-system")
   def playbook_intake_system():
-    return render_template("marketing/unified-intake-system.html")
+    return redirect("/solutions/email/ai-triage", 301)
 
   @app.get("/features")
   def features_page():
@@ -490,14 +490,6 @@ def create_app() -> Flask:
       {"loc": "https://kalevent.com/support-automation", "priority": "0.8", "changefreq": "monthly", "lastmod": "2026-03-01"},
       {"loc": "https://kalevent.com/blog", "priority": "0.8", "changefreq": "daily"},
       {"loc": "https://kalevent.com/contact", "priority": "0.7", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/unified-intake", "priority": "0.7", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/decisions", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/voice", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/social", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/forms", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/chat", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/crm", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/api", "priority": "0.6", "changefreq": "monthly"},
       {"loc": "https://kalevent.com/solutions/email/ai-triage", "priority": "0.7", "changefreq": "monthly"},
       {"loc": "https://kalevent.com/solutions/email/triage-automation", "priority": "0.7", "changefreq": "monthly"},
       {"loc": "https://kalevent.com/solutions/email/shared-inbox", "priority": "0.6", "changefreq": "monthly"},
@@ -507,10 +499,6 @@ def create_app() -> Flask:
       {"loc": "https://kalevent.com/use-cases/claims", "priority": "0.6", "changefreq": "monthly"},
       {"loc": "https://kalevent.com/use-cases/hr", "priority": "0.6", "changefreq": "monthly"},
       {"loc": "https://kalevent.com/use-cases/finance", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/playbook/unified-support-triage", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/playbook/unified-sales-intake", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/playbook/unified-ops-intake", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/playbook/unified-intake-system", "priority": "0.6", "changefreq": "monthly"},
       {"loc": "https://kalevent.com/security", "priority": "0.5", "changefreq": "monthly", "lastmod": "2026-03-05"},
       {"loc": "https://kalevent.com/docs", "priority": "0.5", "changefreq": "monthly"},
       {"loc": "https://kalevent.com/privacy", "priority": "0.4", "changefreq": "yearly"},
