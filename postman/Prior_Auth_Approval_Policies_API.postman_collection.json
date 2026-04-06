@@ -23,6 +23,52 @@
   ],
   "item": [
     {
+      "name": "Login (auto-saves token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "if (json.access_token) {",
+              "    pm.collectionVariables.set('jwt_token', json.access_token);",
+              "    console.log('jwt_token saved automatically');",
+              "} else {",
+              "    console.error('Login failed:', JSON.stringify(json));",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"kofi@kalevent.com\",\n  \"password\": \"YOUR_PASSWORD_HERE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "login"]
+        },
+        "description": "Run this first. The test script automatically saves the access_token into {{jwt_token}} so all other requests work without any copy-paste."
+      },
+      "response": []
+    },
+    {
       "name": "List all policies",
       "request": {
         "method": "GET",
