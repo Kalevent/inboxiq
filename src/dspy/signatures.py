@@ -434,6 +434,21 @@ def build_blog_writer(dspy: Any) -> Any:
         target_keywords = dspy.InputField(desc="Optional comma-separated keywords to target (may be empty).")
         seo_markdown = dspy.OutputField(desc="SEO-optimised Markdown article.")
 
+    class ExpandBlogPostSignature(dspy.Signature):
+        """
+        Expand an existing B2B SaaS blog post to reach a target word count.
+        - Preserve all existing headings, structure, and tone exactly
+        - Add depth to existing sections: examples, data points, practical steps
+        - Add 1-2 new sections if needed to reach the target word count
+        - Do not repeat content already present
+        - Return the complete expanded article in Markdown — not just the additions
+        """
+        existing_markdown = dspy.InputField(desc="The existing blog post content in Markdown.")
+        current_word_count = dspy.InputField(desc="Current word count of the article.")
+        target_word_count = dspy.InputField(desc="Minimum word count to reach.")
+        primary_keyword = dspy.InputField(desc="Primary SEO keyword to naturally reinforce (may be empty).")
+        expanded_markdown = dspy.OutputField(desc="Complete expanded article in Markdown.")
+
     class BlogWriterModule(dspy.Module):
         def __init__(self) -> None:
             super().__init__()
@@ -461,6 +476,41 @@ def build_blog_writer(dspy: Any) -> Any:
             return final  # exposes .seo_markdown
 
     return BlogWriterModule()
+
+
+def build_blog_expander(dspy: Any) -> Any:
+    """Single-step DSPy module that expands an existing blog post to a target word count."""
+
+    class ExpandBlogPostSignature(dspy.Signature):
+        """
+        Expand an existing B2B SaaS blog post to reach a target word count.
+        - Preserve all existing headings, structure, and tone exactly
+        - Add depth to existing sections: examples, data points, practical steps
+        - Add 1-2 new sections if needed to reach the target word count
+        - Do not repeat content already present
+        - Return the complete expanded article in Markdown — not just the additions
+        """
+        existing_markdown = dspy.InputField(desc="The existing blog post content in Markdown.")
+        current_word_count = dspy.InputField(desc="Current word count of the article.")
+        target_word_count = dspy.InputField(desc="Minimum word count to reach.")
+        primary_keyword = dspy.InputField(desc="Primary SEO keyword to naturally reinforce (may be empty).")
+        expanded_markdown = dspy.OutputField(desc="Complete expanded article in Markdown.")
+
+    class BlogExpanderModule(dspy.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.expand = dspy.ChainOfThought(ExpandBlogPostSignature)
+
+        def forward(self, existing_markdown: str, current_word_count: str,
+                    target_word_count: str, primary_keyword: str = "") -> Any:
+            return self.expand(
+                existing_markdown=existing_markdown,
+                current_word_count=current_word_count,
+                target_word_count=target_word_count,
+                primary_keyword=primary_keyword,
+            )
+
+    return BlogExpanderModule()
 
 
 def build_newsletter_writer(dspy: Any) -> Any:

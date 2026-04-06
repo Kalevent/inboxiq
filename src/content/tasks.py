@@ -460,6 +460,45 @@ def optimize_existing_post(blog_post_id: str):
         return {"error": str(e)}
 
 
+@shared_task(name="content.expand_short_blog_posts")
+def expand_short_blog_posts(min_word_count: int = 800):
+    """
+    Expand all blog posts (any status) whose word_count is below min_word_count.
+    Uses DSPy to add depth to existing content without changing structure or tone.
+    """
+    import logging
+    from src.publishing.service import expand_blog_post
+
+    log = logging.getLogger(__name__)
+    posts = BlogPost.query.filter(
+        (BlogPost.word_count < min_word_count) | (BlogPost.word_count == None)
+    ).all()
+
+    results = {"expanded": [], "skipped": [], "failed": []}
+    for post in posts:
+        wc = post.word_count or 0
+        log.info("Expanding %s (current: %d words)", post.slug, wc)
+        try:
+            success = expand_blog_post(post, target_word_count=min_word_count)
+            if success:
+                try:
+                    db.session.commit()
+                    results["expanded"].append({"slug": post.slug, "new_wc": post.word_count})
+                    log.info("Expanded %s → %d words", post.slug, post.word_count)
+                except Exception:
+                    db.session.rollback()
+                    results["failed"].append(post.slug)
+            else:
+                results["skipped"].append(post.slug)
+        except Exception as exc:
+            db.session.rollback()
+            log.exception("Failed to expand %s: %s", post.slug, exc)
+            results["failed"].append(post.slug)
+
+    log.info("expand_short_blog_posts done: %s", results)
+    return results
+
+
 @shared_task(name="content.content_generation_job")
 def content_generation_job():
     """

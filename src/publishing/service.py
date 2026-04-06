@@ -18,7 +18,7 @@ from flask import current_app
 from src.extensions import db
 from src.models.content import BlogPost
 from src.dspy.config import _configure_dspy
-from src.dspy.signatures import build_blog_writer, build_meta_description_generator
+from src.dspy.signatures import build_blog_writer, build_meta_description_generator, build_blog_expander
 
 _log = logging.getLogger(__name__)
 
@@ -189,6 +189,47 @@ def _derive_excerpt(markdown_text: str, limit: int = 260) -> str:
 def _derive_word_count(markdown_text: str) -> int:
     tokens = re.findall(r"\w+", markdown_text)
     return len(tokens)
+
+
+def expand_blog_post(post: BlogPost, target_word_count: int = 1000) -> bool:
+    """
+    Expand a blog post to reach target_word_count using DSPy.
+    Updates the post in-place. Returns True on success, False on failure.
+    Caller is responsible for db.session.commit().
+    """
+    existing_md = post.markdown or ""
+    if not existing_md:
+        _log.warning("expand_blog_post: post %s has no markdown, skipping", post.slug)
+        return False
+
+    current_wc = _derive_word_count(existing_md)
+    if current_wc >= target_word_count:
+        return True
+
+    try:
+        _, _, dspy = _configure_dspy()
+        expander = build_blog_expander(dspy)
+        result = expander(
+            existing_markdown=existing_md,
+            current_word_count=str(current_wc),
+            target_word_count=str(target_word_count),
+            primary_keyword=post.primary_keyword or "",
+        )
+        expanded_md = result.expanded_markdown or ""
+        if not expanded_md or _derive_word_count(expanded_md) <= current_wc:
+            _log.warning("expand_blog_post: expansion produced no gain for %s", post.slug)
+            return False
+
+        rendered = _render_markdown(expanded_md)
+        post.markdown = expanded_md
+        post.content_html = rendered
+        post.rendered_html = rendered
+        post.word_count = _derive_word_count(expanded_md)
+        post.excerpt = _derive_excerpt(expanded_md)
+        return True
+    except Exception:
+        _log.exception("expand_blog_post: failed for %s", post.slug)
+        return False
 
 
 def create_blog_draft(data: dict, run_async: bool = False) -> Tuple[BlogPost, dict]:
