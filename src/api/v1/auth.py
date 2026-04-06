@@ -55,6 +55,8 @@ def _create_trial_lead(email: str, account_id: int) -> None:
         lead = Lead(
             id=str(uuid4()),
             email=email,
+            name=email.split("@")[0].replace(".", " ").replace("_", " ").capitalize(),
+            status="New Lead",
             source="signup",
             current_funnel_stage="trial",
             stage_entered_at=now,
