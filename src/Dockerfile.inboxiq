@@ -31,8 +31,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /usr/src
 
-# Create non-root user
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+# Create non-root user with a real home directory so DSPy cache (and other
+# tools that write to $HOME) don't crash with [Errno 13] /nonexistent.
+RUN addgroup --system appgroup && \
+    adduser --system --ingroup appgroup --home /home/appuser --shell /bin/false appuser && \
+    mkdir -p /home/appuser && \
+    chown appuser:appgroup /home/appuser
 
 # Copy venv from builder
 COPY --from=builder /usr/src/.venv /usr/src/.venv
