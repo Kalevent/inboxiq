@@ -16,6 +16,22 @@ import markdown
 from src.extensions import db
 from src.models.content import BlogPost, GeneratedContent, PitchedBlogTopic
 
+
+def _safe_seo_score(raw) -> float:
+    """Parse DSPy seo_score which may arrive as '85', '85%', '85/100', or '85% / 100'."""
+    import re
+    try:
+        s = str(raw).strip()
+        # Extract first numeric token
+        m = re.search(r'[\d.]+', s)
+        if not m:
+            return 0.0
+        val = float(m.group())
+        # If it looks like a 0–1 float already, keep it; otherwise divide by 100
+        return val / 100.0 if val > 1 else val
+    except Exception:
+        return 0.0
+
 # Import DSPy modules
 try:
     import dspy
@@ -313,7 +329,7 @@ def generate_blog_post(
             read_time_minutes=read_time,
             generated_content_id=generated_content.id,
             auto_generated=True,
-            dspy_quality_score=float(str(seo_result.seo_score).strip().rstrip('%')) / 100.0,
+            dspy_quality_score=_safe_seo_score(seo_result.seo_score),
             published_at=None,  # set by distribution pipeline on actual publish
             created_at=datetime.now(),
             updated_at=datetime.now()
@@ -687,7 +703,7 @@ def generate_blog_from_pitched_topic(topic_id: str):
             read_time_minutes=read_time,
             generated_content_id=generated_content.id,
             auto_generated=True,
-            dspy_quality_score=float(str(seo_result.seo_score).strip().rstrip('%')) / 100.0,
+            dspy_quality_score=_safe_seo_score(seo_result.seo_score),
             published_at=None,
             created_at=datetime.now(),
             updated_at=datetime.now()
