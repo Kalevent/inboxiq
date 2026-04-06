@@ -454,6 +454,22 @@ def create_app() -> Flask:
     # Serve SEO-friendly robots.txt at the root.
     return current_app.send_static_file("robots.txt")
 
+  @app.route("/.well-known/jwks.json")
+  def jwks():
+    """JWKS endpoint for NHS FHIR API signed JWT authentication."""
+    import json
+    jwks_json = current_app.config.get("NHS_FHIR_JWKS")
+    if not jwks_json:
+      return {"keys": []}, 200
+    try:
+      payload = json.loads(jwks_json)
+    except (ValueError, TypeError):
+      payload = {"keys": []}
+    resp = current_app.make_response(json.dumps(payload))
+    resp.headers["Content-Type"] = "application/json"
+    resp.headers["Cache-Control"] = "public, max-age=3600"
+    return resp
+
   # Old website URLs — return 410 Gone so Google de-indexes them faster than a 404
   @app.route("/en-gb/", defaults={"path": ""})
   @app.route("/en-gb/<path:path>")

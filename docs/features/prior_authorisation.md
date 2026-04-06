@@ -75,7 +75,7 @@ Email arrives
           ↓ matches policy condition?
           YES → create ApprovalRequest, hold draft, notify approver
           NO  → proceed to auto-send as normal
-    → Approver approves/rejects via Slack or in-app
+    → Approver approves/modify/discard via gmail or outlook inbox native UI
     → If approved: send draft
     → If rejected or expired: route to inbox for manual handling
 ```

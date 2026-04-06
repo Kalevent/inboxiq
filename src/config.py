@@ -133,6 +133,12 @@ class Config:
     # Publishing MCP/HTTP endpoints
     PUBLISHING_API_BASE = os.getenv("PUBLISHING_API_BASE")
     PUBLISHING_API_TOKEN = os.getenv("PUBLISHING_API_TOKEN")
+    # NHS FHIR API — signed JWT authentication
+    NHS_FHIR_CLIENT_ID = os.getenv("NHS_FHIR_CLIENT_ID")
+    NHS_FHIR_BASE_URL = os.getenv("NHS_FHIR_BASE_URL")
+    NHS_FHIR_CALLBACK_URL = os.getenv("NHS_FHIR_CALLBACK_URL")
+    NHS_FHIR_PRIVATE_KEY = os.getenv("NHS_FHIR_PRIVATE_KEY")  # PEM — used to sign JWTs
+    NHS_FHIR_JWKS = os.getenv("NHS_FHIR_JWKS")                # JSON string served at /.well-known/jwks.json
 
 
 class DevelopmentConfig(Config):
