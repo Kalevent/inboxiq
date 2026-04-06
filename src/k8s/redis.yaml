@@ -13,6 +13,7 @@ spec:
       labels:
         app: redis
     spec:
+      priorityClassName: inboxiq-critical
       containers:
         - name: redis
           image: redis:7

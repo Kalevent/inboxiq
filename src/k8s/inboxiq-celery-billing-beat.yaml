@@ -13,6 +13,7 @@ spec:
       labels:
         app: inboxiq-celery-billing-beat
     spec:
+      priorityClassName: inboxiq-high
       containers:
         - name: billing-beat
           image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:${TAG_VALUE}

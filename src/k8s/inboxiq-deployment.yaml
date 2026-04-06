@@ -18,6 +18,7 @@ spec:
       labels:
         app: inboxiq
     spec:
+      priorityClassName: inboxiq-high
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

@@ -51,6 +51,7 @@ spec:
         app: phoenix
         component: observability
     spec:
+      priorityClassName: inboxiq-low
       containers:
         - name: phoenix
           image: arizephoenix/phoenix:version-13.0.2

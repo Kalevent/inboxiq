@@ -1,0 +1,27 @@
+# Pod Priority Classes — controls eviction order under memory pressure.
+# When a node runs out of memory, Kubernetes evicts lowest-priority pods first.
+# This ensures Redis and core workers are never sacrificed for monitoring.
+
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: inboxiq-critical
+value: 1000
+globalDefault: false
+description: "Critical infrastructure — Redis, never evict"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: inboxiq-high
+value: 750
+globalDefault: false
+description: "Core app — Flask, Celery workers"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: inboxiq-low
+value: 100
+globalDefault: false
+description: "Observability — Phoenix, monitoring. Evicted first under pressure."

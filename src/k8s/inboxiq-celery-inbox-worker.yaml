@@ -18,6 +18,7 @@ spec:
       labels:
         app: inboxiq-celery-inbox-worker
     spec:
+      priorityClassName: inboxiq-high
       containers:
         - name: inbox-worker
           image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
