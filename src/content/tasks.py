@@ -286,10 +286,10 @@ def generate_blog_post(
         # Sanitize HTML to prevent XSS attacks (defense-in-depth)
         content_html = sanitize_html(raw_html)
 
-        # Calculate read time (average reading speed: 200 words/minute)
-        # DSPy OutputField returns strings — cast defensively
+        # Calculate read time — count actual words in the final markdown, not DSPy's reported value
+        # (DSPy OutputField sometimes returns "approximately 750" which parses unreliably)
         import math
-        _word_count = int(float(str(write_result.word_count).strip())) if write_result.word_count else 0
+        _word_count = len(_optimized_post.split())
         read_time = math.ceil(_word_count / 200) if _word_count else 1
 
         base_slug = seo_result.slug
@@ -457,7 +457,7 @@ def optimize_existing_post(blog_post_id: str):
         blog_post.markdown = result.optimized_post
         blog_post.meta_description = result.meta_description
         blog_post.slug = result.slug
-        blog_post.dspy_quality_score = float(result.seo_score) / 100.0
+        blog_post.dspy_quality_score = _safe_seo_score(result.seo_score)
         blog_post.updated_at = datetime.now()
 
         db.session.commit()
@@ -560,6 +560,21 @@ def generate_blog_from_pitched_topic(topic_id: str):
     if not pitched_topic:
         return {"error": f"Pitched topic {topic_id} not found"}
 
+    # Reset status to generating and clear previous error from notes
+    try:
+        pitched_topic.status = "generating"
+        # Strip any previously appended "Generation failed:" lines so notes stay clean
+        import re as _re
+        if pitched_topic.pitch_notes:
+            pitched_topic.pitch_notes = _re.sub(
+                r'\n*Generation failed:.*$', '', pitched_topic.pitch_notes,
+                flags=_re.DOTALL
+            ).strip() or None
+        pitched_topic.updated_at = datetime.now()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
     try:
         # Convert pitched topic into the format expected by content generation
         description = pitched_topic.description or ""
@@ -626,10 +641,18 @@ def generate_blog_from_pitched_topic(topic_id: str):
             logging.getLogger(__name__).warning("Hero image generation failed: %s", img_exc)
 
         # 6. Save to database
+        # Resolve slug uniqueness for GeneratedContent too
+        _gc_base_slug = seo_result.slug
+        _gc_slug = _gc_base_slug
+        _gc_suffix = 1
+        while db.session.query(GeneratedContent).filter(GeneratedContent.slug == _gc_slug).first():
+            _gc_slug = f"{_gc_base_slug}-{_gc_suffix}"
+            _gc_suffix += 1
+
         generated_content = GeneratedContent(
             content_type="blog_post",
             title=seo_result.meta_title,
-            slug=seo_result.slug,
+            slug=_gc_slug,
             content=seo_result.optimized_post,
             meta_data=json.dumps({
                 "meta_title": seo_result.meta_title,
@@ -761,10 +784,12 @@ def generate_blog_from_pitched_topic(topic_id: str):
 
     except Exception as e:
         db.session.rollback()
-        # Mark pitched topic as failed
+        # Mark pitched topic as failed so the UI reflects it and notes stay clean
         try:
-            pitched_topic.pitch_notes = f"{pitched_topic.pitch_notes or ''}\n\nGeneration failed: {str(e)}".strip()
+            pitched_topic.status = "failed"
+            pitched_topic.pitch_notes = f"{(pitched_topic.pitch_notes or '').strip()}\n\nGeneration failed: {str(e)}".strip()
+            pitched_topic.updated_at = datetime.now()
             db.session.commit()
-        except:
-            pass
+        except Exception:
+            db.session.rollback()
         return {"error": str(e)}
