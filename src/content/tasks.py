@@ -565,7 +565,7 @@ def content_generation_job():
         return results
 
 
-@shared_task(name="content.generate_blog_from_pitched_topic", queue="inbox")
+@shared_task(name="content.generate_blog_from_pitched_topic", queue="content")
 def generate_blog_from_pitched_topic(topic_id: str):
     """
     Generate blog post from a manually pitched topic.

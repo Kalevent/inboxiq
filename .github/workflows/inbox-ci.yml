@@ -231,14 +231,15 @@ jobs:
           # (e.g. APP_ENV) were never applied — which causes DevelopmentConfig to
           # be used instead of ProductionConfig, connecting to localhost instead of RDS.
           export TAG_VALUE="${TAG}"
-          envsubst < src/k8s/inboxiq-celery-inbox-worker.yaml   | kubectl apply -f - -n "${KUBE_NAMESPACE}"
-          envsubst < src/k8s/inboxiq-celery-inbox-beat.yaml     | kubectl apply -f - -n "${KUBE_NAMESPACE}"
-          envsubst < src/k8s/inboxiq-celery-billing-worker.yaml | kubectl apply -f - -n "${KUBE_NAMESPACE}"
-          envsubst < src/k8s/inboxiq-celery-billing-beat.yaml   | kubectl apply -f - -n "${KUBE_NAMESPACE}"
+          envsubst < src/k8s/inboxiq-celery-inbox-worker.yaml     | kubectl apply -f - -n "${KUBE_NAMESPACE}"
+          envsubst < src/k8s/inboxiq-celery-inbox-beat.yaml       | kubectl apply -f - -n "${KUBE_NAMESPACE}"
+          envsubst < src/k8s/inboxiq-celery-billing-worker.yaml   | kubectl apply -f - -n "${KUBE_NAMESPACE}"
+          envsubst < src/k8s/inboxiq-celery-billing-beat.yaml     | kubectl apply -f - -n "${KUBE_NAMESPACE}"
+          envsubst < src/k8s/inboxiq-celery-content-worker.yaml   | kubectl apply -f - -n "${KUBE_NAMESPACE}"
           kubectl set image deploy/inboxiq inboxiq="${IMAGE}" -n "${KUBE_NAMESPACE}"
           kubectl scale deploy/inboxiq-celery-inbox-beat    -n "${KUBE_NAMESPACE}" --replicas=1
           kubectl scale deploy/inboxiq-celery-billing-beat  -n "${KUBE_NAMESPACE}" --replicas=1
-          for deploy in inboxiq inboxiq-celery-inbox-worker inboxiq-celery-inbox-beat inboxiq-celery-billing-worker inboxiq-celery-billing-beat; do
+          for deploy in inboxiq inboxiq-celery-inbox-worker inboxiq-celery-inbox-beat inboxiq-celery-billing-worker inboxiq-celery-billing-beat inboxiq-celery-content-worker; do
             echo "Waiting for rollout: ${deploy}"
             if ! kubectl rollout status "deploy/${deploy}" -n "${KUBE_NAMESPACE}" --timeout=600s; then
               echo "${deploy} rollout failed; rolling back..."
@@ -261,7 +262,7 @@ jobs:
             exit 1
           fi
 
-          for worker in inboxiq-celery-inbox-worker inboxiq-celery-billing-worker; do
+          for worker in inboxiq-celery-inbox-worker inboxiq-celery-billing-worker inboxiq-celery-content-worker; do
             if ! kubectl rollout status "deployment/${worker}" -n "${KUBE_NAMESPACE}" --timeout=180s; then
               echo "❌ ${worker} deployment failed. Rolling back..."
               kubectl rollout undo "deployment/${worker}" -n "${KUBE_NAMESPACE}"
@@ -281,7 +282,7 @@ jobs:
 
       - name: Verify deployed images
         run: |
-          for deploy in inboxiq inboxiq-celery-inbox-worker inboxiq-celery-inbox-beat inboxiq-celery-billing-worker inboxiq-celery-billing-beat; do
+          for deploy in inboxiq inboxiq-celery-inbox-worker inboxiq-celery-inbox-beat inboxiq-celery-billing-worker inboxiq-celery-billing-beat inboxiq-celery-content-worker; do
             echo -n "${deploy}: "
             kubectl get deploy "${deploy}" -n "${KUBE_NAMESPACE}" -o jsonpath='{.spec.template.spec.containers[0].image}'; echo
           done

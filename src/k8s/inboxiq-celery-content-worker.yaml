@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inboxiq-celery-content-worker
+  namespace: kaley
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: inboxiq-celery-content-worker
+  template:
+    metadata:
+      labels:
+        app: inboxiq-celery-content-worker
+    spec:
+      priorityClassName: inboxiq-low   # evicted before web pods and inbox workers under memory pressure
+      containers:
+        - name: content-worker
+          image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
+          imagePullPolicy: IfNotPresent
+          command: ["celery"]
+          args: ["-A", "src.celery_inboxiq.celery", "worker", "--queues=content", "--loglevel=info", "-E", "--concurrency=1"]
+          env:
+            - name: APP_ENV
+              value: "production"
+            - name: SEARXNG_URL
+              value: "http://searxng:8000"
+            - name: HOME
+              value: "/tmp"
+            - name: DSPY_COMPILED_DIR
+              value: "/dspy-artifacts"
+            - name: OTEL_ENABLED
+              value: "true"
+            - name: OTEL_SERVICE_NAME
+              value: "inboxiq-celery-content-worker"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://phoenix.kaley.svc.cluster.local:4317"
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: OTEL_TRACES_SAMPLER
+              value: "parentbased_traceidratio"
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "0.1"
+            - name: ENVIRONMENT
+              value: "production"
+            - name: K8S_CLUSTER_NAME
+              value: "inboxiq-prod"
+          envFrom:
+            - secretRef:
+                name: inboxiq-env
+            - configMapRef:
+                name: inboxiq-config
+          livenessProbe:
+            exec:
+              command: ["python", "-c", "import os; os.kill(1, 0)"]
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi   # content gen needs more RAM than email workers
+            limits:
+              cpu: 1000m
+              memory: 2Gi    # hard cap — kernel kills this pod before touching web pods
+          volumeMounts:
+            - name: dspy-artifacts
+              mountPath: /dspy-artifacts
+      volumes:
+        - name: dspy-artifacts
+          emptyDir: {}
