@@ -109,7 +109,7 @@
   <script src="{{ url_for('static', filename='docs/js/toc.js') }}"></script>
   <script>
     (function () {
-      var saved = localStorage.getItem('docs-theme') || 'dark';
+      var saved = localStorage.getItem('docs-theme') || 'light';
       document.documentElement.setAttribute('data-theme', saved);
     })();
 
@@ -130,7 +130,7 @@
         }
       }
 
-      applyTheme(localStorage.getItem('docs-theme') || 'dark');
+      applyTheme(localStorage.getItem('docs-theme') || 'light');
 
       btn.addEventListener('click', function () {
         var current = document.documentElement.getAttribute('data-theme');
