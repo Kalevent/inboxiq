@@ -685,10 +685,18 @@ def generate_blog_from_pitched_topic(topic_id: str):
         _word_count = int(float(str(write_result.word_count).strip())) if write_result.word_count else 0
         read_time = math.ceil(_word_count / 200) if _word_count else 1
 
+        # Ensure slug is unique — a previous failed attempt may have left a record
+        base_slug = seo_result.slug
+        unique_slug = base_slug
+        suffix = 1
+        while db.session.query(BlogPost).filter(BlogPost.slug == unique_slug).first():
+            unique_slug = f"{base_slug}-{suffix}"
+            suffix += 1
+
         # Create blog post entry
         blog_post = BlogPost(
             title=seo_result.meta_title,
-            slug=seo_result.slug,
+            slug=unique_slug,
             status="ready",
             funnel_stage=pitched_topic.funnel_stage or "discovery",
             primary_keyword=selected_topic["target_keyword"],
