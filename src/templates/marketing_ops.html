@@ -144,6 +144,18 @@
 
       <!-- Main Content Area -->
       <div class="flex-1 overflow-y-auto">
+        <!-- Breadcrumb -->
+        <div class="border-b border-slate-800 bg-slate-950/60 px-6 py-2 flex items-center gap-2 text-sm text-slate-400">
+          <a href="/marketing" class="hover:text-slate-200 transition-colors">Marketing Ops</a>
+          <svg class="w-3 h-3 text-slate-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <span id="breadcrumb-section" class="text-slate-200">
+            {% if active_section == 'content' %}Content &amp; Publishing
+            {% elif active_section == 'marketing' %}Marketing
+            {% elif active_section == 'campaigns' %}Email Outreach
+            {% else %}Funnel v2.0{% endif %}
+          </span>
+        </div>
+
         {% include 'admin/section_funnel.html' %}
         {% if show_content_section %}{% include 'admin/section_content.html' %}{% endif %}
         {% include 'admin/section_marketing.html' %}
@@ -164,6 +176,13 @@
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
   <script>
     // ── Sidebar navigation ────────────────────────────────────────────────
+    const _sectionLabels = {
+      funnel: 'Funnel v2.0',
+      content: 'Content & Publishing',
+      marketing: 'Marketing',
+      campaigns: 'Email Outreach',
+    };
+
     document.querySelectorAll('.sidebar-nav-item').forEach(item => {
       item.addEventListener('click', () => {
         document.querySelectorAll('.sidebar-nav-item').forEach(i => i.classList.remove('active'));
@@ -172,6 +191,9 @@
         item.classList.add('active');
         const section = item.getAttribute('data-section');
         document.getElementById(`section-${section}`).classList.add('active');
+
+        const crumb = document.getElementById('breadcrumb-section');
+        if (crumb) crumb.textContent = _sectionLabels[section] || section;
 
         if (section === 'funnel') {
           loadFunnelMetrics();
