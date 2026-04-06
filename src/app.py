@@ -499,26 +499,14 @@ def create_app() -> Flask:
     from src.models import BlogPost
     from flask import Response
 
-    # Static pages
+    # Static pages — only include routes that actually exist and are publicly accessible.
+    # Never include auth-gated pages (/docs, /dashboard, /settings) — Google gets a login
+    # redirect it cannot follow, wastes crawl budget, and counts as not-indexed.
     static_pages = [
-      {"loc": "https://kalevent.com/", "priority": "1.0", "changefreq": "weekly", "lastmod": "2026-03-01"},
-      {"loc": "https://kalevent.com/email-triage", "priority": "0.9", "changefreq": "monthly", "lastmod": "2026-03-01"},
-      {"loc": "https://kalevent.com/ai-email-triage", "priority": "0.9", "changefreq": "monthly", "lastmod": "2026-03-01"},
-      {"loc": "https://kalevent.com/shared-inbox", "priority": "0.8", "changefreq": "monthly", "lastmod": "2026-03-01"},
-      {"loc": "https://kalevent.com/support-automation", "priority": "0.8", "changefreq": "monthly", "lastmod": "2026-03-01"},
-      {"loc": "https://kalevent.com/blog", "priority": "0.8", "changefreq": "daily"},
+      {"loc": "https://kalevent.com/", "priority": "1.0", "changefreq": "weekly", "lastmod": "2026-04-06"},
+      {"loc": "https://kalevent.com/blog", "priority": "0.8", "changefreq": "daily", "lastmod": "2026-04-06"},
       {"loc": "https://kalevent.com/contact", "priority": "0.7", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/email/ai-triage", "priority": "0.7", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/email/triage-automation", "priority": "0.7", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/email/shared-inbox", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/solutions/email/support-automation", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/use-cases/support", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/use-cases/healthcare-triage", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/use-cases/claims", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/use-cases/hr", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/use-cases/finance", "priority": "0.6", "changefreq": "monthly"},
-      {"loc": "https://kalevent.com/security", "priority": "0.5", "changefreq": "monthly", "lastmod": "2026-03-05"},
-      {"loc": "https://kalevent.com/docs", "priority": "0.5", "changefreq": "monthly"},
+      {"loc": "https://kalevent.com/security", "priority": "0.5", "changefreq": "monthly", "lastmod": "2026-04-06"},
       {"loc": "https://kalevent.com/privacy", "priority": "0.4", "changefreq": "yearly"},
       {"loc": "https://kalevent.com/terms", "priority": "0.4", "changefreq": "yearly"},
     ]
