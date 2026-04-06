@@ -40,6 +40,8 @@ def _writeback_to_provider(
     subject: str,
     email_type: str | None = None,
     is_automated: bool = False,
+    sentiment: str | None = None,
+    reply_confidence: float | None = None,
 ) -> None:
     """
     Write triage results back into the user's inbox (Gmail label + optional draft reply).
@@ -81,6 +83,10 @@ def _writeback_to_provider(
         refresh_token=conn.refresh_token,
         client_id=current_app.config.get("GOOGLE_CLIENT_ID"),
         client_secret=current_app.config.get("GOOGLE_CLIENT_SECRET"),
+        # Prior auth — needed to evaluate ApprovalPolicy conditions
+        account_id=account_id,
+        sentiment=sentiment,
+        reply_confidence=reply_confidence,
     )
 
     # Persist label cache updates and any refreshed access token.
@@ -787,6 +793,8 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         subject=normalized.get("subject", ""),
         email_type=email_type,
         is_automated=is_automated,
+        sentiment=sentiment,
+        reply_confidence=decision.reply_confidence,
     )
 
     # Trigger automation rules using intelligent agent (tool-calling like Claude Code!)

@@ -50,6 +50,9 @@ def writeback_to_provider(
     refresh_token: str | None = None,
     client_id: str | None = None,
     client_secret: str | None = None,
+    account_id: int | None = None,
+    sentiment: str | None = None,
+    reply_confidence: float | None = None,
 ) -> dict:
     """
     Apply an InboxIQ label and optional draft reply to a provider message.
@@ -60,29 +63,49 @@ def writeback_to_provider(
         refresh_token / client_id / client_secret: optional Gmail OAuth creds.
             When provided, a single token-refresh retry is attempted on 401 so a
             stale access_token doesn't silently skip the writeback.
+        account_id / sentiment / reply_confidence: used by prior auth gate.
+            When a matching ApprovalPolicy exists and confidence is sufficient,
+            the reply is sent directly instead of saved as a draft.
 
     Returns:
-        {"label_applied": bool, "draft_created": bool, "new_token": str | None}
+        {"label_applied": bool, "draft_created": bool, "auto_sent": bool, "new_token": str | None}
     """
     if not provider or provider not in ("gmail", "outlook") or not provider_message_id:
-        return {"label_applied": False, "draft_created": False, "new_token": None}
+        return {"label_applied": False, "draft_created": False, "auto_sent": False, "new_token": None}
 
     _cat = category.title()
     label_name = f"InboxIQ/{_cat}/Urgent" if priority == "P1" else f"InboxIQ/{_cat}"
     draft_needed = _should_draft(reply_text, email_type, is_automated)
 
+    # Prior auth gate — check whether this reply qualifies for direct send.
+    # Only evaluated when draft_needed is True (i.e. there is a reply to send).
+    auto_send = False
+    if draft_needed and account_id:
+        try:
+            from src.features import check_approval_policies
+            auto_send = check_approval_policies(
+                account_id=account_id,
+                category=category,
+                email_type=email_type,
+                sentiment=sentiment,
+                reply_confidence=reply_confidence,
+            )
+        except Exception as _pa_exc:
+            _log.warning("approval policy check failed, falling back to draft: %s", _pa_exc)
+
     label_applied = False
     draft_created = False
+    auto_sent = False
     new_token = None
     _log.info(
         "writeback: provider=%s category=%s priority=%s email_type=%s is_automated=%s "
-        "reply_text_present=%s draft_needed=%s thread_id=%s",
+        "reply_text_present=%s draft_needed=%s auto_send=%s thread_id=%s",
         provider, category, priority, email_type, is_automated,
-        bool(reply_text), draft_needed, bool(provider_thread_id),
+        bool(reply_text), draft_needed, auto_send, bool(provider_thread_id),
     )
 
     def _apply_gmail(token: str) -> None:
-        nonlocal label_applied, draft_created
+        nonlocal label_applied, draft_created, auto_sent
         label_id = label_cache.get(label_name)
         if not label_id:
             label_id = ensure_gmail_label(token, label_name)
@@ -92,9 +115,17 @@ def writeback_to_provider(
         apply_label_gmail(token, provider_message_id, label_id, remove_label_ids=other_inboxiq_ids)
         label_applied = True
         if draft_needed and provider_thread_id:
-            create_gmail_draft_reply(token, provider_thread_id, from_email, subject, reply_text)
-            draft_created = True
-            _log.info("draft reply created: thread_id=%s subject=%s", provider_thread_id, subject)
+            if auto_send:
+                send_gmail_reply(token, provider_thread_id, from_email, subject, reply_text)
+                auto_sent = True
+                _log.info(
+                    "prior auth: reply auto-sent: thread_id=%s subject=%s confidence=%s",
+                    provider_thread_id, subject, reply_confidence,
+                )
+            else:
+                create_gmail_draft_reply(token, provider_thread_id, from_email, subject, reply_text)
+                draft_created = True
+                _log.info("draft reply created: thread_id=%s subject=%s", provider_thread_id, subject)
 
     try:
         if provider == "gmail":
@@ -120,14 +151,22 @@ def writeback_to_provider(
             apply_label_outlook(access_token, provider_message_id, label_name)
             label_applied = True
             if draft_needed:
-                create_outlook_draft_reply(access_token, provider_message_id, reply_text)
-                draft_created = True
+                if auto_send:
+                    send_outlook_reply(access_token, provider_message_id, reply_text)
+                    auto_sent = True
+                    _log.info(
+                        "prior auth: reply auto-sent: message_id=%s subject=%s confidence=%s",
+                        provider_message_id, subject, reply_confidence,
+                    )
+                else:
+                    create_outlook_draft_reply(access_token, provider_message_id, reply_text)
+                    draft_created = True
     except Exception as exc:
         _log.warning(
             "writeback_to_provider failed: provider=%s error=%s", provider, exc
         )
 
-    return {"label_applied": label_applied, "draft_created": draft_created, "new_token": new_token}
+    return {"label_applied": label_applied, "draft_created": draft_created, "auto_sent": auto_sent, "new_token": new_token}
 
 IMAP_HOSTS = {
     "gmail": "imap.gmail.com",
@@ -914,6 +953,77 @@ def create_outlook_draft_reply(
     if patch_resp.status_code >= 300:
         raise ValueError(f"Outlook draft update failed: {patch_resp.status_code} {patch_resp.text}")
     return draft_id
+
+
+def send_gmail_reply(
+    access_token: str,
+    thread_id: str,
+    to_email: str,
+    subject: str,
+    body: str,
+) -> str:
+    """
+    Send a reply directly in the Gmail thread (prior auth auto-send path).
+    Bypasses the draft queue — reply is sent immediately via Gmail messages.send.
+    Returns the sent message ID.
+    """
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    subject_header = subject if subject.lower().startswith("re:") else f"Re: {subject}"
+
+    msg = MIMEMultipart("alternative")
+    msg["To"] = to_email
+    msg["Subject"] = subject_header
+
+    plain_body = body + _INBOXIQ_FOOTER_TEXT
+    msg.attach(MIMEText(plain_body, "plain", "utf-8"))
+
+    html_paragraphs = "".join(
+        f"<p>{line}</p>" if line.strip() else "<br>"
+        for line in body.splitlines()
+    )
+    html_body = f"<div style=\"font-family:sans-serif;font-size:14px;line-height:1.6\">{html_paragraphs}{_INBOXIQ_FOOTER_HTML}</div>"
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
+
+    resp = requests.post(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+        json={"threadId": thread_id, "raw": raw},
+        timeout=10,
+    )
+    if resp.status_code not in (200, 201):
+        raise ValueError(f"Gmail send failed: {resp.status_code} {resp.text}")
+    return resp.json()["id"]
+
+
+def send_outlook_reply(
+    access_token: str,
+    message_id: str,
+    body: str,
+) -> None:
+    """
+    Send a reply directly to an Outlook message (prior auth auto-send path).
+    Bypasses the draft queue — reply is sent immediately via Graph API message/reply.
+    """
+    html_paragraphs = "".join(
+        f"<p>{line}</p>" if line.strip() else "<br>"
+        for line in body.splitlines()
+    )
+    html_body = (
+        f"<div style=\"font-family:sans-serif;font-size:14px;line-height:1.6\">"
+        f"{html_paragraphs}{_INBOXIQ_FOOTER_HTML}</div>"
+    )
+    resp = requests.post(
+        f"https://graph.microsoft.com/v1.0/me/messages/{message_id}/reply",
+        headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+        json={"message": {"body": {"contentType": "HTML", "content": html_body}}},
+        timeout=10,
+    )
+    if resp.status_code not in (200, 202, 204):
+        raise ValueError(f"Outlook send failed: {resp.status_code} {resp.text}")
 
 
 def _ms_refresh_access_token(refresh_token: str, client_id: str, client_secret: str, tenant_id: str | None) -> str:

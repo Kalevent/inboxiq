@@ -1,0 +1,392 @@
+{
+  "info": {
+    "name": "InboxIQ - Prior Auth Approval Policies API",
+    "description": "Manage ApprovalPolicy rules that control which emails are auto-sent directly (bypassing the Gmail/Outlook draft queue) when DSPy reply confidence meets the threshold.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.kalevent.com",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "policy_id",
+      "value": "POLICY_ID_HERE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "List all policies",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies"]
+        },
+        "description": "Returns all ApprovalPolicies for the authenticated account."
+      },
+      "response": []
+    },
+    {
+      "name": "Create policy - password reset auto-send",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Auto-send password resets\",\n  \"description\": \"Replies to password reset requests are sent directly when confidence is high\",\n  \"conditions\": [\n    {\n      \"field\": \"email_type\",\n      \"operator\": \"equals\",\n      \"value\": \"password_reset\"\n    }\n  ],\n  \"condition_logic\": \"AND\",\n  \"min_confidence\": 0.85,\n  \"enabled\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies"]
+        },
+        "description": "Creates a policy that auto-sends replies to password reset emails when DSPy confidence >= 0.85."
+      },
+      "response": []
+    },
+    {
+      "name": "Create policy - billing with positive sentiment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Auto-send routine billing replies\",\n  \"description\": \"Billing queries with positive sentiment auto-send at high confidence\",\n  \"conditions\": [\n    {\n      \"field\": \"category\",\n      \"operator\": \"equals\",\n      \"value\": \"billing\"\n    },\n    {\n      \"field\": \"sentiment\",\n      \"operator\": \"equals\",\n      \"value\": \"positive\"\n    }\n  ],\n  \"condition_logic\": \"AND\",\n  \"min_confidence\": 0.9,\n  \"enabled\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies"]
+        },
+        "description": "Auto-sends billing replies when sentiment is positive and confidence >= 0.9. Both conditions must match (AND logic)."
+      },
+      "response": []
+    },
+    {
+      "name": "Create policy - multiple email types (in_list)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Auto-send routine support queries\",\n  \"description\": \"Common low-risk support types that are safe to auto-send\",\n  \"conditions\": [\n    {\n      \"field\": \"email_type\",\n      \"operator\": \"in_list\",\n      \"value\": \"password_reset,account_access,general_inquiry\"\n    }\n  ],\n  \"condition_logic\": \"AND\",\n  \"min_confidence\": 0.85,\n  \"enabled\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies"]
+        },
+        "description": "Auto-sends replies for any of the listed email types when confidence >= 0.85."
+      },
+      "response": []
+    },
+    {
+      "name": "Get policy by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies/{{policy_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies", "{{policy_id}}"]
+        },
+        "description": "Fetch a single policy. Replace policy_id variable with the UUID."
+      },
+      "response": []
+    },
+    {
+      "name": "Update policy - raise confidence threshold",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"min_confidence\": 0.92\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies/{{policy_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies", "{{policy_id}}"]
+        },
+        "description": "Raise the confidence threshold. Only the fields you send are updated."
+      },
+      "response": []
+    },
+    {
+      "name": "Update policy - disable",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"enabled\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies/{{policy_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies", "{{policy_id}}"]
+        },
+        "description": "Disable a policy without deleting it. Set enabled: true to re-enable."
+      },
+      "response": []
+    },
+    {
+      "name": "Update policy - add negative sentiment guard",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"conditions\": [\n    {\n      \"field\": \"email_type\",\n      \"operator\": \"equals\",\n      \"value\": \"password_reset\"\n    },\n    {\n      \"field\": \"sentiment\",\n      \"operator\": \"not_equals\",\n      \"value\": \"negative\"\n    }\n  ],\n  \"condition_logic\": \"AND\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies/{{policy_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies", "{{policy_id}}"]
+        },
+        "description": "Adds a guard so angry/negative password reset emails are never auto-sent."
+      },
+      "response": []
+    },
+    {
+      "name": "Delete policy",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies/{{policy_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies", "{{policy_id}}"]
+        },
+        "description": "Permanently delete a policy."
+      },
+      "response": []
+    },
+    {
+      "name": "400 - Missing name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"conditions\": [\n    {\"field\": \"category\", \"operator\": \"equals\", \"value\": \"billing\"}\n  ],\n  \"min_confidence\": 0.85\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies"]
+        },
+        "description": "Expected: 400 - name is required"
+      },
+      "response": []
+    },
+    {
+      "name": "400 - Invalid condition field",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Bad field test\",\n  \"conditions\": [\n    {\"field\": \"subject\", \"operator\": \"equals\", \"value\": \"hello\"}\n  ],\n  \"min_confidence\": 0.85\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies"]
+        },
+        "description": "Expected: 400 - condition field must be one of: category, email_type, sentiment"
+      },
+      "response": []
+    },
+    {
+      "name": "400 - Confidence out of range",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Bad confidence test\",\n  \"conditions\": [\n    {\"field\": \"category\", \"operator\": \"equals\", \"value\": \"billing\"}\n  ],\n  \"min_confidence\": 1.5\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/approval-policies",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "approval-policies"]
+        },
+        "description": "Expected: 400 - min_confidence must be a float between 0 and 1"
+      },
+      "response": []
+    }
+  ]
+}

@@ -106,3 +106,86 @@ def get_draft_reply_config(account_id: int) -> dict:
         "auto_approve": feature_flags.draft_reply_auto_approve,
         "min_confidence": feature_flags.draft_reply_min_confidence,
     }
+
+
+def check_approval_policies(
+    account_id: int,
+    category: str,
+    email_type: str | None,
+    sentiment: str | None,
+    reply_confidence: float | None,
+) -> bool:
+    """
+    Check whether a reply should be auto-sent (prior auth).
+
+    Returns True if ALL of the following hold:
+    - At least one enabled ApprovalPolicy for the account has conditions
+      that match the ticket context
+    - The DSPy reply_confidence meets or exceeds the policy's min_confidence
+
+    Called just before writeback_to_provider decides whether to create a
+    draft or send directly. Returns False (safe default) on any error.
+    """
+    try:
+        from src.models.automation import ApprovalPolicy
+
+        policies = ApprovalPolicy.query.filter_by(
+            account_id=account_id,
+            enabled=True,
+        ).all()
+
+        if not policies:
+            return False
+
+        ctx = {
+            "category": (category or "").lower(),
+            "email_type": (email_type or "").lower(),
+            "sentiment": (sentiment or "").lower(),
+        }
+
+        for policy in policies:
+            if _policy_conditions_match(policy, ctx):
+                min_conf = policy.min_confidence or 0.85
+                if reply_confidence is not None and reply_confidence >= min_conf:
+                    return True
+
+        return False
+
+    except Exception:
+        # Never block normal draft creation on an unexpected error
+        return False
+
+
+def _policy_conditions_match(policy, ctx: dict) -> bool:
+    """Evaluate a policy's conditions against the ticket context dict."""
+    conditions = policy.conditions or []
+    if not conditions:
+        return False
+
+    logic = (policy.condition_logic or "AND").upper()
+    results = [_eval_condition(c, ctx) for c in conditions]
+
+    if logic == "OR":
+        return any(results)
+    return all(results)
+
+
+def _eval_condition(condition: dict, ctx: dict) -> bool:
+    """Evaluate a single condition against context. Mirrors AutomationRule DSL."""
+    field = condition.get("field", "")
+    operator = condition.get("operator", "equals")
+    value = str(condition.get("value", "")).lower()
+    actual = str(ctx.get(field, "")).lower()
+
+    if operator == "equals":
+        return actual == value
+    if operator == "not_equals":
+        return actual != value
+    if operator == "contains":
+        return value in actual
+    if operator == "not_contains":
+        return value not in actual
+    if operator == "in_list":
+        items = [v.strip().lower() for v in value.split(",")]
+        return actual in items
+    return False

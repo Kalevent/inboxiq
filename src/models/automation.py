@@ -178,6 +178,60 @@ class AutomationRule(db.Model):
         }
 
 
+class ApprovalPolicy(db.Model):
+    """
+    Prior authorisation policy — defines which emails are auto-sent directly
+    without waiting for the owner to review the draft in Gmail/Outlook.
+
+    When an email's category, email_type, and sentiment match a policy's
+    conditions AND the DSPy reply_confidence meets the threshold, InboxIQ
+    sends the reply directly via the Gmail/Outlook API instead of creating
+    a draft. The owner never sees it in their draft queue.
+
+    All other emails follow the normal flow: draft created, owner decides.
+    """
+    __tablename__ = "approval_policies"
+    __table_args__ = (
+        db.Index("ix_approval_policies_account_enabled", "account_id", "enabled"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False, index=True)
+
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    enabled = db.Column(db.Boolean, default=True, nullable=False)
+
+    # Conditions — same DSL as AutomationRule.conditions
+    # [{"field": "category", "operator": "equals", "value": "support"},
+    #  {"field": "email_type", "operator": "equals", "value": "password_reset"}]
+    conditions = db.Column(db.JSON, nullable=False, default=list)
+    condition_logic = db.Column(db.String(16), default="AND", nullable=False)  # AND | OR
+
+    # Minimum reply confidence from DSPy before auto-send fires (0.0–1.0)
+    min_confidence = db.Column(db.Float, nullable=False, default=0.85)
+
+    # Audit
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    account = db.relationship("Account", backref="approval_policies")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "name": self.name,
+            "description": self.description,
+            "enabled": self.enabled,
+            "conditions": self.conditions,
+            "condition_logic": self.condition_logic,
+            "min_confidence": self.min_confidence,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 class AutomationRuleExecution(db.Model):
     """
     Log of automation rule executions for debugging and analytics.

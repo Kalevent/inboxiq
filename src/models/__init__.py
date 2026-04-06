@@ -11,7 +11,7 @@ from src.models.ai import DspyTrainingMetric, AgentEvent, AgentModel, MCPServerC
 from src.models.leads import Lead, LeadFunnelStage, LeadEngagementEvent, LeadAttribution, FunnelMetricsDaily
 from src.models.content import BlogPost, KBIntegration, KBArticle, KBArticleEmbedding, GeneratedContent, PitchedBlogTopic
 from src.models.campaigns import CampaignSender, HunterDomainCache, EmailCampaign, EmailOutreach, NurtureEmailSend
-from src.models.automation import AutomationStudioWaitlist, AutomationRule, AutomationRuleExecution, WebhookProvider, AutomationSuggestion
+from src.models.automation import AutomationStudioWaitlist, AutomationRule, AutomationRuleExecution, WebhookProvider, AutomationSuggestion, ApprovalPolicy
 from src.models.marketing import Referral, InAppMessage, InAppMessageDismissal, LandingPage, MarketingSpend, EnterpriseInquiry
 from src.models.misc import Testimonial, Feedback
 from src.models.developer import DeveloperAccessRequest, RegisteredApp
@@ -38,7 +38,7 @@ __all__ = [
     # campaigns
     "CampaignSender", "HunterDomainCache", "EmailCampaign", "EmailOutreach", "NurtureEmailSend",
     # automation
-    "AutomationStudioWaitlist", "AutomationRule", "AutomationRuleExecution", "WebhookProvider", "AutomationSuggestion",
+    "AutomationStudioWaitlist", "AutomationRule", "AutomationRuleExecution", "WebhookProvider", "AutomationSuggestion", "ApprovalPolicy",
     # marketing
     "Referral", "InAppMessage", "InAppMessageDismissal", "LandingPage", "MarketingSpend", "EnterpriseInquiry",
     # misc
