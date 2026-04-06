@@ -185,15 +185,20 @@ def generate_from_pitched_topic(topic_id):
         flash("Topic not found", "error")
         return redirect(url_for("admin.pitched_topics"))
 
-    if topic.status != "approved":
-        flash("Only approved topics can be generated", "error")
+    if topic.status not in ("approved", "failed"):
+        flash("Only approved or failed topics can be generated", "error")
         return redirect(url_for("admin.pitched_topics"))
 
     try:
-        # Queue Celery task
-        task = generate_blog_from_pitched_topic.delay(topic_id=topic_id)
+        # Reset failed topics back to approved before queuing
+        if topic.status == "failed":
+            topic.status = "approved"
+            db.session.commit()
 
-        flash(f"Content generation queued for '{topic.title}'. Task ID: {task.id}", "success")
+        # Queue Celery task
+        generate_blog_from_pitched_topic.delay(topic_id=topic_id)
+
+        flash(f"Content generation queued for '{topic.title}'.", "success")
 
     except Exception as e:
         flash(f"Error queueing generation: {str(e)}", "error")

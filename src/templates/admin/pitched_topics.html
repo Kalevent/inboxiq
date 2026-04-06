@@ -283,15 +283,19 @@
                   </form>
                 {% endif %}
 
-                <!-- Generate (for approved) -->
-                {% if topic.status == 'approved' %}
+                <!-- Generate (for approved or failed) -->
+                {% if topic.status in ('approved', 'failed') %}
                   <form method="post" action="/admin/pitched-topics/{{ topic.id }}/generate" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit"
                             class="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-2 shadow">
-                      Generate
+                      {% if topic.status == 'failed' %}Retry{% else %}Generate{% endif %}
                     </button>
                   </form>
+                {% elif topic.status == 'generating' %}
+                  <span class="rounded-xl bg-slate-700 text-slate-400 text-xs px-3 py-2 cursor-not-allowed">
+                    Generating…
+                  </span>
                 {% endif %}
 
                 <!-- Distribute (for published but not yet distributed) -->
