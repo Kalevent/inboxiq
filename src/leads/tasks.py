@@ -82,7 +82,25 @@ def enrich_lead_with_email(self, lead_id: str, domain: str) -> Dict[str, Any]:
         emails = cache.emails or []
         from_cache = True
     else:
-        # Check remaining free-tier credits before making the API call
+        # Hard cap: free plan = 25 searches/month. Count how many we've already
+        # used this calendar month across all leads to avoid burning credits on
+        # low-value lookups. Cache hits don't count against this.
+        from src.models import HunterDomainCache as _HDC
+        now_utc = datetime.now(tz())
+        month_start = now_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        HUNTER_FREE_MONTHLY_CAP = int(os.getenv("HUNTER_MONTHLY_CAP", "25"))
+        searches_this_month = _HDC.query.filter(
+            _HDC.created_at >= month_start,
+        ).count()
+        if searches_this_month >= HUNTER_FREE_MONTHLY_CAP:
+            return {
+                "success": False,
+                "error": f"Hunter.io monthly cap reached ({HUNTER_FREE_MONTHLY_CAP} searches). Resets on the 1st.",
+                "lead_id": lead_id,
+                "skip": True,
+            }
+
+        # Also check live available credits as a secondary guard
         if _hunter_searches_available() == 0:
             return {
                 "success": False,

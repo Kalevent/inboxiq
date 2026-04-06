@@ -462,3 +462,54 @@ def process_followup_emails(campaign_id: Optional[str] = None, max_emails: int =
                 results['errors'].append(f"Failed follow-up to {lead.email}")
 
     return results
+
+
+# ── ICP cold outreach templates ───────────────────────────────────────────────
+# Hunter.io free plan = 25 searches/month. Cap weekly sends at 6 to stay
+# safely under 25/month (6 × 4 weeks = 24).
+
+HUNTER_FREE_MONTHLY_CAP = 25
+OUTREACH_WEEKLY_CAP = 6
+
+ICP_COLD_EMAIL_SUBJECT = "Before you hire a support manager, {{ CompanyName }}"
+
+ICP_COLD_EMAIL_BODY = """Hi {{ FirstName }},
+
+I noticed {{ CompanyName }} is growing — support volume usually grows with it.
+
+Most founders at your stage hire a support manager when email starts feeling out of control. Before you do, it's worth knowing there's a faster fix.
+
+InboxIQ connects to your Gmail or Outlook and automatically triages every incoming email — categorising by intent, flagging urgency, and drafting a reply for review. Your team handles the exceptions; everything routine is handled by the AI.
+
+Teams using it typically cut first-response time by 60-70% without adding headcount.
+
+Would it be worth a 15-minute call to see if it fits what you're dealing with?
+
+- Kofi
+Founder, InboxIQ
+https://kalevent.com"""
+
+ICP_COLD_EMAIL_FOLLOWUP = """Hi {{ FirstName }},
+
+Just following up on my note from last week.
+
+If support email is still eating into your team's time, I'd be happy to show you how InboxIQ handles it -- takes about 15 minutes.
+
+If the timing's not right, no worries at all.
+
+- Kofi
+https://kalevent.com"""
+
+
+def get_icp_cold_outreach_templates() -> dict:
+    """
+    Returns subject, body, and follow-up for ICP cold outreach.
+    Designed for Hunter.io free plan: 25 searches/month, 6 emails/week.
+    """
+    return {
+        "subject": ICP_COLD_EMAIL_SUBJECT,
+        "body": ICP_COLD_EMAIL_BODY,
+        "followup": ICP_COLD_EMAIL_FOLLOWUP,
+        "weekly_cap": OUTREACH_WEEKLY_CAP,
+        "monthly_cap": HUNTER_FREE_MONTHLY_CAP,
+    }
