@@ -726,6 +726,14 @@ def activate():
     db.session.add(account)
     db.session.commit()
 
+    # Add to leads funnel at TRIAL stage
+    try:
+        from src.api.v1.auth import _create_trial_lead
+        _create_trial_lead(user.email, account.id)
+    except Exception as _e:
+        import logging
+        logging.getLogger(__name__).warning("Failed to create trial lead for %s: %s", user.email, _e)
+
     # Enroll user in trial onboarding sequence (send Day 1 email)
     try:
         from src.trial.tasks import enroll_user_in_trial_task

@@ -27,6 +27,56 @@ from src.models.core import Account, InboxConnection, User
 from src.security import log_audit
 
 
+def _create_trial_lead(email: str, account_id: int) -> None:
+    """
+    Create a Lead record for a new signup so they enter the funnel at TRIAL stage.
+    Called after both email activation and OAuth signup. Silently no-ops if the
+    lead already exists or any error occurs — never blocks the auth flow.
+    """
+    import logging
+    from uuid import uuid4
+    try:
+        from src.models.leads import Lead, LeadFunnelStage
+        now = datetime.now(timezone.utc)
+        existing = Lead.query.filter_by(email=email).first()
+        if existing:
+            # Already a lead — just advance to trial stage if they're still in visits/discovery
+            if existing.current_funnel_stage in (None, "visits", "discovery"):
+                existing.current_funnel_stage = "trial"
+                existing.stage_entered_at = now
+                stage = LeadFunnelStage(
+                    lead_id=existing.id,
+                    stage="trial",
+                    entered_at=now,
+                )
+                db.session.add(stage)
+                db.session.commit()
+            return
+        lead = Lead(
+            id=str(uuid4()),
+            email=email,
+            source="signup",
+            current_funnel_stage="trial",
+            stage_entered_at=now,
+            created_at=now,
+            updated_at=now,
+        )
+        db.session.add(lead)
+        db.session.flush()
+        stage = LeadFunnelStage(
+            lead_id=lead.id,
+            stage="trial",
+            entered_at=now,
+        )
+        db.session.add(stage)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        logging.getLogger(__name__).warning(
+            "_create_trial_lead: failed for %s account=%s", email, account_id, exc_info=True
+        )
+
+
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
@@ -174,6 +224,7 @@ def _find_or_create_user(email: str, display_name: str | None) -> tuple[User, bo
     except Exception:
         pass  # Non-fatal — access_control falls back gracefully
     db.session.commit()
+    _create_trial_lead(email, account.id)
     return user, True
 
 
