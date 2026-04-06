@@ -13,7 +13,7 @@ spec:
     kind: Deployment
     name: inboxiq
   minReplicas: 1
-  maxReplicas: 4
+  maxReplicas: 3  # 4th pod can't schedule — 3 nodes have <1Gi free and autoscaler is at max group size
   metrics:
     - type: Resource
       resource:
