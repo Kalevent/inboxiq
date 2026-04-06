@@ -292,6 +292,31 @@ def generate_blog_post(
         _word_count = len(_optimized_post.split())
         read_time = math.ceil(_word_count / 200) if _word_count else 1
 
+        # Enforce minimum word count
+        _MIN_WORDS = 1000
+        if _word_count < _MIN_WORDS:
+            try:
+                from src.publishing.service import expand_blog_post as _expand
+                import logging as _log
+                _log.getLogger(__name__).info(
+                    "Generated post only %d words (< %d), expanding…", _word_count, _MIN_WORDS
+                )
+                class _TmpPost:
+                    markdown = _optimized_post
+                    word_count = _word_count
+                    content_html = content_html
+                    rendered_html = None
+                    excerpt = seo_result.meta_description
+                _tmp = _TmpPost()
+                _expand(_tmp, target_word_count=_MIN_WORDS)
+                _optimized_post = _tmp.markdown
+                content_html = _tmp.content_html
+                _word_count = len(_optimized_post.split())
+                read_time = math.ceil(_word_count / 200) if _word_count else 1
+            except Exception as _exp_err:
+                import logging as _log
+                _log.getLogger(__name__).warning("Word count expansion failed: %s", _exp_err)
+
         base_slug = seo_result.slug
 
         # Skip if a published or ready post on this topic already exists
@@ -702,11 +727,36 @@ def generate_blog_from_pitched_topic(topic_id: str):
         raw_html = md_converter.convert(_optimized_post)
         content_html = sanitize_html(raw_html)
 
-        # Calculate read time
-        # DSPy OutputField returns strings — cast defensively
+        # Calculate read time — count actual words in final markdown
         import math
-        _word_count = int(float(str(write_result.word_count).strip())) if write_result.word_count else 0
+        _word_count = len(_optimized_post.split())
         read_time = math.ceil(_word_count / 200) if _word_count else 1
+
+        # Enforce minimum word count — if DSPy fell short, expand before saving
+        _MIN_WORDS = 1000
+        if _word_count < _MIN_WORDS:
+            try:
+                from src.publishing.service import expand_blog_post as _expand
+                import logging as _log
+                _log.getLogger(__name__).info(
+                    "Generated post only %d words (< %d), expanding…", _word_count, _MIN_WORDS
+                )
+                # Build a temporary unsaved BlogPost-like object for the expander
+                class _TmpPost:
+                    markdown = _optimized_post
+                    word_count = _word_count
+                    content_html = content_html
+                    rendered_html = None
+                    excerpt = seo_result.meta_description
+                _tmp = _TmpPost()
+                _expand(_tmp, target_word_count=_MIN_WORDS)
+                _optimized_post = _tmp.markdown
+                content_html = _tmp.content_html
+                _word_count = len(_optimized_post.split())
+                read_time = math.ceil(_word_count / 200) if _word_count else 1
+            except Exception as _exp_err:
+                import logging as _log
+                _log.getLogger(__name__).warning("Word count expansion failed: %s", _exp_err)
 
         # Ensure slug is unique — a previous failed attempt may have left a record
         base_slug = seo_result.slug
