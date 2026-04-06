@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash, g  # noqa: F401
+from flask import abort, render_template, request, redirect, url_for, flash, g, current_app  # noqa: F401
 from datetime import datetime
 from sqlalchemy import func
 
@@ -9,9 +9,24 @@ from src.content.tasks import generate_blog_from_pitched_topic
 from src.settings import login_required_settings
 
 
+def _require_kalevent_staff():
+    """Abort 403 unless the logged-in user is Kalevent internal staff."""
+    user = getattr(g, "current_user", None)
+    if not user or not user.email:
+        abort(403)
+    allowed = set(
+        e.strip().lower()
+        for e in (current_app.config.get("ADMIN_EMAILS", "") or "kofi@kalevent.com").split(",")
+        if e.strip()
+    )
+    if user.email.lower() not in allowed:
+        abort(403)
+
+
 @bp.route("/pitched-topics", methods=["GET"])
 @login_required_settings
 def pitched_topics():
+    _require_kalevent_staff()
     """Display pitched blog topics management page."""
 
     # Get filter parameters
@@ -82,6 +97,7 @@ def pitched_topics():
 @bp.route("/pitched-topics/submit", methods=["POST"])
 @login_required_settings
 def submit_pitched_topic():
+    _require_kalevent_staff()
     """Handle pitched topic submission."""
 
     title = request.form.get("title", "").strip()
@@ -120,6 +136,7 @@ def submit_pitched_topic():
 @bp.route("/pitched-topics/<topic_id>/approve", methods=["POST"])
 @login_required_settings
 def approve_pitched_topic(topic_id):
+    _require_kalevent_staff()
 
     topic = db.session.query(PitchedBlogTopic).filter(
         PitchedBlogTopic.id == topic_id
@@ -148,6 +165,7 @@ def approve_pitched_topic(topic_id):
 @bp.route("/pitched-topics/<topic_id>/reject", methods=["POST"])
 @login_required_settings
 def reject_pitched_topic(topic_id):
+    _require_kalevent_staff()
 
     topic = db.session.query(PitchedBlogTopic).filter(
         PitchedBlogTopic.id == topic_id
@@ -175,6 +193,7 @@ def reject_pitched_topic(topic_id):
 @bp.route("/pitched-topics/<topic_id>/generate", methods=["POST"])
 @login_required_settings
 def generate_from_pitched_topic(topic_id):
+    _require_kalevent_staff()
     """Queue content generation from pitched topic."""
 
     topic = db.session.query(PitchedBlogTopic).filter(
