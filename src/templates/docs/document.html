@@ -67,6 +67,14 @@
           <input class="docs-search-input" type="text" name="q" placeholder="Search InboxIQ docs" value="{{ request.args.get('q', '') }}">
         </form>
         <div class="docs-header-right">
+          <button class="docs-theme-toggle" id="themeToggle" title="Toggle light/dark mode" aria-label="Toggle theme">
+            <svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0112.003 21c-5.385 0-9.75-4.365-9.75-9.75 0-4.05 2.478-7.524 6.034-9.01.4-.167.82.138.77.567a8.25 8.25 0 0011.137 9.628c.41-.14.74.273.558.667z"/>
+            </svg>
+            <svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="display:none">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1.5M12 19.5V21M4.22 4.22l1.06 1.06M18.72 18.72l1.06 1.06M3 12h1.5M19.5 12H21M4.22 19.78l1.06-1.06M18.72 5.28l1.06-1.06M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/>
+            </svg>
+          </button>
           <a class="docs-header-link" href="{{ url_for('root') }}">App Home</a>
           <a class="docs-header-link docs-sign-in" href="{{ url_for('login_page') }}">Log in</a>
         </div>
@@ -99,5 +107,36 @@
     </div>
   </div>
   <script src="{{ url_for('static', filename='docs/js/toc.js') }}"></script>
+  <script>
+    (function () {
+      var saved = localStorage.getItem('docs-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var btn = document.getElementById('themeToggle');
+      var moon = document.getElementById('themeIconMoon');
+      var sun = document.getElementById('themeIconSun');
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('docs-theme', theme);
+        if (theme === 'light') {
+          moon.style.display = 'none';
+          sun.style.display = 'block';
+        } else {
+          sun.style.display = 'none';
+          moon.style.display = 'block';
+        }
+      }
+
+      applyTheme(localStorage.getItem('docs-theme') || 'dark');
+
+      btn.addEventListener('click', function () {
+        var current = document.documentElement.getAttribute('data-theme');
+        applyTheme(current === 'light' ? 'dark' : 'light');
+      });
+    });
+  </script>
 </body>
 </html>

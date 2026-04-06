@@ -248,6 +248,161 @@ There is no partial rotation — revoking an app invalidates the `client_id` and
 
 ---
 
+## Prior Authorisation — Approval Policies API
+
+Approval policies control which emails are **auto-sent directly** — bypassing the Gmail/Outlook draft queue — when the AI reply confidence meets a threshold. Simple single-condition policies can be created in **Settings → AI Features**. Policies with multiple conditions (e.g. email type AND sentiment guard) must be created via this API.
+
+### Authentication
+
+This API uses **JWT Bearer auth**, not HTTP Basic Auth. Obtain a token by logging in first:
+
+```bash
+curl -X POST https://kalevent.com/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "password": "yourpassword"}'
+```
+
+Use the returned `access_token` on every request:
+
+```bash
+-H "Authorization: Bearer <access_token>"
+```
+
+---
+
+### Condition fields
+
+Conditions are matched against the AI triage output for each incoming email.
+
+| Field | Allowed values |
+|---|---|
+| `email_type` | `support_request`, `sales_inquiry`, `billing`, `bug_report`, `feature_request`, `marketing`, `newsletter`, `spam`, `transactional`, `auto_reply`, `notification`, `internal`, `other` |
+| `category` | Any category produced by your triage config (e.g. `billing`, `support`) |
+| `sentiment` | `positive`, `neutral`, `negative` |
+
+Allowed operators: `equals`, `not_equals`, `contains`, `not_contains`, `in_list`
+
+For `in_list`, pass a comma-separated string as the value — `"support_request,sales_inquiry"`.
+
+---
+
+### GET /api/v1/approval-policies
+
+List all policies for your account.
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+  https://kalevent.com/api/v1/approval-policies
+```
+
+---
+
+### POST /api/v1/approval-policies
+
+Create a new policy.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | yes | Label shown in the Settings UI |
+| `description` | string | no | Optional explanation |
+| `conditions` | array | yes | At least one condition object |
+| `condition_logic` | string | no | `AND` (default) or `OR` |
+| `min_confidence` | float | no | Threshold 0–1. Default: `0.85` |
+| `enabled` | boolean | no | Default: `true` |
+
+Each condition:
+
+```json
+{"field": "email_type", "operator": "equals", "value": "support_request"}
+```
+
+**Example — auto-send support requests, never when negative sentiment:**
+
+```bash
+curl -X POST https://kalevent.com/api/v1/approval-policies \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Auto-send support requests",
+    "conditions": [
+      {"field": "email_type", "operator": "equals", "value": "support_request"},
+      {"field": "sentiment", "operator": "not_equals", "value": "negative"}
+    ],
+    "condition_logic": "AND",
+    "min_confidence": 0.88,
+    "enabled": true
+  }'
+```
+
+**Example — auto-send multiple email types:**
+
+```bash
+curl -X POST https://kalevent.com/api/v1/approval-policies \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Auto-send routine support",
+    "conditions": [
+      {"field": "email_type", "operator": "in_list", "value": "support_request,sales_inquiry"}
+    ],
+    "min_confidence": 0.85,
+    "enabled": true
+  }'
+```
+
+Returns `201 Created` with the full policy object including its `id`.
+
+---
+
+### GET /api/v1/approval-policies/\<id\>
+
+Fetch a single policy by ID.
+
+---
+
+### PATCH /api/v1/approval-policies/\<id\>
+
+Update any fields. Only fields you send are changed.
+
+**Disable a policy:**
+
+```bash
+curl -X PATCH https://kalevent.com/api/v1/approval-policies/<id> \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": false}'
+```
+
+**Raise the confidence threshold:**
+
+```bash
+curl -X PATCH https://kalevent.com/api/v1/approval-policies/<id> \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"min_confidence": 0.92}'
+```
+
+---
+
+### DELETE /api/v1/approval-policies/\<id\>
+
+Permanently delete a policy.
+
+---
+
+### Approval policy errors
+
+| Status | Error |
+|---|---|
+| `400` | `name is required` |
+| `400` | `condition field must be one of: category, email_type, sentiment` |
+| `400` | `condition operator must be one of: contains, equals, in_list, not_contains, not_equals` |
+| `400` | `min_confidence must be a float between 0 and 1` |
+| `400` | `at least one condition is required` |
+| `404` | Policy not found or belongs to a different account |
+
+---
+
 ## Related guides
 
 - [Channel Intake Guide](/docs/channel_intake_guide)
