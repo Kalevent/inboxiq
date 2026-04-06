@@ -111,7 +111,7 @@ def settings_page(tab):
   if tab == "ai_provider" and account_id:
     llm_config = AccountLLMConfig.query.filter_by(account_id=account_id).first()
 
-  # Get draft reply feature status for features tab
+  # Get draft reply feature status and approval policies for features tab
   draft_reply_enabled = True
   if tab == "features" and account_id:
     from src.models import AccountFeatureFlags
