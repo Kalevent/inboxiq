@@ -5,8 +5,7 @@
   "prConcurrentLimit": 5,
 
   "pip-compile": {
-    "fileMatch": ["src/requirements-inboxiq\\.txt$"],
-    "lockFiles": ["src/requirements-inboxiq.lock.txt"]
+    "fileMatch": ["(^|/)requirements-inboxiq\\.txt$"]
   },
 
   "packageRules": [
