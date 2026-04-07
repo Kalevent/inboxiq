@@ -47,20 +47,16 @@ SKIP_PATTERNS = (
 # Seed URLs — the crawler starts from these.
 SEED_PATHS = [
     "/",
-    "/features",
-    "/pricing",
     "/privacy",
     "/terms",
     "/contact",
-    "/security",
     "/login",
-    "/signup",
     "/dashboard",
     "/settings",
     "/upgrade",
     "/blog",
-    "/kb",
-    "/funnel/dashboard",
+    "/support-automation",
+    "/solutions/email/triage-automation",
 ]
 
 # Status codes that count as broken.

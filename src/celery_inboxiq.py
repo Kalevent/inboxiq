@@ -948,9 +948,7 @@ def nightly_link_check_task(self) -> dict:
     Crawl all public pages nightly, report any broken links to ADMIN_EMAILS.
     Skips destructive URLs; never reads or stores response bodies.
     """
-    base_url = os.getenv("INBOXIQ_API_BASE_URL") or os.getenv("APP_BASE_URL") or "https://kalevent.com"
-    # Strip /api path suffix if present — we want the site root.
-    base_url = base_url.rstrip("/").removesuffix("/api/v1").removesuffix("/api")
+    base_url = os.getenv("APP_BASE_URL") or "https://kalevent.com"
 
     from src.monitoring.link_checker import run_link_check, send_link_check_report
     report = run_link_check(base_url)
