@@ -551,6 +551,14 @@
   font-weight: 600;
 }
 
+.blog-primary-cta,
+.blog-primary-cta:hover,
+.blog-primary-cta:focus,
+.blog-primary-cta:active,
+.blog-primary-cta:visited {
+  color: #ffffff !important;
+}
+
 .blog-body ul,
 .blog-body ol {
   margin: 0 0 0.6rem 1.1rem;

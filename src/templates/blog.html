@@ -51,7 +51,7 @@
 
     <div class="space-y-4">
       {% for post in posts %}
-        <article class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-slate-800 rounded-xl px-4 py-3 bg-slate-950/50">
+        <article class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl px-4 py-3 border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950/50 dark:shadow-none">
           <div class="space-y-1">
             <p class="blog-meta text-indigo-200/80 uppercase tracking-wide">
               {% if post.funnel_stage %}{{ post.funnel_stage|upper }}{% else %}Playbook{% endif %}
@@ -74,7 +74,7 @@
     </div>
 
     <div class="mt-6 flex flex-wrap items-center gap-3 text-slate-300">
-      <a href="{{ url_for('upgrade') }}" class="blog-button-text inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 text-white">
+      <a href="{{ url_for('upgrade') }}" class="blog-primary-cta px-4 py-2 rounded-xl bg-indigo-600 font-semibold hover:bg-indigo-500 shadow-sm">
         Try InboxIQ
       </a>
       <span class="blog-meta text-slate-500">Want coverage on a topic? Email <a href="mailto:support@kalevent.com" class="text-indigo-200 hover:text-white">support@kalevent.com</a>.</span>
