@@ -244,9 +244,7 @@ jobs:
           for deploy in inboxiq inboxiq-celery-inbox-worker inboxiq-celery-inbox-beat inboxiq-celery-billing-worker inboxiq-celery-billing-beat inboxiq-celery-content-worker; do
             echo "Waiting for rollout: ${deploy}"
             if ! kubectl rollout status "deploy/${deploy}" -n "${KUBE_NAMESPACE}" --timeout=600s; then
-              echo "${deploy} rollout failed; rolling back..."
-              kubectl rollout undo "deploy/${deploy}" -n "${KUBE_NAMESPACE}" || true
-              kubectl rollout status "deploy/${deploy}" -n "${KUBE_NAMESPACE}" --timeout=600s || true
+              echo "${deploy} rollout failed — leaving cluster on last stable image. Fix forward and redeploy."
               exit 1
             fi
           done
@@ -257,18 +255,13 @@ jobs:
 
           # Check if inboxiq deployment is ready
           if ! kubectl rollout status deployment/inboxiq -n "${KUBE_NAMESPACE}" --timeout=180s; then
-            echo "❌ inboxiq deployment failed health checks. Rolling back..."
-            kubectl rollout undo deployment/inboxiq -n "${KUBE_NAMESPACE}"
-            kubectl rollout status deployment/inboxiq -n "${KUBE_NAMESPACE}" --timeout=180s
-            echo "Deployment rolled back to previous version."
+            echo "❌ inboxiq deployment failed health checks — leaving cluster on last stable image."
             exit 1
           fi
 
           for worker in inboxiq-celery-inbox-worker inboxiq-celery-billing-worker inboxiq-celery-content-worker; do
             if ! kubectl rollout status "deployment/${worker}" -n "${KUBE_NAMESPACE}" --timeout=180s; then
-              echo "❌ ${worker} deployment failed. Rolling back..."
-              kubectl rollout undo "deployment/${worker}" -n "${KUBE_NAMESPACE}"
-              kubectl rollout status "deployment/${worker}" -n "${KUBE_NAMESPACE}" --timeout=180s
+              echo "❌ ${worker} deployment failed — leaving cluster on last stable image."
               exit 1
             fi
           done
