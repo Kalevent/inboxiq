@@ -6,6 +6,14 @@ module "iam" {
   source = "../../modules/iam"
 }
 
+module "observability_storage" {
+  source = "../../modules/observability-storage"
+
+  vpc_id             = module.networking.vpc_id
+  vpc_cidr           = module.networking.vpc_cidr
+  private_subnet_ids = module.networking.private_subnet_ids
+}
+
 module "eks" {
   source = "../../modules/eks"
 
@@ -14,9 +22,9 @@ module "eks" {
   public_subnet_ids  = module.networking.public_subnet_ids
   private_subnet_ids = module.networking.private_subnet_ids
 
-  node_desired = 3
-  node_min     = 2
-  node_max     = 4
+  node_desired = 4
+  node_min     = 4
+  node_max     = 6
 }
 
 module "rds" {

@@ -4,13 +4,22 @@
 grafana:
   enabled: true
   adminPassword: "InboxIQ-Grafana-2026!"
+  priorityClassName: inboxiq-low
+  initChownData:
+    enabled: false
+  podSecurityContext:
+    fsGroup: 472
+    runAsGroup: 472
+    runAsUser: 472
   service:
     type: ClusterIP
     port: 80
-  # Persist dashboards and config
+  # Keep Grafana off single-attach EBS so node loss does not strand the UI.
   persistence:
     enabled: true
-    storageClassName: ebs-gp2-csi
+    storageClassName: efs-observability
+    accessModes:
+      - ReadWriteMany
     size: 5Gi
   resources:
     requests:
@@ -40,7 +49,12 @@ grafana:
 
 prometheus:
   prometheusSpec:
-    retention: 15d
+    priorityClassName: inboxiq-low
+    retention: 7d
+    retentionSize: 8GB
+    walCompression: true
+    scrapeInterval: 30s
+    evaluationInterval: 30s
     # Watch ServiceMonitors in all namespaces (celery-exporter + inboxiq-flask are in kaley namespace)
     serviceMonitorNamespaceSelector: {}
     serviceMonitorSelector:
@@ -56,7 +70,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: ebs-gp2-csi
+          storageClassName: ebs-gp3-csi
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
