@@ -97,6 +97,10 @@ alertmanager:
       group_interval: 5m
       repeat_interval: 4h
       receiver: 'email-security'
+      routes:
+        - matchers:
+            - alertname =~ "InfoInhibitor|Watchdog"
+          receiver: 'null'
     receivers:
       - name: 'null'  # silences Watchdog heartbeat alert injected by kube-prometheus-stack
       - name: 'email-security'
@@ -107,6 +111,96 @@ alertmanager:
             require_tls: true
             auth_username: 'AKIARMHMNL5CXEGWE27P'
             auth_password_file: '/etc/alertmanager/secrets/alertmanager-smtp-creds/smtp_auth_password'
+            headers:
+              Subject: '{{ template "inboxiq.email.subject" . }}'
+            html: '{{ template "inboxiq.email.html" . }}'
+  templateFiles:
+    inboxiq.tmpl: |
+      {{ define "inboxiq.email.subject" -}}
+      {{ if eq .Status "firing" -}}[ALERT] {{ else -}}[RESOLVED] {{ end -}}
+      {{ with index .Alerts 0 }}{{ .Annotations.summary }}{{ end }}
+      {{- end }}
+
+      {{ define "inboxiq.email.html" -}}
+      <!DOCTYPE html>
+      <html>
+      <body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1a1a1a;">
+
+      {{ if eq .Status "firing" -}}
+      <div style="border-left:4px solid #c0392b;background:#fdf2f2;padding:16px;margin-bottom:24px;">
+        <p style="margin:0;font-size:16px;font-weight:bold;color:#c0392b;">Infrastructure Alert — Action May Be Required</p>
+      </div>
+      {{ else -}}
+      <div style="border-left:4px solid #27ae60;background:#f2fdf5;padding:16px;margin-bottom:24px;">
+        <p style="margin:0;font-size:16px;font-weight:bold;color:#27ae60;">Alert Resolved</p>
+      </div>
+      {{ end -}}
+
+      {{ range .Alerts -}}
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px;">
+        <tr style="background:#f5f5f5;">
+          <td style="padding:10px;font-weight:bold;width:130px;">What happened</td>
+          <td style="padding:10px;">{{ .Annotations.summary }}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;font-weight:bold;">Details</td>
+          <td style="padding:10px;">{{ .Annotations.description }}</td>
+        </tr>
+        {{ if .Labels.pod -}}
+        <tr style="background:#f5f5f5;">
+          <td style="padding:10px;font-weight:bold;">Pod</td>
+          <td style="padding:10px;font-family:monospace;">{{ .Labels.pod }}</td>
+        </tr>
+        {{ end -}}
+        {{ if .Labels.node -}}
+        <tr style="background:#f5f5f5;">
+          <td style="padding:10px;font-weight:bold;">Node</td>
+          <td style="padding:10px;font-family:monospace;">{{ .Labels.node }}</td>
+        </tr>
+        {{ end -}}
+        <tr>
+          <td style="padding:10px;font-weight:bold;">Namespace</td>
+          <td style="padding:10px;">{{ .Labels.namespace }}</td>
+        </tr>
+        <tr style="background:#f5f5f5;">
+          <td style="padding:10px;font-weight:bold;">Severity</td>
+          <td style="padding:10px;">{{ toUpper .Labels.severity }}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;font-weight:bold;">Time</td>
+          <td style="padding:10px;">{{ .StartsAt.Format "02 Jan 2006 15:04 UTC" }}</td>
+        </tr>
+        {{ if match "OOMKill" .Labels.alertname -}}
+        <tr style="background:#fffbf0;">
+          <td style="padding:10px;font-weight:bold;">What to do</td>
+          <td style="padding:10px;">The pod will restart automatically. If this repeats, the memory limit needs to be raised in the pod deployment YAML.</td>
+        </tr>
+        {{ else if match "Restarting" .Labels.alertname -}}
+        <tr style="background:#fffbf0;">
+          <td style="padding:10px;font-weight:bold;">What to do</td>
+          <td style="padding:10px;">Check pod logs: kubectl logs &lt;pod-name&gt; -n {{ .Labels.namespace }} --previous</td>
+        </tr>
+        {{ else if match "Memory" .Labels.alertname -}}
+        <tr style="background:#fffbf0;">
+          <td style="padding:10px;font-weight:bold;">What to do</td>
+          <td style="padding:10px;">Memory is approaching its limit. Monitor closely — an OOMKill may follow if usage does not drop.</td>
+        </tr>
+        {{ else if match "Node" .Labels.alertname -}}
+        <tr style="background:#fffbf0;">
+          <td style="padding:10px;font-weight:bold;">What to do</td>
+          <td style="padding:10px;">Node memory is critically high. The cluster autoscaler may add a node. Check for a pod with a memory leak.</td>
+        </tr>
+        {{ end -}}
+      </table>
+      {{ end -}}
+
+      <p style="font-size:12px;color:#888;margin-top:32px;">
+        Sent by InboxIQ infrastructure monitoring &mdash;
+        <a href="{{ .ExternalURL }}" style="color:#888;">View in Alertmanager</a>
+      </p>
+      </body>
+      </html>
+      {{- end }}
 
 # Critical alerts — OOMKill, pod restarts, memory pressure
 additionalPrometheusRulesMap:
