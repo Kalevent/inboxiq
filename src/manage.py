@@ -376,5 +376,64 @@ def cli_backfill_meta_descriptions(dry_run: bool):
     click.echo(f"\nDone. updated={updated}  skipped={skipped}  dry_run={dry_run}")
 
 
+@app.cli.command("fix-cross-account-connections")
+@click.option("--confirm", is_flag=True, default=False, help="Actually delete the bad rows (omit to dry-run).")
+def cli_fix_cross_account_connections(confirm: bool):
+    """
+    Find and remove InboxConnection rows whose email_address matches a User login
+    email that belongs to a DIFFERENT account than the connection's account_id.
+
+    These rows are data corruption: a personal mailbox filed under the wrong account.
+
+    Run without --confirm first to review what would be deleted, then re-run with
+    --confirm to perform the deletion.
+    """
+    from src.models.core import InboxConnection, User
+
+    bad_rows = (
+        db.session.query(InboxConnection, User)
+        .join(User, db.func.lower(User.email) == db.func.lower(InboxConnection.email_address))
+        .filter(
+            InboxConnection.account_id.isnot(None),
+            InboxConnection.account_id != User.account_id,
+        )
+        .all()
+    )
+
+    if not bad_rows:
+        click.echo("No cross-account connections found. Database is clean.")
+        return
+
+    click.echo(f"Found {len(bad_rows)} bad connection(s):\n")
+    for conn, real_owner in bad_rows:
+        click.echo(
+            f"  id={conn.id}"
+            f"  email={conn.email_address}"
+            f"  provider={conn.provider}"
+            f"  filed_under_account={conn.account_id}"
+            f"  real_owner_account={real_owner.account_id}"
+            f"  status={conn.status}"
+            f"  created={conn.created_at.date() if conn.created_at else 'unknown'}"
+        )
+
+    if not confirm:
+        click.echo("\nDry run — no rows deleted. Re-run with --confirm to delete.")
+        return
+
+    ids_to_delete = [conn.id for conn, _ in bad_rows]
+    deleted = (
+        InboxConnection.query
+        .filter(InboxConnection.id.in_(ids_to_delete))
+        .delete(synchronize_session=False)
+    )
+    try:
+        db.session.commit()
+        click.echo(f"\nDeleted {deleted} bad connection(s).")
+    except Exception as exc:
+        db.session.rollback()
+        click.echo(f"ERROR: rollback — {exc}")
+        raise
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
