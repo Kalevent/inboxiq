@@ -81,8 +81,8 @@ def _writeback_to_provider(
         is_automated=is_automated,
         # Pass refresh creds so writeback can recover from a stale access token.
         refresh_token=conn.refresh_token,
-        client_id=current_app.config.get("GOOGLE_CLIENT_ID"),
-        client_secret=current_app.config.get("GOOGLE_CLIENT_SECRET"),
+        client_id=current_app.config.get("GOOGLE_CLIENT_ID") if provider == "gmail" else current_app.config.get("MICROSOFT_CLIENT_ID"),
+        client_secret=current_app.config.get("GOOGLE_CLIENT_SECRET") if provider == "gmail" else current_app.config.get("MICROSOFT_CLIENT_SECRET"),
         # Prior auth — needed to evaluate ApprovalPolicy conditions
         account_id=account_id,
         sentiment=sentiment,

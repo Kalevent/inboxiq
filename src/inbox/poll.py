@@ -148,19 +148,35 @@ def writeback_to_provider(
                         "writeback_to_provider failed: provider=%s error=%s", provider, exc
                     )
         elif provider == "outlook":
-            apply_label_outlook(access_token, provider_message_id, label_name)
-            label_applied = True
-            if draft_needed:
-                if auto_send:
-                    send_outlook_reply(access_token, provider_message_id, reply_text)
-                    auto_sent = True
-                    _log.info(
-                        "prior auth: reply auto-sent: message_id=%s subject=%s confidence=%s",
-                        provider_message_id, subject, reply_confidence,
-                    )
+            def _apply_outlook(token: str) -> None:
+                nonlocal label_applied, draft_created, auto_sent
+                apply_label_outlook(token, provider_message_id, label_name)
+                label_applied = True
+                if draft_needed:
+                    if auto_send:
+                        send_outlook_reply(token, provider_message_id, reply_text)
+                        auto_sent = True
+                        _log.info(
+                            "prior auth: reply auto-sent: message_id=%s subject=%s confidence=%s",
+                            provider_message_id, subject, reply_confidence,
+                        )
+                    else:
+                        create_outlook_draft_reply(token, provider_message_id, reply_text)
+                        draft_created = True
+                        _log.info("draft reply created: message_id=%s subject=%s", provider_message_id, subject)
+
+            try:
+                _apply_outlook(access_token)
+            except Exception as exc:
+                if "401" in str(exc) and refresh_token and client_id and client_secret:
+                    try:
+                        new_token = _ms_refresh_access_token(refresh_token, client_id, client_secret, None)
+                        _apply_outlook(new_token)
+                        _log.info("writeback succeeded after token refresh: provider=outlook")
+                    except Exception as retry_exc:
+                        _log.warning("writeback_to_provider failed after refresh: provider=outlook error=%s", retry_exc)
                 else:
-                    create_outlook_draft_reply(access_token, provider_message_id, reply_text)
-                    draft_created = True
+                    _log.warning("writeback_to_provider failed: provider=outlook error=%s", exc)
     except Exception as exc:
         _log.warning(
             "writeback_to_provider failed: provider=%s error=%s", provider, exc
