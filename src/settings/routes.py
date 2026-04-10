@@ -86,6 +86,24 @@ def settings_root():
   return redirect(url_for("settings.settings_page", tab="team"))
 
 
+@bp.post("/settings/profile")
+@login_required_settings
+def save_profile():
+  current_user = getattr(g, "current_user", None)
+  if not current_user:
+    return redirect(url_for("settings.settings_page", tab="profile"))
+  new_name = request.form.get("display_name", "").strip()
+  if new_name:
+    current_user.name = new_name
+    try:
+      db.session.commit()
+      flash("Profile saved.", "success")
+    except Exception:
+      db.session.rollback()
+      flash("Failed to save profile. Please try again.", "error")
+  return redirect(url_for("settings.settings_page", tab="profile"))
+
+
 @bp.get("/settings/<tab>")
 @login_required_settings
 def settings_page(tab):
