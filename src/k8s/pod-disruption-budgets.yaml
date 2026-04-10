@@ -1,0 +1,14 @@
+---
+# Ensures at least 1 web pod stays live during voluntary disruptions
+# (node drains, rolling node updates, kubectl cordon).
+# Workers use replicas=1 so PDB is not applicable — they self-recover via Deployment.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: inboxiq-web-pdb
+  namespace: kaley
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: inboxiq

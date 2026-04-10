@@ -4,12 +4,12 @@ metadata:
   name: inboxiq
   namespace: kaley
 spec:
-  replicas: 1  # Can increase after memory optimization is confirmed stable
+  replicas: 2  # Minimum 2 so one pod stays live during rolling updates; HPA scales to 3 under load
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1  # Terminate one old pod before creating replacement (no surge needed — avoids OOM on constrained nodes)
-      maxSurge: 0
+      maxUnavailable: 0  # Never kill old pod until new one is ready
+      maxSurge: 1        # Bring up new pod first, then terminate old
   selector:
     matchLabels:
       app: inboxiq

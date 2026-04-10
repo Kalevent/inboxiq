@@ -46,10 +46,22 @@ spec:
                 name: inboxiq-env
             - configMapRef:
                 name: inboxiq-config
+          startupProbe:
+            exec:
+              command: ["python", "-c", "import os; os.kill(1, 0)"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command: ["python", "-c", "import os; os.kill(1, 0)"]
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 2
           livenessProbe:
             exec:
               command: ["python", "-c", "import os; os.kill(1, 0)"]
-            initialDelaySeconds: 15
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
