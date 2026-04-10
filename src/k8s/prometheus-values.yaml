@@ -85,9 +85,15 @@ alertmanager:
       limits:
         memory: 128Mi
         cpu: 100m
-    # Mount the SMTP credentials secret so auth_password_file can read it
+    # Mount secret as files (for auth_password_file) and as env var (for auth_username)
     secrets:
       - alertmanager-smtp-creds
+    env:
+      - name: SMTP_AUTH_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: alertmanager-smtp-creds
+            key: smtp_auth_username
   config:
     global:
       resolve_timeout: 5m
@@ -109,7 +115,7 @@ alertmanager:
             from: 'noreply@kalevent.com'
             smarthost: 'email-smtp.us-west-2.amazonaws.com:587'
             require_tls: true
-            auth_username: 'AKIARMHMNL5CXEGWE27P'
+            auth_username: '$SMTP_AUTH_USERNAME'
             auth_password_file: '/etc/alertmanager/secrets/alertmanager-smtp-creds/smtp_auth_password'
             headers:
               Subject: '{{ template "inboxiq.email.subject" . }}'
