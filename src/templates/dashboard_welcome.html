@@ -9,122 +9,72 @@
   <style>
     @keyframes fadeIn {
       from { opacity: 0; }
-      to { opacity: 1; }
+      to   { opacity: 1; }
     }
     @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    .animate-fadeIn {
-      animation: fadeIn 0.3s ease-out;
-    }
-    .animate-slideUp {
-      animation: slideUp 0.4s ease-out;
-    }
+    .animate-fadeIn  { animation: fadeIn  0.3s ease-out; }
+    .animate-slideUp { animation: slideUp 0.4s ease-out; }
 
-    /* Ensure modal content is above all decorative elements */
-    #formsConnectModal > * {
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Hide decorative background elements when modal is open */
-    body:has(#formsConnectModal:not(.hidden)) main::before,
-    body:has(#formsConnectModal:not(.hidden)) main::after,
-    body:has(#formsConnectModal:not(.hidden)) header::before,
-    body:has(#formsConnectModal:not(.hidden)) header::after {
-      display: none !important;
-    }
-
-    /* Hide any large decorative elements when modal is open */
-    body:has(#formsConnectModal:not(.hidden)) [class*="decorative"],
-    body:has(#formsConnectModal:not(.hidden)) [class*="hero-"],
-    body:has(#formsConnectModal:not(.hidden)) svg[class*="absolute"] {
-      opacity: 0 !important;
-      visibility: hidden !important;
-    }
-
-    /* Ensure no modal elements are oversized */
-    #formsConnectModal svg {
-      max-width: 2rem !important;
-      max-height: 2rem !important;
-    }
-
-    /* Hide decorative blurred gradients inside modal */
-    #formsConnectModal .blur-3xl {
-      display: none !important;
-    }
-
-    /* Remove any pseudo-element decorations in modal */
+    #formsConnectModal > * { position: relative; z-index: 1; }
+    #formsConnectModal svg { max-width: 2rem !important; max-height: 2rem !important; }
+    #formsConnectModal .blur-3xl { display: none !important; }
     #formsConnectModal *::before,
-    #formsConnectModal *::after {
-      content: none !important;
-      display: none !important;
-    }
-
-    /* Prevent any background images in modal sections */
+    #formsConnectModal *::after { content: none !important; display: none !important; }
     #formsConnectModal .space-y-4,
     #formsConnectModal .space-y-6,
-    #formsConnectModal .rounded-xl {
-      background-image: none !important;
-    }
+    #formsConnectModal .rounded-xl { background-image: none !important; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-50 antialiased">
+<body class="pub-page bg-slate-50 text-slate-900 antialiased">
   <div class="min-h-screen flex flex-col">
 
     <!-- Header -->
-    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
+    <header class="border-b border-slate-200 bg-white/90 backdrop-blur">
       <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">
-            KI
-          </div>
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
           <div>
-            <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
-            <div class="text-xs text-slate-400">InboxIQ – Your Inbox, Smarter</div>
+            <div class="font-semibold text-lg tracking-tight text-slate-900">Kalevent</div>
+            <div class="text-xs text-slate-500">InboxIQ – Your Inbox, Smarter</div>
           </div>
         </div>
 
-        <div class="flex items-center gap-3 text-sm text-slate-200">
-          <a href="/onboarding" class="px-3 py-1.5 rounded-full border border-slate-700 hover:bg-slate-800">← Back to setup</a>
-          <a href="/upgrade" class="inline-flex items-center gap-1 rounded-full btn-primary text-white px-3 py-1.5 font-semibold shadow-lg shadow-indigo-500/30">
+        <div class="flex items-center gap-3 text-sm">
+          <a href="/onboarding" class="px-3 py-1.5 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-100 transition">← Back to setup</a>
+          <a href="/upgrade" class="inline-flex items-center gap-1 rounded-full btn-primary text-white px-3 py-1.5 font-semibold shadow shadow-indigo-200">
             Upgrade
           </a>
 
           <div class="relative z-[9999]">
-            <button type="button" id="userMenuBtn" class="flex items-center gap-2 rounded-full bg-slate-900/70 border border-slate-700 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
-              <div class="dashboard-avatar shrink-0 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500/80 to-fuchsia-500/80 border border-slate-700">
+            <button type="button" id="userMenuBtn" class="flex items-center gap-2 rounded-full bg-white border border-slate-200 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-400 cursor-pointer shadow-sm">
+              <div class="dashboard-avatar shrink-0 rounded-full overflow-hidden bg-gradient-to-br from-indigo-400/80 to-fuchsia-400/80 border border-slate-200">
                 <img src="{{ avatar_url }}" alt="User avatar" class="h-full w-full object-cover">
               </div>
-              <span class="inline-block max-w-[200px] truncate text-sm text-slate-100">
+              <span class="inline-block max-w-[200px] truncate text-sm text-slate-700">
                 {{
                   current_user.account.name
                   if current_user and current_user.account and current_user.account.name
                   else current_user.email if current_user else ""
                 }}
               </span>
-              <span class="text-slate-200 text-xs">&#9662;</span>
+              <span class="text-slate-400 text-xs">&#9662;</span>
             </button>
 
             <div id="userMenu" class="dashboard-user-menu hidden">
               <div class="dashboard-user-menu__header">
                 <div class="dashboard-user-menu__eyebrow">Signed in</div>
-              <div class="dashboard-user-menu__title truncate">{{ current_user.email if current_user else "" }}</div>
-            </div>
-            <div class="dashboard-user-menu__list">
-              <a href="{{ url_for('settings.settings_page', tab='team') }}" class="dashboard-user-menu__item">Settings</a>
-              {% if has_admin_access %}
-              <a href="/admin" class="dashboard-user-menu__item">Admin</a>
-              <a href="/dashboard" class="dashboard-user-menu__item">Dashboard</a>
-              {% endif %}
-              <a href="/kb" class="dashboard-user-menu__item">Help</a>
+                <div class="dashboard-user-menu__title truncate">{{ current_user.email if current_user else "" }}</div>
+              </div>
+              <div class="dashboard-user-menu__list">
+                <a href="{{ url_for('settings.settings_page', tab='team') }}" class="dashboard-user-menu__item">Settings</a>
+                {% if has_admin_access %}
+                <a href="/admin" class="dashboard-user-menu__item">Admin</a>
+                <a href="/dashboard" class="dashboard-user-menu__item">Dashboard</a>
+                {% endif %}
+                <a href="/kb" class="dashboard-user-menu__item">Help</a>
                 <form id="logoutForm" action="/auth/logout" method="post">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                   <button type="submit" class="dashboard-user-menu__item dashboard-user-menu__item--danger">Log out</button>
@@ -136,125 +86,121 @@
       </div>
     </header>
 
-    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+    <main class="flex-1 bg-gradient-to-br from-slate-100 via-white to-indigo-50">
       <div class="max-w-6xl mx-auto px-4 py-10 lg:py-14">
 
-        <div class="rounded-3xl border border-slate-800 bg-slate-950/85 p-6 lg:p-7 shadow-lg shadow-slate-950/30 relative overflow-hidden">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 lg:p-7 shadow-sm relative overflow-hidden">
+
           {% if not has_kb %}
-          <div class="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/8 px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div class="space-y-0.5">
-              <p class="text-sm font-semibold text-slate-100">Link your knowledge base to improve draft replies</p>
-              <p class="text-xs text-slate-400">
-                Connect your help centre, Notion docs, or any URL so InboxIQ can reference your content when drafting replies. This message disappears once you add a source.
+              <p class="text-sm font-semibold text-slate-800">Link your knowledge base to improve draft replies</p>
+              <p class="text-xs text-slate-500">
+                Connect your help centre, Notion docs, or any URL so InboxIQ can reference your content when drafting replies.
               </p>
             </div>
-            <a
-              href="{{ url_for('settings.settings_page', tab='knowledge_base') }}"
-              class="inline-flex items-center gap-2 rounded-full border border-amber-500/50 text-amber-300 hover:bg-amber-500/10 text-sm font-medium px-4 py-2 flex-shrink-0 transition-colors"
-            >
+            <a href="{{ url_for('settings.settings_page', tab='knowledge_base') }}"
+               class="inline-flex items-center gap-2 rounded-full border border-amber-400 text-amber-700 hover:bg-amber-100 text-sm font-medium px-4 py-2 flex-shrink-0 transition-colors">
               Add a source →
             </a>
           </div>
           {% endif %}
 
           {% if not email_inbox_connections %}
-          <div class="mb-4 rounded-xl border border-indigo-500/60 bg-indigo-500/10 px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div class="mb-4 rounded-xl border border-indigo-300 bg-indigo-50 px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div class="space-y-1">
-              <p class="text-sm font-semibold text-slate-100">Your inbox is not connected yet</p>
-              <p class="text-xs text-slate-300">
+              <p class="text-sm font-semibold text-slate-800">Your inbox is not connected yet</p>
+              <p class="text-xs text-slate-600">
                 Connect Gmail or Outlook to start classifying emails and generating draft replies automatically.
               </p>
             </div>
-            <a
-              href="/onboarding"
-              class="inline-flex items-center gap-2 rounded-full btn-primary text-white text-sm font-semibold px-4 py-2"
-            >
+            <a href="/onboarding" class="inline-flex items-center gap-2 rounded-full btn-primary text-white text-sm font-semibold px-4 py-2">
               Finish setup →
             </a>
           </div>
           {% endif %}
-          <!-- Reporting dashboard -->
+
           <div class="space-y-6">
 
-            <!-- Status: connected inboxes -->
+            <!-- Connected inboxes -->
             {% for conn in email_inbox_connections %}
-            <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 flex items-center gap-3">
-              <div class="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse"></div>
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3">
+              <div class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0 animate-pulse"></div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-slate-100">{{ conn.display_name or conn.email_address }}</p>
-                <p class="text-xs text-slate-400 mt-0.5">InboxIQ is monitoring via {{ conn.provider | capitalize }}</p>
+                <p class="text-sm font-medium text-slate-800">{{ conn.display_name or conn.email_address }}</p>
+                <p class="text-xs text-slate-500 mt-0.5">InboxIQ is monitoring via {{ conn.provider | capitalize }}</p>
               </div>
               <div class="flex items-center gap-3 flex-shrink-0">
                 <button
                   onclick="triggerPoll('{{ conn.id }}')"
-                  class="text-xs text-indigo-400 hover:text-indigo-200 font-medium border border-indigo-500/40 hover:border-indigo-400 rounded-lg px-3 py-1.5 transition-colors"
+                  class="text-xs text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-300 hover:border-indigo-400 bg-white rounded-lg px-3 py-1.5 transition-colors"
                 >
                   Check inbox
                 </button>
-                <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="text-xs text-slate-400 hover:text-slate-200">Manage →</a>
+                <a href="{{ url_for('settings.settings_page', tab='integrations') }}" class="text-xs text-slate-500 hover:text-slate-700">Manage →</a>
               </div>
             </div>
             {% endfor %}
 
             <!-- Metric cards -->
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">PROCESSED</p>
-                <p class="text-2xl font-semibold text-slate-50">{{ total_tickets or 0 }}</p>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-xs uppercase tracking-[0.2em] text-indigo-500 mb-1">PROCESSED</p>
+                <p class="text-2xl font-semibold text-slate-900">{{ total_tickets or 0 }}</p>
                 <p class="text-[11px] text-slate-400">Emails handled all time</p>
               </div>
-              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">TODAY</p>
-                <p class="text-2xl font-semibold text-slate-50">{{ tickets_today or 0 }}</p>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-xs uppercase tracking-[0.2em] text-indigo-500 mb-1">TODAY</p>
+                <p class="text-2xl font-semibold text-slate-900">{{ tickets_today or 0 }}</p>
                 <p class="text-[11px] text-slate-400">Emails processed today</p>
               </div>
-              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">AUTO-HANDLED</p>
-                <p class="text-2xl font-semibold text-slate-50">{{ triage_eliminated_pct or 0 }}%</p>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-xs uppercase tracking-[0.2em] text-indigo-500 mb-1">AUTO-HANDLED</p>
+                <p class="text-2xl font-semibold text-slate-900">{{ triage_eliminated_pct or 0 }}%</p>
                 <p class="text-[11px] text-slate-400">Handled without intervention</p>
               </div>
-              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">HOURS SAVED</p>
-                <p class="text-2xl font-semibold text-slate-50">{{ hours_saved_display }}</p>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-xs uppercase tracking-[0.2em] text-indigo-500 mb-1">HOURS SAVED</p>
+                <p class="text-2xl font-semibold text-slate-900">{{ hours_saved_display }}</p>
                 <p class="text-[11px] text-slate-400">Estimated time reclaimed</p>
               </div>
-              <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                <p class="text-xs uppercase tracking-[0.2em] text-indigo-300 mb-1">DRAFT ACCEPTANCE</p>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-xs uppercase tracking-[0.2em] text-indigo-500 mb-1">DRAFT ACCEPTANCE</p>
                 {% if draft_acceptance_pct is not none %}
-                  <p class="text-2xl font-semibold text-slate-50">{{ draft_acceptance_pct }}%</p>
+                  <p class="text-2xl font-semibold text-slate-900">{{ draft_acceptance_pct }}%</p>
                   <p class="text-[11px] text-slate-400">Drafts accepted or edited</p>
                 {% else %}
-                  <p class="text-2xl font-semibold text-slate-500">—</p>
-                  <p class="text-[11px] text-slate-500">No drafts reviewed yet</p>
+                  <p class="text-2xl font-semibold text-slate-300">—</p>
+                  <p class="text-[11px] text-slate-400">No drafts reviewed yet</p>
                 {% endif %}
               </div>
             </div>
 
-            <!-- Top Topics section -->
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+            <!-- Top Topics -->
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div class="flex items-center justify-between mb-4">
                 <div>
-                  <p class="text-xs uppercase tracking-[0.2em] text-indigo-300">TOP TOPICS</p>
-                  <p class="text-[11px] text-slate-500 mt-0.5">What your customers contact you about most</p>
+                  <p class="text-xs uppercase tracking-[0.2em] text-indigo-500">TOP TOPICS</p>
+                  <p class="text-[11px] text-slate-400 mt-0.5">What your customers contact you about most</p>
                 </div>
               </div>
               {% if top_topics %}
                 <div class="space-y-2">
                   {% for topic in top_topics %}
-                  <div class="flex items-center gap-3 py-2 border-b border-slate-800/60 last:border-0">
+                  <div class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
                     <div class="flex-1 min-w-0">
-                      <p class="text-sm font-medium text-slate-100 truncate">{{ topic.label }}</p>
-                      <p class="text-[11px] text-slate-500">{{ topic.count }} email{{ 's' if topic.count != 1 else '' }}</p>
+                      <p class="text-sm font-medium text-slate-800 truncate">{{ topic.label }}</p>
+                      <p class="text-[11px] text-slate-400">{{ topic.count }} email{{ 's' if topic.count != 1 else '' }}</p>
                     </div>
                     {% if topic.rule_id %}
                       <a href="/integrations/automation#rule-{{ topic.rule_id }}"
-                         class="shrink-0 flex items-center gap-1 text-xs text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 rounded-lg px-3 py-1.5 hover:bg-emerald-500/20 transition-colors">
-                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                         class="shrink-0 flex items-center gap-1 text-xs text-emerald-700 border border-emerald-300 bg-emerald-50 rounded-lg px-3 py-1.5 hover:bg-emerald-100 transition-colors">
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                         Automated
                       </a>
                     {% else %}
                       <a href="/integrations/automation?prefill={{ ('When category is ' ~ topic.label ~ ', send auto-reply using KB article')|urlencode }}"
-                         class="shrink-0 text-xs text-indigo-400 border border-indigo-500/30 rounded-lg px-3 py-1.5 hover:bg-indigo-500/10 transition-colors">
+                         class="shrink-0 text-xs text-indigo-600 border border-indigo-200 bg-indigo-50 rounded-lg px-3 py-1.5 hover:bg-indigo-100 transition-colors">
                         Automate →
                       </a>
                     {% endif %}
@@ -262,16 +208,16 @@
                   {% endfor %}
                 </div>
               {% else %}
-                <p class="text-sm text-slate-500">No data yet — topics appear once emails are processed.</p>
+                <p class="text-sm text-slate-400">No data yet — topics appear once emails are processed.</p>
               {% endif %}
             </div>
 
             <!-- Inbox-first message -->
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/40 px-5 py-4">
-              <p class="text-sm text-slate-300 leading-relaxed">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+              <p class="text-sm text-slate-600 leading-relaxed">
                 Your inbox is your workspace. InboxIQ classifies emails, drafts replies, and applies labels directly inside Gmail or Outlook — there is nothing to do here.
                 {% if not email_inbox_connections %}
-                <a href="/onboarding" class="text-indigo-400 hover:text-indigo-300 font-medium">Connect your inbox to get started →</a>
+                <a href="/onboarding" class="text-indigo-600 hover:text-indigo-500 font-medium">Connect your inbox to get started →</a>
                 {% endif %}
               </p>
             </div>
@@ -280,10 +226,10 @@
         </div>
       </div>
 
-      <footer class="border-t border-slate-800 bg-slate-950/85">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-[11px] text-slate-500">
+      <footer class="border-t border-slate-200 bg-white/85">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between text-[11px] text-slate-400">
           <div>© 2025 Kalevent · InboxIQ</div>
-          <div class="text-slate-400">InboxIQ is running in the background.</div>
+          <div>InboxIQ is running in the background.</div>
         </div>
       </footer>
     </main>
@@ -341,9 +287,9 @@
   <script>
     (function() {
       const TYPE_STYLES = {
-        info:    { bar: 'bg-indigo-600/95 border-indigo-500/50',    icon: 'ℹ', btn: 'text-indigo-200 hover:text-white' },
-        success: { bar: 'bg-emerald-600/95 border-emerald-500/50',  icon: '✓', btn: 'text-emerald-200 hover:text-white' },
-        warning: { bar: 'bg-amber-600/95 border-amber-500/50',      icon: '⚠', btn: 'text-amber-200 hover:text-white' },
+        info:    { bar: 'bg-indigo-600/95 border-indigo-500/50',   icon: 'ℹ', btn: 'text-indigo-200 hover:text-white' },
+        success: { bar: 'bg-emerald-600/95 border-emerald-500/50', icon: '✓', btn: 'text-emerald-200 hover:text-white' },
+        warning: { bar: 'bg-amber-600/95 border-amber-500/50',     icon: '⚠', btn: 'text-amber-200 hover:text-white' },
       };
 
       async function loadBanners() {
@@ -352,7 +298,6 @@
           if (!res.ok) return;
           const { messages } = await res.json();
           if (!messages || !messages.length) return;
-
           const container = document.getElementById('inAppBanners');
           messages.forEach(msg => {
             const s = TYPE_STYLES[msg.type] || TYPE_STYLES.info;
@@ -385,15 +330,13 @@
   </script>
   <script>
     async function triggerPoll(connectionId) {
-      const btn = document.getElementById('poll-btn');
-      const dot = document.getElementById('poll-status-dot');
-      const txt = document.getElementById('poll-status-text');
-      if (!btn) return;
+      const btn = event.currentTarget;
+      const statusRow = btn.closest('.rounded-xl');
+      const dot = statusRow ? statusRow.querySelector('.rounded-full.animate-pulse') : null;
 
       btn.disabled = true;
       btn.textContent = 'Checking…';
-      dot.classList.remove('bg-emerald-400');
-      dot.classList.add('bg-indigo-400');
+      if (dot) { dot.classList.remove('bg-emerald-500'); dot.classList.add('bg-indigo-400'); }
 
       try {
         const res = await fetch(`/api/v1/inboxiq/poll/${connectionId}`, {
@@ -401,20 +344,14 @@
         });
         const data = await res.json().catch(() => ({}));
         const created = data.created ?? 0;
-        const dupes = data.duplicates ?? 0;
-        txt.textContent = created > 0
-          ? `${created} new email${created !== 1 ? 's' : ''} processed · ${dupes} already seen`
-          : 'Inbox is up to date';
-        dot.classList.remove('bg-indigo-400');
-        dot.classList.add('bg-emerald-400');
-        btn.textContent = 'Check inbox';
-        // Reload metrics after a short delay so counts update
+        btn.textContent = created > 0
+          ? `${created} new email${created !== 1 ? 's' : ''} found`
+          : 'Up to date';
+        if (dot) { dot.classList.remove('bg-indigo-400'); dot.classList.add('bg-emerald-500'); }
         setTimeout(() => location.reload(), 1800);
       } catch (e) {
-        txt.textContent = 'Poll failed — check connection';
-        dot.classList.remove('bg-indigo-400');
-        dot.classList.add('bg-red-400');
-        btn.textContent = 'Check inbox';
+        btn.textContent = 'Poll failed';
+        if (dot) { dot.classList.remove('bg-indigo-400'); dot.classList.add('bg-red-400'); }
       } finally {
         btn.disabled = false;
       }
