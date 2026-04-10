@@ -395,7 +395,7 @@ def make_celery(app) -> Celery:
 
 app = create_app()
 celery = make_celery(app)
-celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach"])
+celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox"])
 
 # Initialize OpenTelemetry for Celery workers
 from src.monitoring.observability import init_otel, get_tracer

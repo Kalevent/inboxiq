@@ -15,7 +15,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-_DEMO_FROM_EMAIL = os.getenv("DEMO_SENDER_EMAIL", "demo-customer@kalevent.com")
+# kalevent.com domain is SES-verified — any @kalevent.com address can send.
+# These look like real customer addresses so the triage pipeline treats them
+# as human-written and generates draft replies.
+_DEMO_SUPPORT_FROM = "alex.chen@kalevent.com"
+_DEMO_SCHEDULING_FROM = "sam.rivera@kalevent.com"
 
 # ── Email 1 — Support query ───────────────────────────────────────────────────
 
@@ -51,7 +55,7 @@ Sam Rivera
 Head of Operations, Riverdale Software"""
 
 
-def _send_via_ses(to_email: str, from_name: str, subject: str, body: str) -> bool:
+def _send_via_ses(to_email: str, from_email: str, from_name: str, subject: str, body: str) -> bool:
     """Send a plain-text email via SES. No tracking pixel — looks like a real email."""
     import boto3
     try:
@@ -62,7 +66,7 @@ def _send_via_ses(to_email: str, from_name: str, subject: str, body: str) -> boo
             aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         )
         ses.send_email(
-            Source=f"{from_name} <{_DEMO_FROM_EMAIL}>",
+            Source=f"{from_name} <{from_email}>",
             Destination={"ToAddresses": [to_email]},
             Message={
                 "Subject": {"Data": subject, "Charset": "UTF-8"},
@@ -104,12 +108,14 @@ def send_demo_emails(inbox_email: str, connection_id: str) -> bool:
 
     ok1 = _send_via_ses(
         to_email=inbox_email,
+        from_email=_DEMO_SUPPORT_FROM,
         from_name="Alex Chen",
         subject=_SUPPORT_SUBJECT,
         body=_SUPPORT_BODY,
     )
     ok2 = _send_via_ses(
         to_email=inbox_email,
+        from_email=_DEMO_SCHEDULING_FROM,
         from_name="Sam Rivera",
         subject=_SCHEDULING_SUBJECT,
         body=_SCHEDULING_BODY,
