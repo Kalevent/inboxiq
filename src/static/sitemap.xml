@@ -221,11 +221,6 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://kalevent.com/blog/ai-email-triage</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://kalevent.com/blog/stop-missing-customer-emails</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
