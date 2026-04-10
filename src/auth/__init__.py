@@ -183,7 +183,7 @@ def signup():
     activation_token = create_access_token(
         identity=str(user.id),
         additional_claims={"account_id": str(account.id), "purpose": "activation"},
-        expires_delta=timedelta(minutes=10),
+        expires_delta=timedelta(hours=24),
     )
     activation_link = url_for("activate_page", token=activation_token, _external=True)
     email_sent = send_activation_email(email, activation_link, account_name)
@@ -205,7 +205,7 @@ def signup():
     )
 
 
-@bp.route("/auth/resend-activation", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+@bp.route("/resend-activation", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 @limiter.limit("5 per hour", override_defaults=False)
 def resend_activation():
     """Resend activation token for an existing, not-yet-activated user."""
@@ -227,7 +227,7 @@ def resend_activation():
     activation_token = create_access_token(
         identity=str(user.id),
         additional_claims={"account_id": str(account.id), "purpose": "activation"},
-        expires_delta=timedelta(minutes=10),
+        expires_delta=timedelta(hours=24),
     )
     activation_link = url_for("activate_page", token=activation_token, _external=True)
     email_sent = send_activation_email(email, activation_link, account.name or "Your account")

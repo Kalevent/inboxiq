@@ -112,7 +112,7 @@
     setResendStatus('info', 'Sending a new activation link...');
 
     try {
-      const response = await fetch('/auth/resend-activation', {
+      const response = await fetch('/auth/resend-activation', {  // route: /resend-activation on /auth blueprint
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
