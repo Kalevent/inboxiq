@@ -169,6 +169,7 @@ def increment_signals(account_id: int, quantity: int = 1) -> None:
         db.session.execute(stmt)
         db.session.commit()
     except Exception as exc:
+        db.session.rollback()
         logger.warning("increment_signals failed account=%d: %s", account_id, exc)
 
 

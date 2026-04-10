@@ -6,6 +6,7 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 from celery import Celery
+from flask import current_app
 from celery.schedules import crontab
 from src.app import create_app
 from src.agents.worker import process_email_with_agents

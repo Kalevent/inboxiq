@@ -31,7 +31,11 @@ class AgentRegistry:
                 graph_node_ref=data.get("graph_node_ref"),
             )
             db.session.add(agent)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                raise
             return agent
 
     def list(self, include_drafts: bool = True) -> list[AgentModel]:
@@ -50,7 +54,11 @@ class AgentRegistry:
                 return None
             agent.status = "published"
             agent.updated_at = datetime.utcnow()
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                raise
             return agent
 
     def update(self, agent_id: str, updates: dict) -> Optional[AgentModel]:
@@ -62,7 +70,11 @@ class AgentRegistry:
                 if hasattr(agent, key) and value is not None:
                     setattr(agent, key, value)
             agent.updated_at = datetime.utcnow()
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                raise
             return agent
 
     def delete(self, agent_id: str) -> bool:
@@ -71,7 +83,11 @@ class AgentRegistry:
             if not agent:
                 return False
             db.session.delete(agent)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                raise
             return True
 
 

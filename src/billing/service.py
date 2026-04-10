@@ -57,7 +57,11 @@ class BillingService:
         db.session.add(db_pm)
         db.session.flush()
         profile.default_payment_method_id = db_pm.id
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         return {"payment_method": {"id": db_pm.id, "brand": db_pm.brand, "last4": db_pm.last4}}
 
     def activate_subscription(self, profile: models.CustomerBillingProfile, plan_code: str, provider_name: str, idempotency_key: Optional[str] = None) -> Dict[str, Any]:
@@ -88,7 +92,11 @@ class BillingService:
         profile.subscription_status = "active"
         profile.plan_choice = plan_code
         profile.trial_status = "ended"
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         return {"subscription": {"id": db_sub.id, "status": db_sub.status}, "invoice": {"id": inv.id, "status": inv.status}, "client_secret": sub.get("client_secret")}
 
     def list_invoices(self, profile: models.CustomerBillingProfile):
@@ -124,7 +132,11 @@ class BillingService:
             used_fallback=provider_name != (invoice.provider or provider_name),
         )
         db.session.add(attempt)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         if status in ("paid", "succeeded"):
             send_payment_receipt(to_email=self._profile_email(invoice.profile_id), invoice_id=invoice.id)
         else:
@@ -154,7 +166,11 @@ class BillingService:
             profile.trial_status = "ended"
             if profile.subscription_status in ("none", "trialing", "canceled") and profile.email:
                 send_trial_ended(profile.email)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         return {"ending_soon": len(ending_soon), "ended": len(ended)}
 
     def retry_past_due(self, now: Optional[datetime] = None) -> Dict[str, int]:
