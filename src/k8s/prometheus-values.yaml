@@ -101,7 +101,7 @@ alertmanager:
       - name: 'null'  # silences Watchdog heartbeat alert injected by kube-prometheus-stack
       - name: 'email-security'
         email_configs:
-          - to: 'security@kalevent.com'
+          - to: 'kofi@kalevent.com'
             from: 'noreply@kalevent.com'
             smarthost: 'email-smtp.us-west-2.amazonaws.com:587'
             require_tls: true
