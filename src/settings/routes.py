@@ -191,6 +191,8 @@ def settings_page(tab):
           account_id=account_id
         ).order_by(RegisteredApp.created_at.desc()).all()
 
+  csrf_token_value = request.cookies.get("csrf_access_token") or request.cookies.get("csrf_refresh_token") or ""
+
   return render_template(
     "settings/index.html",
     active_tab=tab,
@@ -221,6 +223,7 @@ def settings_page(tab):
     llm_config=llm_config,
     allowed_llm_providers=ALLOWED_LLM_PROVIDERS,
     current_user=current_user,
+    csrf_token_value=csrf_token_value,
   )
 
 

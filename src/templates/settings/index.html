@@ -317,6 +317,7 @@
               {% endwith %}
 
               <form method="POST" action="{{ url_for('settings.save_profile') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
               <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
                 <div class="grid settings-2col md:grid-cols-2 gap-3">
                   <label class="text-xs text-slate-300 space-y-1 block">
