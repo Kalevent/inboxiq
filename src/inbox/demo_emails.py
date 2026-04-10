@@ -105,7 +105,7 @@ def _inject_via_gmail_api(
     try:
         raw = _build_rfc2822(to_email, from_email, from_name, subject, body)
         resp = requests.post(
-            "https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/insert",
+            "https://www.googleapis.com/upload/gmail/v1/users/me/messages/insert",
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "message/rfc822",
