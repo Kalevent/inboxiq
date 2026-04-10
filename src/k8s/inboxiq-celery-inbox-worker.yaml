@@ -8,7 +8,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 0       # Don't exceed current replica count (node memory is constrained)
+      maxSurge: 0
       maxUnavailable: 1 # Terminate one old pod before creating replacement
   selector:
     matchLabels:
@@ -67,10 +67,10 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 256Mi
+              memory: 512Mi
             limits:
               cpu: 500m
-              memory: 1Gi
+              memory: 2Gi
           volumeMounts:
             - name: dspy-artifacts
               mountPath: /dspy-artifacts
