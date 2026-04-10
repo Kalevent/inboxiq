@@ -85,6 +85,9 @@ alertmanager:
       limits:
         memory: 128Mi
         cpu: 100m
+    # Mount the SMTP credentials secret so auth_password_file can read it
+    secrets:
+      - alertmanager-smtp-creds
   config:
     global:
       resolve_timeout: 5m
@@ -95,13 +98,14 @@ alertmanager:
       repeat_interval: 4h
       receiver: 'email-security'
     receivers:
+      - name: 'null'  # silences Watchdog heartbeat alert injected by kube-prometheus-stack
       - name: 'email-security'
         email_configs:
           - to: 'security@kalevent.com'
             from: 'noreply@kalevent.com'
             smarthost: 'email-smtp.us-west-2.amazonaws.com:587'
             require_tls: true
-            auth_username_file: '/etc/alertmanager/secrets/alertmanager-smtp-creds/smtp_auth_username'
+            auth_username: 'AKIARMHMNL5CXEGWE27P'
             auth_password_file: '/etc/alertmanager/secrets/alertmanager-smtp-creds/smtp_auth_password'
 
 # Critical alerts — OOMKill, pod restarts, memory pressure
