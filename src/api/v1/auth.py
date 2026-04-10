@@ -284,7 +284,9 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
     conn = InboxConnection.query.filter_by(account_id=account_id, email_address=email_address).first() if account_id else None
     if conn is None:
         conn = InboxConnection.query.filter_by(user_id=resolved_user_id, provider=provider).first()
-    if not conn:
+
+    is_new_connection = not conn
+    if is_new_connection:
         conn = InboxConnection(
             user_id=resolved_user_id,
             account_id=account_id,
@@ -309,6 +311,23 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
     except Exception:
         db.session.rollback()
         raise
+
+    # Send demo emails on first-time inbox connection only.
+    # inbox_email is sourced from the OAuth token — not user input.
+    # The task itself is idempotent (checks demo_emails_sent flag).
+    if is_new_connection and provider in ("gmail", "outlook") and conn.email_address:
+        try:
+            from src.inbox.tasks import send_demo_emails_task
+            send_demo_emails_task.apply_async(
+                args=[conn.id, conn.email_address],
+                countdown=60,  # 60s delay — let the first poll cycle initialise first
+            )
+        except Exception:
+            # Non-fatal: demo emails failing must never break the connection flow
+            current_app.logger.warning(
+                "send_demo_emails_task could not be queued for connection %s", conn.id
+            )
+
     return conn
 
 

@@ -60,3 +60,42 @@ def sync_outlook_rules_task(self, connection_id: str) -> None:
 
         except Exception as exc:
             raise self.retry(exc=exc)
+
+
+@shared_task(name="inbox.send_demo_emails", bind=True, max_retries=2, default_retry_delay=30)
+def send_demo_emails_task(self, connection_id: str, inbox_email: str) -> None:
+    """
+    Send two demo emails to a newly connected inbox.
+
+    Triggered once after the first successful inbox connection so the user
+    sees the triage pipeline and draft replies appear in Gmail within minutes.
+    After both emails are sent, queues a poll with a 30-second countdown to
+    give SES time to deliver to the inbox before the poll runs.
+    """
+    app = create_app()
+    with app.app_context():
+        try:
+            from src.inbox.demo_emails import send_demo_emails
+            sent = send_demo_emails(inbox_email=inbox_email, connection_id=connection_id)
+            if sent:
+                # 30s countdown — gives SES → Gmail/Outlook delivery time before poll
+                trigger_demo_poll_task.apply_async(args=[connection_id], countdown=30)
+        except Exception as exc:
+            raise self.retry(exc=exc)
+
+
+@shared_task(name="inbox.trigger_demo_poll", bind=True, max_retries=2, default_retry_delay=60)
+def trigger_demo_poll_task(self, connection_id: str) -> None:
+    """
+    Trigger an immediate inbox poll after demo emails have been delivered.
+
+    Reuses the same poll logic as the dashboard "Poll now" button.
+    Called automatically 30 seconds after send_demo_emails_task succeeds.
+    """
+    app = create_app()
+    with app.app_context():
+        try:
+            from src.api.v1.inboxiq import poll_inbox_service
+            poll_inbox_service(connection_id)
+        except Exception as exc:
+            raise self.retry(exc=exc)

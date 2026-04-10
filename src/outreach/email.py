@@ -475,15 +475,15 @@ ICP_COLD_EMAIL_SUBJECT = "Before you hire a support manager, {{ CompanyName }}"
 
 ICP_COLD_EMAIL_BODY = """Hi {{ FirstName }},
 
-I noticed {{ CompanyName }} is growing — support volume usually grows with it.
+Quick question — how much time does {{ CompanyName }} spend each week writing the same support replies?
 
-Most founders at your stage hire a support manager when email starts feeling out of control. Before you do, it's worth knowing there's a faster fix.
+I ask because most founders at your stage are still handling it from Gmail, and the pattern is usually the same: 30-40% of incoming email is the same 8 questions on repeat. Password resets, billing queries, "how does X work."
 
-InboxIQ connects to your Gmail or Outlook and automatically triages every incoming email — categorising by intent, flagging urgency, and drafting a reply for review. Your team handles the exceptions; everything routine is handled by the AI.
+InboxIQ connects to Gmail or Outlook and places a draft reply directly in the thread before you open it. You see the email, the draft is already there, you review and send. No new tool to open. No dashboard to check.
 
-Teams using it typically cut first-response time by 60-70% without adding headcount.
+Here is what one of those threads looks like: the email arrives, InboxIQ applies a label (Support · P2), and a draft reply referencing your help docs is waiting in the thread. For a meeting request, available calendar slots are included in the draft — no Calendly link needed.
 
-Would it be worth a 15-minute call to see if it fits what you're dealing with?
+Would a 15-minute look make sense? I can show you it working on a real inbox.
 
 - Kofi
 Founder, InboxIQ
@@ -491,11 +491,11 @@ https://kalevent.com"""
 
 ICP_COLD_EMAIL_FOLLOWUP = """Hi {{ FirstName }},
 
-Just following up on my note from last week.
+Following up briefly.
 
-If support email is still eating into your team's time, I'd be happy to show you how InboxIQ handles it -- takes about 15 minutes.
+If support email is still eating into your mornings, I would be happy to show you what InboxIQ looks like inside Gmail — takes 15 minutes and you would see it working on a real inbox.
 
-If the timing's not right, no worries at all.
+If the timing is not right, no problem at all.
 
 - Kofi
 https://kalevent.com"""
