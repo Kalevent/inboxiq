@@ -11,9 +11,9 @@
   function setStatus(type, message) {
     if (!statusEl) return;
     const colorMap = {
-      success: 'border-emerald-400 bg-emerald-500/10 text-emerald-100',
-      error: 'border-rose-400 bg-rose-500/10 text-rose-100',
-      info: 'border-indigo-400 bg-indigo-500/10 text-indigo-100',
+      success: 'border border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200',
+      error: 'border border-rose-400 bg-rose-50 text-rose-800 dark:bg-rose-900/30 dark:text-rose-200',
+      info: 'border border-indigo-300 bg-indigo-50 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-200',
     };
     statusEl.className = `mt-4 text-sm rounded-xl px-3 py-3 ${colorMap[type] || colorMap.info}`;
     statusEl.textContent = message;
@@ -60,11 +60,11 @@
 
       if (data.mfa_setup_required) {
         setStatus('success', 'Account activated! Please set up two-factor authentication before continuing.');
-        window.location.href = '/settings/security?mfa_required=1';
+        setTimeout(() => { window.location.href = '/settings/security?mfa_required=1'; }, 2000);
         return;
       }
-      setStatus('success', 'Account activated! Redirecting…');
-      window.location.href = '/onboarding';
+      setStatus('success', 'Your account has been activated successfully. Welcome to InboxIQ! Taking you to your workspace…');
+      setTimeout(() => { window.location.href = '/onboarding'; }, 2500);
     } catch (error) {
       setStatus('error', error.message || 'Activation failed.');
     } finally {
@@ -80,9 +80,9 @@
   function setResendStatus(type, message) {
     if (!resendStatus) return;
     const colorMap = {
-      success: 'border-emerald-400 bg-emerald-500/10 text-emerald-100',
-      error: 'border-rose-400 bg-rose-500/10 text-rose-100',
-      info: 'border-indigo-400 bg-indigo-500/10 text-indigo-100',
+      success: 'border border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200',
+      error: 'border border-rose-400 bg-rose-50 text-rose-800 dark:bg-rose-900/30 dark:text-rose-200',
+      info: 'border border-indigo-300 bg-indigo-50 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-200',
     };
     resendStatus.className = `text-sm rounded-xl px-3 py-3 ${colorMap[type] || colorMap.info}`;
     resendStatus.textContent = message;
