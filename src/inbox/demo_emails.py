@@ -2,16 +2,25 @@
 Demo email sender for newly connected inboxes.
 
 Sends two realistic customer-style emails to a newly connected inbox
-so the user sees the triage pipeline and draft replies appear in Gmail
-within minutes of connecting — without waiting for real customer emails.
+so the user sees the triage pipeline and draft replies appear within
+minutes of connecting — without waiting for real customer emails.
 
 Email 1 — a support query that gets classified as Support and receives
            a KB-grounded draft reply.
 Email 2 — a scheduling request that gets classified and receives a draft
            with calendar slots injected when a calendar is connected.
+
+Provider strategy
+-----------------
+Gmail   → Gmail messages.insert API (bypasses all spam/routing filters,
+          lands directly in INBOX). Requires gmail.modify scope which is
+          already in GOOGLE_GMAIL_SCOPES.
+Outlook → SES (Microsoft is permissive enough; SES delivers reliably).
 """
 import os
 import logging
+from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +64,77 @@ Sam Rivera
 Head of Operations, Riverdale Software"""
 
 
-def _send_via_ses(to_email: str, from_email: str, from_name: str, subject: str, body: str) -> bool:
+# ── RFC2822 builder ───────────────────────────────────────────────────────────
+
+def _build_rfc2822(
+    to_email: str,
+    from_email: str,
+    from_name: str,
+    subject: str,
+    body: str,
+) -> bytes:
+    """Build a minimal RFC2822 message as bytes using stdlib only."""
+    msg = MIMEText(body, "plain", "utf-8")
+    msg["From"] = f"{from_name} <{from_email}>"
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg["Date"] = formatdate(localtime=False)
+    msg["Message-ID"] = make_msgid(domain="kalevent.com")
+    return msg.as_bytes()
+
+
+# ── Gmail API injection ───────────────────────────────────────────────────────
+
+def _inject_via_gmail_api(
+    access_token: str,
+    to_email: str,
+    from_email: str,
+    from_name: str,
+    subject: str,
+    body: str,
+) -> bool:
+    """
+    Inject a message directly into the user's Gmail inbox via the Gmail API.
+
+    Uses messages.insert (uploadType=media) which bypasses all spam and
+    routing filters — the message lands in INBOX immediately with no
+    deliverability risk. Requires gmail.modify scope (already granted).
+    """
+    import requests
+
+    try:
+        raw = _build_rfc2822(to_email, from_email, from_name, subject, body)
+        resp = requests.post(
+            "https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/insert",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "message/rfc822",
+            },
+            params={"uploadType": "media"},
+            data=raw,
+            timeout=15,
+        )
+        if resp.status_code in (200, 201):
+            return True
+        logger.error(
+            "Gmail API inject failed to %s: %s %s",
+            to_email, resp.status_code, resp.text,
+        )
+        return False
+    except Exception as exc:
+        logger.error("Gmail API inject exception for %s: %s", to_email, exc)
+        return False
+
+
+# ── SES sender (Outlook / fallback) ──────────────────────────────────────────
+
+def _send_via_ses(
+    to_email: str,
+    from_email: str,
+    from_name: str,
+    subject: str,
+    body: str,
+) -> bool:
     """Send a plain-text email via SES. No tracking pixel — looks like a real email."""
     import boto3
     try:
@@ -75,9 +154,11 @@ def _send_via_ses(to_email: str, from_email: str, from_name: str, subject: str, 
         )
         return True
     except Exception as exc:
-        logger.error("Demo email send failed to %s: %s", to_email, exc)
+        logger.error("Demo email SES send failed to %s: %s", to_email, exc)
         return False
 
+
+# ── Public entry point ────────────────────────────────────────────────────────
 
 def send_demo_emails(inbox_email: str, connection_id: str) -> bool:
     """
@@ -86,9 +167,14 @@ def send_demo_emails(inbox_email: str, connection_id: str) -> bool:
     Idempotent — checks metadata_json.demo_emails_sent before sending.
     Marks the flag after both emails are delivered.
 
+    Provider strategy:
+      gmail   → Gmail messages.insert API (guaranteed INBOX delivery, no spam risk)
+      outlook → SES (delivers reliably to Outlook/Hotmail)
+
     Args:
-        inbox_email:    The connected inbox email address (Oliver's Gmail/Outlook).
-        connection_id:  InboxConnection.id — used to mark demo_emails_sent.
+        inbox_email:    The connected inbox email address (user's Gmail/Outlook).
+        connection_id:  InboxConnection.id — used to read provider/token and
+                        mark demo_emails_sent.
 
     Returns:
         True if both emails were sent (or already sent previously).
@@ -103,23 +189,28 @@ def send_demo_emails(inbox_email: str, connection_id: str) -> bool:
 
     meta = conn.metadata_json or {}
     if meta.get("demo_emails_sent"):
-        logger.info("send_demo_emails: already sent for connection %s, skipping", connection_id)
+        logger.info(
+            "send_demo_emails: already sent for connection %s, skipping", connection_id
+        )
         return True
 
-    ok1 = _send_via_ses(
-        to_email=inbox_email,
-        from_email=_DEMO_SUPPORT_FROM,
-        from_name="Alex Chen",
-        subject=_SUPPORT_SUBJECT,
-        body=_SUPPORT_BODY,
-    )
-    ok2 = _send_via_ses(
-        to_email=inbox_email,
-        from_email=_DEMO_SCHEDULING_FROM,
-        from_name="Sam Rivera",
-        subject=_SCHEDULING_SUBJECT,
-        body=_SCHEDULING_BODY,
-    )
+    provider = (conn.provider or "").lower()
+
+    def _send(from_email: str, from_name: str, subject: str, body: str) -> bool:
+        if provider == "gmail":
+            if not conn.access_token:
+                logger.error(
+                    "send_demo_emails: no access_token for Gmail connection %s", connection_id
+                )
+                return False
+            return _inject_via_gmail_api(
+                conn.access_token, inbox_email, from_email, from_name, subject, body
+            )
+        # Outlook and any other future provider: SES
+        return _send_via_ses(inbox_email, from_email, from_name, subject, body)
+
+    ok1 = _send(_DEMO_SUPPORT_FROM, "Alex Chen", _SUPPORT_SUBJECT, _SUPPORT_BODY)
+    ok2 = _send(_DEMO_SCHEDULING_FROM, "Sam Rivera", _SCHEDULING_SUBJECT, _SCHEDULING_BODY)
 
     if ok1 and ok2:
         meta["demo_emails_sent"] = True
@@ -128,6 +219,9 @@ def send_demo_emails(inbox_email: str, connection_id: str) -> bool:
             db.session.commit()
         except Exception:
             db.session.rollback()
-        logger.info("send_demo_emails: both sent to %s (connection %s)", inbox_email, connection_id)
+        logger.info(
+            "send_demo_emails: both sent to %s via %s (connection %s)",
+            inbox_email, provider, connection_id,
+        )
 
     return ok1 and ok2
