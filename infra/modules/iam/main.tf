@@ -3,7 +3,7 @@
 # Do NOT delete or recreate — would break the EKS node group.
 
 data "aws_iam_role" "node_instance" {
-  name = "eksctl-inboxiq-eks-nodegroup-inbox-NodeInstanceRole-qJMYbgghTryP"
+  name = "eksctl-inboxiq-eks-nodegroup-inbox-NodeInstanceRole-su5coQo2MksF"
 }
 
 data "aws_iam_role" "cluster_service" {

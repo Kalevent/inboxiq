@@ -22,9 +22,9 @@ module "eks" {
   public_subnet_ids  = module.networking.public_subnet_ids
   private_subnet_ids = module.networking.private_subnet_ids
 
-  node_desired = 4
-  node_min     = 4
-  node_max     = 6
+  node_desired = 2
+  node_min     = 2
+  node_max     = 4
 }
 
 module "rds" {
