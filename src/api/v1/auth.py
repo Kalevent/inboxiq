@@ -278,12 +278,13 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
             resolved_user_id = user.id
             account_id = user.account_id
 
-    if not resolved_user_id:
+    if not resolved_user_id or not account_id:
         raise RuntimeError("login_required")
 
-    conn = InboxConnection.query.filter_by(account_id=account_id, email_address=email_address).first() if account_id else None
-    if conn is None:
-        conn = InboxConnection.query.filter_by(user_id=resolved_user_id, provider=provider).first()
+    # Look up only by (account_id, email_address) — never by user_id alone.
+    # A user_id-only fallback can match a connection from a different mailbox
+    # and silently adopt/corrupt it.
+    conn = InboxConnection.query.filter_by(account_id=account_id, email_address=email_address).first()
 
     is_new_connection = not conn
     if is_new_connection:
@@ -295,8 +296,6 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
         )
         db.session.add(conn)
     else:
-        if account_id and not conn.account_id:
-            conn.account_id = account_id
         conn.provider = provider
 
     conn.access_token = access_token

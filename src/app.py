@@ -689,15 +689,6 @@ def create_app() -> Flask:
     account_connections = InboxConnection.query.filter_by(account_id=account_id, status="connected").all()
     email_inbox_connections = [c for c in account_connections if (c.provider or "").lower() in {"gmail", "outlook", "imap"}]
     last_connection = _pick_connection(account_connections)
-    if not last_connection:
-      # Only fall back to user_id-scoped connections that have no account_id (orphans from
-      # incomplete onboarding). Never include connections that belong to a different account.
-      user_connections = [
-        c for c in InboxConnection.query.filter_by(user_id=user.id, status="connected").all()
-        if not c.account_id
-      ]
-      last_connection = _pick_connection(user_connections)
-      email_inbox_connections = email_inbox_connections or [c for c in user_connections if (c.provider or "").lower() in {"gmail", "outlook", "imap"}]
     last_poll = (last_connection.metadata_json or {}).get("last_poll_at") if last_connection else None
     last_poll_status = (last_connection.metadata_json or {}).get("last_poll_status") if last_connection else None
     last_poll_error = (last_connection.metadata_json or {}).get("last_poll_error") if last_connection else None
