@@ -736,6 +736,33 @@ html:not(.dark) .pub-page header {
   border-bottom-color: #e2e8f0 !important;
   backdrop-filter: blur(12px);
 }
+
+/* ── Dashboard header: always-dark nav (scoped to .dashboard-header) ─── */
+/* Specificity (0,3,1) beats the generic html:not(.dark) .pub-page header rule (0,2,2) */
+html:not(.dark) .pub-page .dashboard-header {
+  background-color: rgba(2,6,23,0.95) !important;
+  border-bottom-color: #1e293b !important;
+  position: relative;
+  z-index: 10;
+}
+html.dark .pub-page .dashboard-header {
+  position: relative;
+  z-index: 10;
+}
+
+/* Preserve dark-nav colors in light mode — prevent broad pub-page overrides */
+html:not(.dark) .pub-page .dashboard-header .text-white    { color: #ffffff !important; }
+html:not(.dark) .pub-page .dashboard-header .text-slate-100 { color: #f1f5f9 !important; }
+html:not(.dark) .pub-page .dashboard-header .text-slate-300 { color: #cbd5e1 !important; }
+html:not(.dark) .pub-page .dashboard-header .text-slate-400 { color: #94a3b8 !important; }
+html:not(.dark) .pub-page .dashboard-header .text-slate-700 { color: #e2e8f0 !important; }
+html:not(.dark) .pub-page .dashboard-header .bg-white       { background-color: rgba(15,23,42,0.7) !important; }
+html:not(.dark) .pub-page .dashboard-header .bg-slate-900   { background-color: rgba(15,23,42,0.7) !important; }
+html:not(.dark) .pub-page .dashboard-header .border-slate-200 { border-color: #334155 !important; }
+html:not(.dark) .pub-page .dashboard-header .border-slate-300 { border-color: #334155 !important; }
+html:not(.dark) .pub-page .dashboard-header .border-slate-700 { border-color: #475569 !important; }
+html:not(.dark) .pub-page .dashboard-header .hover\:bg-slate-100:hover { background-color: rgba(255,255,255,0.08) !important; }
+html:not(.dark) .pub-page .dashboard-header .hover\:bg-slate-800:hover { background-color: rgba(255,255,255,0.08) !important; }
 html:not(.dark) .pub-page main {
   background: #f8fafc !important;
 }
@@ -782,6 +809,8 @@ html.dark body.pub-page { background-color: #020617; color: #f1f5f9; }
 html.dark .pub-page header {
   background-color: rgba(2,6,23,0.85) !important;
   border-bottom-color: #1e293b !important;
+  position: relative;
+  z-index: 10;
 }
 html.dark .pub-page main { background: inherit !important; }
 html.dark .pub-page footer {
