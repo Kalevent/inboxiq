@@ -1083,6 +1083,13 @@ def send_inbox_invite():
         "provider": provider,
         "email_sent": sent,
     })
+    from src.security import log_audit
+    log_audit(
+        "inbox.invite.created",
+        resource_type="inbox_connection",
+        resource_id=conn.id,
+        details={"email": email_address, "provider": provider},
+    )
 
     return jsonify({
         "connection_id": conn.id,

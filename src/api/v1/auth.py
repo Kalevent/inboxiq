@@ -482,6 +482,12 @@ def _complete_invite_connection(provider: str, email: str, access_token: str, re
     current_app.logger.info(
         {"event": "inbox.invite.connected", "account_id": account_id, "email": email, "provider": provider}
     )
+    log_audit(
+        "inbox.invite.accepted",
+        resource_type="inbox_connection",
+        resource_id=conn.id,
+        details={"email": email, "provider": provider, "account_id": account_id},
+    )
     return True, f"Your {provider.title()} inbox has been connected to InboxIQ. You can close this tab."
 
 
