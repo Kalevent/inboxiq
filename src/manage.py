@@ -435,5 +435,48 @@ def cli_fix_cross_account_connections(confirm: bool):
         raise
 
 
+@app.cli.command("remove-inbox-connection")
+@click.option("--email", required=True, help="Email address of the inbox connection to remove.")
+@click.option("--confirm", is_flag=True, default=False, help="Actually delete the row (omit to dry-run).")
+def cli_remove_inbox_connection(email: str, confirm: bool):
+    """
+    Remove a specific InboxConnection by email address.
+    Run without --confirm first to preview, then re-run with --confirm to delete.
+    """
+    from src.models.core import InboxConnection
+
+    conns = InboxConnection.query.filter(
+        db.func.lower(InboxConnection.email_address) == email.strip().lower()
+    ).all()
+
+    if not conns:
+        click.echo(f"No inbox connection found for {email}")
+        return
+
+    for conn in conns:
+        click.echo(
+            f"  id={conn.id}"
+            f"  email={conn.email_address}"
+            f"  provider={conn.provider}"
+            f"  account_id={conn.account_id}"
+            f"  status={conn.status}"
+            f"  created={conn.created_at.date() if conn.created_at else 'unknown'}"
+        )
+
+    if not confirm:
+        click.echo("\nDry run — no rows deleted. Re-run with --confirm to delete.")
+        return
+
+    ids = [c.id for c in conns]
+    deleted = InboxConnection.query.filter(InboxConnection.id.in_(ids)).delete(synchronize_session=False)
+    try:
+        db.session.commit()
+        click.echo(f"\nDeleted {deleted} connection(s) for {email}.")
+    except Exception as exc:
+        db.session.rollback()
+        click.echo(f"ERROR: rollback — {exc}")
+        raise
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
