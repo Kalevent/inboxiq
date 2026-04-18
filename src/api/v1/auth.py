@@ -410,16 +410,26 @@ def inbox_accept_invite():
     if provider == "gmail":
         if not client_id or not redirect_uri:
             return _invite_result_page(False, "Google OAuth is not configured. Contact support.")
+        # If the account owner has Google Calendar connected, request calendar
+        # scope in the same OAuth flow so the invited user's calendar is also linked.
+        gcal_active = InboxConnection.query.filter_by(
+            account_id=account_id, provider="gcal", status="connected"
+        ).first() is not None
+        invite_scopes = list(GOOGLE_GMAIL_SCOPES)
+        invite_state = f"inbox_invite:{token}"
+        if gcal_active:
+            invite_scopes.append("https://www.googleapis.com/auth/calendar")
+            invite_state = f"inbox_invite_gcal:{token}"
         params = {
             "response_type": "code",
             "client_id": client_id,
             "redirect_uri": redirect_uri,
-            "scope": " ".join(GOOGLE_GMAIL_SCOPES),
+            "scope": " ".join(invite_scopes),
             "access_type": "offline",
             "include_granted_scopes": "true",
             "prompt": "consent",
             "login_hint": expected_email,
-            "state": f"inbox_invite:{token}",
+            "state": invite_state,
         }
         return redirect(f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}")
 
@@ -489,6 +499,43 @@ def _complete_invite_connection(provider: str, email: str, access_token: str, re
         details={"email": email, "provider": provider, "account_id": account_id},
     )
     return True, f"Your {provider.title()} inbox has been connected to InboxIQ. You can close this tab."
+
+
+def _complete_invite_gcal_connection(account_id: int, email: str, access_token: str, refresh_token: str | None) -> None:
+    """
+    Create or update a gcal InboxConnection for the invited user using tokens
+    obtained during the combined Gmail+Calendar invite OAuth flow. Best-effort —
+    logs on failure but never raises so the inbox connection result is unaffected.
+    """
+    from src.crypto import encrypt_value
+    try:
+        conn = InboxConnection.query.filter_by(account_id=account_id, provider="gcal").first()
+        meta = {
+            "access_token_enc": encrypt_value(access_token),
+            "refresh_token_enc": encrypt_value(refresh_token) if refresh_token else None,
+            "scope": "https://www.googleapis.com/auth/calendar",
+            "linked_email": email,
+        }
+        if conn:
+            conn.metadata_json = meta
+            conn.status = "connected"
+        else:
+            user = User.query.filter_by(account_id=account_id).first()
+            conn = InboxConnection(
+                user_id=user.id if user else None,
+                account_id=account_id,
+                provider="gcal",
+                status="connected",
+                metadata_json=meta,
+            )
+            db.session.add(conn)
+        db.session.commit()
+        current_app.logger.info(
+            {"event": "gcal.invite.connected", "account_id": account_id, "email": email}
+        )
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.warning("gcal invite connection failed account=%s: %s", account_id, exc)
 
 
 def _invite_result_page(success: bool, message: str) -> str:
@@ -591,6 +638,15 @@ def google_callback():
     # Prefer user_id from signed state (works for password-auth users whose JWT cookie
     # is on a different subdomain than the callback URL). Fall back to JWT cookie identity.
     user_id = _parse_connect_state(state) or get_jwt_identity()
+
+    if state.startswith("inbox_invite_gcal:"):
+        invite_token = state[len("inbox_invite_gcal:"):]
+        ok, message = _complete_invite_connection("gmail", email, access_token, refresh_token, invite_token)
+        if ok:
+            _, account_id_from_token, _ = verify_inbox_invite_token(invite_token)
+            if account_id_from_token:
+                _complete_invite_gcal_connection(account_id_from_token, email, access_token, refresh_token)
+        return _invite_result_page(ok, message + (" Google Calendar also connected." if ok else ""))
 
     if state.startswith("inbox_invite:"):
         invite_token = state[len("inbox_invite:"):]
