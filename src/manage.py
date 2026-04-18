@@ -435,6 +435,27 @@ def cli_fix_cross_account_connections(confirm: bool):
         raise
 
 
+@app.cli.command("set-user-role")
+@click.option("--email", required=True, help="User email to update.")
+@click.option("--role", required=True, type=click.Choice(["owner", "admin", "agent", "viewer", "billing"]), help="Role to assign.")
+def cli_set_user_role(email: str, role: str):
+    """Set the role for a user by email."""
+    from src.models.core import User
+    user = User.query.filter(User.email.ilike(email.strip())).first()
+    if not user:
+        click.echo(f"No user found for {email}")
+        return
+    old_role = user.role
+    user.role = role
+    try:
+        db.session.commit()
+        click.echo(f"Updated {email}: {old_role} → {role}")
+    except Exception as exc:
+        db.session.rollback()
+        click.echo(f"ERROR: {exc}")
+        raise
+
+
 @app.cli.command("remove-inbox-connection")
 @click.option("--email", required=True, help="Email address of the inbox connection to remove.")
 @click.option("--confirm", is_flag=True, default=False, help="Actually delete the row (omit to dry-run).")

@@ -208,7 +208,7 @@ def _find_or_create_user(email: str, display_name: str | None) -> tuple[User, bo
     account = Account(name=account_name, seats_limit=2, seats_used=0, created_at=now, updated_at=now)
     db.session.add(account)
     db.session.flush()
-    user = User(email=email, password_hash=None, account_id=account.id, created_at=now, updated_at=now)
+    user = User(email=email, password_hash=None, account_id=account.id, role="owner", created_at=now, updated_at=now)
     db.session.add(user)
     db.session.flush()
     # Create billing profile with explicit 7-day trial so the fallback default is never relied on
