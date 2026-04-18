@@ -600,6 +600,16 @@ def google_callback():
             current_app.logger.info("gmail inbox connected: user_id=%s email=%s", user_id, email)
         except RuntimeError:
             pass
+        # Bootstrap InboxIQ labels and category filters immediately on connect.
+        # Demonstrates gmail.modify (label creation) and gmail.settings.basic (filter creation)
+        # before the first poll runs. Best-effort — never block the redirect.
+        try:
+            from src.inbox.poll import bootstrap_inboxiq_labels_gmail, bootstrap_gmail_filters
+            label_ids = bootstrap_inboxiq_labels_gmail(access_token)
+            bootstrap_gmail_filters(access_token, label_ids)
+            current_app.logger.info("gmail bootstrap complete: user_id=%s", user_id)
+        except Exception as exc:
+            current_app.logger.warning("gmail bootstrap at connect failed user_id=%s: %s", user_id, exc)
         return redirect("https://mail.google.com")
 
     # state == "signin" (default): sign-up or log-in flow — no Gmail scopes requested

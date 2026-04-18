@@ -1323,9 +1323,12 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                     meta["labels_synced_at"] = datetime.now(timezone.utc).isoformat()
                     conn.metadata_json = dict(meta)  # new dict forces SQLAlchemy dirty-tracking
                     db.session.commit()
-                    # Note: Gmail Filters API (category:social etc.) returns 403 for OAuth apps
-                    # without domain-wide delegation. InboxIQ's post-triage writeback is the
-                    # reliable mechanism — do not call bootstrap_gmail_filters here.
+                    # Create Gmail category filters (category:social → InboxIQ/Social, etc.)
+                    # using gmail.settings.basic scope. Best-effort — log but never fail the poll.
+                    try:
+                        bootstrap_gmail_filters(conn.access_token, canonical_ids)
+                    except Exception as _fe:
+                        current_app.logger.warning("gmail filter bootstrap failed conn=%s: %s", conn.id, _fe)
 
                 # Hourly: merge user-created Gmail labels into triage categories
                 elif not last_sync or last_sync < _one_hour_ago:
