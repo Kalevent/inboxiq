@@ -1716,9 +1716,13 @@ def poll_my_inbox():
     Trigger a poll for the current user's most recent connected inbox.
     Intended for dashboard "Poll now" button.
     """
+    from src.models.core import User
     user_id = get_jwt_identity()
+    user = db.session.get(User, user_id)
+    if not user or not user.account_id:
+        return jsonify({"error": "No account found"}), 404
     conn = (
-        InboxConnection.query.filter_by(user_id=user_id, status="connected")
+        InboxConnection.query.filter_by(account_id=user.account_id, status="connected")
         .order_by(InboxConnection.updated_at.desc())
         .first()
     )
