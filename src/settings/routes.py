@@ -131,8 +131,9 @@ def settings_page(tab):
 
   # Get draft reply feature status and approval policies for features tab
   draft_reply_enabled = True
-  if tab == "features" and account_id:
-    from src.models import AccountFeatureFlags
+  feature_flags = None
+  if tab in ("features", "integrations") and account_id:
+    from src.models.core import AccountFeatureFlags
 
     feature_flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
     draft_reply_enabled = feature_flags.draft_reply_enabled if feature_flags else True
@@ -224,6 +225,7 @@ def settings_page(tab):
     allowed_llm_providers=ALLOWED_LLM_PROVIDERS,
     current_user=current_user,
     csrf_token_value=csrf_token_value,
+    feature_flags=feature_flags,
   )
 
 
@@ -649,6 +651,36 @@ def account_delete():
   })
 
   return jsonify({"ok": True, "message": "Account scheduled for deletion. Data will be permanently removed in 30 days."}), 200
+
+
+@bp.post("/integrations/booking-duration")
+@login_required_settings
+def save_booking_duration():
+    from src.models.core import AccountFeatureFlags
+    account_id = getattr(g, "current_account_id", None)
+    if not account_id:
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+
+    raw = request.form.get("booking_duration_minutes", "30")
+    try:
+        duration = int(raw)
+        if duration not in (15, 30, 45, 60):
+            duration = 30
+    except (ValueError, TypeError):
+        duration = 30
+
+    try:
+        flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
+        if not flags:
+            flags = AccountFeatureFlags(account_id=account_id)
+            db.session.add(flags)
+        flags.booking_duration_minutes = duration
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.error("Failed to save booking_duration_minutes account=%s", account_id)
+
+    return redirect(url_for("settings.settings_page", tab="integrations"))
 
 
 @bp.route("/integrations/social/disconnect", methods=["POST"])

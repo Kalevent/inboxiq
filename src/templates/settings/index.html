@@ -1604,6 +1604,23 @@
                     </div>
                   </div>
 
+
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2">
+                    <div class="text-sm font-semibold text-slate-100 mb-1">Default meeting duration</div>
+                    <p class="text-sm text-slate-400 mb-3">Applied to booking links generated in draft replies.</p>
+                    <form method="POST" action="{{ url_for('settings.save_booking_duration') }}" class="flex items-center gap-3">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                      <select name="booking_duration_minutes" class="bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        {% set dur = feature_flags.booking_duration_minutes if feature_flags else 30 %}
+                        <option value="15" {% if dur == 15 %}selected{% endif %}>15 minutes</option>
+                        <option value="30" {% if dur == 30 %}selected{% endif %}>30 minutes</option>
+                        <option value="45" {% if dur == 45 %}selected{% endif %}>45 minutes</option>
+                        <option value="60" {% if dur == 60 %}selected{% endif %}>60 minutes</option>
+                      </select>
+                      <button type="submit" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium">Save</button>
+                    </form>
+                  </div>
+
                   <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2 settings-span-2">
                     <div class="text-sm font-semibold text-slate-100">Webhook / API</div>
                     <p class="text-sm text-slate-300 mt-2">
