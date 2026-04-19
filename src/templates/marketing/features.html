@@ -142,6 +142,89 @@ InboxIQ triage, labels, drafts, and automation run inside Gmail and Outlook — 
     </div>
   </section>
 
+  {# ── Booking / Scheduling ─────────────────────────────────── #}
+  <section id="scheduling" class="grid lg:grid-cols-2 gap-8 marketing-section items-center">
+    <div class="space-y-5">
+      <div class="inline-flex items-center gap-2 rounded-full bg-amber-500/10 text-amber-300 px-3 py-1 text-xs font-semibold">
+        AI Scheduling &bull; New
+      </div>
+      <h2 class="text-2xl font-semibold text-white">Meeting requested? A booking link is already in the draft.</h2>
+      <p class="text-slate-300 leading-relaxed">
+        When InboxIQ detects a meeting request, it generates a personal scheduling link and embeds it in the draft reply automatically. No Calendly. No back-and-forth. Rachel clicks, picks a slot, and the calendar event is created — all while you were in another tab.
+      </p>
+      <ol class="space-y-3 text-slate-300 text-sm leading-relaxed">
+        <li class="flex gap-3"><span class="text-amber-400 font-semibold mt-0.5">1.</span><span>AI detects "can we find a time?" in the incoming email.</span></li>
+        <li class="flex gap-3"><span class="text-amber-400 font-semibold mt-0.5">2.</span><span>A signed booking link is embedded in the draft reply — one click for the visitor.</span></li>
+        <li class="flex gap-3"><span class="text-amber-400 font-semibold mt-0.5">3.</span><span>Visitor picks a slot. Calendar event created instantly. Google Meet or Teams link sent to both parties.</span></li>
+      </ol>
+      <ul class="space-y-2 text-slate-300 text-sm">
+        <li class="flex gap-2"><span class="text-emerald-400">&#10003;</span><span>Works with Google Calendar and Outlook Calendar</span></li>
+        <li class="flex gap-2"><span class="text-emerald-400">&#10003;</span><span>Ticket status updated to "meeting scheduled" — no manual follow-up</span></li>
+        <li class="flex gap-2"><span class="text-emerald-400">&#10003;</span><span>Auto-reply fired on the thread with the meeting link and time</span></li>
+        <li class="flex gap-2"><span class="text-emerald-400">&#10003;</span><span>No third-party scheduling tool required</span></li>
+      </ul>
+    </div>
+    <div class="flex justify-center lg:justify-end">
+      <!-- Booking page mockup — mirrors the real /book/<token> contextual layout -->
+      <div style="max-width:340px;width:100%;background:#fff;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,.4);overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+        <!-- Browser chrome -->
+        <div style="background:#1e2130;padding:8px 12px;display:flex;align-items:center;gap:6px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+          <span style="width:10px;height:10px;border-radius:50%;background:#febc2e;display:inline-block;"></span>
+          <span style="width:10px;height:10px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+          <span style="flex:1;background:#2d3148;border-radius:4px;height:18px;margin-left:6px;display:flex;align-items:center;padding:0 8px;">
+            <span style="font-size:10px;color:#9ca3af;">kalevent.com/book/...</span>
+          </span>
+        </div>
+        <!-- Page content -->
+        <div style="background:#f5f5f5;padding:20px;">
+          <!-- Logo -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+            <div style="width:28px;height:28px;background:#4F46E5;border-radius:6px;flex-shrink:0;"></div>
+            <span style="font-size:13px;font-weight:600;color:#111;">InboxIQ</span>
+          </div>
+          <!-- Context banner -->
+          <div style="background:#fef3c7;border-left:3px solid #f59e0b;padding:9px 10px;border-radius:4px;margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:600;color:#92400e;">Re: Demo request — InboxIQ pricing</div>
+            <div style="font-size:10px;color:#78350f;margin-top:2px;">from rachel@acmecorp.com</div>
+          </div>
+          <!-- Heading -->
+          <div style="font-size:13px;font-weight:600;color:#111;margin-bottom:2px;">Book a meeting with Kofi</div>
+          <div style="font-size:11px;color:#666;margin-bottom:12px;">30-minute call &middot; Video link sent on confirmation</div>
+          <!-- Slot grid -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">
+            <div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:6px;padding:8px 10px;font-size:10px;color:#374151;text-align:center;">
+              <div style="font-size:9px;color:#9ca3af;">Mon 21 Apr</div>
+              <strong>10:00 AM</strong>
+            </div>
+            <div style="background:#eef2ff;border:2px solid #4F46E5;border-radius:6px;padding:8px 10px;font-size:10px;color:#4F46E5;text-align:center;font-weight:600;">
+              <div style="font-size:9px;color:#6366f1;">Mon 21 Apr</div>
+              <strong>2:00 PM &#10003;</strong>
+            </div>
+            <div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:6px;padding:8px 10px;font-size:10px;color:#374151;text-align:center;">
+              <div style="font-size:9px;color:#9ca3af;">Tue 22 Apr</div>
+              <strong>11:00 AM</strong>
+            </div>
+            <div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:6px;padding:8px 10px;font-size:10px;color:#374151;text-align:center;">
+              <div style="font-size:9px;color:#9ca3af;">Tue 22 Apr</div>
+              <strong>3:00 PM</strong>
+            </div>
+          </div>
+          <!-- Name field (pre-filled) -->
+          <div style="font-size:10px;color:#374151;font-weight:500;margin-bottom:3px;">Your name</div>
+          <div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:5px;padding:6px 9px;font-size:11px;color:#374151;margin-bottom:8px;">Rachel Adams</div>
+          <!-- Email field (pre-filled) -->
+          <div style="font-size:10px;color:#374151;font-weight:500;margin-bottom:3px;">Your email</div>
+          <div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:5px;padding:6px 9px;font-size:11px;color:#374151;margin-bottom:12px;">rachel@acmecorp.com</div>
+          <!-- Confirm button -->
+          <div style="background:#4F46E5;border-radius:7px;padding:10px;text-align:center;">
+            <span style="font-size:12px;color:#fff;font-weight:600;">Confirm booking</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   {# ── Layer 3: Automation Studio ─────────────────────────────── #}
   <section id="automation" class="marketing-card space-y-6 marketing-section">
     <div class="grid lg:grid-cols-2 gap-8">
