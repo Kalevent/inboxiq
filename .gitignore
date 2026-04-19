@@ -60,3 +60,7 @@ docs/marketing/
 
 # Claude Code local memory
 .claude/
+
+# Large demo/media files — use cloud storage instead
+src/static/demo/*.mov
+src/static/demo/*.mp4
