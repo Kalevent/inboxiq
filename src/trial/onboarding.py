@@ -61,9 +61,12 @@ def extract_personalization_variables(user: User, account: Account) -> Dict[str,
         first_name = name_parts[0].capitalize() if name_parts else user.name.capitalize()
     elif user.email:
         # Fallback: extract from email (e.g., jane.doe@company.com -> Jane)
+        # Only use if the part looks like a real first name (short, no digits)
         email_username = user.email.split('@')[0]
         name_parts = email_username.split('.')
-        first_name = name_parts[0].capitalize() if name_parts else email_username.capitalize()
+        candidate = name_parts[0]
+        if candidate.isalpha() and len(candidate) <= 12:
+            first_name = candidate.capitalize()
 
     # Get industry from account (if exists)
     industry = getattr(account, 'industry', None) or ""
@@ -80,23 +83,23 @@ def extract_personalization_variables(user: User, account: Account) -> Dict[str,
 def render_email_template(template_path: str, variables: Dict[str, Any]) -> str:
     """
     Render email template with personalization variables.
-
-    Args:
-        template_path: Path to template file
-        variables: Dict of variables to substitute
-
-    Returns:
-        Rendered HTML string
+    Uses Flask's Jinja2 environment so template resolution never depends on CWD.
+    template_path should be relative to the Flask templates folder
+    (e.g. "email/trial_onboarding/day7_upgrade_urgency.html").
     """
+    from flask import current_app
+    # Strip the leading "src/templates/" prefix if present (legacy path format)
+    rel_path = template_path
+    for prefix in ("src/templates/", "templates/"):
+        if rel_path.startswith(prefix):
+            rel_path = rel_path[len(prefix):]
+            break
     try:
-        with open(template_path, 'r') as f:
-            template_str = f.read()
-
-        template = Template(template_str)
-        return template.render(**variables)
+        tmpl = current_app.jinja_env.get_template(rel_path)
+        return tmpl.render(**variables)
     except Exception as e:
-        logger.error(f"Failed to render template {template_path}: {e}")
-        return f"<p>Welcome to InboxIQ! Get started at https://kalevent.com/dashboard</p>"
+        logger.error("Failed to render email template %s: %s", rel_path, e)
+        raise
 
 
 def send_trial_email(

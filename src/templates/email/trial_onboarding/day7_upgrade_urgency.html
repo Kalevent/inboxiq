@@ -12,104 +12,67 @@
                 <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                     <tr>
                         <td style="padding: 40px 40px 20px;">
+
                             <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin-bottom: 25px;">
                                 <p style="margin: 0; font-size: 14px; font-weight: 600; color: #92400e;">
-                                    ⏰ Your trial ends in 24 hours
+                                    Your trial ends tomorrow
                                 </p>
                             </div>
 
-                            <h1 style="margin: 0 0 20px; font-size: 26px; font-weight: 600; color: #1a1a1a;">
-                                {{first_name and first_name + ', don't' or 'Don't'}} lose access tomorrow
+                            <h1 style="margin: 0 0 20px; font-size: 24px; font-weight: 600; color: #1a1a1a;">
+                                {% if first_name %}Hi {{ first_name }},{% else %}Hi there,{% endif %}
                             </h1>
 
                             <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #333;">
-                                Hi {{first_name or 'there'}},
+                                Your 7-day InboxIQ trial ends tomorrow. After that, AI triage, automation rules, and draft replies will be turned off for your account.
                             </p>
 
                             <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #333;">
-                                Your 7-day InboxIQ trial ends tomorrow. Here's what you'll lose access to:
+                                If you want to keep them running, upgrading takes about 2 minutes.
                             </p>
 
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="https://kalevent.com/upgrade" style="display: inline-block; padding: 16px 40px; background-color: #4F46E5; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 17px;">
+                                    Keep my access
+                                </a>
+                            </div>
+
+                            <p style="margin: 25px 0 10px; font-size: 15px; line-height: 1.6; color: #333;">
+                                <strong>What stays on after you upgrade:</strong>
+                            </p>
                             <ul style="margin: 0 0 25px; padding-left: 20px;">
-                                <li style="margin-bottom: 12px; font-size: 16px; line-height: 1.6; color: #333;">
-                                    <strong>AI-powered email triage</strong> — Auto-classify and route requests
+                                <li style="margin-bottom: 10px; font-size: 15px; line-height: 1.6; color: #333;">
+                                    AI triage on every incoming email &mdash; no manual sorting
                                 </li>
-                                <li style="margin-bottom: 12px; font-size: 16px; line-height: 1.6; color: #333;">
-                                    <strong>Automation workflows</strong> — Save hours with intelligent rules
+                                <li style="margin-bottom: 10px; font-size: 15px; line-height: 1.6; color: #333;">
+                                    Automation rules that run while you sleep
                                 </li>
-                                <li style="margin-bottom: 12px; font-size: 16px; line-height: 1.6; color: #333;">
-                                    <strong>Priority scoring</strong> — Never miss urgent requests again
+                                <li style="margin-bottom: 10px; font-size: 15px; line-height: 1.6; color: #333;">
+                                    Draft replies so your team responds faster
                                 </li>
-                                <li style="margin-bottom: 12px; font-size: 16px; line-height: 1.6; color: #333;">
-                                    <strong>Team collaboration</strong> — Unified inbox with delegation
+                                <li style="margin-bottom: 10px; font-size: 15px; line-height: 1.6; color: #333;">
+                                    Priority scoring so urgent messages never get buried
                                 </li>
                             </ul>
 
-                            <!-- Special Offer Box -->
-                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center;">
-                                <div style="font-size: 36px; margin-bottom: 10px;">🎁</div>
-                                <p style="margin: 0 0 12px; font-size: 22px; font-weight: 700; color: #ffffff;">
-                                    Special Trial Offer
-                                </p>
-                                <p style="margin: 0 0 8px; font-size: 32px; font-weight: 700; color: #ffffff;">
-                                    20% OFF
-                                </p>
-                                <p style="margin: 0 0 20px; font-size: 16px; color: #e0e7ff;">
-                                    Your first 3 months — expires in 24 hours
-                                </p>
-                                <a href="https://kalevent.com/upgrade?promo=TRIAL20" style="display: inline-block; padding: 16px 40px; background-color: #ffffff; color: #667eea; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                                    Claim Your Discount →
-                                </a>
-                            </div>
-
-                            <p style="margin: 25px 0 20px; font-size: 16px; line-height: 1.6; color: #333;">
-                                <strong>Why teams love InboxIQ:</strong>
-                            </p>
-
-                            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0;">
-                                <p style="margin: 0 0 15px; font-size: 14px; line-height: 1.6; color: #555; font-style: italic;">
-                                    "InboxIQ reduced our email response time from 12 hours to under 2 hours. The AI triage is incredibly accurate."
-                                </p>
-                                <p style="margin: 0; font-size: 13px; color: #666;">
-                                    — Sarah Chen, Operations Manager at HealthFirst
-                                </p>
-                            </div>
-
-                            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0;">
-                                <p style="margin: 0 0 15px; font-size: 14px; line-height: 1.6; color: #555; font-style: italic;">
-                                    "We're handling 3x more volume with the same team size. The automation workflows are game-changing."
-                                </p>
-                                <p style="margin: 0; font-size: 13px; color: #666;">
-                                    — Mike Rodriguez, Support Director at TechCorp
-                                </p>
-                            </div>
-
                             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 
-                            <p style="margin: 0 0 15px; font-size: 16px; line-height: 1.6; color: #333;">
-                                <strong>Not ready to upgrade yet?</strong>
+                            <p style="margin: 0 0 10px; font-size: 14px; line-height: 1.6; color: #666;">
+                                Not ready to upgrade? Reply to this email and tell me why &mdash; I read every response.
                             </p>
 
-                            <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #666;">
-                                I'd love to hear your feedback! What can we improve? What features would make InboxIQ perfect for your team?
+                            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #666;">
+                                &mdash; Kofi, InboxIQ
                             </p>
 
-                            <p style="margin: 0; text-align: center;">
-                                <a href="mailto:support@kalevent.com?subject=Trial%20Feedback" style="display: inline-block; padding: 12px 24px; background-color: transparent; border: 2px solid #4F46E5; color: #4F46E5; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">
-                                    Share Feedback
-                                </a>
-                            </p>
                         </td>
                     </tr>
 
                     <tr>
-                        <td style="padding: 30px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
-                            <p style="margin: 0 0 10px; font-size: 14px; color: #666;">
-                                Kofi from Kalevent<br>
-                                <a href="mailto:support@kalevent.com" style="color: #4F46E5; text-decoration: none;">support@kalevent.com</a>
-                            </p>
-                            <p style="margin: 10px 0 0; font-size: 12px; color: #999;">
-                                Questions about billing or your subscription? <a href="https://kalevent.com/contact" style="color: #4F46E5; text-decoration: none;">Contact us</a>
+                        <td style="padding: 20px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; font-size: 12px; color: #999;">
+                                InboxIQ by Kalevent &middot;
+                                <a href="https://kalevent.com/contact" style="color: #4F46E5; text-decoration: none;">Contact us</a>
                             </p>
                         </td>
                     </tr>
