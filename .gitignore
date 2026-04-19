@@ -64,3 +64,4 @@ docs/marketing/
 # Large demo/media files — use cloud storage instead
 src/static/demo/*.mov
 src/static/demo/*.mp4
+.worktrees/
