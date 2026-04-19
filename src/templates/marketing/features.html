@@ -10,27 +10,47 @@ InboxIQ triage, labels, drafts, and automation run inside Gmail and Outlook — 
 <div class="marketing-main space-y-16">
 
   {# ── Hero ──────────────────────────────────────────────────── #}
-  <header class="space-y-6">
-    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
-      InboxIQ &bull; Full Feature Overview
+  <header class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+    <div class="space-y-6">
+      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+        InboxIQ &bull; Full Feature Overview
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+        AI email intelligence that lives<br class="hidden sm:block"> inside your inbox
+      </h1>
+      <p class="text-lg text-slate-200 leading-relaxed">
+        InboxIQ adds a five-layer intelligence pipeline to your existing Gmail or Outlook inbox.
+        No migration. No new support tool. Every feature is designed for the founder or ops lead
+        drowning in 50–300 repetitive emails a week.
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+          Connect your inbox free
+        </a>
+        <a href="{{ url_for('pricing_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
+          See pricing
+        </a>
+      </div>
+      <p class="text-slate-400 text-sm">Works with Gmail and Outlook &bull; No credit card required to start</p>
     </div>
-    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
-      AI email intelligence that lives<br class="hidden sm:block"> inside your inbox
-    </h1>
-    <p class="text-lg text-slate-200 leading-relaxed max-w-2xl">
-      InboxIQ adds a five-layer intelligence pipeline to your existing Gmail or Outlook inbox.
-      No migration. No new support tool. Every feature is designed for the founder or ops lead
-      drowning in 50–300 repetitive emails a week.
-    </p>
-    <div class="flex flex-wrap gap-3">
-      <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
-        Connect your inbox free
-      </a>
-      <a href="{{ url_for('pricing_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
-        See pricing
-      </a>
+    <div class="relative">
+      <div class="rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+        <div class="bg-slate-800 px-4 py-2.5 flex items-center gap-2 border-b border-white/5">
+          <span class="w-2.5 h-2.5 rounded-full bg-red-500/70 flex-shrink-0"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/70 flex-shrink-0"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-green-500/70 flex-shrink-0"></span>
+          <div class="flex-1 bg-slate-700/70 rounded-md h-5 ml-2 flex items-center px-3">
+            <span class="text-xs text-slate-400">app.kalevent.com/dashboard</span>
+          </div>
+        </div>
+        <img src="{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}"
+             alt="InboxIQ dashboard — triage, drafts and automation running inside your inbox"
+             class="w-full block"
+             loading="eager" width="1280" height="800">
+      </div>
+      <div class="absolute -bottom-4 -right-4 w-24 h-24 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -top-4 -left-4 w-20 h-20 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
     </div>
-    <p class="text-slate-400 text-sm">Works with Gmail and Outlook &bull; No credit card required to start</p>
   </header>
 
   {# ── How it works ──────────────────────────────────────────── #}
