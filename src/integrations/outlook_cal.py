@@ -13,6 +13,8 @@ import logging
 from datetime import datetime, timedelta, time
 
 import requests as http
+from src.models.core import InboxConnection
+from src.crypto import decrypt_value
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +33,6 @@ def _get_access_token(account_id: int) -> str | None:
     connection, or None if not connected.
     """
     try:
-        from src.models.core import InboxConnection
-        from src.crypto import decrypt_value
-
         conn = InboxConnection.query.filter_by(
             account_id=account_id, provider="outlook_cal", status="connected"
         ).first()
@@ -142,3 +141,60 @@ def get_available_slots_text(account_id: int, days_ahead: int = 5) -> str:
             "outlook_cal get_available_slots_text failed account=%s: %s", account_id, exc
         )
         return ""
+
+
+def create_meeting(
+    account_id: int,
+    title: str,
+    start_dt,
+    end_dt,
+    attendee_email: str,
+    attendee_name: str,
+) -> dict:
+    """
+    Create an Outlook Calendar event with a Teams meeting link via Microsoft Graph API.
+
+    Returns {"event_id": str, "meet_link": str, "html_link": str} or raises RuntimeError.
+    """
+    conn = InboxConnection.query.filter_by(
+        account_id=account_id, provider="outlook_cal", status="connected"
+    ).first()
+    if not conn:
+        raise RuntimeError("Outlook Calendar not connected for this account")
+
+    meta = conn.metadata_json or {}
+    token = decrypt_value(meta.get("access_token_enc", ""))
+    if not token:
+        raise RuntimeError("Outlook access token missing or could not be decrypted")
+
+    url = "https://graph.microsoft.com/v1.0/me/events"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    body = {
+        "subject": title,
+        "start": {"dateTime": start_dt.isoformat(), "timeZone": "UTC"},
+        "end": {"dateTime": end_dt.isoformat(), "timeZone": "UTC"},
+        "attendees": [
+            {
+                "emailAddress": {"address": attendee_email, "name": attendee_name},
+                "type": "required",
+            }
+        ],
+        "isOnlineMeeting": True,
+        "onlineMeetingProvider": "teamsForBusiness",
+    }
+    resp = http.post(url, headers=headers, json=body, timeout=15)
+    if resp.status_code not in (200, 201):
+        raise RuntimeError(
+            f"Outlook event creation failed: {resp.status_code} {resp.text[:200]}"
+        )
+
+    data = resp.json()
+    meet_link = (data.get("onlineMeeting") or {}).get("joinUrl", "")
+    return {
+        "event_id": data["id"],
+        "meet_link": meet_link,
+        "html_link": data.get("webLink", ""),
+    }
