@@ -766,6 +766,29 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         ticket.id, status, action_required, email_type
     )
 
+    # Best-effort: if this email is a meeting request and a draft was generated,
+    # append a booking link so the visitor can self-schedule.
+    if decision.reply_text and normalized.get("from_email"):
+        try:
+            from src.integrations.gcal import is_meeting_request as _is_meeting_req
+            _subj = normalized.get("subject", "")
+            _body = normalized.get("body") or normalized.get("text") or ""
+            if _is_meeting_req(_subj, _body):
+                from src.booking.service import generate_booking as _gen_booking
+                _booking_url = _gen_booking(
+                    account_id=account_id,
+                    ticket_id=ticket.id,
+                    subject=_subj,
+                    requester_email=normalized.get("from_email", ""),
+                    requester_name="",
+                )
+                decision.reply_text = (
+                    decision.reply_text.rstrip()
+                    + f"\n\nSchedule a time that works for you: {_booking_url}"
+                )
+        except Exception as _bk_exc:
+            logging.getLogger(__name__).warning("Booking link injection failed: %s", _bk_exc)
+
     # Layer 4 — upsert SenderProfile so the domain confidence grows with each email.
     # Best-effort: never block ticket creation if this fails.
     try:
