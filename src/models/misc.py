@@ -92,4 +92,23 @@ class Booking(db.Model):
     confirmed_at = db.Column(db.DateTime(timezone=True), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "account_id": self.account_id,
+            "ticket_id": self.ticket_id,
+            "subject": self.subject,
+            "requester_email": self.requester_email,
+            "requester_name": self.requester_name,
+            "duration_minutes": self.duration_minutes,
+            "status": self.status,
+            "slot_start": self.slot_start.isoformat() if self.slot_start else None,
+            "slot_end": self.slot_end.isoformat() if self.slot_end else None,
+            "booked_by_name": self.booked_by_name,
+            "booked_by_email": self.booked_by_email,
+            "meet_link": self.meet_link,
+            "confirmed_at": self.confirmed_at.isoformat() if self.confirmed_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
 
