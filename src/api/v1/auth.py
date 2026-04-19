@@ -562,7 +562,6 @@ def _invite_result_page(success: bool, message: str) -> str:
 
 
 @v1.route("/auth/google/start", methods=["GET"])
-@jwt_required(optional=True)
 def google_start():
     """Sign-in / sign-up with Google. Uses only openid/email/profile — no Gmail scopes."""
     client_id = current_app.config.get("GOOGLE_CLIENT_ID")
