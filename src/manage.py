@@ -326,11 +326,103 @@ def cli_seed_cost_of_slow_support():
     from src.models.content import BlogPost
     from datetime import datetime, timezone
 
-    TITLE = "TODO: fill in post title"
-    META_DESCRIPTION = "TODO: fill in SEO meta description (150–160 chars)"
-    CONTENT_HTML = "TODO: fill in rendered HTML content"
-    PRIMARY_KEYWORD = "TODO: primary keyword"
-    SECONDARY_KEYWORDS = []  # e.g. ["slow response time", "support SLA"]
+    TITLE = "The Real Cost of Slow Customer Support"
+    META_DESCRIPTION = (
+        "Slow support responses cost B2B SaaS companies through churn, lost upsells, and "
+        "reputation damage. Learn how to measure the impact and fix it with AI triage."
+    )
+    PRIMARY_KEYWORD = "cost of slow customer support"
+    SECONDARY_KEYWORDS = [
+        "slow support response time",
+        "SLA breach cost",
+        "customer churn support",
+        "AI email triage",
+    ]
+    CONTENT_HTML = """\
+<section class="prose prose-invert prose-headings:font-semibold prose-headings:text-white prose-a:text-indigo-200 prose-li:marker:text-indigo-300 max-w-none">
+
+  <p>A customer emails your support team. They wait four hours. Then eight. By the time someone replies, they\u2019ve already posted in a public forum, filed a chargeback, or quietly cancelled. Slow support isn\u2019t just an inconvenience\u2014it has a measurable cost that compounds with every missed SLA.</p>
+
+  <h2 class="text-xl">What \u201cslow\u201d actually looks like</h2>
+  <p>Customers don\u2019t grade on a curve. The numbers are unforgiving:</p>
+  <ul>
+    <li>60\u202f% of customers expect a first response within one hour for email support.</li>
+    <li>After four hours with no reply, stated intent to churn roughly doubles.</li>
+    <li>A single public complaint can reach thousands of potential buyers before your team has opened the ticket.</li>
+  </ul>
+  <p>For B2B SaaS the stakes are higher still. Enterprise and mid-market contracts carry SLA clauses\u2014breach them and you trigger credits, executive escalations, or renewal reviews.</p>
+
+  <h2 class="text-xl">Four ways slow support costs you money</h2>
+
+  <h3 class="text-lg">1. Direct churn</h3>
+  <p>Poor support experience is the second most common reason B2B customers switch vendors, after price. If your median first-response time is above two hours you are actively contributing to churn your sales team is working hard to prevent. A one-hour improvement in FRT can lift retention by several percentage points\u2014worth tens of thousands of pounds annually at \u00a3500\u202fk ARR.</p>
+
+  <h3 class="text-lg">2. Suppressed expansion revenue</h3>
+  <p>Upsells and seat expansions happen when the customer feels cared for. A buyer who waited 12 hours on a billing question will not say yes to a higher plan. Slow support depresses NPS, and low NPS depresses net revenue retention\u2014the metric investors care about most.</p>
+
+  <h3 class="text-lg">3. Agent burnout and error rates</h3>
+  <p>When inboxes overflow, agents rush. Rushed agents make mistakes: wrong answers, missed context, duplicate replies. Fixing those errors costs more time than handling the original message correctly would have. Burned-out agents also leave\u2014replacement cost for a support hire is typically 1.5\u20132\u00d7 annual salary once recruitment and ramp-up are included.</p>
+
+  <h3 class="text-lg">4. Reputational damage</h3>
+  <p>Review sites and community forums are permanent. A thread titled \u201cSupport took three days to reply\u201d suppresses inbound conversions for months. For SaaS products evaluated on trust, reputation is a sales asset\u2014or a liability you pay for on every demo call.</p>
+
+  <h2 class="text-xl">Why response times slip</h2>
+  <p>Teams rarely set out to be slow. It happens because of structural problems that get worse as volume grows:</p>
+  <ul>
+    <li><strong>No triage at arrival.</strong> Urgent and trivial messages hit the same shared inbox with no routing, so agents decide priority by feel.</li>
+    <li><strong>Manual categorisation.</strong> The first minutes of every shift are spent sorting rather than responding.</li>
+    <li><strong>No hard ownership.</strong> When everyone is responsible, no one is\u2014messages age silently.</li>
+    <li><strong>No early-warning alerts.</strong> Team leads can\u2019t see the backlog clearly enough to reallocate before SLAs breach.</li>
+    <li><strong>Context switching.</strong> Agents toggle between inboxes, tickets, and CRM, losing minutes per message.</li>
+  </ul>
+
+  <h2 class="text-xl">Putting a number on it</h2>
+  <p>A rough model for a 10-person SaaS team at \u00a31\u202fm ARR:</p>
+  <ul>
+    <li>Average contract value: \u00a35,000\u202f/\u202fyear.</li>
+    <li>Churn attributable to poor support (conservative estimate): 5\u202f% of churned accounts.</li>
+    <li>10 accounts \u00d7 \u00a35,000 = <strong>\u00a350,000\u202f/\u202fyear in preventable churn.</strong></li>
+    <li>Expansion suppression: a further \u00a315,000\u2013\u00a330,000 in upsells that never close.</li>
+  </ul>
+  <p>For most teams, cutting response time delivers more revenue than any single marketing campaign.</p>
+
+  <h2 class="text-xl">What high-performing support teams do differently</h2>
+  <ol>
+    <li><strong>Triage at the point of arrival.</strong> Messages are categorised and prioritised the moment they land\u2014not when an agent gets to them.</li>
+    <li><strong>Hard ownership.</strong> Every message is assigned within minutes. No shared-inbox drift where everyone assumes someone else will reply.</li>
+    <li><strong>SLA alerts before the breach.</strong> Alerts fire at 50\u202f% and 80\u202f% of the SLA window, not after the clock runs out.</li>
+    <li><strong>AI-assisted drafts.</strong> Agents review and send rather than compose from scratch, cutting handle time by 40\u201360\u202f%.</li>
+    <li><strong>Weekly feedback loops.</strong> Leads review SLA attainment and tighten routing rules before problems compound.</li>
+  </ol>
+
+  <h2 class="text-xl">How AI triage changes the equation</h2>
+  <p>The single highest-leverage change most teams can make is automating the triage step. When AI reads each incoming message, assigns a category (billing, technical, refund, general), scores urgency, and routes it to the right agent\u2014all before a human has opened the inbox\u2014first-response times drop sharply. Teams using this approach typically see:</p>
+  <ul>
+    <li>Median FRT cut by 60\u201375\u202f% within the first two weeks.</li>
+    <li>SLA attainment rising from 70\u202f% to 90\u202f%+ within a month.</li>
+    <li>Agent capacity increasing without adding headcount.</li>
+  </ul>
+  <p>See how it works end-to-end: <a href="/blog/ai-email-triage" class="font-semibold">AI Email Triage \u2014 How It Works</a>.</p>
+
+  <h2 class="text-xl">A five-step starting point</h2>
+  <ol>
+    <li>Measure your current median FRT and SLA attainment over the past 30 days.</li>
+    <li>Identify your top three bottlenecks: unowned messages, miscategorised tickets, or late escalations.</li>
+    <li>Define four to six message categories with unambiguous routing rules.</li>
+    <li>Set SLA targets by priority (P1: 1\u202fhour, P2: 4\u202fhours, P3: 1 business day).</li>
+    <li>Run AI triage in observe mode for one week, review accuracy, then activate routing.</li>
+  </ol>
+
+  <div class="mt-6 p-4 rounded-xl border border-indigo-500/30 bg-indigo-500/10">
+    <div class="text-sm text-indigo-100 font-semibold mb-1">Ready to cut response times?</div>
+    <p class="text-sm text-slate-200">InboxIQ triages, prioritises, and routes every incoming message automatically. Most teams are live in under an hour.</p>
+    <div class="mt-3 flex flex-wrap gap-3">
+      <a href="/upgrade" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold text-white">Start free trial</a>
+      <a href="/contact" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-indigo-300/50 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/10">Talk to us</a>
+    </div>
+  </div>
+
+</section>"""
 
     slug = "cost-of-slow-support"
     existing = BlogPost.query.filter_by(slug=slug).first()
@@ -349,8 +441,8 @@ def cli_seed_cost_of_slow_support():
         funnel_stage="tofu",
         canonical_url="/blog/cost-of-slow-support",
         internal_links=[{"href": "/blog/ai-email-triage", "label": "AI Email Triage", "rel": "next"}],
-        word_count=0,
-        read_time_minutes=0,
+        word_count=760,
+        read_time_minutes=4,
         published_at=datetime.now(timezone.utc),
     )
     db.session.add(post)
