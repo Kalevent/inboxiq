@@ -10,7 +10,7 @@ def test_get_available_slots_gcal_returns_list(app):
         "calendars": {"primary": {"busy": []}}
     }
     with app.app_context():
-        with patch("src.integrations.gcal.get_gcal_service", return_value=mock_service):
+        with patch("src.booking.calendar.get_gcal_service",return_value=mock_service):
             slots = get_available_slots(account_id=1, duration_minutes=30, provider="gcal")
 
     assert isinstance(slots, list)
@@ -26,7 +26,7 @@ def test_get_available_slots_returns_empty_when_no_service(app):
     from src.booking.calendar import get_available_slots
 
     with app.app_context():
-        with patch("src.integrations.gcal.get_gcal_service", return_value=None):
+        with patch("src.booking.calendar.get_gcal_service",return_value=None):
             slots = get_available_slots(account_id=1, duration_minutes=30, provider="gcal")
     assert slots == []
 
@@ -56,7 +56,7 @@ def test_create_gcal_event_returns_event_id_and_meet_link(app):
     end = datetime(2026, 4, 21, 10, 30)
 
     with app.app_context():
-        with patch("src.integrations.gcal.get_gcal_service", return_value=mock_service):
+        with patch("src.booking.calendar.get_gcal_service",return_value=mock_service):
             result = create_gcal_event(
                 account_id=1,
                 summary="Demo call",
@@ -76,7 +76,7 @@ def test_create_gcal_event_raises_when_no_service(app):
     import pytest
 
     with app.app_context():
-        with patch("src.integrations.gcal.get_gcal_service", return_value=None):
+        with patch("src.booking.calendar.get_gcal_service",return_value=None):
             with pytest.raises(RuntimeError, match="not connected"):
                 create_gcal_event(
                     account_id=1, summary="x",
@@ -95,5 +95,8 @@ def test_slots_respect_busy_times(app):
     busy = [{"start": "2026-04-22T09:00:00Z", "end": "2026-04-22T17:00:00Z"}]
     slots = _compute_slots(busy, duration_minutes=30, days_ahead=2)
     # All returned slots should not overlap the busy range
+    busy_start = datetime(2026, 4, 22, 9, 0)
+    busy_end = datetime(2026, 4, 22, 17, 0)
     for s in slots:
-        assert not ("2026-04-22T09" <= s["start"] < "2026-04-22T17")
+        slot_dt = datetime.fromisoformat(s["start"].replace("Z", ""))
+        assert not (slot_dt >= busy_start and slot_dt < busy_end)

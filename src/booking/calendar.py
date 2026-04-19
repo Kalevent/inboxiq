@@ -3,6 +3,8 @@ from datetime import datetime, timedelta, time
 from typing import Any
 from uuid import uuid4
 
+from src.integrations.gcal import get_gcal_service
+
 logger = logging.getLogger(__name__)
 
 _BUSINESS_START = time(9, 0)
@@ -52,7 +54,6 @@ def create_calendar_event(
 
 
 def _gcal_slots(account_id: int, duration_minutes: int, days_ahead: int) -> list[dict]:
-    from src.integrations.gcal import get_gcal_service
     service = get_gcal_service(account_id)
     if not service:
         return []
@@ -112,7 +113,7 @@ def _outlook_slots(account_id: int, duration_minutes: int, days_ahead: int) -> l
 def _compute_slots(busy_times: list, duration_minutes: int, days_ahead: int) -> list[dict]:
     slots = []
     now = datetime.utcnow()
-    cursor = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    cursor = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_date = now + timedelta(days=days_ahead)
 
     while cursor.date() <= end_date.date() and len(slots) < _MAX_SLOTS:
@@ -126,11 +127,11 @@ def _compute_slots(busy_times: list, duration_minutes: int, days_ahead: int) -> 
             and len(slots) < _MAX_SLOTS
         ):
             slot_end = slot_start + timedelta(minutes=duration_minutes)
-            if not _overlaps(slot_start, slot_end, busy_times):
+            if slot_start > now and not _overlaps(slot_start, slot_end, busy_times):
                 slots.append({
                     "start": slot_start.isoformat() + "Z",
                     "end": slot_end.isoformat() + "Z",
-                    "label": slot_start.strftime("%a %d %b · %I:%M %p UTC").lstrip("0").replace(" 0", " "),
+                    "label": f"{slot_start.strftime('%a %d %b')} · {slot_start.strftime('%I:%M %p UTC').lstrip('0')}",
                 })
             slot_start += timedelta(minutes=duration_minutes + _BUFFER_MINUTES)
         cursor += timedelta(days=1)
@@ -158,7 +159,6 @@ def create_gcal_event(
     attendee_name: str,
 ) -> dict[str, str]:
     """Create a Google Calendar event with Meet link. Returns {event_id, meet_link, html_link}."""
-    from src.integrations.gcal import get_gcal_service
     service = get_gcal_service(account_id)
     if not service:
         raise RuntimeError("Google Calendar not connected for this account")
