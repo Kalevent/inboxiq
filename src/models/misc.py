@@ -71,4 +71,25 @@ class Feedback(db.Model):
         }
 
 
+class Booking(db.Model):
+    __tablename__ = "inboxiq_bookings"
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    token_hash = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    ticket_id = db.Column(db.String(64), db.ForeignKey("inboxiq_tickets.id"), nullable=False)
+    subject = db.Column(db.String(500), nullable=False, default="")
+    requester_email = db.Column(db.String(255), nullable=False, default="")
+    requester_name = db.Column(db.String(255), nullable=False, default="")
+    duration_minutes = db.Column(db.Integer, nullable=False, default=30)
+    status = db.Column(db.String(32), nullable=False, default="pending")
+    slot_start = db.Column(db.DateTime(timezone=True), nullable=True)
+    slot_end = db.Column(db.DateTime(timezone=True), nullable=True)
+    booked_by_name = db.Column(db.String(255), nullable=True)
+    booked_by_email = db.Column(db.String(255), nullable=True)
+    calendar_event_id = db.Column(db.String(255), nullable=True)
+    meet_link = db.Column(db.String(500), nullable=True)
+    confirmed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
 

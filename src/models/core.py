@@ -90,6 +90,7 @@ class AccountFeatureFlags(db.Model):
     draft_reply_enabled = db.Column(db.Boolean, nullable=False, default=True)
     draft_reply_auto_approve = db.Column(db.Boolean, nullable=False, default=False)  # Future: auto-send low-risk replies
     draft_reply_min_confidence = db.Column(db.Float, nullable=False, default=0.7)
+    booking_duration_minutes = db.Column(db.Integer, nullable=False, default=30, server_default='30')
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -99,6 +100,7 @@ class AccountFeatureFlags(db.Model):
             "draft_reply_enabled": self.draft_reply_enabled,
             "draft_reply_auto_approve": self.draft_reply_auto_approve,
             "draft_reply_min_confidence": self.draft_reply_min_confidence,
+            "booking_duration_minutes": self.booking_duration_minutes,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
