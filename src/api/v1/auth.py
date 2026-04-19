@@ -19,6 +19,7 @@ from flask_jwt_extended import (
     jwt_required,
     set_access_cookies,
     set_refresh_cookies,
+    verify_jwt_in_request,
 )
 
 from src.api.v1 import v1
@@ -606,8 +607,16 @@ def google_inbox_start():
     return redirect(f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}")
 
 
+def _get_jwt_identity_safe() -> str | None:
+    """Return the current JWT identity without raising on missing or expired tokens."""
+    try:
+        verify_jwt_in_request(optional=True)
+        return get_jwt_identity()
+    except Exception:
+        return None
+
+
 @v1.route("/auth/google/callback", methods=["GET"])
-@jwt_required(optional=True)
 def google_callback():
     code = request.args.get("code")
     if not code:
@@ -636,7 +645,7 @@ def google_callback():
     refresh_token = tok.get("refresh_token")
     # Prefer user_id from signed state (works for password-auth users whose JWT cookie
     # is on a different subdomain than the callback URL). Fall back to JWT cookie identity.
-    user_id = _parse_connect_state(state) or get_jwt_identity()
+    user_id = _parse_connect_state(state) or _get_jwt_identity_safe()
 
     if state.startswith("inbox_invite_gcal:"):
         invite_token = state[len("inbox_invite_gcal:"):]
@@ -731,7 +740,6 @@ def outlook_inbox_start():
 
 
 @v1.route("/auth/outlook/callback", methods=["GET"])
-@jwt_required(optional=True)
 def outlook_callback():
     code = request.args.get("code")
     if not code:
@@ -762,7 +770,7 @@ def outlook_callback():
     email = (id_claims.get("preferred_username") or id_claims.get("email") or "").strip().lower() or "unknown@outlook.com"
     access_token = tok.get("access_token")
     refresh_token = tok.get("refresh_token")
-    user_id = _parse_connect_state(state) or get_jwt_identity()
+    user_id = _parse_connect_state(state) or _get_jwt_identity_safe()
 
     if state.startswith("inbox_invite:"):
         invite_token = state[len("inbox_invite:"):]
