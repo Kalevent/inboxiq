@@ -202,7 +202,8 @@ def _run_dspy_triage_impl(
         kb_context_list = fetch_kb_context(subject, body, account_id, limit=3)
         # If the email is a meeting request and the account has Google Calendar
         # connected, surface available slots so the draft reply can include them.
-        calendar_slots = fetch_calendar_slots(subject, body, account_id)
+        from_email = payload.get("from_email") or payload.get("from") or ""
+        calendar_slots = fetch_calendar_slots(subject, body, account_id, requester_email=from_email or None)
         if calendar_slots:
             kb_context_list.append({
                 "type": "calendar_availability",

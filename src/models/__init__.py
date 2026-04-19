@@ -13,7 +13,7 @@ from src.models.content import BlogPost, KBIntegration, KBArticle, KBArticleEmbe
 from src.models.campaigns import CampaignSender, HunterDomainCache, EmailCampaign, EmailOutreach, NurtureEmailSend
 from src.models.automation import AutomationStudioWaitlist, AutomationRule, AutomationRuleExecution, WebhookProvider, AutomationSuggestion, ApprovalPolicy
 from src.models.marketing import Referral, InAppMessage, InAppMessageDismissal, LandingPage, MarketingSpend, EnterpriseInquiry
-from src.models.misc import Testimonial, Feedback
+from src.models.misc import Testimonial, Feedback, Booking
 from src.models.developer import DeveloperAccessRequest, RegisteredApp
 from src.models.billing import (
     PaymentProviderAccount, CustomerBillingProfile, PaymentMethod,
@@ -42,7 +42,7 @@ __all__ = [
     # marketing
     "Referral", "InAppMessage", "InAppMessageDismissal", "LandingPage", "MarketingSpend", "EnterpriseInquiry",
     # misc
-    "Testimonial", "Feedback",
+    "Testimonial", "Feedback", "Booking",
     # developer
     "DeveloperAccessRequest", "RegisteredApp",
     # billing

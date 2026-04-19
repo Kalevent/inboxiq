@@ -306,6 +306,8 @@ def create_app() -> Flask:
   app.register_blueprint(marketing_bp)
   app.register_blueprint(audit_bp)
   app.register_blueprint(approval_policies_bp)
+  from src.booking.routes import booking_bp
+  app.register_blueprint(booking_bp)
 
   # Register SEO cleanup handlers for old URLs
   from src.marketing.seo_cleanup import register_seo_cleanup

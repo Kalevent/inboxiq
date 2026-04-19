@@ -172,10 +172,20 @@ def compute_reply_confidence(result: Any) -> float:
     return 0.8
 
 
-def fetch_calendar_slots(subject: str, body: str, account_id: int | None) -> str:
+def fetch_calendar_slots(
+    subject: str,
+    body: str,
+    account_id: int | None,
+    ticket_id: str | None = None,
+    requester_email: str | None = None,
+    requester_name: str | None = None,
+) -> str:
     """
     If the email looks like a meeting request AND the account has Google Calendar
     connected, return a formatted available-slots string to include in the draft.
+
+    When ticket_id and requester_email are provided, returns a booking link instead
+    of a text-based slot list so the visitor can self-schedule.
 
     Returns empty string when:
     - account_id is None
@@ -187,17 +197,33 @@ def fetch_calendar_slots(subject: str, body: str, account_id: int | None) -> str
         subject: Email subject line
         body: Email body text
         account_id: Account ID to look up gcal connection
+        ticket_id: Ticket ID for generating a booking link (optional)
+        requester_email: Email of the meeting requester (optional)
+        requester_name: Name of the meeting requester (optional)
 
     Returns:
-        Human-readable availability string, or ""
+        Human-readable availability string or booking link, or ""
     """
     if not account_id:
         return ""
     try:
-        from src.integrations.gcal import is_meeting_request, get_available_slots_text as gcal_slots
-        from src.integrations.outlook_cal import get_available_slots_text as outlook_slots
+        from src.integrations.gcal import is_meeting_request
         if not is_meeting_request(subject, body):
             return ""
+
+        if ticket_id and requester_email:
+            from src.booking.service import generate_booking
+            booking_url = generate_booking(
+                account_id=account_id,
+                ticket_id=ticket_id,
+                subject=subject,
+                requester_email=requester_email,
+                requester_name=requester_name or "",
+            )
+            return f"\n\nSchedule a time that works for you: {booking_url}"
+
+        from src.integrations.gcal import get_available_slots_text as gcal_slots
+        from src.integrations.outlook_cal import get_available_slots_text as outlook_slots
         # Try Google Calendar first, fall back to Outlook Calendar
         slots = gcal_slots(account_id)
         if not slots:
