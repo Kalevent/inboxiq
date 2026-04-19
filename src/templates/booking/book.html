@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book a meeting</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+    .wrap { max-width: 560px; margin: 40px auto; padding: 0 16px; }
+    .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.08); padding: 32px; }
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .logo-mark { width: 32px; height: 32px; background: #4F46E5; border-radius: 7px; }
+    .logo-name { font-size: 15px; font-weight: 600; color: #111; }
+    .context-banner { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 14px; border-radius: 4px; margin-bottom: 24px; font-size: 13px; }
+    .context-banner .subject { font-weight: 600; color: #92400e; }
+    .context-banner .from { color: #78350f; margin-top: 2px; }
+    h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #666; margin-bottom: 20px; }
+    .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px; }
+    .slot { border: 2px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; cursor: pointer; font-size: 13px; background: #f9fafb; transition: all .15s; }
+    .slot:hover { border-color: #a5b4fc; background: #eef2ff; }
+    .slot.selected { border-color: #4F46E5; background: #eef2ff; color: #4F46E5; font-weight: 600; }
+    .slot .date { font-size: 11px; color: #666; }
+    .slot.selected .date { color: #6366f1; }
+    .no-slots { text-align: center; padding: 20px; color: #666; font-size: 14px; }
+    label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #374151; }
+    input { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 9px 12px; font-size: 14px; margin-bottom: 14px; outline: none; }
+    input:focus { border-color: #4F46E5; box-shadow: 0 0 0 2px rgba(79,70,229,.15); }
+    .btn { width: 100%; background: #4F46E5; color: #fff; border: none; border-radius: 8px; padding: 13px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+    .btn:disabled { background: #c7c9f0; cursor: not-allowed; }
+    .footer { text-align: center; font-size: 11px; color: #999; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="logo">
+        <div class="logo-mark"></div>
+        <span class="logo-name">InboxIQ</span>
+      </div>
+
+      {% if subject or requester_email %}
+      <div class="context-banner">
+        {% if subject %}<div class="subject">Re: {{ subject }}</div>{% endif %}
+        {% if requester_email %}<div class="from">from {{ requester_email }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+      <h1>Book a meeting with {{ account_name }}</h1>
+      <p class="subtitle">{{ duration_minutes }}-minute call &middot; Video link sent on confirmation</p>
+
+      <form method="POST" action="/book/{{ token }}/confirm" id="book-form">
+        {% if slots %}
+        <div class="slots" id="slot-grid">
+          {% for slot in slots %}
+          <div class="slot" data-start="{{ slot.start }}" onclick="selectSlot(this)">
+            <div class="date">{{ slot.label.split('·')[0].strip() }}</div>
+            <strong>{{ slot.label.split('·')[1].strip() if '·' in slot.label else slot.label }}</strong>
+          </div>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="slot_start" id="slot_start" value="">
+        {% else %}
+        <div class="no-slots">No available slots found. Please reply to the email to arrange a time.</div>
+        {% endif %}
+
+        <label for="name">Your name</label>
+        <input type="text" id="name" name="booked_by_name" value="{{ requester_name }}" required placeholder="Your full name">
+
+        <label for="email">Your email</label>
+        <input type="email" id="email" name="booked_by_email" value="{{ requester_email }}" required placeholder="you@company.com">
+
+        {% if slots %}
+        <button type="submit" class="btn" id="submit-btn" disabled>Select a time above</button>
+        {% endif %}
+      </form>
+    </div>
+    <div class="footer">Powered by InboxIQ</div>
+  </div>
+
+  <script>
+    function selectSlot(el) {
+      document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('slot_start').value = el.dataset.start;
+      var btn = document.getElementById('submit-btn');
+      btn.disabled = false;
+      btn.textContent = 'Confirm booking';
+    }
+    document.getElementById('book-form').addEventListener('submit', function(e) {
+      var slot = document.getElementById('slot_start').value;
+      if (!slot) { e.preventDefault(); alert('Please select a time slot.'); }
+    });
+  </script>
+</body>
+</html>
