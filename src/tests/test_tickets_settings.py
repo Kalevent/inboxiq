@@ -52,3 +52,56 @@ class TestBuildTicketQuery:
             from src.settings.routes import _build_ticket_query
             _build_ticket_query(account_id=1, status="")
             assert mock_q.filter.call_count == 0
+
+
+# ---------------------------------------------------------------------------
+# _is_staff_account
+# ---------------------------------------------------------------------------
+
+class TestIsStaffAccount:
+
+    def _mock_current_app(self, admin_emails="kofi@kalevent.com"):
+        """Return a mock current_app with config.get returning admin_emails."""
+        mock_app = MagicMock()
+        mock_app.config.get.return_value = admin_emails
+        return mock_app
+
+    def test_staff_email_returns_true(self):
+        from src.settings.routes import _is_staff_account
+        import src.settings.routes as routes_mod
+        user = MagicMock()
+        user.email = "kofi@kalevent.com"
+        orig = routes_mod.current_app
+        routes_mod.current_app = self._mock_current_app()
+        try:
+            assert _is_staff_account(user) is True
+        finally:
+            routes_mod.current_app = orig
+
+    def test_non_staff_email_returns_false(self):
+        from src.settings.routes import _is_staff_account
+        import src.settings.routes as routes_mod
+        user = MagicMock()
+        user.email = "customer@example.com"
+        orig = routes_mod.current_app
+        routes_mod.current_app = self._mock_current_app()
+        try:
+            assert _is_staff_account(user) is False
+        finally:
+            routes_mod.current_app = orig
+
+    def test_none_user_returns_false(self):
+        from src.settings.routes import _is_staff_account
+        assert _is_staff_account(None) is False
+
+    def test_case_insensitive(self):
+        from src.settings.routes import _is_staff_account
+        import src.settings.routes as routes_mod
+        user = MagicMock()
+        user.email = "KOFI@KALEVENT.COM"
+        orig = routes_mod.current_app
+        routes_mod.current_app = self._mock_current_app()
+        try:
+            assert _is_staff_account(user) is True
+        finally:
+            routes_mod.current_app = orig

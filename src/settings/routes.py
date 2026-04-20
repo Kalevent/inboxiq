@@ -707,6 +707,31 @@ def tickets_list():
   )
 
 
+@bp.get("/settings/tickets/<ticket_id>")
+@login_required_settings
+def tickets_detail(ticket_id):
+  account_id = getattr(g, "current_account_id", None)
+  current_user = getattr(g, "current_user", None)
+  if not account_id:
+    return redirect(url_for("settings.settings_page", tab="team"))
+
+  ticket = Ticket.query.filter_by(id=ticket_id, account_id=account_id).first()
+  if not ticket:
+    from flask import abort
+    abort(404)
+
+  back_url = request.args.get("back") or url_for("settings.tickets_list")
+  is_staff = _is_staff_account(current_user)
+
+  return render_template(
+    "settings/tickets_detail.html",
+    ticket=ticket,
+    back_url=back_url,
+    is_staff=is_staff,
+    active_tab="tickets",
+  )
+
+
 @bp.post("/settings/account/delete")
 @login_required_settings
 @limiter.limit("3 per hour")
