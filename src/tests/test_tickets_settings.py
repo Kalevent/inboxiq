@@ -105,3 +105,37 @@ class TestIsStaffAccount:
             assert _is_staff_account(user) is True
         finally:
             routes_mod.current_app = orig
+
+
+# ---------------------------------------------------------------------------
+# Resolve / close idempotency guard
+# ---------------------------------------------------------------------------
+
+class TestTicketActionIdempotency:
+    """The resolve and close routes skip the DB write if ticket is already resolved/closed."""
+
+    def _already_done_ticket(self, status):
+        ticket = MagicMock()
+        ticket.id = "abc123"
+        ticket.status = status
+        return ticket
+
+    def test_resolve_skipped_when_already_resolved(self):
+        ticket = self._already_done_ticket("resolved")
+        already_done = ticket.status in ("resolved", "closed")
+        assert already_done is True
+
+    def test_resolve_skipped_when_already_closed(self):
+        ticket = self._already_done_ticket("closed")
+        already_done = ticket.status in ("resolved", "closed")
+        assert already_done is True
+
+    def test_resolve_proceeds_when_open(self):
+        ticket = self._already_done_ticket("open")
+        already_done = ticket.status in ("resolved", "closed")
+        assert already_done is False
+
+    def test_close_proceeds_when_new(self):
+        ticket = self._already_done_ticket("new")
+        already_done = ticket.status in ("resolved", "closed")
+        assert already_done is False

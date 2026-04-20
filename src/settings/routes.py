@@ -735,6 +735,52 @@ def tickets_detail(ticket_id):
   )
 
 
+@bp.post("/settings/tickets/<ticket_id>/resolve")
+@login_required_settings
+def tickets_resolve(ticket_id):
+  account_id = getattr(g, "current_account_id", None)
+  ticket = Ticket.query.filter_by(id=ticket_id, account_id=account_id).first()
+  if not ticket:
+    abort(404)
+
+  if ticket.status in ("resolved", "closed"):
+    flash(f"Ticket is already {ticket.status}.", "info")
+    return redirect(url_for("settings.tickets_detail", ticket_id=ticket_id))
+
+  ticket.status = "resolved"
+  try:
+    db.session.commit()
+    flash("Ticket marked as resolved.", "success")
+  except Exception:
+    db.session.rollback()
+    flash("Failed to update ticket. Please try again.", "error")
+
+  return redirect(url_for("settings.tickets_detail", ticket_id=ticket_id))
+
+
+@bp.post("/settings/tickets/<ticket_id>/close")
+@login_required_settings
+def tickets_close(ticket_id):
+  account_id = getattr(g, "current_account_id", None)
+  ticket = Ticket.query.filter_by(id=ticket_id, account_id=account_id).first()
+  if not ticket:
+    abort(404)
+
+  if ticket.status in ("resolved", "closed"):
+    flash(f"Ticket is already {ticket.status}.", "info")
+    return redirect(url_for("settings.tickets_detail", ticket_id=ticket_id))
+
+  ticket.status = "closed"
+  try:
+    db.session.commit()
+    flash("Ticket closed.", "success")
+  except Exception:
+    db.session.rollback()
+    flash("Failed to update ticket. Please try again.", "error")
+
+  return redirect(url_for("settings.tickets_detail", ticket_id=ticket_id))
+
+
 @bp.post("/settings/account/delete")
 @login_required_settings
 @limiter.limit("3 per hour")
