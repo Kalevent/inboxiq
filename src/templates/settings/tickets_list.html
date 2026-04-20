@@ -168,7 +168,7 @@
 
           <!-- Pagination -->
           {% if total_pages > 1 %}
-            {% set base = url_for('settings.tickets_list') ~ '?q=' ~ (q | urlencode) ~ '&status=' ~ filter_status ~ '&category=' ~ filter_category ~ '&priority=' ~ filter_priority ~ '&from=' ~ filter_from ~ '&to=' ~ filter_to %}
+            {% set base = url_for('settings.tickets_list') ~ '?q=' ~ (q | urlencode) ~ '&status=' ~ (filter_status | urlencode) ~ '&category=' ~ (filter_category | urlencode) ~ '&priority=' ~ (filter_priority | urlencode) ~ '&from=' ~ (filter_from | urlencode) ~ '&to=' ~ (filter_to | urlencode) %}
             <div class="flex items-center justify-between px-5 py-3 border-t border-slate-800 text-sm text-slate-400">
               <span>Page {{ page }} of {{ total_pages }}</span>
               <div class="flex gap-2">

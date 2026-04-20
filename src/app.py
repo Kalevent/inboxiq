@@ -1220,6 +1220,8 @@ def create_app() -> Flask:
       dt = dt.replace(tzinfo=timezone.utc)
     diff = now - dt
     seconds = int(diff.total_seconds())
+    if seconds < 0:
+      return dt.strftime("%b %d, %Y")
     if seconds < 60:
       return "just now"
     elif seconds < 3600:
