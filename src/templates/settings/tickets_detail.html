@@ -80,7 +80,7 @@
                 </div>
                 <div class="flex gap-2">
                   <dt class="w-28 text-slate-400 shrink-0">Category</dt>
-                  <dd class="text-slate-100">{{ ticket.category | title }}</dd>
+                  <dd class="text-slate-100">{{ ticket.category | title if ticket.category else '—' }}</dd>
                 </div>
                 <div class="flex gap-2">
                   <dt class="w-28 text-slate-400 shrink-0">Priority</dt>
@@ -169,11 +169,11 @@
                 </div>
                 <div class="flex gap-2">
                   <dt class="w-20 text-slate-400 shrink-0">Tokens in</dt>
-                  <dd class="text-slate-100">{{ ticket.llm_tokens_in or '—' }}</dd>
+                  <dd class="text-slate-100">{% if ticket.llm_tokens_in is not none %}{{ ticket.llm_tokens_in }}{% else %}—{% endif %}</dd>
                 </div>
                 <div class="flex gap-2">
                   <dt class="w-20 text-slate-400 shrink-0">Tokens out</dt>
-                  <dd class="text-slate-100">{{ ticket.llm_tokens_out or '—' }}</dd>
+                  <dd class="text-slate-100">{% if ticket.llm_tokens_out is not none %}{{ ticket.llm_tokens_out }}{% else %}—{% endif %}</dd>
                 </div>
                 <div class="flex gap-2">
                   <dt class="w-20 text-slate-400 shrink-0">Cost</dt>
