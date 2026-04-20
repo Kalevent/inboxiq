@@ -51,6 +51,7 @@
             {% elif ticket.status == 'closed' %}bg-slate-700 text-slate-400
             {% elif ticket.status == 'needs_review' %}bg-yellow-500/20 text-yellow-300
             {% elif ticket.status in ('new', 'open') %}bg-indigo-500/20 text-indigo-300
+            {% elif ticket.status == 'auto_handled' %}bg-slate-700 text-slate-400
             {% else %}bg-slate-700/50 text-slate-400{% endif %}">
             {{ ticket.status | replace('_', ' ') | title }}
           </span>
@@ -168,15 +169,15 @@
                 </div>
                 <div class="flex gap-2">
                   <dt class="w-20 text-slate-400 shrink-0">Tokens in</dt>
-                  <dd class="text-slate-100">{{ ticket.llm_tokens_in }}</dd>
+                  <dd class="text-slate-100">{{ ticket.llm_tokens_in or '—' }}</dd>
                 </div>
                 <div class="flex gap-2">
                   <dt class="w-20 text-slate-400 shrink-0">Tokens out</dt>
-                  <dd class="text-slate-100">{{ ticket.llm_tokens_out }}</dd>
+                  <dd class="text-slate-100">{{ ticket.llm_tokens_out or '—' }}</dd>
                 </div>
                 <div class="flex gap-2">
                   <dt class="w-20 text-slate-400 shrink-0">Cost</dt>
-                  <dd class="text-slate-100">${{ '%.6f' | format(ticket.llm_cost_usd | float) }}</dd>
+                  <dd class="text-slate-100">{% if ticket.llm_cost_usd is not none %}${{ '%.6f' | format(ticket.llm_cost_usd | float) }}{% else %}—{% endif %}</dd>
                 </div>
               </dl>
             </div>
