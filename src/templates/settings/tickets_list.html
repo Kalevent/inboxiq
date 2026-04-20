@@ -124,7 +124,7 @@
                 {% if tickets %}
                   {% for ticket in tickets %}
                     <tr class="border-b border-slate-800/60 hover:bg-slate-800/30 cursor-pointer"
-                        onclick="window.location='{{ url_for('settings.tickets_detail', ticket_id=ticket.id) }}?back={{ request.url | urlencode }}'">
+                        data-href="{{ url_for('settings.tickets_detail', ticket_id=ticket.id) }}?back={{ request.url | urlencode }}">
                       <td class="px-5 py-3 text-slate-100 max-w-xs truncate">
                         {{ ticket.subject[:80] }}{% if ticket.subject | length > 80 %}…{% endif %}
                       </td>
@@ -150,7 +150,7 @@
                         </span>
                       </td>
                       <td class="px-5 py-3 text-slate-400 whitespace-nowrap">
-                        {{ ticket.created_at.strftime('%b %d, %Y') if ticket.created_at else '—' }}
+                        {{ ticket.created_at | time_ago }}
                       </td>
                     </tr>
                   {% endfor %}
@@ -188,5 +188,10 @@
       </div>
     </main>
   </div>
+  <script>
+    document.querySelectorAll('tr[data-href]').forEach(function(row) {
+      row.addEventListener('click', function() { window.location = row.dataset.href; });
+    });
+  </script>
 </body>
 </html>

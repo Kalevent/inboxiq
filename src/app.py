@@ -1212,6 +1212,27 @@ def create_app() -> Flask:
   def ratelimit_handler(e):
     return jsonify({"error": "too many requests", "details": str(e.description)}), 429
 
+  def _time_ago(dt):
+    if not dt:
+      return "—"
+    now = datetime.now(timezone.utc)
+    if dt.tzinfo is None:
+      dt = dt.replace(tzinfo=timezone.utc)
+    diff = now - dt
+    seconds = int(diff.total_seconds())
+    if seconds < 60:
+      return "just now"
+    elif seconds < 3600:
+      return f"{seconds // 60}m ago"
+    elif seconds < 86400:
+      return f"{seconds // 3600}h ago"
+    elif seconds < 604800:
+      return f"{diff.days}d ago"
+    else:
+      return dt.strftime("%b %d, %Y")
+
+  app.jinja_env.filters["time_ago"] = _time_ago
+
   # Initialize Celery instance for background tasks
   # This ensures shared_task decorators use the correct broker (Redis)
   try:
