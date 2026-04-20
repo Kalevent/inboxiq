@@ -51,7 +51,9 @@ def _build_ticket_query(account_id, q="", status="", category="", priority="", f
       pass
   if to_date:
     try:
-      query = query.filter(Ticket.created_at <= datetime.strptime(to_date, "%Y-%m-%d"))
+      from datetime import timedelta
+      dt = datetime.strptime(to_date, "%Y-%m-%d") + timedelta(days=1)
+      query = query.filter(Ticket.created_at < dt)
     except ValueError:
       pass
 
@@ -159,7 +161,7 @@ def save_profile():
 @bp.get("/settings/<tab>")
 @login_required_settings
 def settings_page(tab):
-  allowed = {"team", "profile", "billing", "security", "integrations", "features", "ai_provider", "developer"}
+  allowed = {"team", "profile", "billing", "security", "integrations", "features", "ai_provider", "developer", "tickets"}
   if tab not in allowed:
     tab = "team"
   passkeys = []
