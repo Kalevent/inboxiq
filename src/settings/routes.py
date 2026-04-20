@@ -648,6 +648,57 @@ def activity_log_page():
   return render_template("settings/activity_log.html", account_id=account_id)
 
 
+_TICKET_STATUSES = ["new", "open", "auto_handled", "optional", "needs_review",
+                    "meeting_scheduled", "resolved", "closed"]
+_TICKET_CATEGORIES = ["support", "transactional", "scheduling", "billing", "spam", "other"]
+_TICKET_PRIORITIES = ["P0", "P1", "P2", "P3", "P4"]
+_TICKETS_PAGE_SIZE = 25
+
+
+@bp.get("/settings/tickets")
+@login_required_settings
+def tickets_list():
+  account_id = getattr(g, "current_account_id", None)
+  if not account_id:
+    return redirect(url_for("settings.settings_page", tab="team"))
+
+  q = request.args.get("q", "").strip()
+  status = request.args.get("status", "").strip()
+  category = request.args.get("category", "").strip()
+  priority = request.args.get("priority", "").strip()
+  from_date = request.args.get("from", "").strip()
+  to_date = request.args.get("to", "").strip()
+
+  try:
+    page = max(1, int(request.args.get("page", 1) or 1))
+  except (ValueError, TypeError):
+    page = 1
+
+  ticket_q = _build_ticket_query(account_id, q, status, category, priority, from_date, to_date)
+  total = ticket_q.count()
+  tickets = ticket_q.offset((page - 1) * _TICKETS_PAGE_SIZE).limit(_TICKETS_PAGE_SIZE).all()
+  total_pages = max(1, (total + _TICKETS_PAGE_SIZE - 1) // _TICKETS_PAGE_SIZE)
+
+  return render_template(
+    "settings/tickets_list.html",
+    tickets=tickets,
+    page=page,
+    total=total,
+    total_pages=total_pages,
+    page_size=_TICKETS_PAGE_SIZE,
+    q=q,
+    filter_status=status,
+    filter_category=category,
+    filter_priority=priority,
+    filter_from=from_date,
+    filter_to=to_date,
+    statuses=_TICKET_STATUSES,
+    categories=_TICKET_CATEGORIES,
+    priorities=_TICKET_PRIORITIES,
+    active_tab="tickets",
+  )
+
+
 @bp.post("/settings/account/delete")
 @login_required_settings
 @limiter.limit("3 per hour")
