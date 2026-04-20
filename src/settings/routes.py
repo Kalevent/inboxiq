@@ -3,7 +3,7 @@ import secrets
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from flask import current_app, flash, g, jsonify, redirect, render_template, request, url_for
+from flask import abort, current_app, flash, g, jsonify, redirect, render_template, request, url_for
 from sqlalchemy import case, or_
 
 from src.extensions import db, limiter
@@ -717,10 +717,13 @@ def tickets_detail(ticket_id):
 
   ticket = Ticket.query.filter_by(id=ticket_id, account_id=account_id).first()
   if not ticket:
-    from flask import abort
     abort(404)
 
-  back_url = request.args.get("back") or url_for("settings.tickets_list")
+  _raw_back = request.args.get("back", "")
+  if _raw_back.startswith("/") and not _raw_back.startswith("//"):
+      back_url = _raw_back
+  else:
+      back_url = url_for("settings.tickets_list")
   is_staff = _is_staff_account(current_user)
 
   return render_template(
