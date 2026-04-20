@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Tickets</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Tickets</div>
+          </div>
+        </div>
+        <a href="{{ url_for('settings.settings_page', tab='team') }}" class="px-3 py-1.5 rounded-full border border-slate-700 hover:bg-slate-800 text-sm text-slate-200">
+          ← Settings
+        </a>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-10 lg:py-14">
+
+        <div class="mb-6">
+          <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Tickets</h1>
+          <p class="text-sm text-slate-300 mt-1">All emails InboxIQ has processed for your account.</p>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="mb-4 px-4 py-3 rounded-xl text-sm
+              {% if category == 'success' %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-300
+              {% elif category == 'error' %}bg-red-500/10 border border-red-500/30 text-red-300
+              {% else %}bg-indigo-500/10 border border-indigo-400/30 text-indigo-200{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endwith %}
+
+        <!-- Filter form -->
+        <form method="GET" action="{{ url_for('settings.tickets_list') }}" class="mb-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+          <div class="flex flex-wrap gap-3 items-end">
+            <div class="flex-1 min-w-48">
+              <label class="block text-xs text-slate-400 mb-1">Search</label>
+              <input type="text" name="q" value="{{ q }}"
+                     placeholder="Subject or sender email…"
+                     class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Status</label>
+              <select name="status" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2">
+                <option value="">All statuses</option>
+                {% for s in statuses %}
+                  <option value="{{ s }}" {% if filter_status == s %}selected{% endif %}>{{ s | replace('_', ' ') | title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Category</label>
+              <select name="category" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2">
+                <option value="">All categories</option>
+                {% for c in categories %}
+                  <option value="{{ c }}" {% if filter_category == c %}selected{% endif %}>{{ c | title }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Priority</label>
+              <select name="priority" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2">
+                <option value="">All priorities</option>
+                {% for p in priorities %}
+                  <option value="{{ p }}" {% if filter_priority == p %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">From</label>
+              <input type="date" name="from" value="{{ filter_from }}"
+                     class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">To</label>
+              <input type="date" name="to" value="{{ filter_to }}"
+                     class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2" />
+            </div>
+            <div class="flex gap-2">
+              <button type="submit" class="rounded-xl px-4 py-2 text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white">Search</button>
+              <a href="{{ url_for('settings.tickets_list') }}" class="rounded-xl px-4 py-2 text-sm border border-slate-700 text-slate-300 hover:bg-slate-800">Clear</a>
+            </div>
+          </div>
+        </form>
+
+        <!-- Results count -->
+        {% if total > 0 %}
+          <p class="text-xs text-slate-400 mb-3">
+            Showing {{ (page - 1) * page_size + 1 }}–{{ [page * page_size, total] | min }} of {{ total }} ticket{{ 's' if total != 1 else '' }}
+          </p>
+        {% endif %}
+
+        <!-- Ticket table -->
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/60 shadow-2xl shadow-indigo-500/10 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wide">
+                  <th class="px-5 py-3 text-left">Subject</th>
+                  <th class="px-5 py-3 text-left">From</th>
+                  <th class="px-5 py-3 text-left">Category</th>
+                  <th class="px-5 py-3 text-left">Priority</th>
+                  <th class="px-5 py-3 text-left">Status</th>
+                  <th class="px-5 py-3 text-left">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if tickets %}
+                  {% for ticket in tickets %}
+                    <tr class="border-b border-slate-800/60 hover:bg-slate-800/30 cursor-pointer"
+                        onclick="window.location='{{ url_for('settings.tickets_detail', ticket_id=ticket.id) }}?back={{ request.url | urlencode }}'">
+                      <td class="px-5 py-3 text-slate-100 max-w-xs truncate">
+                        {{ ticket.subject[:80] }}{% if ticket.subject | length > 80 %}…{% endif %}
+                      </td>
+                      <td class="px-5 py-3 text-slate-300">{{ ticket.from_email }}</td>
+                      <td class="px-5 py-3 text-slate-300">{{ ticket.category | title }}</td>
+                      <td class="px-5 py-3">
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+                          {% if ticket.priority == 'P0' %}bg-red-500/20 text-red-300
+                          {% elif ticket.priority == 'P1' %}bg-orange-500/20 text-orange-300
+                          {% elif ticket.priority == 'P2' %}bg-yellow-500/20 text-yellow-300
+                          {% else %}bg-slate-700 text-slate-300{% endif %}">
+                          {{ ticket.priority }}
+                        </span>
+                      </td>
+                      <td class="px-5 py-3">
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+                          {% if ticket.status == 'resolved' %}bg-emerald-500/20 text-emerald-300
+                          {% elif ticket.status == 'closed' %}bg-slate-700 text-slate-400
+                          {% elif ticket.status == 'needs_review' %}bg-yellow-500/20 text-yellow-300
+                          {% elif ticket.status in ('new', 'open') %}bg-indigo-500/20 text-indigo-300
+                          {% else %}bg-slate-700/50 text-slate-400{% endif %}">
+                          {{ ticket.status | replace('_', ' ') | title }}
+                        </span>
+                      </td>
+                      <td class="px-5 py-3 text-slate-400 whitespace-nowrap">
+                        {{ ticket.created_at.strftime('%b %d, %Y') if ticket.created_at else '—' }}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="6" class="px-5 py-12 text-center text-slate-400">
+                      No tickets found for these filters.
+                      <a href="{{ url_for('settings.tickets_list') }}" class="ml-1 text-indigo-400 hover:text-indigo-300">Clear filters</a>
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          {% if total_pages > 1 %}
+            {% set base = url_for('settings.tickets_list') ~ '?q=' ~ (q | urlencode) ~ '&status=' ~ filter_status ~ '&category=' ~ filter_category ~ '&priority=' ~ filter_priority ~ '&from=' ~ filter_from ~ '&to=' ~ filter_to %}
+            <div class="flex items-center justify-between px-5 py-3 border-t border-slate-800 text-sm text-slate-400">
+              <span>Page {{ page }} of {{ total_pages }}</span>
+              <div class="flex gap-2">
+                {% if page > 1 %}
+                  <a href="{{ base }}&page={{ page - 1 }}"
+                     class="px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800">Prev</a>
+                {% endif %}
+                {% if page < total_pages %}
+                  <a href="{{ base }}&page={{ page + 1 }}"
+                     class="px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800">Next</a>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
