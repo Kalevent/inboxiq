@@ -1,9 +1,10 @@
 import os
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import uuid4
 
 from flask import current_app, flash, g, jsonify, redirect, render_template, request, url_for
+from sqlalchemy import case, or_
 
 from src.extensions import db, limiter
 from src.models.auth import Passkey, TOTPDevice
@@ -27,22 +28,35 @@ def _is_staff_account(user) -> bool:
   return user.email.lower() in allowed
 
 
+_TICKET_STATUSES = ["new", "open", "auto_handled", "optional", "needs_review",
+                    "meeting_scheduled", "resolved", "closed"]
+_TICKET_CATEGORIES = ["support", "transactional", "scheduling", "billing", "spam", "other"]
+_TICKET_PRIORITIES = ["P0", "P1", "P2", "P3", "P4"]
+_TICKETS_PAGE_SIZE = 25
+
+
 def _build_ticket_query(account_id, q="", status="", category="", priority="", from_date="", to_date=""):
   """Return a scoped, filtered, sorted Ticket query for the given account."""
-  from sqlalchemy import case
-  from datetime import datetime
-
   query = Ticket.query.filter(Ticket.account_id == account_id)
 
   if q:
-    query = query.filter(
-      Ticket.search_vec.op("@@")(db.func.plainto_tsquery("english", q))
+    search_filter = or_(
+      Ticket.subject.ilike(f"%{q}%"),
+      Ticket.from_email.ilike(f"%{q}%"),
     )
-  if status:
+    try:
+      search_filter = or_(
+        search_filter,
+        Ticket.search_vec.op("@@")(db.func.plainto_tsquery("english", q))
+      )
+    except Exception:
+      pass
+    query = query.filter(search_filter)
+  if status and status in _TICKET_STATUSES:
     query = query.filter(Ticket.status == status)
-  if category:
+  if category and category in _TICKET_CATEGORIES:
     query = query.filter(Ticket.category == category)
-  if priority:
+  if priority and priority in _TICKET_PRIORITIES:
     query = query.filter(Ticket.priority == priority)
   if from_date:
     try:
@@ -51,7 +65,6 @@ def _build_ticket_query(account_id, q="", status="", category="", priority="", f
       pass
   if to_date:
     try:
-      from datetime import timedelta
       dt = datetime.strptime(to_date, "%Y-%m-%d") + timedelta(days=1)
       query = query.filter(Ticket.created_at < dt)
     except ValueError:
@@ -648,13 +661,6 @@ def _legacy_settings_redirect(tab="team"):
 def activity_log_page():
   account_id = getattr(g, "current_account_id", None)
   return render_template("settings/activity_log.html", account_id=account_id)
-
-
-_TICKET_STATUSES = ["new", "open", "auto_handled", "optional", "needs_review",
-                    "meeting_scheduled", "resolved", "closed"]
-_TICKET_CATEGORIES = ["support", "transactional", "scheduling", "billing", "spam", "other"]
-_TICKET_PRIORITIES = ["P0", "P1", "P2", "P3", "P4"]
-_TICKETS_PAGE_SIZE = 25
 
 
 @bp.get("/settings/tickets")
