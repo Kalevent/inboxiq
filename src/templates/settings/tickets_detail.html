@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>InboxIQ – Ticket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}" />
+</head>
+
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur dashboard-header">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-indigo-500 flex items-center justify-center font-bold text-white">KI</div>
+          <div>
+            <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
+            <div class="text-xs text-slate-400">InboxIQ – Ticket Detail</div>
+          </div>
+        </div>
+        <a href="{{ back_url }}" class="px-3 py-1.5 rounded-full border border-slate-700 hover:bg-slate-800 text-sm text-slate-200">
+          ← Back to tickets
+        </a>
+      </div>
+    </header>
+
+    <main class="flex-1 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
+      <div class="max-w-6xl mx-auto px-4 lg:px-6 py-10 lg:py-14">
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="mb-4 px-4 py-3 rounded-xl text-sm
+              {% if category == 'success' %}bg-emerald-500/10 border border-emerald-500/30 text-emerald-300
+              {% elif category == 'error' %}bg-red-500/10 border border-red-500/30 text-red-300
+              {% else %}bg-indigo-500/10 border border-indigo-400/30 text-indigo-200{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endwith %}
+
+        <!-- Title + status badge -->
+        <div class="mb-6 flex items-start gap-4 flex-wrap">
+          <div class="flex-1">
+            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">{{ ticket.subject }}</h1>
+          </div>
+          <span class="mt-1 inline-flex items-center rounded-full px-3 py-1 text-sm font-medium
+            {% if ticket.status == 'resolved' %}bg-emerald-500/20 text-emerald-300
+            {% elif ticket.status == 'closed' %}bg-slate-700 text-slate-400
+            {% elif ticket.status == 'needs_review' %}bg-yellow-500/20 text-yellow-300
+            {% elif ticket.status in ('new', 'open') %}bg-indigo-500/20 text-indigo-300
+            {% else %}bg-slate-700/50 text-slate-400{% endif %}">
+            {{ ticket.status | replace('_', ' ') | title }}
+          </span>
+        </div>
+
+        <!-- Two-column layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Left: primary info -->
+          <div class="lg:col-span-2 space-y-4">
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+              <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Details</h2>
+              <dl class="space-y-2 text-sm">
+                <div class="flex gap-2">
+                  <dt class="w-28 text-slate-400 shrink-0">From</dt>
+                  <dd class="text-slate-100">{{ ticket.from_email }}</dd>
+                </div>
+                <div class="flex gap-2">
+                  <dt class="w-28 text-slate-400 shrink-0">Received</dt>
+                  <dd class="text-slate-100">{{ ticket.created_at.strftime('%B %d, %Y at %H:%M UTC') if ticket.created_at else '—' }}</dd>
+                </div>
+                <div class="flex gap-2">
+                  <dt class="w-28 text-slate-400 shrink-0">Provider</dt>
+                  <dd class="text-slate-100">{{ ticket.provider | title if ticket.provider else '—' }}</dd>
+                </div>
+                <div class="flex gap-2">
+                  <dt class="w-28 text-slate-400 shrink-0">Category</dt>
+                  <dd class="text-slate-100">{{ ticket.category | title }}</dd>
+                </div>
+                <div class="flex gap-2">
+                  <dt class="w-28 text-slate-400 shrink-0">Priority</dt>
+                  <dd>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+                      {% if ticket.priority == 'P0' %}bg-red-500/20 text-red-300
+                      {% elif ticket.priority == 'P1' %}bg-orange-500/20 text-orange-300
+                      {% elif ticket.priority == 'P2' %}bg-yellow-500/20 text-yellow-300
+                      {% else %}bg-slate-700 text-slate-300{% endif %}">
+                      {{ ticket.priority }}
+                    </span>
+                  </dd>
+                </div>
+                <div class="flex gap-2">
+                  <dt class="w-28 text-slate-400 shrink-0">Sentiment</dt>
+                  <dd class="text-slate-100">{{ ticket.sentiment | title if ticket.sentiment else '—' }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            {% if ticket.body_preview %}
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+              <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Message</h2>
+              <p class="text-sm text-slate-200 whitespace-pre-wrap">{{ ticket.body_preview }}</p>
+            </div>
+            {% endif %}
+
+            {% if ticket.summary %}
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+              <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">AI Summary</h2>
+              <p class="text-sm text-slate-200">{{ ticket.summary }}</p>
+            </div>
+            {% endif %}
+
+          </div>
+
+          <!-- Right: metadata sidebar -->
+          <div class="space-y-4">
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+              <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Triage</h2>
+              {% set dec = ticket.decision or {} %}
+              <dl class="space-y-2 text-sm">
+                <div class="flex gap-2">
+                  <dt class="w-28 text-slate-400 shrink-0">Action needed</dt>
+                  <dd class="text-slate-100">{{ dec.get('action_required', '—') }}</dd>
+                </div>
+                <div class="flex gap-2">
+                  <dt class="w-28 text-slate-400 shrink-0">Intent</dt>
+                  <dd class="text-slate-100">{{ dec.get('intent', '—') }}</dd>
+                </div>
+                <div class="flex gap-2">
+                  <dt class="w-28 text-slate-400 shrink-0">Risk</dt>
+                  <dd class="text-slate-100">{{ dec.get('risk_flag', '—') }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            {% if ticket.assigned_to or ticket.team %}
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+              <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Assignment</h2>
+              <dl class="space-y-2 text-sm">
+                {% if ticket.assigned_to %}
+                <div class="flex gap-2">
+                  <dt class="w-20 text-slate-400 shrink-0">Assigned to</dt>
+                  <dd class="text-slate-100">{{ ticket.assigned_to }}</dd>
+                </div>
+                {% endif %}
+                {% if ticket.team %}
+                <div class="flex gap-2">
+                  <dt class="w-20 text-slate-400 shrink-0">Team</dt>
+                  <dd class="text-slate-100">{{ ticket.team }}</dd>
+                </div>
+                {% endif %}
+              </dl>
+            </div>
+            {% endif %}
+
+            {% if is_staff %}
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+              <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">LLM Usage</h2>
+              <dl class="space-y-2 text-sm">
+                <div class="flex gap-2">
+                  <dt class="w-20 text-slate-400 shrink-0">Model</dt>
+                  <dd class="text-slate-100 font-mono text-xs">{{ ticket.llm_model or '—' }}</dd>
+                </div>
+                <div class="flex gap-2">
+                  <dt class="w-20 text-slate-400 shrink-0">Tokens in</dt>
+                  <dd class="text-slate-100">{{ ticket.llm_tokens_in }}</dd>
+                </div>
+                <div class="flex gap-2">
+                  <dt class="w-20 text-slate-400 shrink-0">Tokens out</dt>
+                  <dd class="text-slate-100">{{ ticket.llm_tokens_out }}</dd>
+                </div>
+                <div class="flex gap-2">
+                  <dt class="w-20 text-slate-400 shrink-0">Cost</dt>
+                  <dd class="text-slate-100">${{ '%.6f' | format(ticket.llm_cost_usd | float) }}</dd>
+                </div>
+              </dl>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+
+        <!-- Actions -->
+        {% if ticket.status not in ('resolved', 'closed') %}
+        <div class="mt-8 flex gap-3 flex-wrap">
+          <form method="POST" action="{{ url_for('settings.tickets_resolve', ticket_id=ticket.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit"
+                    class="rounded-xl px-5 py-2.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white">
+              Mark as Resolved
+            </button>
+          </form>
+          <form method="POST" action="{{ url_for('settings.tickets_close', ticket_id=ticket.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit"
+                    class="rounded-xl px-5 py-2.5 text-sm font-semibold border border-slate-700 text-slate-300 hover:bg-slate-800">
+              Close Ticket
+            </button>
+          </form>
+        </div>
+        {% endif %}
+
+      </div>
+    </main>
+  </div>
+</body>
+</html>
