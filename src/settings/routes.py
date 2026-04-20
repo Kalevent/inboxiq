@@ -10,9 +10,61 @@ from src.models.auth import Passkey, TOTPDevice
 from src.models.automation import WebhookProvider
 from src.models.core import User, Account, InboxConnection, AccountLLMConfig, ALLOWED_LLM_PROVIDERS
 from src.models.developer import RegisteredApp, DeveloperAccessRequest
+from src.models.tickets import Ticket
 from src.crypto import encrypt_value, decrypt_value
 from src.api.v1.access_control import account_allows_api
 from src.settings import bp, login_required_settings
+
+def _is_staff_account(user) -> bool:
+  """Return True only for Kalevent internal staff accounts."""
+  if not user or not user.email:
+    return False
+  allowed = {
+    e.strip().lower()
+    for e in (current_app.config.get("ADMIN_EMAILS", "") or "kofi@kalevent.com").split(",")
+    if e.strip()
+  }
+  return user.email.lower() in allowed
+
+
+def _build_ticket_query(account_id, q="", status="", category="", priority="", from_date="", to_date=""):
+  """Return a scoped, filtered, sorted Ticket query for the given account."""
+  from sqlalchemy import case
+  from datetime import datetime
+
+  query = Ticket.query.filter(Ticket.account_id == account_id)
+
+  if q:
+    query = query.filter(
+      Ticket.search_vec.op("@@")(db.func.plainto_tsquery("english", q))
+    )
+  if status:
+    query = query.filter(Ticket.status == status)
+  if category:
+    query = query.filter(Ticket.category == category)
+  if priority:
+    query = query.filter(Ticket.priority == priority)
+  if from_date:
+    try:
+      query = query.filter(Ticket.created_at >= datetime.strptime(from_date, "%Y-%m-%d"))
+    except ValueError:
+      pass
+  if to_date:
+    try:
+      query = query.filter(Ticket.created_at <= datetime.strptime(to_date, "%Y-%m-%d"))
+    except ValueError:
+      pass
+
+  priority_order = case(
+    (Ticket.priority == "P0", 0),
+    (Ticket.priority == "P1", 1),
+    (Ticket.priority == "P2", 2),
+    (Ticket.priority == "P3", 3),
+    (Ticket.priority == "P4", 4),
+    else_=5,
+  )
+  return query.order_by(priority_order, Ticket.created_at.desc())
+
 
 RBAC_DEFAULT_ROLES = [
   {
@@ -193,6 +245,7 @@ def settings_page(tab):
         ).order_by(RegisteredApp.created_at.desc()).all()
 
   csrf_token_value = request.cookies.get("csrf_access_token") or request.cookies.get("csrf_refresh_token") or ""
+  show_social_integrations = _is_staff_account(current_user)
 
   return render_template(
     "settings/index.html",
@@ -226,6 +279,7 @@ def settings_page(tab):
     current_user=current_user,
     csrf_token_value=csrf_token_value,
     feature_flags=feature_flags,
+    show_social_integrations=show_social_integrations,
   )
 
 
@@ -807,6 +861,7 @@ def integrations_webhooks():
   user = getattr(g, "current_user", None)
   account_id = getattr(g, "current_account_id", None)
   api_allowed = account_allows_api(account_id) if account_id else False
+  show_social_integrations = _is_staff_account(user)
   crm_connection = None
   crm_prefill = {}
   linkedin_connection = None
@@ -876,6 +931,7 @@ def integrations_webhooks():
           account_id=account_id,
           crm_connection=crm_connection,
           crm_prefill=crm_prefill,
+          show_social_integrations=show_social_integrations,
         )
 
       status = "connected" if (api_key or access_token or client_secret) else "pending"
@@ -949,6 +1005,7 @@ def integrations_webhooks():
         facebook_connection=facebook_connection,
         gcal_connection=gcal_connection,
         outlook_cal_connection=outlook_cal_connection,
+        show_social_integrations=show_social_integrations,
       )
     if action == "add_provider" and account_id:
       import re
@@ -1139,6 +1196,7 @@ def integrations_webhooks():
     crm_connection=crm_connection,
     crm_prefill=crm_prefill,
     webhook_providers=webhook_providers,
+    show_social_integrations=show_social_integrations,
   )
 
 
