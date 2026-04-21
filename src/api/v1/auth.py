@@ -427,7 +427,6 @@ def inbox_accept_invite():
             "redirect_uri": redirect_uri,
             "scope": " ".join(invite_scopes),
             "access_type": "offline",
-            "include_granted_scopes": "true",
             "prompt": "consent",
             "login_hint": expected_email,
             "state": invite_state,
@@ -600,7 +599,6 @@ def google_inbox_start():
         "redirect_uri": redirect_uri,
         "scope": " ".join(GOOGLE_GMAIL_SCOPES),
         "access_type": "offline",
-        "include_granted_scopes": "true",
         "prompt": "select_account consent",
         "state": _make_connect_state(get_jwt_identity(), next_dest),
     }
