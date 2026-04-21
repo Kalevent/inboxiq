@@ -56,11 +56,15 @@ def book_page(token: str):
         except Exception as exc:
             logger.warning("Slot fetch failed for booking page account=%s: %s", payload["account_id"], exc)
 
+    from email.utils import parseaddr
+    _, requester_email = parseaddr(payload.get("requester_email", ""))
+    requester_email = requester_email or payload.get("requester_email", "")
+
     return render_template(
         "booking/book.html",
         token=token,
         subject=payload.get("subject", ""),
-        requester_email=payload.get("requester_email", ""),
+        requester_email=requester_email,
         requester_name=payload.get("requester_name", ""),
         duration_minutes=payload.get("duration_minutes", 30),
         account_name=account_name,
