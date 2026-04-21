@@ -57,6 +57,7 @@ def create_calendar_event(
 def _gcal_slots(account_id: int, duration_minutes: int, days_ahead: int) -> list[dict]:
     service = get_gcal_service(account_id)
     if not service:
+        logger.warning("gcal slot fetch: no service for account=%s (calendar not connected or token invalid)", account_id)
         return []
     try:
         now = datetime.utcnow()
@@ -71,7 +72,7 @@ def _gcal_slots(account_id: int, duration_minutes: int, days_ahead: int) -> list
         busy_times = result.get("calendars", {}).get("primary", {}).get("busy", [])
         return _compute_slots(busy_times, duration_minutes, days_ahead)
     except Exception as exc:
-        logger.warning("gcal slot fetch failed account=%s: %s", account_id, exc)
+        logger.warning("gcal slot fetch failed account=%s: %s", account_id, exc, exc_info=True)
         return []
 
 
