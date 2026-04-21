@@ -9,7 +9,7 @@ _FROM_EMAIL = os.getenv("TRIAL_ONBOARDING_FROM_EMAIL", "hello@kalevent.com")
 _FROM_NAME = os.getenv("TRIAL_ONBOARDING_FROM_NAME", "Kofi from InboxIQ")
 
 
-@shared_task(name="booking.send_confirmation_reply", bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(name="booking.send_confirmation_reply", bind=True, max_retries=3, default_retry_delay=60, queue="inbox")
 def send_booking_confirmation_reply(self, booking_id: str) -> None:
     """Send a confirmation email to the person who just booked a meeting via SES."""
     from src.app import create_app
