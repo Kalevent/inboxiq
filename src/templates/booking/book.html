@@ -48,7 +48,7 @@
       {% endif %}
 
       <h1>Book a meeting with {{ account_name }}</h1>
-      <p class="subtitle">{{ duration_minutes }}-minute call &middot; Video link sent on confirmation</p>
+      <p class="subtitle">{{ duration_minutes }}-minute call{% if has_calendar %} &middot; Video link sent on confirmation{% endif %}</p>
 
       <form method="POST" action="/book/{{ token }}/confirm" id="book-form">
         {% if slots %}
@@ -62,7 +62,8 @@
         </div>
         <input type="hidden" name="slot_start" id="slot_start" value="">
         {% else %}
-        <div class="no-slots">No available slots found. Please reply to the email to arrange a time.</div>
+        <div class="no-slots">No available time slots right now. Fill in your details below and we'll follow up to arrange a time.</div>
+        <input type="hidden" name="slot_start" value="">
         {% endif %}
 
         <label for="name">Your name</label>
@@ -73,6 +74,8 @@
 
         {% if slots %}
         <button type="submit" class="btn" id="submit-btn" disabled>Select a time above</button>
+        {% else %}
+        <button type="submit" class="btn">Send request</button>
         {% endif %}
       </form>
     </div>
@@ -85,13 +88,14 @@
       el.classList.add('selected');
       document.getElementById('slot_start').value = el.dataset.start;
       var btn = document.getElementById('submit-btn');
-      btn.disabled = false;
-      btn.textContent = 'Confirm booking';
+      if (btn) { btn.disabled = false; btn.textContent = 'Confirm booking'; }
     }
+    {% if slots %}
     document.getElementById('book-form').addEventListener('submit', function(e) {
       var slot = document.getElementById('slot_start').value;
       if (!slot) { e.preventDefault(); alert('Please select a time slot.'); }
     });
+    {% endif %}
   </script>
 </body>
 </html>

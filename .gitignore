@@ -65,3 +65,4 @@ docs/marketing/
 src/static/demo/*.mov
 src/static/demo/*.mp4
 .worktrees/
+.superpowers/

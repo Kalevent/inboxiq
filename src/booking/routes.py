@@ -65,6 +65,7 @@ def book_page(token: str):
         duration_minutes=payload.get("duration_minutes", 30),
         account_name=account_name,
         slots=slots,
+        has_calendar=bool(provider),
     )
 
 
@@ -76,7 +77,7 @@ def book_confirm(token: str):
     booked_by_name = request.form.get("booked_by_name", "").strip()
     booked_by_email = request.form.get("booked_by_email", "").strip()
 
-    if not slot_start or not booked_by_email:
+    if not booked_by_email:
         abort(400)
 
     try:
@@ -110,7 +111,7 @@ def book_confirm(token: str):
 
     slot_label = (
         booking.slot_start.strftime("%A %d %B %Y at %H:%M UTC")
-        if booking.slot_start else "your scheduled time"
+        if booking.slot_start else ""
     )
     return render_template(
         "booking/confirmed.html",
@@ -118,6 +119,7 @@ def book_confirm(token: str):
         booked_by_email=booked_by_email,
         meet_link=booking.meet_link or "",
         booking_id=booking.id,
+        has_slot=bool(booking.slot_start),
     )
 
 

@@ -1,4 +1,5 @@
 import logging
+import time as time_module
 from datetime import datetime, timedelta, time
 from typing import Any
 from uuid import uuid4
@@ -189,14 +190,26 @@ def create_gcal_event(
         sendUpdates="all",
     ).execute()
 
-    meet_link = ""
-    for ep in result.get("conferenceData", {}).get("entryPoints", []):
-        if ep.get("entryPointType") == "video":
-            meet_link = ep.get("uri", "")
-            break
+    meet_link = _extract_meet_link(result)
+
+    # Google sometimes provisions the Meet room asynchronously — retry once.
+    if not meet_link:
+        time_module.sleep(2)
+        result = service.events().get(
+            calendarId="primary",
+            eventId=result["id"],
+        ).execute()
+        meet_link = _extract_meet_link(result)
 
     return {
         "event_id": result["id"],
         "meet_link": meet_link,
         "html_link": result.get("htmlLink", ""),
     }
+
+
+def _extract_meet_link(event: dict) -> str:
+    for ep in event.get("conferenceData", {}).get("entryPoints", []):
+        if ep.get("entryPointType") == "video":
+            return ep.get("uri", "")
+    return ""

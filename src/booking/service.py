@@ -86,20 +86,30 @@ def confirm_booking(
     if booking.status != "pending":
         raise ValueError(f"booking_already_{booking.status}")
 
-    slot_start = datetime.fromisoformat(slot_start_iso.replace("Z", "+00:00"))
-    slot_end = slot_start + timedelta(minutes=booking.duration_minutes)
+    slot_start = None
+    slot_end = None
+    calendar_event_id = ""
+    meet_link = ""
 
-    provider = _detect_provider(booking.account_id)
-
-    event = create_calendar_event(
-        account_id=booking.account_id,
-        provider=provider,
-        summary=f"Meeting: {booking.subject or 'Scheduled call'}",
-        start_dt=slot_start.replace(tzinfo=None),
-        end_dt=slot_end.replace(tzinfo=None),
-        attendee_email=booked_by_email,
-        attendee_name=booked_by_name,
-    )
+    if slot_start_iso:
+        slot_start = datetime.fromisoformat(slot_start_iso.replace("Z", "+00:00"))
+        slot_end = slot_start + timedelta(minutes=booking.duration_minutes)
+        try:
+            provider = _detect_provider(booking.account_id)
+            if provider:
+                event = create_calendar_event(
+                    account_id=booking.account_id,
+                    provider=provider,
+                    summary=f"Meeting: {booking.subject or 'Scheduled call'}",
+                    start_dt=slot_start.replace(tzinfo=None),
+                    end_dt=slot_end.replace(tzinfo=None),
+                    attendee_email=booked_by_email,
+                    attendee_name=booked_by_name,
+                )
+                calendar_event_id = event.get("event_id", "")
+                meet_link = event.get("meet_link", "")
+        except RuntimeError as exc:
+            logger.warning("Calendar event creation skipped: %s", exc)
 
     try:
         now = datetime.now(timezone.utc)
@@ -108,19 +118,21 @@ def confirm_booking(
         booking.slot_end = slot_end
         booking.booked_by_name = booked_by_name
         booking.booked_by_email = booked_by_email
-        booking.calendar_event_id = event.get("event_id", "")
-        booking.meet_link = event.get("meet_link", "")
+        booking.calendar_event_id = calendar_event_id
+        booking.meet_link = meet_link
         booking.confirmed_at = now
 
         from src.models.tickets import Ticket
         ticket = db.session.get(Ticket, booking.ticket_id)
         if ticket:
-            slot_label = slot_start.strftime("%a %d %b %Y at %H:%M UTC")
+            if slot_start:
+                slot_label = slot_start.strftime("%a %d %b %Y at %H:%M UTC")
+                note = f"Meeting booked: {slot_label} via booking page by {booked_by_name} ({booked_by_email})"
+            else:
+                note = f"Meeting requested via booking page by {booked_by_name} ({booked_by_email}) — time to be arranged"
             existing_notes = ticket.decision or {}
             notes = list(existing_notes.get("notes", []))
-            notes.append(
-                f"Meeting booked: {slot_label} via booking page by {booked_by_name} ({booked_by_email})"
-            )
+            notes.append(note)
             ticket.decision = {**existing_notes, "notes": notes}
             ticket.status = "meeting_scheduled"
 
@@ -138,8 +150,8 @@ def confirm_booking(
     return booking
 
 
-def _detect_provider(account_id: int) -> str:
-    """Return 'gcal' or 'outlook_cal' based on which calendar is connected."""
+def _detect_provider(account_id: int) -> str | None:
+    """Return 'gcal' or 'outlook_cal' based on which calendar is connected, or None."""
     conn = InboxConnection.query.filter_by(
         account_id=account_id, provider="gcal", status="connected"
     ).first()
@@ -150,4 +162,4 @@ def _detect_provider(account_id: int) -> str:
     ).first()
     if conn:
         return "outlook_cal"
-    raise RuntimeError("No calendar connected for this account")
+    return None

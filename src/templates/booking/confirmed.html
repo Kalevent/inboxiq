@@ -22,6 +22,7 @@
   <div class="wrap">
     <div class="card">
       <div class="check">&#10003;</div>
+      {% if has_slot %}
       <h1>You're booked!</h1>
       <div class="slot-label">{{ slot_label }}</div>
       <p>A confirmation has been sent to {{ booked_by_email }}.<br>A calendar invite has been sent to all attendees.</p>
@@ -29,6 +30,10 @@
       <a href="{{ meet_link }}" class="meet-btn">Join meeting</a>
       {% endif %}
       <a href="/book/{{ booking_id }}/ics" class="ics-link">&#8595; Add to calendar (.ics)</a>
+      {% else %}
+      <h1>Request received!</h1>
+      <p>Thanks! We'll follow up with {{ booked_by_email }} to arrange a time.</p>
+      {% endif %}
     </div>
     <div class="footer">Powered by InboxIQ</div>
   </div>
