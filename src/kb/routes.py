@@ -28,6 +28,7 @@ KB_CATEGORIES = [
             {"slug": "connect-outlook", "title": "Connect your Outlook inbox"},
             {"slug": "invite-teammate-inbox", "title": "Invite a teammate's inbox"},
             {"slug": "what-happens-after-connect", "title": "What happens after you connect"},
+            {"slug": "ai-meeting-scheduling", "title": "AI meeting scheduling"},
         ],
     },
     {
