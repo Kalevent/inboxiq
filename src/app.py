@@ -143,6 +143,7 @@ def create_app() -> Flask:
         "img-src 'self' data: https://www.gravatar.com https://files.kalevent.com",
         "font-src 'self' data:",
         "connect-src 'self' https://127.0.0.1:8000 https://api.kalevent.com https://files.kalevent.com",
+        "media-src 'self' https://files.kalevent.com",
         "form-action 'self'",
         "frame-ancestors 'none'",
         "base-uri 'self'",

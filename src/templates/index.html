@@ -482,7 +482,7 @@
               </div>
             </div>
             <video class="rounded-2xl border border-slate-600 shadow-sm w-full" style="aspect-ratio:16/9" controls playsinline poster="https://files.kalevent.com/demo/inboxiq-book-a-meeting-poster.jpg">
-              <source src="{{ url_for('static', filename='demo/inboxiq-book-a-meeting-fs.mp4') }}" type="video/mp4">
+              <source src="https://files.kalevent.com/demo/inboxiq-book-a-meeting-v2.mp4" type="video/mp4">
             </video>
           </div>
         </div>
@@ -1295,7 +1295,7 @@
       document.addEventListener('DOMContentLoaded', function () {
         var vid = document.querySelector('video[poster*="book-a-meeting"]');
         if (!vid) return;
-        vid.poster = "{{ url_for('static', filename='demo/inboxiq-book-a-meeting-poster.jpg') }}";
+        vid.poster = 'https://files.kalevent.com/demo/inboxiq-book-a-meeting-poster.jpg';
         var wrap = document.createElement('div');
         wrap.style.cssText = 'position:relative;display:block;width:100%';
         vid.parentNode.insertBefore(wrap, vid);
