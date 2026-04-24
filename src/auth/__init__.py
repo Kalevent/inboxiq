@@ -718,13 +718,33 @@ def activate():
     if not user or not account or user.account_id != account.id:
         return jsonify({"error": "user not found"}), 404
 
+    now = datetime.now(timezone.utc)
     user.password_hash = hash_password(password)
-    user.updated_at = datetime.now(timezone.utc)
+    user.updated_at = now
     account.seats_used = max(account.seats_used or 0, 1)
-    account.updated_at = user.updated_at
+    account.updated_at = now
     db.session.add(user)
     db.session.add(account)
     db.session.commit()
+
+    # Create billing profile with 7-day trial (mirrors OAuth signup path)
+    try:
+        from src.models.billing import CustomerBillingProfile
+        if not CustomerBillingProfile.query.filter_by(account_id=account.id).first():
+            profile = CustomerBillingProfile(
+                account_id=account.id,
+                email=user.email,
+                trial_start=now,
+                trial_end=now + timedelta(days=7),
+                trial_status="active",
+                subscription_status="trialing",
+            )
+            db.session.add(profile)
+            db.session.commit()
+    except Exception as _e:
+        db.session.rollback()
+        import logging
+        logging.getLogger(__name__).warning("Failed to create billing profile for %s: %s", user.email, _e)
 
     # Add to leads funnel at TRIAL stage
     try:

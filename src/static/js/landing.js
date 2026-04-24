@@ -310,6 +310,17 @@
   document.querySelectorAll('[data-open-demo]').forEach(function (btn) {
     btn.addEventListener('click', openModal);
   });
+
+  // Public opener — lets other sections trigger the gate with a custom video
+  window._inboxiqOpenVideoModal = function (cfg) {
+    if (cfg.videoSrc)  modal.dataset.videoSrc  = cfg.videoSrc;
+    if (cfg.posterSrc) modal.dataset.posterSrc = cfg.posterSrc;
+    var h3 = modal.querySelector('h3');
+    if (h3) h3.textContent = cfg.title || 'Watch the 60-second demo';
+    var p = modal.querySelector('div > p');
+    if (p) p.textContent = cfg.subtitle || 'Enter your work email and the demo plays instantly.';
+    openModal();
+  };
 })();
 
 // ── Free Trial Modal ───────────────────────────────────────────────────────

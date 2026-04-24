@@ -1295,20 +1295,36 @@
       document.addEventListener('DOMContentLoaded', function () {
         var vid = document.querySelector('video[poster*="book-a-meeting"]');
         if (!vid) return;
-        vid.poster = 'https://files.kalevent.com/demo/inboxiq-book-a-meeting-poster.jpg';
-        var wrap = document.createElement('div');
-        wrap.style.cssText = 'position:relative;display:block;width:100%';
-        vid.parentNode.insertBefore(wrap, vid);
-        wrap.appendChild(vid);
+
+        var thumb = document.createElement('div');
+        thumb.style.cssText = 'position:relative;cursor:pointer;aspect-ratio:16/9;display:block;border-radius:1rem;overflow:hidden;border:1px solid #475569;box-shadow:0 1px 3px rgba(0,0,0,0.1);width:100%';
+
+        var img = document.createElement('img');
+        img.src = 'https://files.kalevent.com/demo/inboxiq-book-a-meeting-poster.jpg';
+        img.alt = 'Watch the scheduling demo';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+        thumb.appendChild(img);
+
         var btn = document.createElement('button');
-        btn.setAttribute('aria-label', 'Play video');
+        btn.setAttribute('aria-label', 'Watch scheduling demo');
         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="36" height="36"><path d="M8 5v14l11-7z"/></svg>';
-        btn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.92);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;box-shadow:0 4px 20px rgba(0,0,0,0.35);color:#1e293b;transition:transform 0.15s';
-        wrap.appendChild(btn);
-        btn.addEventListener('click', function () { btn.style.display = 'none'; vid.play(); });
-        btn.addEventListener('mouseenter', function () { btn.style.transform = 'translate(-50%,-50%) scale(1.1)'; });
-        btn.addEventListener('mouseleave', function () { btn.style.transform = 'translate(-50%,-50%) scale(1)'; });
-        vid.addEventListener('ended', function () { btn.style.display = 'flex'; });
+        btn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.92);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;box-shadow:0 4px 20px rgba(0,0,0,0.35);color:#1e293b;transition:transform 0.15s;pointer-events:none';
+        thumb.appendChild(btn);
+
+        thumb.addEventListener('mouseenter', function () { btn.style.transform = 'translate(-50%,-50%) scale(1.1)'; });
+        thumb.addEventListener('mouseleave', function () { btn.style.transform = 'translate(-50%,-50%) scale(1)'; });
+        thumb.addEventListener('click', function () {
+          if (typeof window._inboxiqOpenVideoModal === 'function') {
+            window._inboxiqOpenVideoModal({
+              videoSrc:  'https://files.kalevent.com/demo/inboxiq-book-a-meeting-v2.mp4',
+              posterSrc: 'https://files.kalevent.com/demo/inboxiq-book-a-meeting-poster.jpg',
+              title:    'Watch the scheduling demo',
+              subtitle: 'Enter your email and the video plays instantly.'
+            });
+          }
+        });
+
+        vid.parentNode.replaceChild(thumb, vid);
       });
     })();
   </script>
