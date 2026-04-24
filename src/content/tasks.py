@@ -7,6 +7,7 @@ Automated tasks for:
 - SEO optimization
 - Publishing automation
 """
+import logging
 import os
 import json
 from datetime import datetime
@@ -15,6 +16,8 @@ import markdown
 
 from src.extensions import db
 from src.models.content import BlogPost, GeneratedContent, PitchedBlogTopic
+
+logger = logging.getLogger(__name__)
 
 
 def _safe_seo_score(raw) -> float:
@@ -31,6 +34,13 @@ def _safe_seo_score(raw) -> float:
         return val / 100.0 if val > 1 else val
     except Exception:
         return 0.0
+
+
+def _determine_post_status(seo_score_raw) -> str:
+    """Return 'ready' if SEO quality score >= 0.70, else 'draft' for manual review."""
+    score = _safe_seo_score(seo_score_raw)
+    return "ready" if score >= 0.70 else "draft"
+
 
 # Import DSPy modules
 try:
@@ -147,7 +157,7 @@ def generate_blog_post(
         niche: Blog niche
         audience: Target audience
         topic_index: Which topic to use from generated list
-        auto_publish: Auto-publish (default: False, requires review)
+        auto_publish: Deprecated — status is now determined by quality gate score (>= 0.70 → ready)
         account_id: Account to charge the content_posts quota against
 
     Returns:
@@ -335,12 +345,19 @@ def generate_blog_post(
             suffix += 1
 
         # Create blog post entry
-        # When auto_publish=True, set status="ready" so the distribution pipeline
-        # picks it up and handles LinkedIn/Twitter/email before marking published.
+        # Status determined by quality gate: score >= 0.70 → "ready", else "draft" for manual review
+        _quality_score = _safe_seo_score(seo_result.seo_score)
+        _post_status = _determine_post_status(seo_result.seo_score)
+        if _post_status == "draft":
+            logger.info(
+                "Blog post quality score %.2f < 0.70 — setting to draft for review: %s",
+                _quality_score, seo_result.meta_title
+            )
+
         blog_post = BlogPost(
             title=seo_result.meta_title,
             slug=unique_slug,
-            status="ready",  # always go through distribution pipeline
+            status=_post_status,
             funnel_stage=selected_topic.get("target_stage", "discovery"),
             primary_keyword=selected_topic["target_keyword"],
             secondary_keywords=selected_topic.get("secondary_keywords", []),
@@ -354,7 +371,7 @@ def generate_blog_post(
             read_time_minutes=read_time,
             generated_content_id=generated_content.id,
             auto_generated=True,
-            dspy_quality_score=_safe_seo_score(seo_result.seo_score),
+            dspy_quality_score=_quality_score,
             published_at=None,  # set by distribution pipeline on actual publish
             created_at=datetime.now(),
             updated_at=datetime.now()
@@ -405,7 +422,8 @@ def generate_blog_post(
 
     except Exception as e:
         db.session.rollback()
-        return {"error": str(e)}
+        logger.error("Blog post generation failed: %s", e, exc_info=True)
+        raise
 
 
 @shared_task(name="content.generate_weekly_posts")
@@ -767,10 +785,18 @@ def generate_blog_from_pitched_topic(topic_id: str):
             suffix += 1
 
         # Create blog post entry
+        _quality_score = _safe_seo_score(seo_result.seo_score)
+        _post_status = _determine_post_status(seo_result.seo_score)
+        if _post_status == "draft":
+            logger.info(
+                "Pitched blog post quality score %.2f < 0.70 — setting to draft: %s",
+                _quality_score, seo_result.meta_title
+            )
+
         blog_post = BlogPost(
             title=seo_result.meta_title,
             slug=unique_slug,
-            status="ready",
+            status=_post_status,
             funnel_stage=pitched_topic.funnel_stage or "discovery",
             primary_keyword=selected_topic["target_keyword"],
             secondary_keywords=selected_topic.get("secondary_keywords", []),
@@ -784,7 +810,7 @@ def generate_blog_from_pitched_topic(topic_id: str):
             read_time_minutes=read_time,
             generated_content_id=generated_content.id,
             auto_generated=True,
-            dspy_quality_score=_safe_seo_score(seo_result.seo_score),
+            dspy_quality_score=_quality_score,
             published_at=None,
             created_at=datetime.now(),
             updated_at=datetime.now()
@@ -842,4 +868,5 @@ def generate_blog_from_pitched_topic(topic_id: str):
             db.session.commit()
         except Exception:
             db.session.rollback()
+        # Return (not raise) so the PitchedBlogTopic.status="failed" write persists — callers check status field.
         return {"error": str(e)}
