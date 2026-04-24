@@ -157,7 +157,7 @@ def generate_blog_post(
         niche: Blog niche
         audience: Target audience
         topic_index: Which topic to use from generated list
-        auto_publish: Auto-publish (default: False, requires review)
+        auto_publish: Deprecated — status is now determined by quality gate score (>= 0.70 → ready)
         account_id: Account to charge the content_posts quota against
 
     Returns:
@@ -345,8 +345,7 @@ def generate_blog_post(
             suffix += 1
 
         # Create blog post entry
-        # When auto_publish=True, set status="ready" so the distribution pipeline
-        # picks it up and handles LinkedIn/Twitter/email before marking published.
+        # Status determined by quality gate: score >= 0.70 → "ready", else "draft" for manual review
         _quality_score = _safe_seo_score(seo_result.seo_score)
         _post_status = _determine_post_status(seo_result.seo_score)
         if _post_status == "draft":
@@ -869,4 +868,5 @@ def generate_blog_from_pitched_topic(topic_id: str):
             db.session.commit()
         except Exception:
             db.session.rollback()
+        # Return (not raise) so the PitchedBlogTopic.status="failed" write persists — callers check status field.
         return {"error": str(e)}
