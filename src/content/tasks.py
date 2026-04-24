@@ -35,6 +35,13 @@ def _safe_seo_score(raw) -> float:
     except Exception:
         return 0.0
 
+
+def _determine_post_status(seo_score_raw) -> str:
+    """Return 'ready' if SEO quality score >= 0.70, else 'draft' for manual review."""
+    score = _safe_seo_score(seo_score_raw)
+    return "ready" if score >= 0.70 else "draft"
+
+
 # Import DSPy modules
 try:
     import dspy
@@ -340,10 +347,18 @@ def generate_blog_post(
         # Create blog post entry
         # When auto_publish=True, set status="ready" so the distribution pipeline
         # picks it up and handles LinkedIn/Twitter/email before marking published.
+        _quality_score = _safe_seo_score(seo_result.seo_score)
+        _post_status = _determine_post_status(seo_result.seo_score)
+        if _post_status == "draft":
+            logger.info(
+                "Blog post quality score %.2f < 0.70 — setting to draft for review: %s",
+                _quality_score, seo_result.meta_title
+            )
+
         blog_post = BlogPost(
             title=seo_result.meta_title,
             slug=unique_slug,
-            status="ready",  # always go through distribution pipeline
+            status=_post_status,
             funnel_stage=selected_topic.get("target_stage", "discovery"),
             primary_keyword=selected_topic["target_keyword"],
             secondary_keywords=selected_topic.get("secondary_keywords", []),
@@ -357,7 +372,7 @@ def generate_blog_post(
             read_time_minutes=read_time,
             generated_content_id=generated_content.id,
             auto_generated=True,
-            dspy_quality_score=_safe_seo_score(seo_result.seo_score),
+            dspy_quality_score=_quality_score,
             published_at=None,  # set by distribution pipeline on actual publish
             created_at=datetime.now(),
             updated_at=datetime.now()
