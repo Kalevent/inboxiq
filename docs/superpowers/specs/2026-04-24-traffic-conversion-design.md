@@ -51,7 +51,7 @@ Three targeted additions to `src/templates/index.html`. All new sections appende
 
 **1. Social proof strip** — Directly below the hero: 2–3 short quotes from beta users or early customers. If quotes are not yet available, a "Built for teams at [Industry] and [Industry]" strip with industry labels suffices as an interim signal.
 
-**2. Pricing teaser** — A minimal pricing callout on the homepage anchored around the per-inbox model: *"A 10-person team where 4 people handle email pays for 4 inboxes — not 10 seats. Plans from £49/mo. 7-day free trial, no credit card required."* Link to `/pricing` for full details. This surfaces the key differentiator (not per-seat) and removes price anxiety before the CTA.
+**2. Pricing teaser** — A minimal pricing callout on the homepage anchored around three points: (1) per-inbox model — *"A 10-person team where 4 people handle email pays for 4 inboxes — not 10 seats"*; (2) starting price — *"Plans from £49/mo"*; (3) trial terms — *"7-day free trial. Full Business plan access. No credit card. If you don't upgrade, your account simply pauses — you are never charged without action."* The "pauses, not charges" framing removes the biggest trial anxiety. Link to `/pricing` for full plan details.
 
 **3. Quantified value proposition** — Supplement the current headline with a specific outcome metric. Example: *"Handle 3× the support volume without adding headcount — teams see their first AI draft in under 20 minutes."* Numbers convert better than concepts.
 
