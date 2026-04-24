@@ -7,6 +7,7 @@ Automated tasks for:
 - SEO optimization
 - Publishing automation
 """
+import logging
 import os
 import json
 from datetime import datetime
@@ -15,6 +16,8 @@ import markdown
 
 from src.extensions import db
 from src.models.content import BlogPost, GeneratedContent, PitchedBlogTopic
+
+logger = logging.getLogger(__name__)
 
 
 def _safe_seo_score(raw) -> float:
@@ -405,7 +408,8 @@ def generate_blog_post(
 
     except Exception as e:
         db.session.rollback()
-        return {"error": str(e)}
+        logger.error("Blog post generation failed: %s", e, exc_info=True)
+        raise
 
 
 @shared_task(name="content.generate_weekly_posts")
