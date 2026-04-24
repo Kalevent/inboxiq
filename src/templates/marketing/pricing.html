@@ -19,7 +19,7 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
     </h1>
     <p class="text-lg text-slate-600 leading-relaxed max-w-xl mx-auto dark:text-slate-300">
       A 10-person team where 4 people handle customer email pays for 4 inboxes — not 10 seats.
-      Every plan includes AI triage, draft replies, and automation. No à-la-carte AI add-ons.
+      Every plan includes AI triage, draft replies with meeting scheduling, and automation. No à-la-carte AI add-ons.
     </p>
   </header>
 
@@ -48,7 +48,7 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
           <li class="flex gap-2.5"><span class="text-emerald-600 mt-0.5 font-bold">✓</span> Connect Gmail or Outlook via OAuth</li>
           <li class="flex gap-2.5"><span class="text-emerald-600 mt-0.5 font-bold">✓</span> AI triage on every inbound email</li>
           <li class="flex gap-2.5"><span class="text-emerald-600 mt-0.5 font-bold">✓</span> Urgency, intent &amp; sentiment detection</li>
-          <li class="flex gap-2.5"><span class="text-emerald-600 mt-0.5 font-bold">✓</span> KB-grounded draft replies</li>
+          <li class="flex gap-2.5"><span class="text-emerald-600 mt-0.5 font-bold">✓</span> KB-grounded draft replies + AI meeting scheduling</li>
           <li class="flex gap-2.5"><span class="text-emerald-600 mt-0.5 font-bold">✓</span> Automation rules &amp; runs</li>
           <li class="flex gap-2.5"><span class="text-emerald-600 mt-0.5 font-bold">✓</span> Dashboard, top topics &amp; audit trail</li>
           <li class="flex gap-2.5"><span class="text-emerald-600 mt-0.5 font-bold">✓</span> Team invite &amp; multi-inbox support</li>
@@ -88,7 +88,7 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Urgency &amp; intent detection</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Automation rules</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Dashboard &amp; top topics</li>
-        <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB draft replies</li>
+        <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB draft replies + meeting scheduling</li>
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> Advanced automation</li>
       </ul>
       <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
@@ -109,7 +109,7 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
       <ul class="space-y-2 text-slate-600 text-sm leading-relaxed flex-1 dark:text-slate-300">
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Everything in Pro</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 5,000 AI decisions/mo</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> KB-grounded draft replies</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> KB-grounded draft replies + meeting scheduling</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 500 automation runs/mo</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Multi-inbox invite link</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> API access</li>
@@ -185,9 +185,9 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
           "text-blue-600 dark:text-blue-300", "bg-blue-50 border border-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20"
         ),
         (
-          "Draft replies",
+          "Draft replies + meeting scheduling",
           "Included in AI decisions quota",
-          "Draft generation draws from the same AI decisions pool — no separate counter. If you receive 100 emails and 40 get drafts, that's still 100 AI decisions total.",
+          "Draft generation — including AI-scheduled meeting replies — draws from the same AI decisions pool. No separate counter. If you receive 100 emails and 40 get drafts, that's still 100 AI decisions total.",
           "text-emerald-600 dark:text-green-300", "bg-emerald-50 border border-emerald-100 dark:bg-green-500/10 dark:border-green-500/20"
         ),
       ] %}
