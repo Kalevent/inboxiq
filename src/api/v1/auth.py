@@ -142,19 +142,6 @@ def _get_connect_next(state: str) -> str:
 GOOGLE_SIGNIN_SCOPES = ["openid", "email", "profile"]
 
 # Gmail inbox connection — restricted scopes, requires Google verification for production
-# Only requested after the user has signed in and explicitly connects their inbox
-GOOGLE_GMAIL_SCOPES = [
-    "openid",
-    "email",
-    "profile",
-    "https://www.googleapis.com/auth/gmail.readonly",
-    "https://www.googleapis.com/auth/gmail.modify",
-    "https://www.googleapis.com/auth/gmail.settings.basic",
-]
-
-# Backward-compat alias (kept so nothing else breaks)
-GOOGLE_SCOPES = GOOGLE_SIGNIN_SCOPES
-
 MS_AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
 MS_TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
 
@@ -167,9 +154,10 @@ MS_SIGNIN_SCOPES = [
     "https://graph.microsoft.com/User.Read",
 ]
 
-# Inbox connection — mail scopes requested after sign-in
+# Inbox connection — mail + calendar scopes requested after sign-in
 MS_MAIL_SCOPES = MS_SIGNIN_SCOPES + [
     "https://graph.microsoft.com/Mail.ReadWrite",
+    "https://graph.microsoft.com/Calendars.ReadWrite",
 ]
 
 # Backward-compat alias
@@ -411,25 +399,15 @@ def inbox_accept_invite():
     if provider == "gmail":
         if not client_id or not redirect_uri:
             return _invite_result_page(False, "Google OAuth is not configured. Contact support.")
-        # If the account owner has Google Calendar connected, request calendar
-        # scope in the same OAuth flow so the invited user's calendar is also linked.
-        gcal_active = InboxConnection.query.filter_by(
-            account_id=account_id, provider="gcal", status="connected"
-        ).first() is not None
-        invite_scopes = list(GOOGLE_GMAIL_SCOPES)
-        invite_state = f"inbox_invite:{token}"
-        if gcal_active:
-            invite_scopes.append("https://www.googleapis.com/auth/calendar")
-            invite_state = f"inbox_invite_gcal:{token}"
         params = {
             "response_type": "code",
             "client_id": client_id,
             "redirect_uri": redirect_uri,
-            "scope": " ".join(invite_scopes),
+            "scope": " ".join(GOOGLE_GMAIL_SCOPES),
             "access_type": "offline",
             "prompt": "consent",
             "login_hint": expected_email,
-            "state": invite_state,
+            "state": f"inbox_invite_gcal:{token}",
         }
         return redirect(f"{GOOGLE_AUTH_URL}?{urllib.parse.urlencode(params)}")
 
@@ -536,6 +514,42 @@ def _complete_invite_gcal_connection(account_id: int, email: str, access_token: 
     except Exception as exc:
         db.session.rollback()
         current_app.logger.warning("gcal invite connection failed account=%s: %s", account_id, exc)
+
+
+def _save_outlook_cal_connection(account_id: int, email: str, access_token: str, refresh_token: str | None) -> None:
+    """
+    Create or update an outlook_cal InboxConnection using tokens obtained during
+    the Outlook inbox OAuth flow (Calendars.ReadWrite is bundled). Best-effort.
+    """
+    from src.crypto import encrypt_value
+    try:
+        conn = InboxConnection.query.filter_by(account_id=account_id, provider="outlook_cal").first()
+        meta = {
+            "access_token_enc": encrypt_value(access_token),
+            "refresh_token_enc": encrypt_value(refresh_token) if refresh_token else None,
+            "scope": "https://graph.microsoft.com/Calendars.ReadWrite",
+            "linked_email": email,
+        }
+        if conn:
+            conn.metadata_json = meta
+            conn.status = "connected"
+        else:
+            user = User.query.filter_by(account_id=account_id).first()
+            conn = InboxConnection(
+                user_id=user.id if user else None,
+                account_id=account_id,
+                provider="outlook_cal",
+                status="connected",
+                metadata_json=meta,
+            )
+            db.session.add(conn)
+        db.session.commit()
+        current_app.logger.info(
+            {"event": "outlook_cal.connected", "account_id": account_id, "email": email}
+        )
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.warning("outlook_cal connection failed account=%s: %s", account_id, exc)
 
 
 def _invite_result_page(success: bool, message: str) -> str:
@@ -668,6 +682,11 @@ def google_callback():
             current_app.logger.info("gmail inbox connected: user_id=%s email=%s", user_id, email)
         except RuntimeError:
             pass
+        # Save calendar connection — calendar scope is bundled into the Gmail auth flow
+        # so the same tokens cover Calendar access. Best-effort, never blocks the redirect.
+        user_obj = User.query.get(user_id)
+        if user_obj and user_obj.account_id:
+            _complete_invite_gcal_connection(user_obj.account_id, email, access_token, refresh_token)
         # Bootstrap InboxIQ labels and category filters immediately on connect.
         # Demonstrates gmail.modify (label creation) and gmail.settings.basic (filter creation)
         # before the first poll runs. Best-effort — never block the redirect.
@@ -773,6 +792,10 @@ def outlook_callback():
     if state.startswith("inbox_invite:"):
         invite_token = state[len("inbox_invite:"):]
         ok, message = _complete_invite_connection("outlook", email, access_token, refresh_token, invite_token)
+        if ok:
+            _, account_id_from_token, _ = verify_inbox_invite_token(invite_token)
+            if account_id_from_token:
+                _save_outlook_cal_connection(account_id_from_token, email, access_token, refresh_token)
         return _invite_result_page(ok, message)
 
     if _is_connect:
@@ -784,6 +807,10 @@ def outlook_callback():
             current_app.logger.info("outlook inbox connected: user_id=%s email=%s", user_id, email)
         except RuntimeError:
             pass
+        # Save calendar connection — Calendars.ReadWrite is bundled into the Outlook auth flow
+        user_obj = User.query.get(user_id)
+        if user_obj and user_obj.account_id:
+            _save_outlook_cal_connection(user_obj.account_id, email, access_token, refresh_token)
         return redirect("https://outlook.office.com/mail")
 
     # state == "signin": sign-up or log-in flow — no mail scopes requested
