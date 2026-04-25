@@ -142,6 +142,20 @@ def _get_connect_next(state: str) -> str:
 GOOGLE_SIGNIN_SCOPES = ["openid", "email", "profile"]
 
 # Gmail inbox connection — restricted scopes, requires Google verification for production
+# Only requested after the user has signed in and explicitly connects their inbox
+GOOGLE_GMAIL_SCOPES = [
+    "openid",
+    "email",
+    "profile",
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.settings.basic",
+    "https://www.googleapis.com/auth/calendar",
+]
+
+# Backward-compat alias (kept so nothing else breaks)
+GOOGLE_SCOPES = GOOGLE_SIGNIN_SCOPES
+
 MS_AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
 MS_TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
 
