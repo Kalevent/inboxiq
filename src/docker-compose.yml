@@ -38,7 +38,7 @@ services:
       - "8000:8000"
 
   redis:
-    image: redis:7
+    image: redis:8
     command: ["redis-server", "--requirepass", "supersecret", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
     ports:
       - "6379:6379"
