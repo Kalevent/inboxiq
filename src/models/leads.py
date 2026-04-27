@@ -52,6 +52,7 @@ class Lead(db.Model):
     first_contact_date = db.Column(db.DateTime(timezone=True), nullable=True)
     next_contact_date = db.Column(db.DateTime(timezone=True), nullable=True)
     notes = db.Column(db.Text, nullable=True)
+    linkedin_url = db.Column(db.String(500), nullable=True, index=True)
     campaign_id = db.Column(db.String(64), nullable=True)
     sales_agent_id = db.Column(db.String(64), nullable=True)
 
