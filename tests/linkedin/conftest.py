@@ -12,9 +12,15 @@ from src.models.marketing import ICPConfig
 
 @pytest.fixture
 def app():
+    from sqlalchemy.pool import StaticPool
+
     app = create_app()
     app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "connect_args": {"check_same_thread": False},
+        "poolclass": StaticPool,
+    }
     app.config["SECRET_KEY"] = "test-secret"
     with app.app_context():
         # Only create tables needed for LinkedIn prospect tests to avoid
