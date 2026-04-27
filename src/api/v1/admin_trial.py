@@ -36,9 +36,6 @@ def get_trial_metrics():
     if not _require_admin():
         return jsonify({"error": "forbidden"}), 403
 
-    # Get recent users — extend window to 90 days to capture long-running beta trials
-    ninety_days_ago = datetime.now(timezone.utc) - timedelta(days=90)
-
     active_trials = db.session.query(
         User.id,
         User.email,
@@ -49,10 +46,10 @@ def get_trial_metrics():
         CustomerBillingProfile.trial_end.label('trial_end'),
     ).join(
         Account, User.account_id == Account.id
-    ).outerjoin(
+    ).join(
         CustomerBillingProfile, CustomerBillingProfile.account_id == Account.id
     ).filter(
-        User.created_at >= ninety_days_ago
+        CustomerBillingProfile.trial_status == "active",
     ).order_by(
         User.created_at.desc()
     ).all()
