@@ -280,11 +280,18 @@ def process_trial_onboarding_emails(max_emails: int = 100) -> Dict[str, Any]:
         error_count = 0
         results = []
 
-        # Get all users with activated accounts (have password set)
-        users = User.query.filter(
-            User.password_hash.isnot(None),
-            User.created_at.isnot(None)
-        ).all()
+        # Only email users with an active trial billing profile
+        from src.models.billing import CustomerBillingProfile
+        users = (
+            User.query
+            .join(CustomerBillingProfile, CustomerBillingProfile.account_id == User.account_id)
+            .filter(
+                User.password_hash.isnot(None),
+                User.created_at.isnot(None),
+                CustomerBillingProfile.trial_status == "active",
+            )
+            .all()
+        )
 
         for user in users:
             if sent_count >= max_emails:

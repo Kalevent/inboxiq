@@ -61,3 +61,56 @@ def run_dunning_sender(billing: BillingService, now: Optional[datetime] = None):
         "profiles": len(by_profile),
         "timestamp": now.isoformat(),
     }
+
+
+def run_billing_profile_backfill(now: Optional[datetime] = None) -> dict:
+    """
+    Create CustomerBillingProfile rows for activated users who don't have one.
+
+    This heals accounts where profile creation failed silently at activation.
+    If the user's natural 7-day window already closed, they get a fresh 7 days
+    from now so they can experience the full trial.
+    """
+    from src.models.core import User
+    import src.models.billing as models
+
+    now = now or datetime.now(timezone.utc)
+
+    orphans = (
+        db.session.query(User)
+        .outerjoin(models.CustomerBillingProfile, models.CustomerBillingProfile.account_id == User.account_id)
+        .filter(
+            User.password_hash.isnot(None),
+            models.CustomerBillingProfile.id.is_(None),
+        )
+        .all()
+    )
+
+    created = 0
+    skipped = 0
+    for user in orphans:
+        trial_start = user.created_at or now
+        if trial_start.tzinfo is None:
+            trial_start = trial_start.replace(tzinfo=timezone.utc)
+        trial_end = trial_start + timedelta(days=7)
+        if trial_end < now:
+            trial_start = now
+            trial_end = now + timedelta(days=7)
+
+        profile = models.CustomerBillingProfile(
+            account_id=user.account_id,
+            email=user.email,
+            trial_start=trial_start,
+            trial_end=trial_end,
+            trial_status="active",
+            subscription_status="trialing",
+        )
+        try:
+            db.session.add(profile)
+            db.session.commit()
+            created += 1
+        except Exception:
+            db.session.rollback()
+            skipped += 1
+
+    return {"backfilled": created, "skipped": skipped}

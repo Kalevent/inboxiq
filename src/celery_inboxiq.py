@@ -268,12 +268,17 @@ def make_celery(app) -> Celery:
             ),
             **(
                 {
+                    "billing_backfill_missing_profiles": {
+                        "task": "billing.backfill_missing_profiles",
+                        "schedule": crontab(hour=(trial_onboarding_hour - 1) % 24, minute=45),  # 15 min before trial emails
+                        "options": {"queue": "billing"},
+                    },
                     "process_trial_onboarding_daily": {
                         "task": "trial.process_onboarding_emails",
                         "schedule": crontab(hour=trial_onboarding_hour, minute=0),  # 8am daily
                         "args": [trial_onboarding_max_emails],
                         "options": {"queue": "leads"},
-                    }
+                    },
                 }
                 if trial_onboarding_enabled
                 else {}
