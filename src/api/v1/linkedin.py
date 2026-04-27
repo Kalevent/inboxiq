@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, g, jsonify, redirect, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import get_jwt, jwt_required
 
 from src.extensions import db
 from src.models.campaigns import LinkedInProspect
@@ -79,7 +79,7 @@ def advance_prospect(prospect_id: str):
 @linkedin_api_bp.route("/prospects/<prospect_id>/advance", methods=["POST"])
 @jwt_required()
 def api_advance_prospect(prospect_id: str):
-    account_id = get_jwt_identity()
+    account_id = int(get_jwt().get("account_id"))
     prospect = db.session.query(LinkedInProspect).filter_by(
         id=prospect_id, account_id=account_id
     ).first()
@@ -99,7 +99,7 @@ def api_advance_prospect(prospect_id: str):
 @linkedin_api_bp.route("/prospects/<prospect_id>/disqualify", methods=["POST"])
 @jwt_required()
 def api_disqualify_prospect(prospect_id: str):
-    account_id = get_jwt_identity()
+    account_id = int(get_jwt().get("account_id"))
     prospect = db.session.query(LinkedInProspect).filter_by(
         id=prospect_id, account_id=account_id
     ).first()
@@ -119,7 +119,7 @@ def api_disqualify_prospect(prospect_id: str):
 def api_add_prospect():
     """Manually add a LinkedIn prospect and trigger draft generation."""
     from src.tasks.linkedin import draft_messages_task
-    account_id = get_jwt_identity()
+    account_id = int(get_jwt().get("account_id"))
     data = request.get_json(silent=True) or {}
 
     linkedin_url = (data.get("linkedin_url") or "").strip()
@@ -162,7 +162,7 @@ def api_add_prospect():
 @linkedin_api_bp.route("/prospects", methods=["GET"])
 @jwt_required()
 def api_list_prospects():
-    account_id = get_jwt_identity()
+    account_id = int(get_jwt().get("account_id"))
     status_filter = request.args.get("status")
     query = db.session.query(LinkedInProspect).filter_by(account_id=account_id)
     if status_filter:
@@ -188,7 +188,7 @@ def api_list_prospects():
 def api_get_icp():
     from src.models.marketing import ICPConfig
     from src.tasks.linkedin import _ICP_DEFAULTS
-    account_id = get_jwt_identity()
+    account_id = int(get_jwt().get("account_id"))
     config = db.session.query(ICPConfig).filter_by(account_id=account_id).first()
     if not config:
         return jsonify(_ICP_DEFAULTS)
@@ -205,7 +205,7 @@ def api_get_icp():
 @jwt_required()
 def api_save_icp():
     from src.models.marketing import ICPConfig
-    account_id = get_jwt_identity()
+    account_id = int(get_jwt().get("account_id"))
     data = request.get_json(silent=True) or {}
     config = db.session.query(ICPConfig).filter_by(account_id=account_id).first()
     if not config:
