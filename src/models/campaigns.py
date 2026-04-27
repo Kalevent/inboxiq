@@ -236,7 +236,7 @@ class LinkedInProspect(db.Model):
     )
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
-    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    account_id = db.Column(db.Integer, nullable=False)
     lead_id = db.Column(db.String(64), db.ForeignKey("leads.id"), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     company_name = db.Column(db.String(255), nullable=True)
