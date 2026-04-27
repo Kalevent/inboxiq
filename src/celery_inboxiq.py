@@ -379,6 +379,22 @@ def make_celery(app) -> Celery:
                 if outreach_enabled
                 else {}
             ),
+            # LinkedIn outreach cadence — discover → draft → digest
+            "linkedin_discover_prospects": {
+                "task": "linkedin.discover_prospects",
+                "schedule": crontab(hour=7, minute=0),
+                "options": {"queue": "inbox"},
+            },
+            "linkedin_draft_messages": {
+                "task": "linkedin.draft_messages",
+                "schedule": crontab(hour=7, minute=30),
+                "options": {"queue": "inbox"},
+            },
+            "linkedin_send_digest": {
+                "task": "linkedin.send_digest",
+                "schedule": crontab(hour=8, minute=0),
+                "options": {"queue": "inbox"},
+            },
         },
     )
 
@@ -396,7 +412,7 @@ def make_celery(app) -> Celery:
 
 app = create_app()
 celery = make_celery(app)
-celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox", "src.booking"])
+celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox", "src.booking", "src.tasks.linkedin"])
 
 # Initialize OpenTelemetry for Celery workers
 from src.monitoring.observability import init_otel, get_tracer

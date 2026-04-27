@@ -181,3 +181,95 @@ def draft_messages_task():
 
     log.info("linkedin.draft_messages: drafted %d prospects", drafted)
     return {"drafted": drafted}
+
+
+@shared_task(name="linkedin.send_digest")
+def send_digest_task():
+    """
+    Collect all prospects due for action today and email the digest.
+    Runs daily at 8:00am, after draft_messages_task.
+    """
+    from datetime import datetime, timezone
+    from src.models.campaigns import LinkedInProspect
+    from src.models.content import BlogPost
+    from src.notifications.emails import send_linkedin_digest
+    from flask import current_app
+
+    now = datetime.now(timezone.utc)
+    notify_email = current_app.config.get("ADMIN_EMAILS", "").split(",")[0].strip()
+    if not notify_email:
+        log.warning("linkedin.send_digest: ADMIN_EMAILS not configured, skipping")
+        return {"sent": False}
+
+    due = []
+
+    # Connection requests ready to send (pending with drafts)
+    pending = db.session.query(LinkedInProspect).filter(
+        LinkedInProspect.status == "pending",
+        LinkedInProspect.msg_1_draft.isnot(None),
+    ).all()
+    for p in pending:
+        due.append(_prospect_to_digest_item(p, "Send connection request", p.msg_1_draft))
+
+    # Message 2 due
+    msg2_due = db.session.query(LinkedInProspect).filter(
+        LinkedInProspect.status == "connected",
+        LinkedInProspect.message_2_due_at <= now,
+        LinkedInProspect.msg_2_draft.isnot(None),
+    ).all()
+    for p in msg2_due:
+        days_ago = (now - p.connected_at.replace(tzinfo=timezone.utc)).days if p.connected_at else "?"
+        due.append(_prospect_to_digest_item(p, f"Send message 2 (connected {days_ago} days ago)", p.msg_2_draft, with_post=True))
+
+    # Message 3 due
+    msg3_due = db.session.query(LinkedInProspect).filter(
+        LinkedInProspect.status == "message_2_sent",
+        LinkedInProspect.message_3_due_at <= now,
+        LinkedInProspect.msg_3_draft.isnot(None),
+    ).all()
+    for p in msg3_due:
+        due.append(_prospect_to_digest_item(p, "Send message 3 — soft ask", p.msg_3_draft))
+
+    # Replied — needs qualify/disqualify decision
+    replied = db.session.query(LinkedInProspect).filter(
+        LinkedInProspect.status == "replied",
+    ).all()
+    for p in replied:
+        due.append(_prospect_to_digest_item(p, "Follow up — prospect replied, qualify or disqualify", p.msg_3_draft or ""))
+
+    if not due:
+        log.info("linkedin.send_digest: no actions due today")
+        return {"sent": False, "count": 0}
+
+    # Order: msg3 first, then msg2, then connection requests, then replied
+    order = {"Send message 3": 0, "Send message 2": 1, "Send connection": 2, "Follow up": 3}
+    due.sort(key=lambda x: next((v for k, v in order.items() if x["action_label"].startswith(k)), 4))
+
+    date_label = now.strftime("%a %d %b")
+    sent = send_linkedin_digest(notify_email, due, date_label)
+    log.info("linkedin.send_digest: sent=%s count=%d", sent, len(due))
+    return {"sent": sent, "count": len(due)}
+
+
+def _prospect_to_digest_item(prospect, action_label: str, msg_draft: str, with_post: bool = False) -> dict:
+    from src.models.content import BlogPost
+    item = {
+        "prospect_id": prospect.id,
+        "name": prospect.name,
+        "company_name": prospect.company_name or "",
+        "job_title": prospect.job_title or "",
+        "linkedin_url": prospect.linkedin_url,
+        "action_label": action_label,
+        "msg_draft": msg_draft or "",
+    }
+    if with_post and prospect.suggested_post_id:
+        post = db.session.query(BlogPost).filter_by(id=prospect.suggested_post_id).first()
+        if post:
+            item["suggested_post_title"] = post.title
+            item["suggested_post_url"] = f"https://kalevent.com/blog/{post.slug}"
+            notes = prospect.notes or ""
+            for line in notes.splitlines():
+                if line.startswith("[post match]"):
+                    item["match_reason"] = line.replace("[post match]", "").strip()
+                    break
+    return item
