@@ -120,10 +120,12 @@
 </div>
 
 <script>
-const _liHeaders = () => ({
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
-});
+const _liHeaders = () => {
+  const h = { 'Content-Type': 'application/json' };
+  const token = localStorage.getItem('access_token');
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  return h;
+};
 
 const _STATUS_LABELS = {
   pending: { label: 'Pending', cls: 'bg-slate-700 text-slate-300' },
