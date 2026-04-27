@@ -196,5 +196,5 @@ class ICPConfig(db.Model):
     company_size_min = db.Column(db.Integer, nullable=False, default=10)
     company_size_max = db.Column(db.Integer, nullable=False, default=50)
     geographies = db.Column(db.JSON, nullable=False, default=lambda: ["UK", "US", "Nigeria"])
-    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
-    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
