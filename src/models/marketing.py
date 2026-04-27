@@ -179,3 +179,22 @@ class EnterpriseInquiry(db.Model):
     admin_notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+
+
+class ICPConfig(db.Model):
+    """Per-account ICP criteria used by the LinkedIn discovery task."""
+    __tablename__ = "icp_configs"
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    account_id = db.Column(db.Integer, nullable=False, unique=True)
+    titles = db.Column(
+        db.JSON,
+        nullable=False,
+        default=lambda: ["Founder", "Head of Support", "Operations Lead", "Customer Success Lead"],
+    )
+    industries = db.Column(db.JSON, nullable=False, default=lambda: ["B2B SaaS", "Software"])
+    company_size_min = db.Column(db.Integer, nullable=False, default=10)
+    company_size_max = db.Column(db.Integer, nullable=False, default=50)
+    geographies = db.Column(db.JSON, nullable=False, default=lambda: ["UK", "US", "Nigeria"])
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

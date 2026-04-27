@@ -12,7 +12,7 @@ from src.models.leads import Lead, LeadFunnelStage, LeadEngagementEvent, LeadAtt
 from src.models.content import BlogPost, KBIntegration, KBArticle, KBArticleEmbedding, GeneratedContent, PitchedBlogTopic
 from src.models.campaigns import CampaignSender, HunterDomainCache, EmailCampaign, EmailOutreach, NurtureEmailSend, LinkedInProspect
 from src.models.automation import AutomationStudioWaitlist, AutomationRule, AutomationRuleExecution, WebhookProvider, AutomationSuggestion, ApprovalPolicy
-from src.models.marketing import Referral, InAppMessage, InAppMessageDismissal, LandingPage, MarketingSpend, EnterpriseInquiry
+from src.models.marketing import Referral, InAppMessage, InAppMessageDismissal, LandingPage, MarketingSpend, EnterpriseInquiry, ICPConfig
 from src.models.misc import Testimonial, Feedback, Booking
 from src.models.developer import DeveloperAccessRequest, RegisteredApp
 from src.models.billing import (
@@ -40,7 +40,7 @@ __all__ = [
     # automation
     "AutomationStudioWaitlist", "AutomationRule", "AutomationRuleExecution", "WebhookProvider", "AutomationSuggestion", "ApprovalPolicy",
     # marketing
-    "Referral", "InAppMessage", "InAppMessageDismissal", "LandingPage", "MarketingSpend", "EnterpriseInquiry",
+    "Referral", "InAppMessage", "InAppMessageDismissal", "LandingPage", "MarketingSpend", "EnterpriseInquiry", "ICPConfig",
     # misc
     "Testimonial", "Feedback", "Booking",
     # developer
