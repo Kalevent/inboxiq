@@ -49,7 +49,7 @@ def discover_prospects():
             Lead.linkedin_url.isnot(None),
             Lead.fit_score >= 7,
             Lead.outreach_unsubscribed_at.is_(None),
-            Lead.deleted != True,
+            Lead.deleted.is_(False),
         )
         .all()
     )
@@ -135,11 +135,13 @@ def draft_messages_task():
     drafted = 0
     for prospect in prospects:
         try:
+            first_name = prospect.name.split()[0] if prospect.name and prospect.name.strip() else "there"
             draft_result = drafter(
-                prospect_name=prospect.name.split()[0],
+                prospect_name=first_name,
                 job_title=prospect.job_title or "professional",
                 company_name=prospect.company_name or "your company",
                 industry=prospect.industry or "SaaS",
+                product_name="InboxIQ",
             )
 
             suggested_post_id = None
