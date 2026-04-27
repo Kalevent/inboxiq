@@ -702,26 +702,36 @@ def send_linkedin_digest(to_email: str, prospects: list[dict], date_label: str) 
     sections_html = []
     sections_text = []
 
+    import html as _html
     for p in prospects:
         advance_url = f"{base_url}/marketing/linkedin/advance/{p['prospect_id']}"
+        name = _html.escape(p['name'])
+        job_title = _html.escape(p['job_title'])
+        company_name = _html.escape(p['company_name'])
+        linkedin_url = _html.escape(p['linkedin_url'])
+        action_label = _html.escape(p['action_label'])
+        msg_draft_html = _html.escape(p['msg_draft']).replace('\n', '<br>')
         post_html = ""
         post_text = ""
         if p.get("suggested_post_title"):
+            post_title = _html.escape(p['suggested_post_title'])
+            post_url = _html.escape(p.get('suggested_post_url', ''))
+            match_reason = _html.escape(p.get('match_reason', ''))
             post_html = (
-                f"<p style='margin:4px 0;font-size:13px;color:#94a3b8;'>"
-                f"Sharing: <a href='{p['suggested_post_url']}' style='color:#818cf8;'>{p['suggested_post_title']}</a>"
-                f"<br><em>{p.get('match_reason', '')}</em></p>"
+                f'<p style="margin:4px 0;font-size:13px;color:#94a3b8;">'
+                f'Sharing: <a href="{post_url}" style="color:#818cf8;">{post_title}</a>'
+                f'<br><em>{match_reason}</em></p>'
             )
-            post_text = f"\nSharing: {p['suggested_post_title']} ({p['suggested_post_url']})\nWhy: {p.get('match_reason', '')}"
+            post_text = f"\nSharing: {p['suggested_post_title']} ({p.get('suggested_post_url', '')})\nWhy: {p.get('match_reason', '')}"
 
         sections_html.append(f"""
 <div style="border:1px solid #1e293b;border-radius:8px;padding:16px;margin-bottom:16px;background:#0f172a;">
-  <p style="margin:0 0 4px;font-weight:600;font-size:15px;color:#f1f5f9;">{p['name']} &middot; {p['job_title']} &middot; {p['company_name']}</p>
-  <p style="margin:0 0 8px;font-size:12px;"><a href="{p['linkedin_url']}" style="color:#818cf8;">{p['linkedin_url']}</a></p>
-  <p style="margin:0 0 8px;font-size:13px;font-weight:500;color:#e2e8f0;">Action: {p['action_label']}</p>
+  <p style="margin:0 0 4px;font-weight:600;font-size:15px;color:#f1f5f9;">{name} &middot; {job_title} &middot; {company_name}</p>
+  <p style="margin:0 0 8px;font-size:12px;"><a href="{linkedin_url}" style="color:#818cf8;">{linkedin_url}</a></p>
+  <p style="margin:0 0 8px;font-size:13px;font-weight:500;color:#e2e8f0;">Action: {action_label}</p>
   {post_html}
   <div style="background:#1e293b;border-radius:6px;padding:12px;margin:8px 0;font-size:13px;color:#cbd5e1;font-style:italic;">
-    {p['msg_draft'].replace(chr(10), '<br>')}
+    {msg_draft_html}
   </div>
   <a href="{advance_url}" style="display:inline-block;background:#6366f1;color:#fff;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;">Mark as sent &rarr;</a>
 </div>""")

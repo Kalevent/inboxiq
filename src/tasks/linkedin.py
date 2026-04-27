@@ -191,7 +191,6 @@ def send_digest_task():
     """
     from datetime import datetime, timezone
     from src.models.campaigns import LinkedInProspect
-    from src.models.content import BlogPost
     from src.notifications.emails import send_linkedin_digest
     from flask import current_app
 
@@ -199,7 +198,7 @@ def send_digest_task():
     notify_email = current_app.config.get("ADMIN_EMAILS", "").split(",")[0].strip()
     if not notify_email:
         log.warning("linkedin.send_digest: ADMIN_EMAILS not configured, skipping")
-        return {"sent": False}
+        return {"sent": False, "count": 0}
 
     due = []
 
@@ -235,7 +234,7 @@ def send_digest_task():
         LinkedInProspect.status == "replied",
     ).all()
     for p in replied:
-        due.append(_prospect_to_digest_item(p, "Follow up — prospect replied, qualify or disqualify", p.msg_3_draft or ""))
+        due.append(_prospect_to_digest_item(p, "Follow up — prospect replied, qualify or disqualify", ""))
 
     if not due:
         log.info("linkedin.send_digest: no actions due today")
