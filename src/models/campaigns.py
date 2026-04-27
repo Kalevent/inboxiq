@@ -226,3 +226,51 @@ class NurtureEmailSend(db.Model):
     opened_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
 
+class LinkedInProspect(db.Model):
+    """Tracks a LinkedIn prospect through the 3-message outreach cadence."""
+    __tablename__ = "linkedin_prospects"
+    __table_args__ = (
+        db.UniqueConstraint("account_id", "linkedin_url", name="uq_li_prospect_account_url"),
+        db.Index("idx_li_prospect_account_status", "account_id", "status"),
+        db.Index("idx_li_prospect_due", "message_2_due_at", "message_3_due_at"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    account_id = db.Column(db.Integer, nullable=False)
+    lead_id = db.Column(db.String(64), db.ForeignKey("leads.id"), nullable=True)
+    name = db.Column(db.String(255), nullable=False)
+    company_name = db.Column(db.String(255), nullable=True)
+    job_title = db.Column(db.String(255), nullable=True)
+    industry = db.Column(db.String(100), nullable=True)
+    linkedin_url = db.Column(db.String(500), nullable=False)
+    source = db.Column(db.String(20), nullable=False, default="auto")
+    status = db.Column(
+        db.Enum(
+            "pending",
+            "connection_sent",
+            "connected",
+            "message_2_sent",
+            "message_3_sent",
+            "replied",
+            "qualified",
+            "disqualified",
+            name="linkedin_prospect_status_enum",
+        ),
+        nullable=False,
+        default="pending",
+    )
+    fit_score = db.Column(db.Integer, nullable=True)
+    connection_sent_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    connected_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    message_2_due_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    message_2_sent_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    message_3_due_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    message_3_sent_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    msg_1_draft = db.Column(db.Text, nullable=True)
+    msg_2_draft = db.Column(db.Text, nullable=True)
+    msg_3_draft = db.Column(db.Text, nullable=True)
+    suggested_post_id = db.Column(db.String(64), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+

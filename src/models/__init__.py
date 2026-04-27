@@ -10,7 +10,7 @@ from src.models.tickets import Ticket, TicketEmbedding, TriageLabelConfig, Draft
 from src.models.ai import DspyTrainingMetric, AgentEvent, AgentModel, MCPServerCatalog
 from src.models.leads import Lead, LeadFunnelStage, LeadEngagementEvent, LeadAttribution, FunnelMetricsDaily
 from src.models.content import BlogPost, KBIntegration, KBArticle, KBArticleEmbedding, GeneratedContent, PitchedBlogTopic
-from src.models.campaigns import CampaignSender, HunterDomainCache, EmailCampaign, EmailOutreach, NurtureEmailSend
+from src.models.campaigns import CampaignSender, HunterDomainCache, EmailCampaign, EmailOutreach, NurtureEmailSend, LinkedInProspect
 from src.models.automation import AutomationStudioWaitlist, AutomationRule, AutomationRuleExecution, WebhookProvider, AutomationSuggestion, ApprovalPolicy
 from src.models.marketing import Referral, InAppMessage, InAppMessageDismissal, LandingPage, MarketingSpend, EnterpriseInquiry
 from src.models.misc import Testimonial, Feedback, Booking
@@ -36,7 +36,7 @@ __all__ = [
     # content
     "BlogPost", "KBIntegration", "KBArticle", "KBArticleEmbedding", "GeneratedContent", "PitchedBlogTopic",
     # campaigns
-    "CampaignSender", "HunterDomainCache", "EmailCampaign", "EmailOutreach", "NurtureEmailSend",
+    "CampaignSender", "HunterDomainCache", "EmailCampaign", "EmailOutreach", "NurtureEmailSend", "LinkedInProspect",
     # automation
     "AutomationStudioWaitlist", "AutomationRule", "AutomationRuleExecution", "WebhookProvider", "AutomationSuggestion", "ApprovalPolicy",
     # marketing
