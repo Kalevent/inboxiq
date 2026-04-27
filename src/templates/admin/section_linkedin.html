@@ -1,0 +1,235 @@
+<div class="admin-section" id="section-linkedin">
+  <div class="content-container">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-100">LinkedIn Outreach Queue</h2>
+        <p class="text-sm text-slate-400 mt-1">Agent-drafted messages · Mark sent after you post on LinkedIn</p>
+      </div>
+      <button onclick="showAddProspectModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
+        + Add Prospect
+      </button>
+    </div>
+
+    <!-- Full Queue -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Queue</h3>
+        <div class="flex gap-2">
+          <select id="li-status-filter" onchange="loadLinkedInQueue()" class="bg-slate-800 border border-slate-700 text-slate-300 text-sm rounded-lg px-3 py-1.5">
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="connection_sent">Connection sent</option>
+            <option value="connected">Connected</option>
+            <option value="message_2_sent">Message 2 sent</option>
+            <option value="message_3_sent">Message 3 sent</option>
+            <option value="replied">Replied</option>
+            <option value="qualified">Qualified</option>
+            <option value="disqualified">Disqualified</option>
+          </select>
+        </div>
+      </div>
+      <div class="overflow-x-auto rounded-lg border border-slate-800">
+        <table class="w-full text-sm text-slate-300">
+          <thead class="bg-slate-900 text-slate-400 text-xs uppercase">
+            <tr>
+              <th class="px-4 py-3 text-left">Name</th>
+              <th class="px-4 py-3 text-left">Company</th>
+              <th class="px-4 py-3 text-left">Title</th>
+              <th class="px-4 py-3 text-left">Status</th>
+              <th class="px-4 py-3 text-left">Fit</th>
+              <th class="px-4 py-3 text-left">Source</th>
+              <th class="px-4 py-3 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="li-queue-tbody">
+            <tr><td colspan="7" class="px-4 py-6 text-center text-slate-500">Loading&#8230;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ICP Settings -->
+    <div class="mt-10 border-t border-slate-800 pt-8">
+      <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">ICP Settings</h3>
+      <p class="text-xs text-slate-500 mb-4">Defines who the discovery agent promotes into this queue. Changes take effect on the next 7am run.</p>
+      <form id="icp-form" onsubmit="saveICP(event)" class="space-y-4 max-w-xl">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Job Titles (comma-separated)</label>
+          <input id="icp-titles" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Industries (comma-separated)</label>
+          <input id="icp-industries" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+        </div>
+        <div class="flex gap-4">
+          <div class="flex-1">
+            <label class="block text-xs text-slate-400 mb-1">Company size min</label>
+            <input id="icp-size-min" type="number" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+          </div>
+          <div class="flex-1">
+            <label class="block text-xs text-slate-400 mb-1">Company size max</label>
+            <input id="icp-size-max" type="number" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Geographies (comma-separated)</label>
+          <input id="icp-geos" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+        </div>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">Save ICP</button>
+        <span id="icp-saved-msg" class="hidden text-green-400 text-sm ml-3">Saved</span>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<!-- Add Prospect Modal -->
+<div id="add-prospect-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
+  <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md">
+    <h3 class="text-lg font-semibold text-slate-100 mb-4">Add Prospect Manually</h3>
+    <form id="add-prospect-form" onsubmit="submitAddProspect(event)" class="space-y-3">
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">LinkedIn URL *</label>
+        <input id="ap-url" type="url" required placeholder="https://linkedin.com/in/..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+      </div>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Full Name *</label>
+        <input id="ap-name" type="text" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+      </div>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Company *</label>
+        <input id="ap-company" type="text" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+      </div>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Job Title *</label>
+        <input id="ap-title" type="text" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+      </div>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Industry *</label>
+        <input id="ap-industry" type="text" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">Add to Queue</button>
+        <button type="button" onclick="hideAddProspectModal()" class="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-medium rounded-lg transition-colors">Cancel</button>
+      </div>
+      <p id="ap-error" class="hidden text-red-400 text-xs"></p>
+    </form>
+  </div>
+</div>
+
+<script>
+const _liHeaders = () => ({
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+});
+
+const _STATUS_LABELS = {
+  pending: { label: 'Pending', cls: 'bg-slate-700 text-slate-300' },
+  connection_sent: { label: 'Connection sent', cls: 'bg-blue-900 text-blue-300' },
+  connected: { label: 'Connected', cls: 'bg-cyan-900 text-cyan-300' },
+  message_2_sent: { label: 'Msg 2 sent', cls: 'bg-yellow-900 text-yellow-300' },
+  message_3_sent: { label: 'Msg 3 sent', cls: 'bg-orange-900 text-orange-300' },
+  replied: { label: 'Replied', cls: 'bg-green-900 text-green-300' },
+  qualified: { label: 'Qualified', cls: 'bg-indigo-900 text-indigo-300' },
+  disqualified: { label: 'Disqualified', cls: 'bg-red-900 text-red-300' },
+};
+
+async function loadLinkedInQueue() {
+  const status = document.getElementById('li-status-filter').value;
+  const url = `/api/v1/linkedin/prospects${status ? '?status=' + status : ''}`;
+  const resp = await fetch(url, { credentials: 'include', headers: _liHeaders() });
+  if (!resp.ok) return;
+  const prospects = await resp.json();
+  const tbody = document.getElementById('li-queue-tbody');
+  if (!prospects.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-slate-500">No prospects in queue</td></tr>';
+    return;
+  }
+  tbody.innerHTML = prospects.map(p => {
+    const s = _STATUS_LABELS[p.status] || { label: p.status, cls: 'bg-slate-700 text-slate-300' };
+    return `<tr class="border-t border-slate-800 hover:bg-slate-800/40">
+      <td class="px-4 py-3"><a href="${p.linkedin_url}" target="_blank" class="text-indigo-400 hover:underline">${p.name}</a></td>
+      <td class="px-4 py-3 text-slate-400">${p.company_name || '&#8212;'}</td>
+      <td class="px-4 py-3 text-slate-400">${p.job_title || '&#8212;'}</td>
+      <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${s.cls}">${s.label}</span></td>
+      <td class="px-4 py-3 text-slate-400">${p.fit_score ?? '&#8212;'}</td>
+      <td class="px-4 py-3 text-slate-500 text-xs">${p.source}</td>
+      <td class="px-4 py-3 flex gap-2 text-xs">
+        <button onclick="advanceProspect('${p.id}')" class="px-2 py-1 bg-indigo-800 hover:bg-indigo-700 text-indigo-200 rounded">Advance</button>
+        <button onclick="disqualifyProspect('${p.id}')" class="px-2 py-1 bg-red-900 hover:bg-red-800 text-red-300 rounded">Disqualify</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function advanceProspect(id) {
+  await fetch(`/api/v1/linkedin/prospects/${id}/advance`, { method: 'POST', headers: _liHeaders(), credentials: 'include' });
+  loadLinkedInQueue();
+}
+
+async function disqualifyProspect(id) {
+  if (!confirm('Disqualify this prospect?')) return;
+  await fetch(`/api/v1/linkedin/prospects/${id}/disqualify`, { method: 'POST', headers: _liHeaders(), credentials: 'include' });
+  loadLinkedInQueue();
+}
+
+async function loadICP() {
+  const resp = await fetch('/api/v1/linkedin/icp', { credentials: 'include', headers: _liHeaders() });
+  if (!resp.ok) return;
+  const d = await resp.json();
+  document.getElementById('icp-titles').value = (d.titles || []).join(', ');
+  document.getElementById('icp-industries').value = (d.industries || []).join(', ');
+  document.getElementById('icp-size-min').value = d.company_size_min ?? 10;
+  document.getElementById('icp-size-max').value = d.company_size_max ?? 50;
+  document.getElementById('icp-geos').value = (d.geographies || []).join(', ');
+}
+
+async function saveICP(e) {
+  e.preventDefault();
+  const split = v => v.split(',').map(s => s.trim()).filter(Boolean);
+  const payload = {
+    titles: split(document.getElementById('icp-titles').value),
+    industries: split(document.getElementById('icp-industries').value),
+    company_size_min: parseInt(document.getElementById('icp-size-min').value),
+    company_size_max: parseInt(document.getElementById('icp-size-max').value),
+    geographies: split(document.getElementById('icp-geos').value),
+  };
+  await fetch('/api/v1/linkedin/icp', { method: 'POST', headers: _liHeaders(), credentials: 'include', body: JSON.stringify(payload) });
+  const msg = document.getElementById('icp-saved-msg');
+  msg.classList.remove('hidden');
+  setTimeout(() => msg.classList.add('hidden'), 2000);
+}
+
+function showAddProspectModal() { document.getElementById('add-prospect-modal').classList.remove('hidden'); }
+function hideAddProspectModal() { document.getElementById('add-prospect-modal').classList.add('hidden'); }
+
+async function submitAddProspect(e) {
+  e.preventDefault();
+  const errEl = document.getElementById('ap-error');
+  errEl.classList.add('hidden');
+  const payload = {
+    linkedin_url: document.getElementById('ap-url').value.trim(),
+    name: document.getElementById('ap-name').value.trim(),
+    company_name: document.getElementById('ap-company').value.trim(),
+    job_title: document.getElementById('ap-title').value.trim(),
+    industry: document.getElementById('ap-industry').value.trim(),
+  };
+  const resp = await fetch('/api/v1/linkedin/prospects', { method: 'POST', headers: _liHeaders(), credentials: 'include', body: JSON.stringify(payload) });
+  if (resp.ok) {
+    hideAddProspectModal();
+    document.getElementById('add-prospect-form').reset();
+    loadLinkedInQueue();
+  } else {
+    const d = await resp.json();
+    errEl.textContent = d.error || 'Failed to add prospect';
+    errEl.classList.remove('hidden');
+  }
+}
+
+// Load on section activation
+document.addEventListener('sectionChange', (e) => {
+  if (e.detail === 'linkedin') { loadLinkedInQueue(); loadICP(); }
+});
+</script>
