@@ -1,3 +1,4 @@
+import pytest
 from src.models.campaigns import LinkedInProspect
 
 
@@ -20,9 +21,9 @@ def test_linkedin_prospect_unique_url_per_account(db):
     db.session.add(p1)
     db.session.commit()
     db.session.add(p2)
-    import pytest
     with pytest.raises(Exception):
         db.session.commit()
+    db.session.rollback()
 
 
 def test_linkedin_prospect_same_url_different_account(db):

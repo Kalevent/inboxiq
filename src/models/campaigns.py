@@ -236,14 +236,14 @@ class LinkedInProspect(db.Model):
     )
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
-    account_id = db.Column(db.Integer, nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
     lead_id = db.Column(db.String(64), db.ForeignKey("leads.id"), nullable=True)
     name = db.Column(db.String(255), nullable=False)
     company_name = db.Column(db.String(255), nullable=True)
     job_title = db.Column(db.String(255), nullable=True)
     industry = db.Column(db.String(100), nullable=True)
     linkedin_url = db.Column(db.String(500), nullable=False)
-    source = db.Column(db.String(20), nullable=False, default="auto")
+    source = db.Column(db.String(20), nullable=False, server_default="auto")
     status = db.Column(
         db.Enum(
             "pending",
@@ -257,7 +257,7 @@ class LinkedInProspect(db.Model):
             name="linkedin_prospect_status_enum",
         ),
         nullable=False,
-        default="pending",
+        server_default="pending",
     )
     fit_score = db.Column(db.Integer, nullable=True)
     connection_sent_at = db.Column(db.DateTime(timezone=True), nullable=True)
@@ -269,8 +269,8 @@ class LinkedInProspect(db.Model):
     msg_1_draft = db.Column(db.Text, nullable=True)
     msg_2_draft = db.Column(db.Text, nullable=True)
     msg_3_draft = db.Column(db.Text, nullable=True)
-    suggested_post_id = db.Column(db.String(64), nullable=True)
+    suggested_post_id = db.Column(db.String(64), db.ForeignKey("blog_posts.id"), nullable=True)
     notes = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
