@@ -668,3 +668,104 @@ this email and we'll get back to you.
     except Exception as exc:
         app.logger.warning({"event": "email.failed.enterprise_value_report", "to": to_email, "error": str(exc)})
         return False
+
+
+def send_linkedin_digest(to_email: str, prospects: list[dict], date_label: str) -> bool:
+    """
+    Send the daily LinkedIn outreach digest email.
+
+    Each prospect dict must have:
+        name, company_name, job_title, linkedin_url, action_label,
+        msg_draft, prospect_id
+    Optional keys:
+        suggested_post_title, suggested_post_url, match_reason
+    """
+    app = current_app
+    host = app.config.get("SMTP_HOST")
+    if not host:
+        app.logger.info({"event": "email.disabled", "reason": "SMTP_HOST not configured"})
+        return False
+
+    if not prospects:
+        return False
+
+    port = app.config.get("SMTP_PORT")
+    user = app.config.get("SMTP_USER")
+    password = app.config.get("SMTP_PASSWORD")
+    use_tls = app.config.get("SMTP_USE_TLS", True)
+    use_ssl = app.config.get("SMTP_USE_SSL", False)
+    mail_from = app.config.get("MAIL_FROM", "noreply@kalevent.com")
+    base_url = app.config.get("BASE_URL", "https://kalevent.com")
+
+    subject = f"LinkedIn Outreach — {len(prospects)} action{'s' if len(prospects) != 1 else ''} ready ({date_label})"
+
+    sections_html = []
+    sections_text = []
+
+    for p in prospects:
+        advance_url = f"{base_url}/marketing/linkedin/advance/{p['prospect_id']}"
+        post_html = ""
+        post_text = ""
+        if p.get("suggested_post_title"):
+            post_html = (
+                f"<p style='margin:4px 0;font-size:13px;color:#94a3b8;'>"
+                f"Sharing: <a href='{p['suggested_post_url']}' style='color:#818cf8;'>{p['suggested_post_title']}</a>"
+                f"<br><em>{p.get('match_reason', '')}</em></p>"
+            )
+            post_text = f"\nSharing: {p['suggested_post_title']} ({p['suggested_post_url']})\nWhy: {p.get('match_reason', '')}"
+
+        sections_html.append(f"""
+<div style="border:1px solid #1e293b;border-radius:8px;padding:16px;margin-bottom:16px;background:#0f172a;">
+  <p style="margin:0 0 4px;font-weight:600;font-size:15px;color:#f1f5f9;">{p['name']} &middot; {p['job_title']} &middot; {p['company_name']}</p>
+  <p style="margin:0 0 8px;font-size:12px;"><a href="{p['linkedin_url']}" style="color:#818cf8;">{p['linkedin_url']}</a></p>
+  <p style="margin:0 0 8px;font-size:13px;font-weight:500;color:#e2e8f0;">Action: {p['action_label']}</p>
+  {post_html}
+  <div style="background:#1e293b;border-radius:6px;padding:12px;margin:8px 0;font-size:13px;color:#cbd5e1;font-style:italic;">
+    {p['msg_draft'].replace(chr(10), '<br>')}
+  </div>
+  <a href="{advance_url}" style="display:inline-block;background:#6366f1;color:#fff;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;">Mark as sent &rarr;</a>
+</div>""")
+
+        sections_text.append(
+            f"\n{'─'*60}\n"
+            f"{p['name']} · {p['job_title']} · {p['company_name']}\n"
+            f"{p['linkedin_url']}\n\n"
+            f"Action: {p['action_label']}{post_text}\n\n"
+            f"{p['msg_draft']}\n\n"
+            f"Mark as sent: {advance_url}\n"
+        )
+
+    html_body = f"""<!DOCTYPE html><html><body style="background:#020617;color:#f1f5f9;font-family:sans-serif;padding:24px;max-width:640px;margin:0 auto;">
+<h2 style="color:#818cf8;margin-bottom:4px;">LinkedIn Outreach</h2>
+<p style="color:#94a3b8;margin-top:0;">{len(prospects)} action{'s' if len(prospects) != 1 else ''} ready &mdash; {date_label}</p>
+{''.join(sections_html)}
+<p style="font-size:11px;color:#475569;margin-top:24px;">Manage your queue: <a href="{base_url}/marketing/linkedin" style="color:#818cf8;">{base_url}/marketing/linkedin</a></p>
+</body></html>"""
+
+    text_body = f"LinkedIn Outreach — {len(prospects)} actions ready — {date_label}\n{''.join(sections_text)}"
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = mail_from
+    msg["To"] = to_email
+    msg.set_content(text_body)
+    msg.add_alternative(html_body, subtype="html")
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port) as smtp:
+                if user and password:
+                    smtp.login(user, password)
+                smtp.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port) as smtp:
+                if use_tls:
+                    smtp.starttls()
+                if user and password:
+                    smtp.login(user, password)
+                smtp.send_message(msg)
+        app.logger.info({"event": "email.sent.linkedin_digest", "to": to_email, "count": len(prospects)})
+        return True
+    except Exception as exc:
+        app.logger.warning({"event": "email.failed.linkedin_digest", "to": to_email, "error": str(exc)})
+        return False
