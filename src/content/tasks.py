@@ -89,31 +89,33 @@ def _generate_hero_image(title: str, topic: dict) -> tuple[str, str]:
     import openai
     import requests
     from src.uploads import upload_bytes, build_public_url
+    from src.dspy import _configure_dspy
+    from skills.blog_publishing.scripts.hero_prompt import HeroImagePromptModule
 
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:
         raise RuntimeError("OPENAI_API_KEY not configured")
 
+    # Use DSPy to generate an optimized DALL-E prompt
+    _configure_dspy()
+    prompt_module = HeroImagePromptModule()
+    prompt_result = prompt_module(
+        post_title=title,
+        primary_keyword=topic.get("target_keyword", "business automation"),
+        funnel_stage=topic.get("target_stage", "awareness"),
+        industry="B2B SaaS",
+    )
+    image_prompt = prompt_result.dalle_prompt
+    alt_text = prompt_result.alt_text or f"Hero image for {title}"
+
     client = openai.OpenAI(api_key=openai_api_key)
 
-    # Craft image prompt based on blog topic
-    keyword = topic.get("target_keyword", "business automation")
-    angle = topic.get("angle", "professional")
-
-    image_prompt = f"""Professional hero image for a blog post about {keyword}.
-Style: Modern, clean, professional business illustration.
-Theme: {title}
-Mood: Innovative, trustworthy, data-driven.
-No text or words in the image.
-Perspective: Wide angle, suitable for blog header (16:9 aspect ratio feel).
-Colors: Blue, purple, white tones - corporate but approachable."""
-
-    # Generate image with DALL-E 3
+    # Generate image with DALL-E 3 — 1792x1024 for proper 16:9 landscape hero
     response = client.images.generate(
         model="dall-e-3",
         prompt=image_prompt,
-        size="1024x1024",
-        quality="standard",
+        size="1792x1024",
+        quality="hd",
         n=1
     )
 
@@ -137,8 +139,6 @@ Colors: Blue, purple, white tones - corporate but approachable."""
     )
 
     public_url = build_public_url(key)
-    alt_text = f"Hero image for {title}"
-
     return public_url, alt_text
 
 
@@ -303,7 +303,7 @@ def generate_blog_post(
         read_time = math.ceil(_word_count / 200) if _word_count else 1
 
         # Enforce minimum word count
-        _MIN_WORDS = 1000
+        _MIN_WORDS = 1200
         if _word_count < _MIN_WORDS:
             try:
                 from src.publishing.service import expand_blog_post as _expand
@@ -317,6 +317,8 @@ def generate_blog_post(
                     content_html = content_html
                     rendered_html = None
                     excerpt = seo_result.meta_description
+                    primary_keyword = selected_topic.get("target_keyword", "")
+                    slug = seo_result.slug
                 _tmp = _TmpPost()
                 _expand(_tmp, target_word_count=_MIN_WORDS)
                 _optimized_post = _tmp.markdown
@@ -751,7 +753,7 @@ def generate_blog_from_pitched_topic(topic_id: str):
         read_time = math.ceil(_word_count / 200) if _word_count else 1
 
         # Enforce minimum word count — if DSPy fell short, expand before saving
-        _MIN_WORDS = 1000
+        _MIN_WORDS = 1200
         if _word_count < _MIN_WORDS:
             try:
                 from src.publishing.service import expand_blog_post as _expand
@@ -766,6 +768,8 @@ def generate_blog_from_pitched_topic(topic_id: str):
                     content_html = content_html
                     rendered_html = None
                     excerpt = seo_result.meta_description
+                    primary_keyword = selected_topic.get("target_keyword", "")
+                    slug = seo_result.slug
                 _tmp = _TmpPost()
                 _expand(_tmp, target_word_count=_MIN_WORDS)
                 _optimized_post = _tmp.markdown

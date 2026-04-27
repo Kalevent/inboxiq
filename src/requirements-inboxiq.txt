@@ -15,14 +15,14 @@ Flask-Caching==2.4.0
 redis==7.4.0
 Flask-Limiter==4.1.1
 argon2-cffi==25.1.0
-cryptography==46.0.7
+cryptography==47.0.0
 Flask-Cors==6.0.2
 bleach==6.3.0
 requests==2.33.1
 aiohttp==3.13.5
 markdown==3.10.2
 fastmcp==3.2.4
-stripe==15.0.1
+stripe==15.1.0
 boto3==1.42.96
 pyotp==2.9.0
 webauthn==2.7.1
@@ -32,9 +32,9 @@ google-auth-httplib2>=0.1.0
 google-auth-oauthlib>=0.5.0
 
 # OpenTelemetry - Observability & Tracing
-opentelemetry-api==1.40.0
-opentelemetry-sdk==1.40.0
-opentelemetry-exporter-otlp==1.40.0
+opentelemetry-api==1.41.1
+opentelemetry-sdk==1.41.1
+opentelemetry-exporter-otlp==1.41.1
 
 # OpenTelemetry Auto-instrumentation
 opentelemetry-instrumentation-flask==0.61b0
