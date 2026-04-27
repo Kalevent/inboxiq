@@ -309,6 +309,9 @@ def create_app() -> Flask:
   app.register_blueprint(approval_policies_bp)
   from src.booking.routes import booking_bp
   app.register_blueprint(booking_bp)
+  from src.api.v1.linkedin import linkedin_api_bp, linkedin_ui_bp
+  app.register_blueprint(linkedin_api_bp)
+  app.register_blueprint(linkedin_ui_bp)
 
   # Register SEO cleanup handlers for old URLs
   from src.marketing.seo_cleanup import register_seo_cleanup
