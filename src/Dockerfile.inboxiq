@@ -1,4 +1,4 @@
-
+# syntax=docker/dockerfile:1
 # --- builder ---
 FROM python:3.14-slim AS builder
 
@@ -43,6 +43,9 @@ COPY --from=builder /usr/src/.venv /usr/src/.venv
 
 # Copy application
 COPY src /usr/src/src
+
+# Copy LinkedIn cadence DSPy modules (skills/ lives outside src/ but is needed by Celery tasks)
+COPY --parents skills/__init__.py skills/linkedin_cadence/__init__.py skills/linkedin_cadence/scripts/__init__.py skills/linkedin_cadence/scripts/draft_messages.py skills/linkedin_cadence/scripts/match_post.py /usr/src/
 
 # Fix ownership
 RUN chown -R appuser:appgroup /usr/src
