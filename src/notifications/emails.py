@@ -779,3 +779,62 @@ def send_linkedin_digest(to_email: str, prospects: list[dict], date_label: str) 
     except Exception as exc:
         app.logger.warning({"event": "email.failed.linkedin_digest", "to": to_email, "error": str(exc)})
         return False
+
+
+def send_email(
+    to_email: str,
+    subject: str,
+    html_body: str,
+    from_email: str | None = None,
+    preheader: str | None = None,
+) -> bool:
+    """Generic transactional email sender used by marketing and nurture tasks."""
+    app = current_app
+    host = app.config.get("SMTP_HOST")
+    if not host:
+        app.logger.info({"event": "email.disabled", "reason": "SMTP_HOST not configured", "to": to_email})
+        return False
+
+    port = app.config.get("SMTP_PORT")
+    user = app.config.get("SMTP_USER")
+    password = app.config.get("SMTP_PASSWORD")
+    use_tls = app.config.get("SMTP_USE_TLS", True)
+    use_ssl = app.config.get("SMTP_USE_SSL", False)
+    mail_from = from_email or app.config.get("MAIL_FROM", "noreply@kalevent.com")
+
+    # Inject invisible preheader text so email clients show it as preview copy.
+    preheader_html = ""
+    if preheader:
+        import html as _html
+        safe = _html.escape(preheader)
+        preheader_html = (
+            f'<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">{safe}</div>'
+        )
+
+    full_html = preheader_html + html_body
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = mail_from
+    msg["To"] = to_email
+    msg.set_content("")
+    msg.add_alternative(full_html, subtype="html")
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port) as smtp:
+                if user and password:
+                    smtp.login(user, password)
+                smtp.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port) as smtp:
+                if use_tls:
+                    smtp.starttls()
+                if user and password:
+                    smtp.login(user, password)
+                smtp.send_message(msg)
+        app.logger.info({"event": "email.sent", "to": to_email, "subject": subject})
+        return True
+    except Exception as exc:
+        app.logger.warning({"event": "email.failed", "to": to_email, "subject": subject, "error": str(exc)})
+        return False
