@@ -109,6 +109,7 @@ class Config:
     GOOGLE_ANALYTICS_ENABLED = _env_bool("GOOGLE_ANALYTICS_ENABLED", False)
     GOOGLE_ANALYTICS_API_SECRET = os.getenv("GOOGLE_ANALYTICS_API_SECRET")
     GA_MARKETING_PROPERTY_ID = os.getenv("GA_MARKETING_PROPERTY_ID")
+    INDEXNOW_API_KEY = os.getenv("INDEXNOW_API_KEY", "")
     # Crash reporting email target (used by crash_report)
     CRASH_EMAIL_TO = os.getenv("CRASH_EMAIL_TO")
     # Admin access control (comma-separated emails)

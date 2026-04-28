@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, current_app, g, render_template
+from flask import Blueprint, abort, current_app, g, render_template, jsonify
 
 from src.settings import login_required_settings
 
@@ -45,3 +45,40 @@ def marketing_dashboard(section="funnel"):
         active_section=section,
         show_content_section=_is_kalevent_staff(user),
     )
+
+
+@marketing_bp.route("/<key>.txt", methods=["GET"])
+def indexnow_key_file(key: str):
+    """Serve IndexNow domain verification file at /<INDEXNOW_API_KEY>.txt."""
+    configured = current_app.config.get("INDEXNOW_API_KEY", "")
+    if not configured or key != configured:
+        abort(404)
+    return configured, 200, {"Content-Type": "text/plain"}
+
+
+@marketing_bp.route("/unsubscribe/<token>", methods=["GET"])
+def newsletter_unsubscribe(token: str):
+    """One-click unsubscribe from blog newsletters. Token is HMAC-signed user ID."""
+    from itsdangerous import URLSafeSerializer, BadSignature
+    from src.extensions import db
+    from src.models.core import User
+
+    try:
+        s = URLSafeSerializer(current_app.config["SECRET_KEY"], salt="newsletter-unsubscribe")
+        user_id = s.loads(token)
+    except BadSignature:
+        return jsonify({"error": "Invalid or expired unsubscribe link."}), 400
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    if user.newsletter_opt_in:
+        user.newsletter_opt_in = False
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
+
+    return jsonify({"status": "unsubscribed", "email": user.email}), 200

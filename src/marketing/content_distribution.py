@@ -172,53 +172,55 @@ def distribute_to_social(blog_post_id: str) -> Dict[str, Any]:
 @celery.task(name="marketing.send_blog_newsletter", queue="leads")
 def send_blog_newsletter(blog_post_id: str) -> Dict[str, Any]:
     """
-    Send email newsletter to subscribers about new blog post.
-
-    Args:
-        blog_post_id: BlogPost ID to send newsletter about
-
-    Returns:
-        Dict with email sending results
+    Send email newsletter to opted-in users about a new blog post.
+    Each recipient gets a personalised unsubscribe link.
     """
+    from flask import current_app
+    from itsdangerous import URLSafeSerializer
     from src.models import BlogPost, User, Account
 
     post = db.session.get(BlogPost, blog_post_id)
     if not post:
         return {"status": "error", "reason": "post_not_found"}
 
-    # Get newsletter subscribers (users who opted in)
-    # For now, we'll send to all active trial/paid users
-    subscribers = db.session.query(User).join(
-        Account, User.account_id == Account.id
-    ).filter(
-        Account.deleted == False,  # noqa: E712
-        User.email.isnot(None)
-    ).limit(100).all()  # Limit for initial rollout
+    subscribers = (
+        db.session.query(User)
+        .join(Account, User.account_id == Account.id)
+        .filter(
+            Account.deleted == False,  # noqa: E712
+            User.email.isnot(None),
+            User.newsletter_opt_in == True,  # noqa: E712
+        )
+        .limit(100)
+        .all()
+    )
 
     if not subscribers:
         return {"status": "skipped", "reason": "no_subscribers"}
 
-    # Generate newsletter content
-    newsletter_html = _generate_newsletter_html(post)
+    base_url = current_app.config.get("SITE_URL", "https://kalevent.com")
+    signer = URLSafeSerializer(current_app.config["SECRET_KEY"], salt="newsletter-unsubscribe")
 
-    # Send emails
     sent_count = 0
     failed_count = 0
 
     for user in subscribers:
         try:
+            token = signer.dumps(user.id)
+            unsub_url = f"{base_url}/unsubscribe/{token}"
+            html = _generate_newsletter_html(post, unsubscribe_url=unsub_url)
             success = _send_newsletter_email(
                 to_email=user.email,
-                user_name=user.name or user.email.split('@')[0],
+                user_name=user.name or user.email.split("@")[0],
                 post=post,
-                html_content=newsletter_html
+                html_content=html,
             )
             if success:
                 sent_count += 1
             else:
                 failed_count += 1
-        except Exception as e:
-            logger.error(f"Failed to send newsletter to {user.email}: {e}")
+        except Exception as exc:
+            logger.error("Failed to send newsletter to %s: %s", user.email, exc)
             failed_count += 1
 
     return {
@@ -226,60 +228,61 @@ def send_blog_newsletter(blog_post_id: str) -> Dict[str, Any]:
         "blog_post_id": blog_post_id,
         "sent": sent_count,
         "failed": failed_count,
-        "total_subscribers": len(subscribers)
+        "total_subscribers": len(subscribers),
     }
 
 
 @celery.task(name="marketing.submit_to_search_engines", queue="leads")
 def submit_to_search_engines(blog_post_id: str) -> Dict[str, Any]:
     """
-    Submit blog post URL to search engines for indexing.
-
-    Args:
-        blog_post_id: BlogPost ID to submit
-
-    Returns:
-        Dict with submission results
+    Submit blog post URL to search engines via IndexNow (Bing, Yandex, others).
+    Requires INDEXNOW_API_KEY env var. No-ops silently if key is absent.
     """
     from src.models import BlogPost
     from flask import current_app
+    import requests as http
 
     post = db.session.get(BlogPost, blog_post_id)
     if not post:
         return {"status": "error", "reason": "post_not_found"}
 
-    # Construct blog post URL
     base_url = current_app.config.get("SITE_URL", "https://kalevent.com")
     post_url = f"{base_url}/blog/{post.slug}"
+    api_key = current_app.config.get("INDEXNOW_API_KEY", "")
+
+    if not api_key:
+        logger.info("submit_to_search_engines: INDEXNOW_API_KEY not set, skipping")
+        return {"status": "skipped", "reason": "no_indexnow_key", "url": post_url}
 
     results = {}
 
-    # Google Search Console (if configured)
-    google_api_key = current_app.config.get("GOOGLE_SEARCH_CONSOLE_KEY")
-    if google_api_key:
-        try:
-            # Would integrate with Google Indexing API here
-            # For now, just log
-            logger.info(f"Would submit {post_url} to Google Search Console")
-            results["google"] = {"status": "not_implemented"}
-        except Exception as e:
-            results["google"] = {"status": "error", "error": str(e)}
-
-    # Bing Webmaster Tools (if configured)
-    bing_api_key = current_app.config.get("BING_WEBMASTER_KEY")
-    if bing_api_key:
-        try:
-            # Would integrate with Bing URL Submission API here
-            logger.info(f"Would submit {post_url} to Bing Webmaster Tools")
-            results["bing"] = {"status": "not_implemented"}
-        except Exception as e:
-            results["bing"] = {"status": "error", "error": str(e)}
+    # IndexNow — single POST covers Bing, Yandex, Seznam, and others
+    try:
+        resp = http.post(
+            "https://api.indexnow.org/indexnow",
+            json={
+                "host": base_url.replace("https://", "").replace("http://", "").rstrip("/"),
+                "key": api_key,
+                "urlList": [post_url],
+            },
+            headers={"Content-Type": "application/json; charset=utf-8"},
+            timeout=10,
+        )
+        if resp.status_code in (200, 202):
+            logger.info("IndexNow accepted %s (status %s)", post_url, resp.status_code)
+            results["indexnow"] = {"status": "ok", "http_status": resp.status_code}
+        else:
+            logger.warning("IndexNow rejected %s: %s %s", post_url, resp.status_code, resp.text[:200])
+            results["indexnow"] = {"status": "rejected", "http_status": resp.status_code}
+    except Exception as exc:
+        logger.error("IndexNow request failed for %s: %s", post_url, exc)
+        results["indexnow"] = {"status": "error", "error": str(exc)}
 
     return {
         "status": "completed",
         "blog_post_id": blog_post_id,
         "url": post_url,
-        "search_engines": results
+        "search_engines": results,
     }
 
 
@@ -628,53 +631,48 @@ def _post_to_facebook(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict
         return {"status": "error", "platform": "facebook", "error": str(exc)}
 
 
-def _generate_newsletter_html(post: BlogPost) -> str:
-    """
-    Generate HTML email newsletter from blog post.
-
-    Returns:
-        HTML email content
-    """
+def _generate_newsletter_html(post: BlogPost, unsubscribe_url: str = "") -> str:
+    """Generate HTML newsletter email for a blog post."""
     from flask import current_app
+    import html as _html
 
     base_url = current_app.config.get("SITE_URL", "https://kalevent.com")
     post_url = f"{base_url}/blog/{post.slug}"
+    title = _html.escape(post.title or "")
+    excerpt = _html.escape(post.excerpt or post.summary or "")
 
-    # Simple newsletter template
-    # TODO: Use proper email template with Jinja2
-    html = f"""<!DOCTYPE html>
+    hero = ""
+    if post.hero_image_url:
+        alt = _html.escape(post.hero_image_alt or post.title or "")
+        hero = f'<img src="{_html.escape(post.hero_image_url)}" alt="{alt}" style="width:100%;height:auto;border-radius:8px;margin-bottom:20px;">'
+
+    unsub_footer = ""
+    if unsubscribe_url:
+        safe_url = _html.escape(unsubscribe_url)
+        unsub_footer = f'<p style="margin:8px 0 0;"><a href="{safe_url}" style="color:#9ca3af;">Unsubscribe</a></p>'
+
+    return f"""<!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{post.title}</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h1 style="color: #2563eb; margin: 0 0 10px 0; font-size: 24px;">{post.title}</h1>
-        <p style="color: #6b7280; margin: 0; font-size: 14px;">New from the InboxIQ blog</p>
-    </div>
-
-    {f'<img src="{post.hero_image_url}" alt="{post.hero_image_alt or post.title}" style="width: 100%; height: auto; border-radius: 8px; margin-bottom: 20px;">' if post.hero_image_url else ''}
-
-    <div style="margin-bottom: 20px;">
-        <p style="font-size: 16px; color: #4b5563;">{post.excerpt or post.summary or ''}</p>
-    </div>
-
-    <div style="text-align: center; margin: 30px 0;">
-        <a href="{post_url}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">
-            Read Full Article
-        </a>
-    </div>
-
-    <div style="border-top: 1px solid #e5e7eb; margin-top: 30px; padding-top: 20px; text-align: center; color: #6b7280; font-size: 12px;">
-        <p>You're receiving this because you're a valued InboxIQ user.</p>
-        <p>InboxIQ | Intelligent Inbox Management</p>
-    </div>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>{title}</title></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+  <div style="background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:20px;">
+    <h1 style="color:#2563eb;margin:0 0 10px;font-size:24px;">{title}</h1>
+    <p style="color:#6b7280;margin:0;font-size:14px;">New from the InboxIQ blog</p>
+  </div>
+  {hero}
+  <div style="margin-bottom:20px;">
+    <p style="font-size:16px;color:#4b5563;">{excerpt}</p>
+  </div>
+  <div style="text-align:center;margin:30px 0;">
+    <a href="{_html.escape(post_url)}" style="display:inline-block;background:#2563eb;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:600;">Read Full Article</a>
+  </div>
+  <div style="border-top:1px solid #e5e7eb;margin-top:30px;padding-top:20px;text-align:center;color:#6b7280;font-size:12px;">
+    <p style="margin:0;">You're receiving this because you're a valued InboxIQ user.</p>
+    <p style="margin:4px 0 0;">InboxIQ | Intelligent Inbox Management</p>
+    {unsub_footer}
+  </div>
 </body>
 </html>"""
-
-    return html
 
 
 def _send_newsletter_email(to_email: str, user_name: str, post: BlogPost, html_content: str) -> bool:
