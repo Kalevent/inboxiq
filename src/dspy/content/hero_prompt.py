@@ -11,7 +11,7 @@ import dspy
 
 
 class HeroImagePromptSignature(dspy.Signature):
-    """Generate a DALL-E 3 prompt for a professional blog post hero image."""
+    """Generate a DALL-E 3 prompt for a blog post hero image that looks like editorial photography or human-crafted illustration."""
 
     # Input fields
     post_title = dspy.InputField(desc="Blog post title")
@@ -22,13 +22,25 @@ class HeroImagePromptSignature(dspy.Signature):
     # Output fields
     dalle_prompt = dspy.OutputField(
         desc=(
-            "Complete DALL-E 3 prompt for a professional landscape hero image (16:9). "
-            "Must specify: visual subject, style (modern business illustration), mood, "
-            "color palette (blue/purple/white tones), and explicitly state 'no text, no words, no letters'. "
-            "80-120 words max."
+            "Complete DALL-E 3 prompt for a 16:9 landscape hero image. "
+            "The image must look like editorial photography or a high-quality human-made illustration — "
+            "natural, grounded, and specific to the post topic. "
+            "\n\nSTYLE: Choose ONE that fits the topic: "
+            "(1) editorial documentary photography — real people in real workplaces, natural lighting, candid moments; "
+            "(2) flat editorial illustration — New Yorker / Economist style, hand-drawn feel, limited palette, purposeful composition; "
+            "(3) environmental still life — real objects arranged with intention, soft natural light, shallow depth of field. "
+            "\n\nCOLOR: Derive from the topic and industry — warm neutrals for human stories, muted greens/blues for operations/tech, "
+            "terracotta/amber for growth/energy. Never default to blue-purple gradients. "
+            "\n\nSUBJECT: Make it specific to the post title. A post about customer support automation → a person at a desk looking calm and in control, "
+            "not floating gears. A post about lead generation → a confident conversation, not a funnel diagram. "
+            "\n\nSTRICTLY AVOID: gears, cogs, circuit boards, globes, robotic arms, handshakes, neon glows, "
+            "isometric 3D objects, generic business icons, floating UI elements, abstract blue swirls, "
+            "anything that looks like stock art or AI-generated filler. "
+            "\n\nEnd with: 'No text, no words, no letters, no logos.' "
+            "80-120 words total."
         )
     )
-    alt_text = dspy.OutputField(desc="SEO-friendly alt text for the image (under 125 characters)")
+    alt_text = dspy.OutputField(desc="SEO-friendly alt text describing the actual image content specifically (under 125 characters)")
 
 
 class HeroImagePromptModule(dspy.Module):
