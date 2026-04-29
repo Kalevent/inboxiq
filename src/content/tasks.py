@@ -90,7 +90,7 @@ def _generate_hero_image(title: str, topic: dict) -> tuple[str, str]:
     import requests
     from src.uploads import upload_bytes, build_public_url
     from src.dspy import _configure_dspy
-    from skills.blog_publishing.scripts.hero_prompt import HeroImagePromptModule
+    from src.dspy.content.hero_prompt import HeroImagePromptModule
 
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:

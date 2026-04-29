@@ -38,6 +38,9 @@ docs/
 inboxiq_project_architecture_update.md
 CLAUDE.md
 
+# Claude Code local data — session transcripts, memory, skills (never include in images)
+.claude/
+
 # Google Service Account credentials (never include in images)
 gsc-service-account.json
 *-service-account.json

@@ -6,8 +6,8 @@ from celery import shared_task
 
 from src.dspy import _configure_dspy
 from src.extensions import db
-from skills.linkedin_cadence.scripts.draft_messages import MessageDrafterModule
-from skills.linkedin_cadence.scripts.match_post import BlogPostMatcherModule
+from src.dspy.linkedin.draft_messages import MessageDrafterModule
+from src.dspy.linkedin.match_post import BlogPostMatcherModule
 
 log = logging.getLogger(__name__)
 

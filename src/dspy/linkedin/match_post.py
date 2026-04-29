@@ -2,7 +2,7 @@
 Blog Post Matcher — DSPy Module
 
 Selects the most relevant published blog post for a prospect's message 2.
-Run standalone: python -m skills.linkedin_cadence.scripts.match_post
+Run standalone: python -m src.dspy.linkedin.match_post
 """
 import dspy
 

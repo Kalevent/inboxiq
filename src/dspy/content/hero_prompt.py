@@ -5,7 +5,7 @@ Generates an optimized DALL-E 3 prompt for a blog post hero image.
 The image API call itself stays in src/content/tasks.py — this module
 only produces the prompt string passed to DALL-E.
 
-Run standalone:  python -m skills.blog_publishing.scripts.hero_prompt
+Run standalone:  python -m src.dspy.content.hero_prompt
 """
 import dspy
 

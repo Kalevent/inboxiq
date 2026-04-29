@@ -2,7 +2,7 @@
 Message Drafter — DSPy Module
 
 Drafts all three LinkedIn messages for a prospect in one ChainOfThought call.
-Run standalone: python -m skills.linkedin_cadence.scripts.draft_messages
+Run standalone: python -m src.dspy.linkedin.draft_messages
 """
 import dspy
 
