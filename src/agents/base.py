@@ -39,6 +39,7 @@ class BaseAgent(ABC):
 
     agent_name: str = "base_agent"
     mcp_server_labels: List[str] = []
+    max_iters: int = 25
 
     def __init__(self, account_id: int):
         self.account_id = account_id
@@ -68,7 +69,7 @@ class BaseAgent(ABC):
         try:
             self._open_mcp_clients()
             tools = self._get_tools()
-            react_agent = dspy.ReAct(AgentGoalSignature, tools=tools, max_iters=25)
+            react_agent = dspy.ReAct(self._get_signature(dspy), tools=tools, max_iters=self.max_iters)
             prediction = react_agent(goal=goal)
             result_text = prediction.result or ""
             success = True
@@ -104,6 +105,10 @@ class BaseAgent(ABC):
     @abstractmethod
     def _get_tools(self) -> list:
         """Return list of plain Python callables to pass to dspy.ReAct."""
+
+    def _get_signature(self, dspy: Any) -> type:
+        """Return the DSPy Signature class to use for ReAct. Subclasses can override."""
+        return AgentGoalSignature
 
     # -------------------------------------------------------------------------
     # MCP lifecycle

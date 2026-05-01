@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import dspy as _dspy
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 from uuid import uuid4
@@ -20,6 +21,18 @@ from src.extensions import db
 logger = logging.getLogger(__name__)
 
 
+class WorkflowAgentSignature(_dspy.Signature):
+    """
+    Execute an automation workflow step by step using the available tools.
+    First summarise the context, then evaluate conditions, then execute actions.
+    When done respond with 'Workflow execution completed successfully' or
+    'Workflow execution failed: <reason>'.
+    """
+
+    goal = _dspy.InputField(desc="The automation workflow definition as JSON.")
+    result = _dspy.OutputField(desc="Final execution result: success or failure with reason.")
+
+
 class ToolCallingAutomationAgent(BaseAgent):
     """
     Automation-rule agent using dspy.ReAct.
@@ -28,6 +41,7 @@ class ToolCallingAutomationAgent(BaseAgent):
 
     agent_name = "automation_rule"
     mcp_server_labels = []
+    max_iters = 20
 
     def __init__(self, workflow: AutomationRule, trigger_context: Dict[str, Any]):
         super().__init__(account_id=workflow.account_id)
@@ -49,10 +63,12 @@ class ToolCallingAutomationAgent(BaseAgent):
     # Public entry point
     # =========================================================================
 
+    def _get_signature(self, dspy: Any) -> type:
+        return WorkflowAgentSignature
+
     def execute(self, trigger_event: str) -> Dict[str, Any]:  # type: ignore[override]
         """Execute workflow using dspy.ReAct agent loop."""
         self.log("Starting ReAct agent execution")
-        self._trigger_event = trigger_event
 
         goal = json.dumps({
             "name": self.workflow.name,
