@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional
 import requests
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from src.mcp.lead_discovery_mcp import _search_web
+from urllib.parse import quote
 
 try:
     from mcp.server.fastmcp import FastMCP, Context, ToolError
@@ -64,6 +64,23 @@ HUNTER_API_KEY = os.getenv("HUNTER_API_KEY")
 _HUNTER_FREE_LIMITS = {"searches": 25, "verifications": 50}
 _hunter_credits_cache: dict = {"data": None, "fetched_at": 0.0}
 _HUNTER_CREDITS_TTL = 3600  # re-check once per hour
+
+
+def _search_web(query: str, max_results: int = 25) -> List[Dict[str, Any]]:
+    """Search using SearXNG."""
+    searxng_url = os.getenv("SEARXNG_URL", "https://ranger-search.kalevent.com")
+    try:
+        url = f"{searxng_url}/search?q={quote(query)}&format=json"
+        response = requests.get(url, timeout=30)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("results", [])[:max_results]
+        else:
+            logger.error("Search failed with status %s", response.status_code)
+            return []
+    except Exception as e:
+        logger.error("Search error: %s", e)
+        return []
 
 
 def _get_hunter_credits() -> dict:
@@ -221,11 +238,9 @@ def find_buying_committee(
         roles: Specific roles to search (default: all)
 
     Returns:
-        Dict with buying_committee list containing:
-        - name, title, email (if found)
-        - role_type (economic_buyer, technical_buyer, end_user, champion)
-        - seniority_level
-        - linkedin_url (if available)
+        Dict with:
+        - company_domain: str
+        - buying_committee: list of {name, linkedin_url, role_type, title, seniority_level, email}
     """
     if not company_domain:
         raise ToolError("company_domain is required")
@@ -244,21 +259,24 @@ def find_buying_committee(
     }
 
     committee = []
+    seen: set = set()
     for role in roles[:4]:  # cap at 4 roles to limit SearXNG load
         try:
             query = f'site:linkedin.com/in "{role}" "{company_name or company_domain}"'
             results = _search_web(query, max_results=3)
             for r in results:
-                url = r.get("url", "")
-                if "linkedin.com/in/" not in url:
+                url = r.get("url", "").split("?")[0]
+                if "linkedin.com/in/" not in url or url in seen:
                     continue
+                seen.add(url)
                 role_type = role_mapping.get(role.split()[0].lower(), "end_user")
                 committee.append({
                     "name": r.get("title", "").split("|")[0].strip(),
-                    "linkedin_url": url.split("?")[0],
+                    "linkedin_url": url,
                     "role_type": role_type,
                     "title": role,
                     "seniority_level": "senior" if role_type == "economic_buyer" else "mid",
+                    "email": None,
                 })
         except Exception as exc:
             logger.warning("find_buying_committee search failed for role %s: %s", role, exc)
