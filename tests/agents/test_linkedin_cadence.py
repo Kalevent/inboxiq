@@ -68,3 +68,50 @@ def test_add_to_prospect_queue_creates_prospect(full_app):
         p = db.session.query(LinkedInProspect).filter_by(lead_id="l3").first()
         assert p is not None
         assert p.status == "pending"
+
+
+def test_enrich_lead_linkedin_url_saves_url(full_app):
+    """enrich_lead_linkedin_url stores a valid LinkedIn URL on the Lead."""
+    from src.agents.linkedin_cadence import LinkedInCadenceAgent
+    from src.models.leads import Lead
+    from src.extensions import db
+
+    with full_app.app_context():
+        db.session.add(Lead(
+            id="l4", account_id=1, name="Dave", email="dave@co.com",
+            company_name="Co", source="manual", status="New Lead",
+            fit_score=8, deleted=False, linkedin_url=None,
+        ))
+        db.session.commit()
+
+        agent = LinkedInCadenceAgent(account_id=1)
+        result = agent._tool_enrich_lead_linkedin_url(
+            lead_id="l4",
+            linkedin_url="https://linkedin.com/in/dave?trk=foo",
+        )
+        assert result["saved"] is True
+        lead = db.session.query(Lead).filter_by(id="l4").first()
+        assert lead.linkedin_url == "https://linkedin.com/in/dave"
+
+
+def test_enrich_lead_linkedin_url_rejects_invalid_url(full_app):
+    """enrich_lead_linkedin_url rejects non-LinkedIn URLs."""
+    from src.agents.linkedin_cadence import LinkedInCadenceAgent
+    from src.models.leads import Lead
+    from src.extensions import db
+
+    with full_app.app_context():
+        db.session.add(Lead(
+            id="l5", account_id=1, name="Eve", email="eve@co.com",
+            company_name="Co", source="manual", status="New Lead",
+            fit_score=8, deleted=False, linkedin_url=None,
+        ))
+        db.session.commit()
+
+        agent = LinkedInCadenceAgent(account_id=1)
+        result = agent._tool_enrich_lead_linkedin_url(
+            lead_id="l5",
+            linkedin_url="https://evil.com/in/evil",
+        )
+        assert result["saved"] is False
+        assert "invalid" in result["error"]

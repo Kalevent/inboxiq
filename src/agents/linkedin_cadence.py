@@ -34,7 +34,7 @@ class LinkedInCadenceAgent(BaseAgent):
             self._tool_add_to_prospect_queue,
             self._tool_get_pending_prospects,
             self._tool_save_drafted_messages,
-            self._tool_send_digest_email,
+            # _tool_send_digest_email wired in Task 7
         ]
 
     # -------------------------------------------------------------------------
@@ -54,6 +54,7 @@ class LinkedInCadenceAgent(BaseAgent):
                 Lead.deleted.is_(False),
                 Lead.company_name.isnot(None),
             )
+            .order_by(Lead.created_at.asc())
             .limit(20)
             .all()
         )
@@ -73,11 +74,14 @@ class LinkedInCadenceAgent(BaseAgent):
         Call after find_decision_makers + browser_snapshot confirm the URL.
         """
         from src.models.leads import Lead
-        self.tool_calls.append({"tool": "enrich_lead_linkedin_url", "input": {"lead_id": lead_id}})
+        clean_url = linkedin_url.split("?")[0]
+        self.tool_calls.append({"tool": "enrich_lead_linkedin_url", "input": {"lead_id": lead_id, "linkedin_url": clean_url}})
         lead = db.session.query(Lead).filter_by(id=lead_id, account_id=self.account_id).first()
         if not lead:
             return {"saved": False, "error": "lead not found"}
-        lead.linkedin_url = linkedin_url.split("?")[0]
+        if not (clean_url.startswith("https://www.linkedin.com/") or clean_url.startswith("https://linkedin.com/")):
+            return {"saved": False, "error": "invalid linkedin_url"}
+        lead.linkedin_url = clean_url
         if name and (not lead.name or lead.name == lead.company_name):
             lead.name = name
         try:
@@ -135,6 +139,7 @@ class LinkedInCadenceAgent(BaseAgent):
                 LinkedInProspect.status == "pending",
                 LinkedInProspect.msg_1_draft.is_(None),
             )
+            .order_by(LinkedInProspect.created_at.asc())
             .all()
         )
         return [
@@ -163,9 +168,10 @@ class LinkedInCadenceAgent(BaseAgent):
         ).first()
         if not prospect:
             return {"saved": False, "error": "prospect not found"}
-        prospect.msg_1_draft = msg_1
-        prospect.msg_2_draft = msg_2
-        prospect.msg_3_draft = msg_3
+        from src.sanitize import sanitize_html
+        prospect.msg_1_draft = sanitize_html(msg_1)
+        prospect.msg_2_draft = sanitize_html(msg_2)
+        prospect.msg_3_draft = sanitize_html(msg_3)
         try:
             db.session.commit()
             return {"saved": True}
