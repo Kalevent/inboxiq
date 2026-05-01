@@ -125,6 +125,31 @@ class FunnelDiscoveryAgent(BaseAgent):
         if fit_score < 4:
             return {"created": False, "reason": "fit_score_too_low"}
 
+        # Reject placeholder emails — agent passes contact@domain.com when no real email found
+        _INVALID_EMAIL_DOMAINS = {
+            "linkedin.com", "reddit.com", "twitter.com", "x.com", "facebook.com",
+            "medium.com", "substack.com", "quora.com", "wikipedia.org",
+            "greenhouse.io", "lever.co", "indeed.com", "glassdoor.com",
+        }
+        if email:
+            email_domain = email.split("@")[-1].lower() if "@" in email else ""
+            if email_domain in _INVALID_EMAIL_DOMAINS:
+                email = ""
+
+        # Reject results that are clearly article titles or job postings, not companies
+        _ARTICLE_PREFIXES = (
+            "the ultimate guide", "how to", "how do", "why ", "what is",
+            "top ", "best ", "r/", "hiring ", "guide to", "guide:",
+        )
+        _ARTICLE_KEYWORDS = {"guide", "tutorial", "article", "blog", "post", " vs ", "hiring ", " job ", " jobs"}
+        name_lower = company_name.lower()
+        if (
+            len(company_name) > 70
+            or any(name_lower.startswith(p) for p in _ARTICLE_PREFIXES)
+            or any(kw in name_lower for kw in _ARTICLE_KEYWORDS)
+        ):
+            return {"created": False, "reason": "not_a_company"}
+
         existing = db.session.query(Lead).filter_by(
             account_id=self.account_id,
             company_name=company_name,

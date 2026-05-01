@@ -738,6 +738,66 @@ def cli_register_playwright_mcp():
         raise
 
 
+@app.cli.command("purge-junk-leads")
+@click.option("--dry-run", is_flag=True, default=True, help="Preview without deleting (default). Pass --no-dry-run to delete.")
+def cli_purge_junk_leads(dry_run: bool):
+    """Remove leads created from job boards, social platforms, and article pages."""
+    from src.models.leads import Lead
+
+    _JUNK_EMAIL_DOMAINS = {
+        "linkedin.com", "reddit.com", "twitter.com", "x.com", "facebook.com",
+        "medium.com", "substack.com", "quora.com", "wikipedia.org",
+        "greenhouse.io", "lever.co", "indeed.com", "glassdoor.com",
+        "youtube.com", "instagram.com", "tiktok.com",
+    }
+    _ARTICLE_PREFIXES = (
+        "the ultimate guide", "how to", "how do", "why ", "what is",
+        "top ", "best ", "r/", "guide to", "guide:",
+    )
+    _ARTICLE_KEYWORDS = ["guide", "tutorial", "article", " vs ", "hiring ", " job ", " jobs"]
+
+    all_leads = db.session.query(Lead).filter(Lead.deleted.is_(False)).all()
+    to_delete = []
+
+    for lead in all_leads:
+        email_domain = lead.email.split("@")[-1].lower() if lead.email and "@" in lead.email else ""
+        name_lower = (lead.company_name or "").lower()
+
+        if email_domain in _JUNK_EMAIL_DOMAINS:
+            to_delete.append((lead.id, lead.company_name, f"junk email: {lead.email}"))
+            continue
+        if len(lead.company_name or "") > 70:
+            to_delete.append((lead.id, lead.company_name, "name too long (article title)"))
+            continue
+        if any(name_lower.startswith(p) for p in _ARTICLE_PREFIXES):
+            to_delete.append((lead.id, lead.company_name, "article title prefix"))
+            continue
+        if any(kw in name_lower for kw in _ARTICLE_KEYWORDS):
+            to_delete.append((lead.id, lead.company_name, "article title keyword"))
+
+    if not to_delete:
+        click.echo("No junk leads found.")
+        return
+
+    click.echo(f"{'[DRY RUN] Would delete' if dry_run else 'Deleting'} {len(to_delete)} junk leads:")
+    for lead_id, name, reason in to_delete:
+        click.echo(f"  {lead_id[:8]}  {(name or '')[:50]:<50}  ({reason})")
+
+    if not dry_run:
+        ids = [r[0] for r in to_delete]
+        db.session.query(Lead).filter(Lead.id.in_(ids)).update(
+            {"deleted": True}, synchronize_session=False
+        )
+        try:
+            db.session.commit()
+            click.echo(f"Soft-deleted {len(ids)} leads.")
+        except Exception:
+            db.session.rollback()
+            raise
+    else:
+        click.echo("\nRun with --no-dry-run to actually delete.")
+
+
 @app.cli.command("export-prospects-csv")
 @click.option("--min-score", default=4, show_default=True, help="Minimum fit_score to include")
 @click.option("--output", default="prospects.csv", show_default=True, help="Output file path")

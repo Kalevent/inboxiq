@@ -21,13 +21,23 @@ from urllib.parse import urlparse, quote
 
 logger = logging.getLogger("ranger.lead_discovery")
 
-# Domains that are job boards / social platforms — never the actual company
+# Domains that are job boards, social platforms, or content sites — never the actual company
 _JOB_BOARD_DOMAINS = {
+    # Job boards
     "linkedin.com", "greenhouse.io", "boards.greenhouse.io", "lever.co",
     "jobs.lever.co", "indeed.com", "glassdoor.com", "ziprecruiter.com",
     "workday.com", "jobs.com", "monster.com", "careerbuilder.com",
-    "wellfound.com", "angel.co", "twitter.com", "facebook.com",
-    "youtube.com", "wikipedia.org",
+    "wellfound.com", "angel.co", "ashbyhq.com", "workable.com",
+    "bamboohr.com", "recruitee.com", "pinpointhq.com", "teamtailor.com",
+    # Social / aggregators
+    "twitter.com", "x.com", "facebook.com", "instagram.com",
+    "youtube.com", "tiktok.com", "reddit.com", "quora.com",
+    "news.ycombinator.com", "producthunt.com",
+    # Content / blog platforms — articles not companies
+    "wikipedia.org", "medium.com", "substack.com", "dev.to",
+    "hashnode.com", "hackernoon.com", "techcrunch.com", "venturebeat.com",
+    "forbes.com", "businessinsider.com", "inc.com", "entrepreneur.com",
+    "g2.com", "capterra.com", "trustradius.com", "getapp.com",
 }
 
 
@@ -120,10 +130,9 @@ async def discover_companies(
             if not domain or domain in seen_domains:
                 continue
 
-            # Filter out non-company domains
-            if any(
-                exclude in domain.lower()
-                for exclude in ["linkedin.com", "facebook.com", "twitter.com", "youtube.com", "wikipedia.org"]
+            # Filter out non-company domains using the shared blocklist
+            if domain in _JOB_BOARD_DOMAINS or any(
+                domain.endswith(f".{jb}") for jb in _JOB_BOARD_DOMAINS
             ):
                 continue
 
