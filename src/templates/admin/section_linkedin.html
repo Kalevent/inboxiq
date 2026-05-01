@@ -120,7 +120,21 @@
 </div>
 
 <script>
-const _liHeaders = () => ({ 'Content-Type': 'application/json' });
+function _liCsrfToken() {
+  const name = 'csrf_access_token=';
+  const ca = decodeURIComponent(document.cookie).split(';');
+  for (let c of ca) {
+    c = c.trimStart();
+    if (c.startsWith(name)) return c.substring(name.length);
+  }
+  return null;
+}
+const _liHeaders = () => {
+  const h = { 'Content-Type': 'application/json' };
+  const csrf = _liCsrfToken();
+  if (csrf) h['X-CSRF-TOKEN'] = csrf;
+  return h;
+};
 
 const _STATUS_LABELS = {
   pending: { label: 'Pending', cls: 'bg-slate-700 text-slate-300' },
