@@ -30,6 +30,7 @@ class LinkedInCadenceAgent(BaseAgent):
     def _get_tools(self) -> list:
         return [
             self._tool_get_qualifying_leads,
+            self._tool_find_decision_makers,
             self._tool_enrich_lead_linkedin_url,
             self._tool_add_to_prospect_queue,
             self._tool_get_pending_prospects,
@@ -40,6 +41,18 @@ class LinkedInCadenceAgent(BaseAgent):
     # -------------------------------------------------------------------------
     # Static tools
     # -------------------------------------------------------------------------
+
+    def _tool_find_decision_makers(
+        self,
+        company_domain: str,
+        job_titles: List[str] = None,
+        max_results: int = 5,
+    ) -> Dict[str, Any]:
+        """Search LinkedIn for decision maker profiles at company_domain. Returns contacts with name, job_title, linkedin_url."""
+        import asyncio
+        from src.mcp.lead_discovery_mcp import find_decision_makers
+        self.tool_calls.append({"tool": "find_decision_makers", "input": {"company_domain": company_domain}})
+        return asyncio.run(find_decision_makers(company_domain=company_domain, job_titles=job_titles, max_results=max_results))
 
     def _tool_get_qualifying_leads(self) -> List[Dict[str, Any]]:
         """Return leads with fit_score >= 7 and no LinkedIn URL. Max 20 per run."""

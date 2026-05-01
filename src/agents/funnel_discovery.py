@@ -28,6 +28,9 @@ class FunnelDiscoveryAgent(BaseAgent):
         return [
             self._tool_get_existing_companies,
             self._tool_get_icp_config,
+            self._tool_discover_companies,
+            self._tool_find_buying_signals,
+            self._tool_find_decision_makers,
             self._tool_save_lead,
         ]
 
@@ -59,6 +62,43 @@ class FunnelDiscoveryAgent(BaseAgent):
             "company_size_max": config.company_size_max or _DEFAULTS["company_size_max"],
             "geographies": config.geographies or _DEFAULTS["geographies"],
         }
+
+    def _tool_discover_companies(
+        self,
+        query: str,
+        niche: str = "",
+        location: str = "",
+        max_results: int = 25,
+    ) -> Dict[str, Any]:
+        """Search SearXNG for companies matching ICP criteria. Returns list of companies with domain and description."""
+        import asyncio
+        from src.mcp.lead_discovery_mcp import discover_companies
+        self.tool_calls.append({"tool": "discover_companies", "input": {"query": query}})
+        return asyncio.run(discover_companies(query=query, niche=niche, location=location, max_results=max_results))
+
+    def _tool_find_buying_signals(
+        self,
+        niche: str,
+        signal_type: str = "hiring",
+        max_results: int = 20,
+    ) -> Dict[str, Any]:
+        """Search for companies showing buying signals (hiring, funding, expansion). Returns signals list with company_name and domain."""
+        import asyncio
+        from src.mcp.lead_discovery_mcp import find_buying_signals
+        self.tool_calls.append({"tool": "find_buying_signals", "input": {"niche": niche, "signal_type": signal_type}})
+        return asyncio.run(find_buying_signals(niche=niche, signal_type=signal_type, max_results=max_results))
+
+    def _tool_find_decision_makers(
+        self,
+        company_domain: str,
+        job_titles: List[str] = None,
+        max_results: int = 5,
+    ) -> Dict[str, Any]:
+        """Find decision maker LinkedIn profiles at a company. Returns contacts list with name, job_title, linkedin_url."""
+        import asyncio
+        from src.mcp.lead_discovery_mcp import find_decision_makers
+        self.tool_calls.append({"tool": "find_decision_makers", "input": {"company_domain": company_domain}})
+        return asyncio.run(find_decision_makers(company_domain=company_domain, job_titles=job_titles, max_results=max_results))
 
     def _tool_save_lead(
         self,
