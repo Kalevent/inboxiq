@@ -1,3 +1,5 @@
+import csv
+import io
 import sys
 from pathlib import Path
 
@@ -636,6 +638,77 @@ def cli_remove_inbox_connection(email: str, confirm: bool):
     except Exception as exc:
         db.session.rollback()
         click.echo(f"ERROR: rollback — {exc}")
+        raise
+
+
+@app.cli.command("leads-export-csv")
+@click.option("--min-fit-score", default=7, show_default=True, help="Minimum fit score to include.")
+@click.option("--output", default="-", help="Output file path (default: stdout).")
+def cli_leads_export_csv(min_fit_score: int, output: str):
+    """
+    Export qualified leads to CSV for manual LinkedIn prospecting.
+    Includes name, company, email, industry, fit_score, linkedin_url, source, notes.
+    """
+    from src.models.leads import Lead
+
+    with app.app_context():
+        leads = (
+            Lead.query
+            .filter(Lead.fit_score >= min_fit_score, Lead.deleted.is_(False))
+            .order_by(Lead.fit_score.desc())
+            .all()
+        )
+
+    fieldnames = ["name", "company_name", "email", "industry", "fit_score",
+                  "linkedin_url", "source", "qualification_status", "notes"]
+
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
+    writer.writeheader()
+    for lead in leads:
+        writer.writerow({
+            "name": lead.name or "",
+            "company_name": lead.company_name or "",
+            "email": lead.email or "",
+            "industry": lead.industry or "",
+            "fit_score": lead.fit_score or "",
+            "linkedin_url": lead.linkedin_url or "",
+            "source": lead.source or "",
+            "qualification_status": lead.qualification_status or "",
+            "notes": (lead.notes or "").replace("\n", " "),
+        })
+
+    content = buf.getvalue()
+    if output == "-":
+        click.echo(content, nl=False)
+    else:
+        Path(output).write_text(content)
+        click.echo(f"Exported {len(leads)} leads to {output}")
+
+
+@app.cli.command("register-playwright-mcp")
+def cli_register_playwright_mcp():
+    """Insert or update the playwright-mcp entry in MCPServerCatalog."""
+    from src.models.ai import MCPServerCatalog
+
+    existing = MCPServerCatalog.query.filter_by(label="playwright-mcp").first()
+    if existing:
+        existing.command = ["npx", "@playwright/mcp@latest"]
+        existing.env = {}
+        existing.enabled = True
+        click.echo("playwright-mcp updated.")
+    else:
+        db.session.add(MCPServerCatalog(
+            label="playwright-mcp",
+            command=["npx", "@playwright/mcp@latest"],
+            env={},
+            enabled=True,
+        ))
+        click.echo("playwright-mcp registered.")
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
         raise
 
 
