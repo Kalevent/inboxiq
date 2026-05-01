@@ -104,3 +104,18 @@ def test_generate_blog_post_task_delegates_to_agent(app):
     assert goal["audience"] == "Head of Support"
     assert goal["topic_index"] == 0
     assert "account_id" in goal
+
+
+def test_generate_blog_from_pitched_topic_delegates_to_agent(app):
+    """generate_blog_from_pitched_topic is a thin wrapper around ContentWriterAgent."""
+    from src.agents.content_writer import ContentWriterAgent
+
+    fake_result = {"success": True, "blog_post_id": "y", "title": "P", "slug": "p", "word_count": 1400, "status": "draft", "quality_score": "6"}
+    with patch.object(ContentWriterAgent, "execute", return_value=fake_result) as mock_exec:
+        from src.content.tasks import generate_blog_from_pitched_topic
+        result = generate_blog_from_pitched_topic(topic_id="some-uuid")
+
+    mock_exec.assert_called_once()
+    goal = json.loads(mock_exec.call_args[0][0])
+    assert goal["mode"] == "pitched"
+    assert goal["topic_id"] == "some-uuid"
