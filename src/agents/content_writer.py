@@ -7,7 +7,7 @@ import math
 import os
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 import dspy
@@ -74,12 +74,19 @@ class ContentWriterAgent(BaseAgent):
 
     @staticmethod
     def _init_dspy() -> None:
+        # Call shared config for API key validation and OTel wiring;
+        # content generation needs higher max_tokens and temperature than triage.
+        from src.dspy.config import _configure_dspy
+        try:
+            _, _, _ = _configure_dspy()
+        except Exception:
+            pass  # continue — we reconfigure below regardless
         provider = os.getenv("DSPY_PROVIDER", "openai").strip().lower()
         model = os.getenv("DSPY_MODEL", "gpt-4o-mini")
         if "/" not in model:
             model = f"{provider}/{model}"
         lm = dspy.LM(model=model, max_tokens=3000, temperature=0.7)
-        dspy.settings.configure(lm=lm)
+        dspy.settings.configure(lm=lm)  # unconditional override for content params
 
     def _run_auto(self, niche: str, audience: str, topic_index: int, account_id) -> Dict[str, Any]:
         from src.dspy.content import TopicGeneratorModule
@@ -200,11 +207,14 @@ class ContentWriterAgent(BaseAgent):
             tmp.primary_keyword = selected_topic.get("target_keyword", "")
             tmp.slug = seo_result.slug
             try:
-                expand_blog_post(tmp, target_word_count=_TARGET_WORDS)
-                optimized = tmp.markdown
-                content_html = tmp.content_html
-                word_count = len(optimized.split())
-                self.log(f"Expanded to {word_count} words")
+                expanded = expand_blog_post(tmp, target_word_count=_TARGET_WORDS)
+                if expanded:
+                    optimized = tmp.markdown
+                    content_html = tmp.content_html
+                    word_count = len(optimized.split())
+                    self.log(f"Expanded to {word_count} words")
+                else:
+                    self.log("Expansion returned False — proceeding with original length")
             except Exception as exp_err:
                 log.warning("Expansion failed: %s", exp_err)
 
@@ -234,6 +244,8 @@ class ContentWriterAgent(BaseAgent):
         unique_slug = base_slug
         suffix = 1
         while db.session.query(BlogPost).filter(BlogPost.slug == unique_slug).first():
+            if suffix > 50:
+                raise RuntimeError(f"Cannot find unique slug for base: {base_slug}")
             unique_slug = f"{base_slug}-{suffix}"
             suffix += 1
 
@@ -256,8 +268,8 @@ class ContentWriterAgent(BaseAgent):
             read_time_minutes=read_time,
             auto_generated=True,
             dspy_quality_score=quality_score,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
         db.session.add(blog_post)
         try:
