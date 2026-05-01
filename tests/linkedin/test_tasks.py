@@ -87,3 +87,28 @@ def test_discover_prospects_no_duplicate(db):
         linkedin_url="https://linkedin.com/in/carolwhite", account_id=1
     ).count()
     assert count == 1
+
+
+def test_send_digest_core_returns_empty_when_no_prospects(db):
+    """_send_digest_core returns sent=False when no prospects are due.
+
+    The test app config has no ADMIN_EMAILS set, so _send_digest_core
+    short-circuits immediately with sent=False, count=0.
+    """
+    from src.tasks.linkedin import _send_digest_core
+
+    result = _send_digest_core(account_id=1)
+
+    assert result["sent"] is False
+    assert result["count"] == 0
+
+
+def test_draft_messages_task_calls_agent_execute(db):
+    """draft_messages_task calls LinkedInCadenceAgent.execute for each account."""
+    from unittest.mock import patch, MagicMock
+
+    with patch("src.tasks.linkedin._all_account_ids", return_value=[1]), \
+         patch("src.agents.linkedin_cadence.LinkedInCadenceAgent.execute") as mock_execute:
+        from src.tasks.linkedin import draft_messages_task
+        draft_messages_task.run()
+        mock_execute.assert_called_once()

@@ -46,7 +46,7 @@ class FunnelDiscoveryAgent(BaseAgent):
             "titles": ["Founder", "Head of Support", "Operations Lead", "Customer Success Lead"],
             "industries": ["B2B SaaS", "Software"],
             "company_size_min": 10,
-            "company_size_max": 300,
+            "company_size_max": 50,
             "geographies": ["UK", "US", "Nigeria"],
         }
         config = db.session.query(ICPConfig).filter_by(account_id=self.account_id).first()
@@ -77,7 +77,10 @@ class FunnelDiscoveryAgent(BaseAgent):
         for this source. Enqueues qualify_visitor after commit.
         """
         from src.models.leads import Lead
+        from src.sanitize import sanitize_html
         self.tool_calls.append({"tool": "save_lead", "input": {"company_name": company_name}})
+
+        safe_notes = sanitize_html(notes) if notes else ""
 
         if fit_score < 4:
             return {"created": False, "reason": "fit_score_too_low"}
@@ -101,7 +104,7 @@ class FunnelDiscoveryAgent(BaseAgent):
             source=source,
             fit_score=fit_score,
             status="New Lead",
-            notes=notes,
+            notes=safe_notes,
             deleted=False,
         )
         try:
@@ -113,7 +116,7 @@ class FunnelDiscoveryAgent(BaseAgent):
 
         try:
             from src.funnel.tasks import qualify_visitor
-            qualify_visitor.delay(lead.id)
+            qualify_visitor.delay(str(lead.id))
         except Exception:
             log.warning("qualify_visitor.delay failed for lead %s", lead.id)
 

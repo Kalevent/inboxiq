@@ -124,6 +124,7 @@ def discover_prospects():
     """Promote enriched leads into the prospect queue."""
     from src.models.leads import Lead
     from src.agents.linkedin_cadence import LinkedInCadenceAgent
+
     leads = (
         db.session.query(Lead)
         .filter(
@@ -134,9 +135,16 @@ def discover_prospects():
         )
         .all()
     )
+
+    created = 0
     for lead in leads:
         agent = LinkedInCadenceAgent(account_id=lead.account_id)
-        agent._tool_add_to_prospect_queue(str(lead.id))
+        result = agent._tool_add_to_prospect_queue(str(lead.id))
+        if result.get("created"):
+            created += 1
+
+    log.info("linkedin.discover_prospects: created %d new prospects", created)
+    return {"created": created}
 
 
 @shared_task(name="linkedin.draft_messages")
