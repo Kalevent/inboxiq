@@ -8,10 +8,13 @@ Automated tasks for:
 - Stage progression checks
 - Churn risk analysis
 """
+import logging
 import os
 import json
 from datetime import datetime, timedelta
 from celery import shared_task
+
+log = logging.getLogger(__name__)
 
 from src.extensions import db
 from src.funnel.stages import VISITS, DISCOVERY, CONSIDERATION, RETENTION
@@ -350,7 +353,7 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
     from src.models.core import Account
 
     goal = (
-        f"Discover B2B SaaS companies matching ICP in niche '{niche}'. "
+        f"Discover companies matching ICP in niche '{niche}'. "
         f"Call get_icp_config first. Then call discover_companies via MCP. "
         f"For each result not in get_existing_companies, call save_lead. "
         f"Limit to {max_leads} new leads."
@@ -360,7 +363,10 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
         FunnelDiscoveryAgent(account_id=int(account_id)).execute(goal)
     else:
         for row in db.session.query(Account.id).all():
-            FunnelDiscoveryAgent(account_id=row.id).execute(goal)
+            try:
+                FunnelDiscoveryAgent(account_id=row.id).execute(goal)
+            except Exception:
+                log.exception("discover_leads_via_search failed for account_id=%s", row.id)
 
     return {"status": "ok", "niche": niche}
 
@@ -392,7 +398,10 @@ def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results
     )
 
     for row in db.session.query(Account.id).all():
-        FunnelDiscoveryAgent(account_id=row.id).execute(goal)
+        try:
+            FunnelDiscoveryAgent(account_id=row.id).execute(goal)
+        except Exception:
+            log.exception("discover_buying_signals failed for account_id=%s", row.id)
 
     return {"status": "ok", "niche": niche, "signal_type": signal_type}
 
