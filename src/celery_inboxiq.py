@@ -9,7 +9,6 @@ from celery import Celery
 from flask import current_app
 from celery.schedules import crontab
 from src.app import create_app
-from src.agents.worker import process_email_with_agents
 from src.inbox.logic import normalize_email_payload, run_dspy_decision, compute_due_at
 from src.inbox.merger import merge_decisions, should_skip_triage
 from src.extensions import db
@@ -384,7 +383,12 @@ def make_celery(app) -> Celery:
                 if outreach_enabled
                 else {}
             ),
-            # LinkedIn outreach cadence — discover → draft → digest
+            # LinkedIn outreach cadence — enrich urls → discover → draft → digest
+            "linkedin_enrich_urls": {
+                "task": "linkedin.enrich_linkedin_urls",
+                "schedule": crontab(hour=5, minute=0),
+                "options": {"queue": "inbox"},
+            },
             "linkedin_discover_prospects": {
                 "task": "linkedin.discover_prospects",
                 "schedule": crontab(hour=7, minute=0),
@@ -641,26 +645,12 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     agent_result = None
     agent_decision = None
 
-    # Only run agent pipeline if not skipping triage and not bypassing via SenderProfile.
-    # Bypass only for explicitly non-actionable categories — "general"/unknown always runs DSPy.
     _NON_ACTIONABLE_BYPASS_CATEGORIES = {
         "updates", "promotions", "social", "forums", "transactions",
         "spam", "marketing", "newsletter", "auto_reply", "notification",
     }
     _effective_bypass = _bypass_dspy and _sender_hint in _NON_ACTIONABLE_BYPASS_CATEGORIES
-    if not skip_triage and not _effective_bypass:
-        try:
-            agent_result = process_email_with_agents(normalized)
-            if agent_result:
-                agent_decision = agent_result.get("decision") or agent_result.get("triage") or {}
-        except Exception as exc:
-            # Default to optional agents - don't fail intake if agents fail
-            require_agents = os.getenv("AGENT_PIPELINE_REQUIRED", "0").lower() in ("1", "true", "yes", "on")
-            if require_agents:
-                logging.getLogger(__name__).error("agent pipeline failed; aborting intake: %s", exc)
-                raise
-            logging.getLogger(__name__).warning("agent pipeline failed; continuing without agents: %s", exc)
-            agent_result = None
+    # Legacy HTTP agent pipeline removed — DSPy triage handles classification directly.
 
     # Run DSPy triage (will also apply heuristics internally).
     # _effective_bypass is already computed above — bypass only for non-actionable categories.
