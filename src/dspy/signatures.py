@@ -671,7 +671,7 @@ def build_blog_quality_check(dspy: Any) -> Any:
         title = dspy.InputField(desc="Blog post title.")
         content = dspy.InputField(desc="First 3,000 characters of the blog post in Markdown.")
         target_audience = dspy.InputField(desc="Intended reader — e.g. 'Head of Support, B2B SaaS'.")
-        quality_score = dspy.OutputField(desc="Quality score as an integer 0–10.")
+        quality_score = dspy.OutputField(desc="Quality score as a digit string 0–10 (e.g. '8'). Callers must cast with int().")
         publish_decision = dspy.OutputField(desc="'ready' if score >= 7, else 'draft'.")
         reason = dspy.OutputField(desc="One sentence explaining the decision.")
 
