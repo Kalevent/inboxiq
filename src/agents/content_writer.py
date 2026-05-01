@@ -144,7 +144,8 @@ class ContentWriterAgent(BaseAgent):
             topic_obj.status = "generated"
             topic_obj.generated_content_id = blog_post_id
         else:
-            topic_obj.status = result.get("status", "generated")
+            # Duplicate slug — content already exists; mark as generated
+            topic_obj.status = "generated"
         try:
             db.session.commit()
         except Exception:
