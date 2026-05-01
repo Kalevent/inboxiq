@@ -693,14 +693,14 @@ def cli_register_playwright_mcp():
 
     existing = MCPServerCatalog.query.filter_by(label="playwright-mcp").first()
     if existing:
-        existing.command = ["npx", "@playwright/mcp@latest"]
+        existing.command = ["npx", "@playwright/mcp@0.0.72"]
         existing.env = {}
         existing.enabled = True
         click.echo("playwright-mcp updated.")
     else:
         db.session.add(MCPServerCatalog(
             label="playwright-mcp",
-            command=["npx", "@playwright/mcp@latest"],
+            command=["npx", "@playwright/mcp@0.0.72"],
             env={},
             enabled=True,
         ))
