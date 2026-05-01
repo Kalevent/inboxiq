@@ -164,17 +164,16 @@ def generate_blog_post(
             import logging as _log
             _log.getLogger(__name__).warning("Quota check failed for content_gen account=%s: %s", account_id, _qe)
 
-    from src.agents.content_writer import ContentWriterAgent
-    import json as _json
+    from src.agents.content_writer import ContentWriterAgent  # deferred to avoid circular import risk
 
-    goal = _json.dumps({
+    goal = json.dumps({
         "mode": "auto",
         "niche": niche,
         "audience": audience,
         "topic_index": topic_index,
         "account_id": account_id,
     })
-    return ContentWriterAgent(account_id=account_id or 1).execute(goal)
+    return ContentWriterAgent(account_id=account_id or 1).execute(goal)  # 1 = system account for scheduled runs
 
 
 @shared_task(name="content.generate_weekly_posts")

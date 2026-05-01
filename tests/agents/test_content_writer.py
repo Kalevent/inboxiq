@@ -93,8 +93,7 @@ def test_generate_blog_post_task_delegates_to_agent(app):
     from src.agents.content_writer import ContentWriterAgent
 
     fake_result = {"success": True, "blog_post_id": "x", "title": "T", "slug": "t", "word_count": 1500, "status": "ready", "quality_score": "8"}
-    with patch.object(ContentWriterAgent, "execute", return_value=fake_result) as mock_exec, \
-         patch.object(ContentWriterAgent, "_store_event"):
+    with patch.object(ContentWriterAgent, "execute", return_value=fake_result) as mock_exec:
         from src.content.tasks import generate_blog_post
         result = generate_blog_post(niche="B2B SaaS", audience="Head of Support", topic_index=0)
 
@@ -102,3 +101,6 @@ def test_generate_blog_post_task_delegates_to_agent(app):
     goal = json.loads(mock_exec.call_args[0][0])
     assert goal["mode"] == "auto"
     assert goal["niche"] == "B2B SaaS"
+    assert goal["audience"] == "Head of Support"
+    assert goal["topic_index"] == 0
+    assert "account_id" in goal
