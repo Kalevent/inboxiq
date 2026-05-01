@@ -287,8 +287,8 @@ def generate_blog_post(
         from src.sanitize import sanitize_html
         import re as _re
 
-        # Strip any "Meta Description: ..." line DSPy sometimes prepends
-        _optimized_post = _re.sub(r'^Meta Description:.*\n+', '', seo_result.optimized_post.strip(), flags=_re.IGNORECASE)
+        # Strip any "Meta Description: ..." line DSPy sometimes embeds in the content body
+        _optimized_post = _re.sub(r'^Meta Description:.*\n*', '', seo_result.optimized_post.strip(), flags=_re.IGNORECASE | _re.MULTILINE)
 
         md_converter = markdown.Markdown(extensions=['extra', 'codehilite', 'toc'])
         raw_html = md_converter.convert(_optimized_post)
@@ -740,8 +740,8 @@ def generate_blog_from_pitched_topic(topic_id: str):
         from src.sanitize import sanitize_html
         import re as _re
 
-        # Strip any "Meta Description: ..." line DSPy sometimes prepends
-        _optimized_post = _re.sub(r'^Meta Description:.*\n+', '', seo_result.optimized_post.strip(), flags=_re.IGNORECASE)
+        # Strip any "Meta Description: ..." line DSPy sometimes embeds in the content body
+        _optimized_post = _re.sub(r'^Meta Description:.*\n*', '', seo_result.optimized_post.strip(), flags=_re.IGNORECASE | _re.MULTILINE)
 
         md_converter = markdown.Markdown(extensions=['extra', 'codehilite', 'toc'])
         raw_html = md_converter.convert(_optimized_post)
