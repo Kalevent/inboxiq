@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, g, jsonify, redirect, request
-from flask_jwt_extended import get_jwt, jwt_required
+from src.settings import login_required_settings
 
 from src.extensions import db
 from src.models.campaigns import LinkedInProspect
@@ -54,9 +54,6 @@ def _advance_lead_stage(lead_id: str, prospect_status: str):
 
 
 # Session-auth route — used from email "Mark as sent" links
-from src.settings import login_required_settings  # noqa: E402
-
-
 @linkedin_ui_bp.route("/marketing/linkedin/advance/<prospect_id>")
 @login_required_settings
 def advance_prospect(prospect_id: str):
@@ -75,11 +72,10 @@ def advance_prospect(prospect_id: str):
     return redirect("/marketing/linkedin")
 
 
-# JWT API — used from the queue UI
 @linkedin_api_bp.route("/prospects/<prospect_id>/advance", methods=["POST"])
-@jwt_required()
+@login_required_settings
 def api_advance_prospect(prospect_id: str):
-    account_id = int(get_jwt().get("account_id"))
+    account_id = g.current_account_id
     prospect = db.session.query(LinkedInProspect).filter_by(
         id=prospect_id, account_id=account_id
     ).first()
@@ -97,9 +93,9 @@ def api_advance_prospect(prospect_id: str):
 
 
 @linkedin_api_bp.route("/prospects/<prospect_id>/disqualify", methods=["POST"])
-@jwt_required()
+@login_required_settings
 def api_disqualify_prospect(prospect_id: str):
-    account_id = int(get_jwt().get("account_id"))
+    account_id = g.current_account_id
     prospect = db.session.query(LinkedInProspect).filter_by(
         id=prospect_id, account_id=account_id
     ).first()
@@ -115,11 +111,11 @@ def api_disqualify_prospect(prospect_id: str):
 
 
 @linkedin_api_bp.route("/prospects", methods=["POST"])
-@jwt_required()
+@login_required_settings
 def api_add_prospect():
     """Manually add a LinkedIn prospect and trigger draft generation."""
     from src.tasks.linkedin import draft_messages_task
-    account_id = int(get_jwt().get("account_id"))
+    account_id = g.current_account_id
     data = request.get_json(silent=True) or {}
 
     linkedin_url = (data.get("linkedin_url") or "").strip()
@@ -160,9 +156,9 @@ def api_add_prospect():
 
 
 @linkedin_api_bp.route("/prospects", methods=["GET"])
-@jwt_required()
+@login_required_settings
 def api_list_prospects():
-    account_id = int(get_jwt().get("account_id"))
+    account_id = g.current_account_id
     status_filter = request.args.get("status")
     query = db.session.query(LinkedInProspect).filter_by(account_id=account_id)
     if status_filter:
@@ -184,11 +180,11 @@ def api_list_prospects():
 
 
 @linkedin_api_bp.route("/icp", methods=["GET"])
-@jwt_required()
+@login_required_settings
 def api_get_icp():
     from src.models.marketing import ICPConfig
     from src.tasks.linkedin import _ICP_DEFAULTS
-    account_id = int(get_jwt().get("account_id"))
+    account_id = g.current_account_id
     config = db.session.query(ICPConfig).filter_by(account_id=account_id).first()
     if not config:
         return jsonify(_ICP_DEFAULTS)
@@ -202,10 +198,10 @@ def api_get_icp():
 
 
 @linkedin_api_bp.route("/icp", methods=["POST"])
-@jwt_required()
+@login_required_settings
 def api_save_icp():
     from src.models.marketing import ICPConfig
-    account_id = int(get_jwt().get("account_id"))
+    account_id = g.current_account_id
     data = request.get_json(silent=True) or {}
     config = db.session.query(ICPConfig).filter_by(account_id=account_id).first()
     if not config:
