@@ -80,10 +80,15 @@ class ContentWriterAgent(BaseAgent):
     def _run_auto(self, niche: str, audience: str, topic_index: int, account_id) -> Dict[str, Any]:
         from src.dspy.content import TopicGeneratorModule
         self._init_dspy()
+        from src.models.content import BlogPost
+        existing_slugs = [
+            r[0] for r in db.session.query(BlogPost.slug).filter_by(status="published").all()
+        ]
         topics_result = TopicGeneratorModule()(
             blog_niche=niche,
             target_audience=audience,
             num_topics=5,
+            existing_topics=json.dumps(existing_slugs),
         )
         topics = json.loads(topics_result.topics)
         if topic_index >= len(topics):
