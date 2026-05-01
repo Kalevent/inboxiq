@@ -153,9 +153,12 @@ def draft_messages_task():
     from src.agents.linkedin_cadence import LinkedInCadenceAgent
     for account_id in _all_account_ids():
         LinkedInCadenceAgent(account_id=account_id).execute(
-            "For each prospect from get_pending_prospects: draft three LinkedIn outreach messages "
-            "appropriate for their job_title, company_name, and industry, "
-            "then call save_drafted_messages."
+            "For each prospect from get_pending_prospects: "
+            "1) Call get_relevant_blog_post with the prospect's industry to find a relevant blog post. "
+            "2) Draft three LinkedIn outreach messages — msg_1 is a concise connection request (under 200 chars), "
+            "msg_2 is a value-add message that references the blog post URL if one was found, "
+            "msg_3 is a soft ask for a 15-minute call. "
+            "3) Call save_drafted_messages with all three drafts and the suggested_post_id if a blog post was found."
         )
 
 

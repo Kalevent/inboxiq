@@ -34,6 +34,7 @@ class LinkedInCadenceAgent(BaseAgent):
             self._tool_enrich_lead_linkedin_url,
             self._tool_add_to_prospect_queue,
             self._tool_get_pending_prospects,
+            self._tool_get_relevant_blog_post,
             self._tool_save_drafted_messages,
             self._tool_send_digest_email,
         ]
@@ -166,14 +167,37 @@ class LinkedInCadenceAgent(BaseAgent):
             for p in prospects
         ]
 
+    def _tool_get_relevant_blog_post(self, industry: str, keywords: str = "") -> Dict[str, Any]:
+        """
+        Find a published blog post relevant to the prospect's industry or keywords.
+        Returns post id, title, and public URL to include in message 2.
+        """
+        from src.models.content import BlogPost
+        self.tool_calls.append({"tool": "get_relevant_blog_post", "input": {"industry": industry}})
+        query = db.session.query(BlogPost).filter(BlogPost.status == "published")
+        if industry:
+            query = query.filter(BlogPost.title.ilike(f"%{industry.split()[0]}%"))
+        post = query.order_by(BlogPost.published_at.desc()).first()
+        if not post and industry:
+            post = db.session.query(BlogPost).filter(BlogPost.status == "published").order_by(BlogPost.published_at.desc()).first()
+        if not post:
+            return {"found": False}
+        return {
+            "found": True,
+            "id": str(post.id),
+            "title": post.title,
+            "url": f"https://kalevent.com/blog/{post.slug}",
+        }
+
     def _tool_save_drafted_messages(
         self,
         prospect_id: str,
         msg_1: str,
         msg_2: str,
         msg_3: str,
+        suggested_post_id: str = "",
     ) -> Dict[str, Any]:
-        """Persist drafted outreach messages to a LinkedInProspect."""
+        """Persist drafted outreach messages to a LinkedInProspect. Include suggested_post_id if a blog post was found."""
         from src.models.campaigns import LinkedInProspect
         self.tool_calls.append({"tool": "save_drafted_messages", "input": {"prospect_id": prospect_id}})
         prospect = db.session.query(LinkedInProspect).filter_by(
@@ -185,6 +209,8 @@ class LinkedInCadenceAgent(BaseAgent):
         prospect.msg_1_draft = sanitize_html(msg_1)
         prospect.msg_2_draft = sanitize_html(msg_2)
         prospect.msg_3_draft = sanitize_html(msg_3)
+        if suggested_post_id:
+            prospect.suggested_post_id = suggested_post_id
         try:
             db.session.commit()
             return {"saved": True}
