@@ -74,19 +74,8 @@ class ContentWriterAgent(BaseAgent):
 
     @staticmethod
     def _init_dspy() -> None:
-        # Call shared config for API key validation and OTel wiring;
-        # content generation needs higher max_tokens and temperature than triage.
         from src.dspy.config import _configure_dspy
-        try:
-            _, _, _ = _configure_dspy()
-        except Exception:
-            pass  # continue — we reconfigure below regardless
-        provider = os.getenv("DSPY_PROVIDER", "openai").strip().lower()
-        model = os.getenv("DSPY_MODEL", "gpt-4o-mini")
-        if "/" not in model:
-            model = f"{provider}/{model}"
-        lm = dspy.LM(model=model, max_tokens=3000, temperature=0.7)
-        dspy.settings.configure(lm=lm)  # unconditional override for content params
+        _configure_dspy(max_tokens=3000, temperature=0.7)
 
     def _run_auto(self, niche: str, audience: str, topic_index: int, account_id) -> Dict[str, Any]:
         from src.dspy.content import TopicGeneratorModule

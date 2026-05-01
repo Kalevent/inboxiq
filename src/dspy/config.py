@@ -80,6 +80,8 @@ def get_current_model_id() -> Optional[str]:
 
 def configure_dspy(
     byol_config: Optional[Dict[str, Any]] = None,
+    max_tokens: int = 300,
+    temperature: float = 0.2,
 ) -> tuple[str, str, Any]:
     """
     Configure DSPy with the appropriate LLM provider.
@@ -88,6 +90,9 @@ def configure_dspy(
         byol_config: Optional per-account BYOL config dict with keys
                      provider, base_url, model, api_key.  When provided,
                      overrides all env-var-based provider selection.
+        max_tokens: Token limit for LM responses. Default 300 suits triage/classification.
+                    Pass higher values for content generation (e.g. max_tokens=2000).
+        temperature: Sampling temperature. Default 0.2 suits deterministic tasks.
 
     The system is model-agnostic for training data:
     - Manual overrides (training examples) are stored in the database
@@ -147,7 +152,7 @@ def configure_dspy(
             raise RuntimeError("OPENAI_API_KEY is required for DSPy OpenAI provider.")
         try:
             model_id = model if "/" in model else f"{prefix}/{model}"
-            lm = dspy.LM(model=model_id, max_tokens=300, temperature=0.2)
+            lm = dspy.LM(model=model_id, max_tokens=max_tokens, temperature=temperature)
         except Exception as exc:
             raise RuntimeError(f"Failed to configure DSPy OpenAI backend: {exc}") from exc
 
@@ -156,7 +161,7 @@ def configure_dspy(
             raise RuntimeError("ANTHROPIC_API_KEY is required for DSPy Anthropic provider.")
         try:
             model_id = model if "/" in model else f"{prefix}/{model}"
-            lm = dspy.LM(model=model_id, max_tokens=300, temperature=0.2)
+            lm = dspy.LM(model=model_id, max_tokens=max_tokens, temperature=temperature)
         except Exception as exc:
             raise RuntimeError(f"Failed to configure DSPy Anthropic backend: {exc}") from exc
 
@@ -165,7 +170,7 @@ def configure_dspy(
             raise RuntimeError("GEMINI_API_KEY is required for DSPy Gemini provider.")
         try:
             model_id = model if "/" in model else f"{prefix}/{model}"
-            lm = dspy.LM(model=model_id, max_tokens=300, temperature=0.2)
+            lm = dspy.LM(model=model_id, max_tokens=max_tokens, temperature=temperature)
         except Exception as exc:
             raise RuntimeError(f"Failed to configure DSPy Gemini backend: {exc}") from exc
 
@@ -173,13 +178,12 @@ def configure_dspy(
         base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         try:
             model_id = model if "/" in model else f"{prefix}/{model}"
-            # Ollama uses OpenAI-compatible API
             lm = dspy.LM(
                 model=model_id,
                 api_base=f"{base_url}/v1",
-                api_key="ollama",  # Ollama doesn't require a real key
-                max_tokens=300,
-                temperature=0.2,
+                api_key="ollama",
+                max_tokens=max_tokens,
+                temperature=temperature,
             )
         except Exception as exc:
             raise RuntimeError(f"Failed to configure DSPy Ollama backend: {exc}") from exc
@@ -190,9 +194,7 @@ def configure_dspy(
             "Set DSPY_PROVIDER or appropriate API keys."
         )
 
-    # Configure DSPy settings if not already set
-    if getattr(dspy.settings, "lm", None) is None:
-        dspy.settings.configure(lm=lm)
+    dspy.settings.configure(lm=lm)
 
     logger.info("DSPy configured with provider=%s model=%s", provider, model_id)
 
