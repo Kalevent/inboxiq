@@ -657,3 +657,30 @@ def build_meta_description_generator(dspy: Any) -> Any:
             return self.predict(title=title, excerpt=excerpt, primary_keyword=primary_keyword)
 
     return MetaDescriptionModule()
+
+
+def build_blog_quality_check(dspy: Any) -> Any:
+    """DSPy module that scores a blog post and decides ready vs draft."""
+
+    class BlogQualityCheckSignature(dspy.Signature):
+        """
+        Evaluate a blog post draft for publishing quality.
+        Score 0–10 across relevance, depth, clarity, and audience fit.
+        Decide 'ready' when score >= 7, 'draft' when score < 7.
+        """
+        title = dspy.InputField(desc="Blog post title.")
+        content = dspy.InputField(desc="First 3,000 characters of the blog post in Markdown.")
+        target_audience = dspy.InputField(desc="Intended reader — e.g. 'Head of Support, B2B SaaS'.")
+        quality_score = dspy.OutputField(desc="Quality score as an integer 0–10.")
+        publish_decision = dspy.OutputField(desc="'ready' if score >= 7, else 'draft'.")
+        reason = dspy.OutputField(desc="One sentence explaining the decision.")
+
+    class BlogQualityCheckModule(dspy.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.check = dspy.ChainOfThought(BlogQualityCheckSignature)
+
+        def forward(self, title: str, content: str, target_audience: str) -> Any:
+            return self.check(title=title, content=content, target_audience=target_audience)
+
+    return BlogQualityCheckModule()
