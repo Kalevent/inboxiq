@@ -51,16 +51,16 @@
     <h1 class="blog-heading text-white tracking-tight">{{ post.title }}</h1>
     <div class="flex flex-wrap items-center gap-2 blog-meta">
       {% if post.primary_keyword %}
-        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-indigo-100">Keyword: {{ post.primary_keyword }}</span>
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-50 dark:bg-slate-900/80 border border-indigo-200 dark:border-slate-700 text-indigo-700 dark:text-indigo-100">Keyword: {{ post.primary_keyword }}</span>
       {% endif %}
       {% if post.secondary_keywords %}
-        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/70 border border-slate-800 text-slate-200">Also: {{ post.secondary_keywords|join(', ') }}</span>
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-200">Also: {{ post.secondary_keywords|join(', ') }}</span>
       {% endif %}
       {% if post.read_time_minutes %}
-        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-slate-100">~{{ post.read_time_minutes }} min read</span>
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-100">~{{ post.read_time_minutes }} min read</span>
       {% endif %}
       {% if post.word_count %}
-        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-slate-100">{{ post.word_count }} words</span>
+        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-100">{{ post.word_count }} words</span>
       {% endif %}
     </div>
   </div>
@@ -70,7 +70,7 @@
     {% if hero_src and hero_src.startswith('static/') %}{% set hero_src = '/' + hero_src %}{% endif %}
     {% if hero_src %}
       <div class="blog-hero relative bg-slate-900">
-        <img src="{{ hero_src }}" alt="{{ post.hero_image_alt or post.title or 'Blog hero' }}" class="absolute inset-0 w-full h-full object-cover z-0">
+        <img src="{{ hero_src }}" alt="{{ post.hero_image_alt or post.title or 'Blog hero' }}" class="absolute inset-0 w-full h-full object-cover z-0" onerror="this.onerror=null;this.src='/static/social_media/inboxiq-unified-triage-hero.png'">
         <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/30 to-transparent z-10"></div>
       </div>
     {% else %}
