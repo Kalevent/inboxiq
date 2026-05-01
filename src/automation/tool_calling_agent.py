@@ -13,40 +13,29 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from src.dspy.config import _configure_dspy
+from src.agents.base import BaseAgent
 from src.models.automation import AutomationRule, WebhookProvider, AutomationRuleExecution
 from src.extensions import db
 
 logger = logging.getLogger(__name__)
 
 
-class ToolCallingAutomationAgent:
+class ToolCallingAutomationAgent(BaseAgent):
     """
-    Provider-agnostic automation agent using dspy.ReAct.
+    Automation-rule agent using dspy.ReAct.
+    Extends BaseAgent; adds workflow-specific tools and AutomationRuleExecution logging.
+    """
 
-    Tools are registered as plain Python callables with docstrings —
-    no OpenAI function-calling schema required.
-    """
+    agent_name = "automation_rule"
+    mcp_server_labels = []
 
     def __init__(self, workflow: AutomationRule, trigger_context: Dict[str, Any]):
+        super().__init__(account_id=workflow.account_id)
         self.workflow = workflow
         self.trigger_context = trigger_context
-        self.account_id = workflow.account_id
-        self.execution_log: List[str] = []
-        self.tool_calls: List[Dict[str, Any]] = []
 
-        _, _, self._dspy = _configure_dspy()
-
-    # =========================================================================
-    # Public entry point
-    # =========================================================================
-
-    def execute(self, trigger_event: str) -> Dict[str, Any]:
-        """Execute workflow using dspy.ReAct agent loop."""
-        self.log("Starting ReAct agent execution")
-
-        # Build the DSPy ReAct agent with tools as callables
-        tools = [
+    def _get_tools(self) -> list:
+        return [
             self._tool_get_context_summary,
             self._tool_search_context_field,
             self._tool_evaluate_condition,
@@ -56,74 +45,43 @@ class ToolCallingAutomationAgent:
             self._tool_render_template,
         ]
 
-        class WorkflowAgentSignature(self._dspy.Signature):
-            """
-            Execute an automation workflow step by step using the available tools.
-            First summarise the context, then evaluate conditions, then execute actions.
-            When done respond with 'Workflow execution completed successfully' or
-            'Workflow execution failed: <reason>'.
-            """
-            workflow_description = self._dspy.InputField(
-                desc="The automation workflow definition as JSON."
-            )
-            result = self._dspy.OutputField(
-                desc="Final execution result: success or failure with reason."
-            )
+    # =========================================================================
+    # Public entry point
+    # =========================================================================
 
-        try:
-            agent = self._dspy.ReAct(WorkflowAgentSignature, tools=tools, max_iters=20)
-            workflow_desc = json.dumps({
-                "name": self.workflow.name,
-                "description": self.workflow.description or "",
-                "trigger": self.workflow.trigger,
-                "conditions": self.workflow.conditions,
-                "condition_logic": self.workflow.condition_logic,
-                "actions": self.workflow.actions,
-            })
+    def execute(self, trigger_event: str) -> Dict[str, Any]:  # type: ignore[override]
+        """Execute workflow using dspy.ReAct agent loop."""
+        self.log("Starting ReAct agent execution")
+        self._trigger_event = trigger_event
 
-            prediction = agent(workflow_description=workflow_desc)
-            final_text = prediction.result or ""
-            self.log(f"Agent result: {final_text[:200]}")
+        goal = json.dumps({
+            "name": self.workflow.name,
+            "description": self.workflow.description or "",
+            "trigger": self.workflow.trigger,
+            "conditions": self.workflow.conditions,
+            "condition_logic": self.workflow.condition_logic,
+            "actions": self.workflow.actions,
+        })
 
-            success = (
-                "success" in final_text.lower()
-                and "fail" not in final_text.lower()
-            )
+        base_result = super().execute(goal=goal)
 
-            self._store_execution(
-                trigger_event=trigger_event,
-                matched=True,
-                executed=True,
-                success=success,
-                agent_response=final_text,
-            )
+        self._store_execution(
+            trigger_event=trigger_event,
+            matched=True,
+            executed=base_result["success"],
+            success=base_result["success"],
+            agent_response=base_result.get("result"),
+            error_message=base_result.get("error"),
+        )
 
-            return {
-                "executed": True,
-                "matched": True,
-                "success": success,
-                "agent_log": self.execution_log,
-                "tool_calls": self.tool_calls,
-                "agent_response": final_text,
-            }
-
-        except Exception as e:
-            logger.exception("ToolCallingAutomationAgent failed: %s", e)
-            self.log(f"Agent failed: {e}")
-            self._store_execution(
-                trigger_event=trigger_event,
-                matched=True,
-                executed=False,
-                success=False,
-                error_message=str(e),
-            )
-            return {
-                "executed": False,
-                "matched": True,
-                "success": False,
-                "error": str(e),
-                "agent_log": self.execution_log,
-            }
+        return {
+            "executed": base_result["success"],
+            "matched": True,
+            "success": base_result["success"],
+            "agent_log": base_result["log"],
+            "tool_calls": self.tool_calls,
+            "agent_response": base_result.get("result"),
+        }
 
     # =========================================================================
     # Tools — plain callables; docstrings are the tool descriptions for ReAct
@@ -309,11 +267,6 @@ class ToolCallingAutomationAgent:
             db.session.commit()
         except Exception:
             db.session.rollback()
-
-    def log(self, message: str) -> None:
-        self.execution_log.append(message)
-        logger.info("[ToolCallingAgent %s] %s", self.workflow.name, message)
-
 
 def execute_workflow_with_tool_calling_agent(
     workflow_id: str,
