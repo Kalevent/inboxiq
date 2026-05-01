@@ -34,7 +34,7 @@ class LinkedInCadenceAgent(BaseAgent):
             self._tool_add_to_prospect_queue,
             self._tool_get_pending_prospects,
             self._tool_save_drafted_messages,
-            # _tool_send_digest_email wired in Task 7
+            self._tool_send_digest_email,
         ]
 
     # -------------------------------------------------------------------------
@@ -181,6 +181,6 @@ class LinkedInCadenceAgent(BaseAgent):
 
     def _tool_send_digest_email(self) -> Dict[str, Any]:
         """Collect all prospects due for action today and send the digest email."""
+        from src.tasks.linkedin import _send_digest_core
         self.tool_calls.append({"tool": "send_digest_email"})
-        # Wired in Task 7 when _send_digest_core is extracted from tasks/linkedin.py
-        return {"sent": False, "reason": "pending_task_7"}
+        return _send_digest_core(self.account_id)
