@@ -686,6 +686,32 @@ def cli_leads_export_csv(min_fit_score: int, output: str):
         click.echo(f"Exported {len(leads)} leads to {output}")
 
 
+@app.cli.command("fix-blog-content-html")
+@click.option("--slug", default=None, help="Only fix this slug. Omit to fix all published posts.")
+def cli_fix_blog_content_html(slug):
+    """Strip DSPy artifacts (Meta Description lines) from stored content_html."""
+    import re
+    from src.models.content import BlogPost
+
+    q = db.session.query(BlogPost).filter(BlogPost.status == "published")
+    if slug:
+        q = q.filter(BlogPost.slug == slug)
+    posts = q.all()
+    fixed = 0
+    for post in posts:
+        html = post.content_html or ""
+        cleaned = re.sub(r'<p[^>]*>\s*(<strong>)?Meta Description(</strong>)?:.*?</p>', '', html, flags=re.IGNORECASE | re.DOTALL)
+        if cleaned != html:
+            post.content_html = cleaned
+            fixed += 1
+    try:
+        db.session.commit()
+        click.echo(f"Fixed {fixed} post(s).")
+    except Exception:
+        db.session.rollback()
+        raise
+
+
 @app.cli.command("register-playwright-mcp")
 def cli_register_playwright_mcp():
     """Insert or update the playwright-mcp entry in MCPServerCatalog."""
