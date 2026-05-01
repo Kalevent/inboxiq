@@ -193,7 +193,7 @@ def make_celery(app) -> Celery:
                             0,  # topic_index
                             True,  # auto_publish → always goes through distribution pipeline
                         ],
-                        "options": {"queue": "inbox"},
+                        "options": {"queue": "content"},
                     },
                     # E-commerce blog post — Thursday (stagger to avoid same-day publish)
                     "content_weekly_blog_ecommerce": {
@@ -205,7 +205,7 @@ def make_celery(app) -> Celery:
                             0,
                             True,
                         ],
-                        "options": {"queue": "inbox"},
+                        "options": {"queue": "content"},
                     },
                 }
                 if content_gen_enabled

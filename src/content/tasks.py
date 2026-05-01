@@ -138,7 +138,7 @@ def _generate_hero_image(title: str, topic: dict) -> tuple[str, str]:
     return public_url, alt_text
 
 
-@shared_task(name="content.generate_blog_post")
+@shared_task(name="content.generate_blog_post", queue="content")
 def generate_blog_post(
     niche: str = "Revenue Operations",
     audience: str = "VP Revenue Operations, B2B SaaS, 100-500 employees",
@@ -172,7 +172,7 @@ def generate_blog_post(
     return ContentWriterAgent(account_id=account_id or 1).execute(goal)  # 1 = system account for scheduled runs
 
 
-@shared_task(name="content.generate_weekly_posts")
+@shared_task(name="content.generate_weekly_posts", queue="content")
 def generate_weekly_posts(num_posts: int = 3):
     """
     Scheduled task: Generate weekly blog posts.
@@ -210,7 +210,7 @@ def generate_weekly_posts(num_posts: int = 3):
     return results
 
 
-@shared_task(name="content.optimize_existing_post")
+@shared_task(name="content.optimize_existing_post", queue="content")
 def optimize_existing_post(blog_post_id: str):
     """
     Re-optimize existing blog post for SEO.
@@ -265,7 +265,7 @@ def optimize_existing_post(blog_post_id: str):
         return {"error": str(e)}
 
 
-@shared_task(name="content.expand_short_blog_posts")
+@shared_task(name="content.expand_short_blog_posts", queue="content")
 def expand_short_blog_posts(min_word_count: int = 800):
     """
     Expand all blog posts (any status) whose word_count is below min_word_count.
@@ -304,7 +304,7 @@ def expand_short_blog_posts(min_word_count: int = 800):
     return results
 
 
-@shared_task(name="content.content_generation_job")
+@shared_task(name="content.content_generation_job", queue="content")
 def content_generation_job():
     """
     Main content generation orchestration job.
