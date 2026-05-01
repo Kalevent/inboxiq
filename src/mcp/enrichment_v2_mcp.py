@@ -25,6 +25,7 @@ Env:
 """
 from __future__ import annotations
 
+import logging
 import os
 import re
 import time
@@ -32,6 +33,7 @@ from typing import Any, Dict, List, Optional
 import requests
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from src.mcp.lead_discovery_mcp import _search_web
 
 try:
     from mcp.server.fastmcp import FastMCP, Context, ToolError
@@ -49,6 +51,8 @@ DATABASE_URL = (
     or os.getenv("DATABASE_URL")
     or os.getenv("DATABASE_DEV_URL")
 )
+
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP("enrichment-v2-mcp")
 
@@ -229,10 +233,6 @@ def find_buying_committee(
     if not roles:
         roles = ["ceo", "cto", "vp", "director", "head", "manager", "lead"]
 
-    # This would typically use Apollo.io, RocketReach, or Hunter.io
-    # For now, return structured placeholder
-    committee = []
-
     role_mapping = {
         "ceo": "economic_buyer",
         "cfo": "economic_buyer",
@@ -243,26 +243,27 @@ def find_buying_committee(
         "lead": "end_user"
     }
 
-    # Placeholder logic - would integrate with external API
-    for role in roles:
-        committee.append({
-            "name": f"[Search for {role} at {company_name or company_domain}]",
-            "title": role.upper(),
-            "email": None,
-            "role_type": role_mapping.get(role.lower(), "end_user"),
-            "seniority_level": "senior" if role.lower() in ["ceo", "cfo", "vp", "director"] else "mid",
-            "linkedin_url": None,
-            "confidence": "low",
-            "note": "Add Apollo.io or RocketReach API for real data"
-        })
+    committee = []
+    for role in roles[:4]:  # cap at 4 roles to limit SearXNG load
+        try:
+            query = f'site:linkedin.com/in "{role}" "{company_name or company_domain}"'
+            results = _search_web(query, max_results=3)
+            for r in results:
+                url = r.get("url", "")
+                if "linkedin.com/in/" not in url:
+                    continue
+                role_type = role_mapping.get(role.split()[0].lower(), "end_user")
+                committee.append({
+                    "name": r.get("title", "").split("|")[0].strip(),
+                    "linkedin_url": url.split("?")[0],
+                    "role_type": role_type,
+                    "title": role,
+                    "seniority_level": "senior" if role_type == "economic_buyer" else "mid",
+                })
+        except Exception as exc:
+            logger.warning("find_buying_committee search failed for role %s: %s", role, exc)
 
-    return {
-        "company_domain": company_domain,
-        "company_name": company_name,
-        "roles_searched": roles,
-        "buying_committee": committee,
-        "total_contacts": len(committee)
-    }
+    return {"company_domain": company_domain, "buying_committee": committee}
 
 
 @mcp.tool()
