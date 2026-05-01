@@ -739,7 +739,7 @@ def cli_register_playwright_mcp():
 
 
 @app.cli.command("purge-junk-leads")
-@click.option("--dry-run", is_flag=True, default=True, help="Preview without deleting (default). Pass --no-dry-run to delete.")
+@click.option("--dry-run/--no-dry-run", default=True, help="Preview without deleting (default). Pass --no-dry-run to delete.")
 def cli_purge_junk_leads(dry_run: bool):
     """Remove leads created from job boards, social platforms, and article pages."""
     from src.models.leads import Lead
