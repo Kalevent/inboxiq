@@ -44,6 +44,7 @@ class Lead(db.Model):
             name="lead_status_enum",
         ),
         nullable=False,
+        server_default="New Lead",
     )
     num_employees = db.Column(db.Integer, nullable=True)
     qualification_status = db.Column(db.String(50), nullable=True)

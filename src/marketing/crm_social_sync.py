@@ -87,11 +87,17 @@ def sync_social_crm_leads() -> Dict[str, Any]:
                 else:
                     failed += 1
 
+            try:
+                db.session.commit()
+            except Exception as commit_exc:
+                db.session.rollback()
+                logger.warning("Commit failed for connection %s: %s", conn.id, commit_exc)
+                failed += 1
+
         except Exception as exc:
+            db.session.rollback()
             logger.error("Failed to sync social CRM for connection %s: %s", conn.id, exc)
             failed += 1
-
-    db.session.commit()
     logger.info("[CRM SOCIAL SYNC] synced=%d failed=%d skipped=%d", synced, failed, skipped)
     return {"synced": synced, "failed": failed, "skipped": skipped}
 
