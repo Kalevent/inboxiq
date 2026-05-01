@@ -4,8 +4,8 @@ from unittest.mock import patch, MagicMock
 
 def test_generate_blog_post_raises_on_dspy_failure(app):
     """generate_blog_post must raise on DSPy failure so Celery marks it FAILURE."""
-    from src.agents.content_writer import ContentWriterAgent
     with app.app_context():
+        from src.agents.content_writer import ContentWriterAgent
         with patch.object(ContentWriterAgent, "execute", side_effect=RuntimeError("model timeout")):
             from src.content.tasks import generate_blog_post
             with pytest.raises(RuntimeError, match="model timeout"):

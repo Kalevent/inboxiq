@@ -108,6 +108,14 @@ class ContentWriterAgent(BaseAgent):
         topic_obj = db.session.get(PitchedBlogTopic, topic_id)
         if not topic_obj:
             raise LookupError(f"PitchedBlogTopic {topic_id} not found")
+
+        topic_obj.status = "generating"
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
+
         selected_topic = {
             "target_keyword": topic_obj.target_keyword or "",
             "secondary_keywords": topic_obj.secondary_keywords or [],
@@ -117,7 +125,33 @@ class ContentWriterAgent(BaseAgent):
         audience = topic_obj.target_audience or "Head of Support, B2B SaaS"
         self.log(f"Pitched topic: {topic_obj.title}")
         self._init_dspy()
-        return self._write_pipeline(selected_topic, audience)
+
+        try:
+            result = self._write_pipeline(selected_topic, audience)
+        except Exception as exc:
+            topic_obj.status = "failed"
+            topic_obj.pitch_notes = (
+                f"{(topic_obj.pitch_notes or '').strip()}\n\nGeneration failed: {exc}"
+            ).strip()
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+            raise
+
+        blog_post_id = result.get("blog_post_id")
+        if blog_post_id:
+            topic_obj.status = "generated"
+            topic_obj.generated_content_id = blog_post_id
+        else:
+            topic_obj.status = result.get("status", "generated")
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
+
+        return result
 
     def _write_pipeline(self, selected_topic: dict, audience: str) -> Dict[str, Any]:
         from src.dspy.content import (

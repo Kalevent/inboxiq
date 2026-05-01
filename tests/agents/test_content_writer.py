@@ -83,9 +83,10 @@ def test_content_writer_agent_dispatches_pitched_mode(app):
          patch.object(ContentWriterAgent, "_store_event"):
         agent = ContentWriterAgent(account_id=1)
         goal = json.dumps({"mode": "pitched", "topic_id": "topic-uuid"})
-        agent.execute(goal)
+        result = agent.execute(goal)
 
     mock_pitched.assert_called_once_with("topic-uuid")
+    assert result["status"] == "ready"
 
 
 def test_generate_blog_post_task_delegates_to_agent(app):
@@ -119,3 +120,4 @@ def test_generate_blog_from_pitched_topic_delegates_to_agent(app):
     goal = json.loads(mock_exec.call_args[0][0])
     assert goal["mode"] == "pitched"
     assert goal["topic_id"] == "some-uuid"
+    assert result == fake_result
