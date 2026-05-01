@@ -181,6 +181,7 @@ def _upsert_lead(account_id: int, source: str, profile: Dict[str, Any]) -> Lead:
         name=name,
         email=email,
         source=source,
+        status="New Lead",
         current_funnel_stage=DISCOVERY,
         stage_entered_at=datetime.now(timezone.utc),
     )

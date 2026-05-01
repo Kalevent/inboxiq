@@ -259,6 +259,11 @@ def settings_page(tab):
           account_id=account_id
         ).order_by(RegisteredApp.created_at.desc()).all()
 
+  mcp_servers = []
+  if tab == "developer":
+    from src.models.ai import MCPServerCatalog
+    mcp_servers = MCPServerCatalog.query.filter_by(enabled=True).order_by(MCPServerCatalog.label.asc()).all()
+
   csrf_token_value = request.cookies.get("csrf_access_token") or request.cookies.get("csrf_refresh_token") or ""
   show_social_integrations = _is_staff_account(current_user)
 
@@ -287,6 +292,7 @@ def settings_page(tab):
     inbox_connections=inbox_connections,
     developer_access_request=developer_access_request,
     registered_apps=registered_apps,
+    mcp_servers=mcp_servers,
     developer_error=None,
     new_app=None,
     llm_config=llm_config,
@@ -2078,6 +2084,8 @@ def developer_post():
 
 def _developer_page(*, account_id, account, developer_access_request, registered_apps, error, new_app):
   """Render the developer settings tab directly (used after form submission)."""
+  from src.models.ai import MCPServerCatalog
+  mcp_servers = MCPServerCatalog.query.filter_by(enabled=True).order_by(MCPServerCatalog.label.asc()).all()
   return render_template(
     "settings/index.html",
     active_tab="developer",
@@ -2085,6 +2093,7 @@ def _developer_page(*, account_id, account, developer_access_request, registered
     account=account,
     developer_access_request=developer_access_request,
     registered_apps=registered_apps,
+    mcp_servers=mcp_servers,
     developer_error=error,
     new_app=new_app,
     # required by base template

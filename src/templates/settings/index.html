@@ -2234,6 +2234,30 @@ Content-Type: application/json
                   </div>
                 </div>
 
+                {# MCP Server Catalog #}
+                {% if mcp_servers %}
+                <div class="mt-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+                  <div class="text-sm font-semibold text-slate-100 mb-1">MCP Servers</div>
+                  <p class="text-xs text-slate-400 mb-4">Available MCP servers for agent tool use. Pass the command to <code class="text-indigo-300">PersistentMCPClient</code> or register it against an agent via <code class="text-indigo-300">mcp_servers</code>.</p>
+                  <div class="space-y-3">
+                    {% for server in mcp_servers %}
+                    <div class="rounded-lg border border-slate-800 bg-slate-950 p-4">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-slate-100">{{ server.label }}</span>
+                        <span class="text-xs px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">enabled</span>
+                      </div>
+                      <div class="text-xs text-slate-400 mb-2">Command:</div>
+                      <pre class="rounded bg-slate-900 border border-slate-800 p-2 text-xs text-indigo-200 overflow-x-auto font-mono">{{ server.command | tojson if server.command is not string else server.command }}</pre>
+                      {% if server.env %}
+                      <div class="text-xs text-slate-400 mt-2 mb-1">Env vars required:</div>
+                      <pre class="rounded bg-slate-900 border border-slate-800 p-2 text-xs text-slate-300 overflow-x-auto font-mono">{{ server.env | tojson(indent=2) }}</pre>
+                      {% endif %}
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+
               {% endif %}
 
             {% else %}
