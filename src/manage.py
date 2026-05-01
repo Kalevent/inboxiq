@@ -738,5 +738,55 @@ def cli_register_playwright_mcp():
         raise
 
 
+@app.cli.command("export-prospects-csv")
+@click.option("--min-score", default=4, show_default=True, help="Minimum fit_score to include")
+@click.option("--output", default="prospects.csv", show_default=True, help="Output file path")
+def cli_export_prospects_csv(min_score: int, output: str):
+    """Export discovered leads to CSV for manual LinkedIn outreach."""
+    import csv
+    from src.models.leads import Lead
+
+    leads = (
+        db.session.query(Lead)
+        .filter(
+            Lead.fit_score >= min_score,
+            Lead.deleted.is_(False),
+            Lead.company_name.isnot(None),
+        )
+        .order_by(Lead.fit_score.desc(), Lead.created_at.desc())
+        .all()
+    )
+
+    if not leads:
+        click.echo(f"No leads found with fit_score >= {min_score}.")
+        return
+
+    fields = [
+        "name", "company_name", "industry", "email",
+        "linkedin_url", "fit_score", "intent_score",
+        "qualification_status", "source", "notes", "created_at",
+    ]
+
+    with open(output, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+        writer.writeheader()
+        for lead in leads:
+            writer.writerow({
+                "name": lead.name or "",
+                "company_name": lead.company_name or "",
+                "industry": lead.industry or "",
+                "email": lead.email or "",
+                "linkedin_url": lead.linkedin_url or "",
+                "fit_score": lead.fit_score or 0,
+                "intent_score": lead.intent_score or 0,
+                "qualification_status": lead.qualification_status or "",
+                "source": lead.source or "",
+                "notes": lead.notes or "",
+                "created_at": lead.created_at.isoformat() if lead.created_at else "",
+            })
+
+    click.echo(f"Exported {len(leads)} leads to {output}")
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
