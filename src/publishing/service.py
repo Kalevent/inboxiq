@@ -207,7 +207,14 @@ def expand_blog_post(post: BlogPost, target_word_count: int = 1000) -> bool:
         return True
 
     try:
+        import os as _os
         _, _, dspy = _configure_dspy()
+        # _configure_dspy uses max_tokens=300 for triage; expansion needs much more
+        _provider = _os.getenv("DSPY_PROVIDER", "openai").strip().lower()
+        _model = _os.getenv("DSPY_MODEL", "gpt-4o-mini")
+        if "/" not in _model:
+            _model = f"{_provider}/{_model}"
+        dspy.settings.configure(lm=dspy.LM(model=_model, max_tokens=2000, temperature=0.5))
         expander = build_blog_expander(dspy)
         result = expander(
             existing_markdown=existing_md,
