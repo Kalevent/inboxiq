@@ -394,6 +394,11 @@ def make_celery(app) -> Celery:
                 "schedule": crontab(hour=7, minute=0),
                 "options": {"queue": "inbox"},
             },
+            "linkedin_draft_messages": {
+                "task": "linkedin.draft_messages",
+                "schedule": crontab(hour=7, minute=30),
+                "options": {"queue": "inbox"},
+            },
             "linkedin_send_digest": {
                 "task": "linkedin.send_digest",
                 "schedule": crontab(hour=8, minute=0),
