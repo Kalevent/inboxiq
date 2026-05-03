@@ -21,7 +21,7 @@ from celery import shared_task
 from sqlalchemy.sql import func
 
 from src.extensions import db
-from src.models.campaigns import YouTubeVideo
+from src.models.campaigns import YouTubeVideo, VideoRender
 from src.models.leads import ICPPainPoint, LeadAttribution
 from src.models.content import BlogPost
 from src.mcp import heygen_mcp, youtube_mcp
@@ -174,20 +174,35 @@ def generate_scripts(account_id: int = ACCOUNT_ID, video_style: str = "avatar") 
         except (ValueError, TypeError):
             tags = [tags]
 
+    illus = json.loads(generated["illustration_prompts"]) if generated.get("illustration_prompts") else None
+
+    long_render = VideoRender(
+        account_id=account_id,
+        programme="youtube",
+        video_style=video_style,
+        aspect_ratio="16:9",
+        script=generated["script"],
+        illustration_prompts=illus,
+    )
+    try:
+        db.session.add(long_render)
+        db.session.flush()
+    except Exception:
+        db.session.rollback()
+        raise
+
     long_form = YouTubeVideo(
         account_id=account_id,
         blog_post_id=blog_post.id,
         icp_pain_point_id=pain_point.id,
         video_type="long_form",
         video_style=video_style,
+        video_render_id=long_render.id,
         script=generated["script"],
         title=seo["title"],
         description=seo["description"],
         tags=tags,
         thumbnail_prompt=seo["thumbnail_prompt"],
-        illustration_prompts=json.loads(generated["illustration_prompts"])
-            if generated.get("illustration_prompts")
-            else None,
         utm_slug=utm_slug,
         utm_medium="long_form",
         utm_campaign=utm_campaign,
@@ -205,6 +220,21 @@ def generate_scripts(account_id: int = ACCOUNT_ID, video_style: str = "avatar") 
     shorts_created = 0
     for i, short_data in enumerate(generated["short_scripts"]):
         short_slug = _build_utm_slug("short", f"{blog_post.title}-{i+1}")
+        short_render = VideoRender(
+            account_id=account_id,
+            programme="youtube",
+            video_style=video_style,
+            aspect_ratio="9:16",
+            script=short_data["script"],
+        )
+        try:
+            db.session.add(short_render)
+            db.session.flush()
+        except Exception:
+            db.session.rollback()
+            logger.exception("youtube.generate_scripts: failed to flush short render %d", i)
+            continue
+
         short = YouTubeVideo(
             account_id=account_id,
             blog_post_id=blog_post.id,
@@ -212,6 +242,7 @@ def generate_scripts(account_id: int = ACCOUNT_ID, video_style: str = "avatar") 
             parent_video_id=long_form.id,
             video_type="short",
             video_style=video_style,
+            video_render_id=short_render.id,
             script=short_data["script"],
             utm_slug=short_slug,
             utm_medium="short",

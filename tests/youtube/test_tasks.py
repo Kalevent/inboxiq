@@ -48,6 +48,8 @@ def test_generate_scripts_creates_long_form_and_shorts(app, mock_blog_post, mock
                 },
             }
 
+            mock_render = MagicMock()
+            mock_render.id = "render-001"
             mock_db.session.query.return_value.filter.return_value.first.return_value = None
             mock_db.session.query.return_value.filter_by.return_value.first.return_value = None
 
@@ -118,6 +120,63 @@ def test_publish_videos_uploads_to_youtube(app):
             assert result["published"] == 1
             mock_yt.upload_video.assert_called_once()
             mock_yt.post_pinned_comment.assert_called_once()
+
+
+def test_generate_scripts_creates_video_render(app, db):
+    from src.models.campaigns import YouTubeVideo, VideoRender
+    from unittest.mock import patch, MagicMock
+
+    mock_post = MagicMock()
+    mock_post.id = "post-abc"
+    mock_post.title = "How to fix inbox chaos"
+    mock_post.content_html = "<p>Inbox chaos.</p>"
+    mock_post.primary_keyword = "inbox"
+
+    mock_pp = MagicMock()
+    mock_pp.id = "pain-abc"
+    mock_pp.pain_point = "Emails pile up"
+    mock_pp.consequence = "Customers churn"
+
+    # The app fixture already pushes an app_context — use it directly (no nested push).
+    with patch("src.tasks.youtube._get_latest_blog_post", return_value=mock_post), \
+         patch("src.tasks.youtube._get_top_pain_point", return_value=mock_pp), \
+         patch("src.tasks.youtube._run_dspy_script_generation") as mock_dspy, \
+         patch("src.tasks.youtube._build_utm_slug", side_effect=lambda vtype, title: f"slug-{vtype}"):
+
+        mock_dspy.return_value = {
+            "script": "Your inbox is chaos.",
+            "hook_line": "Chaos.",
+            "chapter_markers": "[]",
+            "cta_line": "Start free.",
+            "illustration_prompts": None,
+            "short_scripts": [
+                {"script": "Short 1.", "pattern_interrupt_line": "Chaos?", "cta_line": "Link."},
+            ],
+            "seo": {
+                "title": "Fix your inbox | InboxIQ",
+                "description": "Chaos.\n{{UTM_LINK}}",
+                "tags": '["inbox"]',
+                "thumbnail_prompt": "Person at desk",
+            },
+        }
+
+        from src.tasks.youtube import generate_scripts
+        # Use .run() to bypass ContextTask and stay in the fixture's app context.
+        result = generate_scripts.run(account_id=2, video_style="avatar")
+
+    assert result["status"] == "ok"
+    assert result["long_form_created"] is True
+
+    videos = db.session.query(YouTubeVideo).filter_by(account_id=2).all()
+    renders = db.session.query(VideoRender).filter_by(account_id=2, programme="youtube").all()
+    assert len(renders) == len(videos), "Each YouTubeVideo must have a VideoRender"
+    for video in videos:
+        assert video.video_render_id is not None
+        render = db.session.get(VideoRender, video.video_render_id)
+        assert render is not None
+        assert render.programme == "youtube"
+        aspect = "16:9" if video.video_type == "long_form" else "9:16"
+        assert render.aspect_ratio == aspect
 
 
 def test_send_digest_calls_email_function(app):
