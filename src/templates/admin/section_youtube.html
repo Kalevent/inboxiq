@@ -169,6 +169,14 @@ const _ytHeaders = () => {
   if (csrf) h['X-CSRF-TOKEN'] = csrf;
   return h;
 };
+function _ytEsc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
 // ── Status badge config ─────────────────────────────────────────────────────
 const _YT_STATUS = {
@@ -211,16 +219,17 @@ async function loadYouTubeVideos() {
     const st = _YT_STATUS[v.status] || { label: v.status, cls: 'bg-slate-700 text-slate-300' };
     const tp = _YT_TYPE[v.video_type] || { label: v.video_type, cls: 'bg-slate-700 text-slate-300' };
     const sy = _YT_STYLE[v.video_style] || { label: v.video_style, cls: 'bg-slate-700 text-slate-300' };
-    const titleCell = v.youtube_url
-      ? `<a href="${v.youtube_url}" target="_blank" class="text-indigo-400 hover:underline">${v.title || '&#8212;'}</a>`
-      : `<span class="text-slate-300">${v.title || '&#8212;'}</span>`;
+    const safeUrl = typeof v.youtube_url === 'string' && v.youtube_url.startsWith('https://') ? v.youtube_url : null;
+    const titleCell = safeUrl
+      ? `<a href="${safeUrl}" target="_blank" class="text-indigo-400 hover:underline">${_ytEsc(v.title) || '&#8212;'}</a>`
+      : `<span class="text-slate-300">${_ytEsc(v.title) || '&#8212;'}</span>`;
     const pubDate = v.published_at ? new Date(v.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '&#8212;';
     return `<tr class="border-t border-slate-800 hover:bg-slate-800/40">
       <td class="px-4 py-3">${titleCell}</td>
       <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${tp.cls}">${tp.label}</span></td>
       <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${sy.cls}">${sy.label}</span></td>
       <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${st.cls}">${st.label}</span></td>
-      <td class="px-4 py-3 text-slate-400 text-xs">${v.pain_point || '&#8212;'}</td>
+      <td class="px-4 py-3 text-slate-400 text-xs">${_ytEsc(v.pain_point) || '&#8212;'}</td>
       <td class="px-4 py-3 text-right text-slate-300">${v.view_count ?? '&#8212;'}</td>
       <td class="px-4 py-3 text-right text-slate-300">${v.click_count ?? '&#8212;'}</td>
       <td class="px-4 py-3 text-slate-400 text-xs">${pubDate}</td>
@@ -240,8 +249,8 @@ async function loadPainPoints() {
   }
   tbody.innerHTML = items.map(pp =>
     `<tr class="border-t border-slate-800">
-      <td class="px-4 py-2.5 text-slate-300">${pp.pain_point}</td>
-      <td class="px-4 py-2.5 text-slate-400 text-xs">${pp.persona || '&#8212;'}</td>
+      <td class="px-4 py-2.5 text-slate-300">${_ytEsc(pp.pain_point)}</td>
+      <td class="px-4 py-2.5 text-slate-400 text-xs">${_ytEsc(pp.persona) || '&#8212;'}</td>
       <td class="px-4 py-2.5 text-right text-slate-400">${pp.priority}</td>
     </tr>`
   ).join('');
