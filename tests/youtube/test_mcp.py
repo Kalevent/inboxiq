@@ -67,3 +67,28 @@ def test_heygen_render_illustration_video_empty_frames(monkeypatch):
     )
     assert result["status"] == "error"
     assert "frame_urls" in result["error"]
+
+
+def test_youtube_upload_missing_creds(monkeypatch):
+    monkeypatch.delenv("YOUTUBE_CLIENT_ID", raising=False)
+    from src.mcp import youtube_mcp
+    import importlib
+    importlib.reload(youtube_mcp)
+    result = youtube_mcp.upload_video(
+        file_url="https://example.com/video.mp4",
+        title="Test title",
+        description="Test description",
+        tags=["test"],
+        category_id="28",
+    )
+    assert result["status"] == "error"
+    assert "YOUTUBE_CLIENT_ID" in result["error"]
+
+
+def test_youtube_get_video_stats_missing_creds(monkeypatch):
+    monkeypatch.delenv("YOUTUBE_CLIENT_ID", raising=False)
+    from src.mcp import youtube_mcp
+    import importlib
+    importlib.reload(youtube_mcp)
+    result = youtube_mcp.get_video_stats("dQw4w9WgXcQ")
+    assert result["status"] == "error"
