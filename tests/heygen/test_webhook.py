@@ -75,3 +75,24 @@ def test_webhook_non_dict_event_data_returns_400(client):
     })
     assert resp.status_code == 400
     assert "invalid event_data" in resp.get_json()["error"]
+
+
+def test_webhook_unrecognised_event_type_is_silent_noop(client, app, db):
+    from src.models.campaigns import VideoRender
+    with app.app_context():
+        r = VideoRender(
+            account_id=2, programme="youtube", video_style="avatar", aspect_ratio="16:9",
+            heygen_job_id="job-noop-003", status="rendering",
+        )
+        db.session.add(r)
+        db.session.commit()
+
+    resp = client.post("/api/v1/heygen/webhook", json={
+        "event_type": "avatar_video.processing",
+        "event_data": {"video_id": "job-noop-003"},
+    })
+    assert resp.status_code == 200
+
+    with app.app_context():
+        r = VideoRender.query.filter_by(heygen_job_id="job-noop-003").first()
+        assert r.status == "rendering"  # unchanged — no-op

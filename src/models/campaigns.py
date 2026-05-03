@@ -306,7 +306,7 @@ class YouTubeVideo(db.Model):
     dalle_frame_urls = db.Column(db.JSON, nullable=True)
 
     # HeyGen
-    heygen_job_id = db.Column(db.String(128), nullable=True)
+    heygen_job_id = db.Column(db.String(128), nullable=True, unique=True)
     heygen_render_url = db.Column(db.String(512), nullable=True)
 
     # YouTube
@@ -360,6 +360,9 @@ class VideoRender(db.Model):
 class OnboardingVideo(db.Model):
     """Personalised welcome video sent to a new customer on signup."""
     __tablename__ = "onboarding_videos"
+    __table_args__ = (
+        db.Index("idx_onboarding_videos_account_video_render", "account_id", "video_render_id"),
+    )
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
@@ -374,6 +377,9 @@ class OnboardingVideo(db.Model):
 class OutreachVideo(db.Model):
     """Per-lead personalised outreach video — delivered via email + LinkedIn DM simultaneously."""
     __tablename__ = "outreach_videos"
+    __table_args__ = (
+        db.Index("idx_outreach_videos_account_video_render", "account_id", "video_render_id"),
+    )
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
