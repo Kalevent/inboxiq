@@ -684,3 +684,102 @@ def build_blog_quality_check(dspy: Any) -> Any:
             return self.check(title=title, content=content, target_audience=target_audience)
 
     return BlogQualityCheckModule()
+
+
+# ── YouTube Cadence Signatures ─────────────────────────────────────────────
+
+def build_youtube_signatures(dspy: Any) -> Dict[str, Any]:
+    """Return all four YouTube cadence DSPy signatures."""
+
+    BRAND_STYLE_PREFIX = (
+        "Editorial illustration, hand-drawn ink lines with watercolour wash, "
+        "warm muted palette (navy, terracotta, cream), textured paper feel, "
+        "loose gestural linework, human figures with natural proportions, "
+        "professional magazine quality, no text, no UI chrome, no 3D render, "
+        "no gradients, no gloss — think New Yorker editorial, not stock photo. "
+    )
+
+    class YouTubeLongFormScript(dspy.Signature):
+        """Generate a pain-point-first YouTube long form script (8-12 min) for a specific ICP persona.
+        The script must open with the named ICP pain point. The product name InboxIQ must not appear
+        in the first 5 seconds. Structure: HOOK (pain) -> PROBLEM -> RESOLUTION -> PROOF -> CTA."""
+
+        blog_post_content: str = dspy.InputField(desc="Source blog post content to base the video on.")
+        icp_persona: str = dspy.InputField(desc="ICP persona, e.g. 'Head of Support, B2B SaaS, 10-50 employees'.")
+        pain_point: str = dspy.InputField(desc="Specific ICP pain point from ICPPainPoint table. Do not invent.")
+        consequence: str = dspy.InputField(desc="What happens if this pain point is not resolved.")
+        video_style: str = dspy.InputField(desc="'avatar' (Caroline presenter) or 'illustration' (editorial art).")
+
+        script: str = dspy.OutputField(desc="Full spoken script. HOOK 0-30s opens with pain, no greeting.")
+        hook_line: str = dspy.OutputField(desc="First spoken sentence. Must name the pain. No product name.")
+        chapter_markers: str = dspy.OutputField(desc="JSON list of {time, title} chapter markers for YouTube.")
+        cta_line: str = dspy.OutputField(desc="Final spoken sentence. One ask only: 'Start free at inboxiq.com'.")
+
+    class YouTubeShortScript(dspy.Signature):
+        """Extract a 60-second Short from a long form script. Pattern interrupt -> agitation -> resolution -> CTA.
+        First 3 seconds must name the pain with no greeting."""
+
+        long_form_script: str = dspy.InputField(desc="Full long form script to extract the Short from.")
+        pain_point: str = dspy.InputField(desc="ICP pain point this Short addresses.")
+        parent_youtube_url: str = dspy.InputField(desc="YouTube URL of the parent long form video.")
+
+        short_script: str = dspy.OutputField(desc="60-second script. Seconds 0-3: pain. 3-20: agitation. 20-50: resolution. 50-60: CTA.")
+        pattern_interrupt_line: str = dspy.OutputField(desc="First sentence (0-3s). Names the pain. No greeting.")
+        cta_line: str = dspy.OutputField(desc="Final line. 'Link in description. Free to start.'")
+
+    class YouTubeSEOMetadata(dspy.Signature):
+        """Generate YouTube SEO metadata for a video. Title must follow [Pain outcome] — [How] | InboxIQ format.
+        Product name must not appear in the title. Description must state pain and resolution in first 2 lines."""
+
+        script: str = dspy.InputField(desc="Video script.")
+        pain_point: str = dspy.InputField(desc="ICP pain point this video addresses.")
+        blog_post_primary_keyword: str = dspy.InputField(desc="Primary SEO keyword from the source BlogPost.")
+        video_type: str = dspy.InputField(desc="'long_form' or 'short'.")
+
+        title: str = dspy.OutputField(desc="YouTube title <=60 chars. Format: [Pain outcome] — [How] | InboxIQ. No product name first.")
+        description: str = dspy.OutputField(desc="YouTube description. Line 1: pain. Line 2: resolution. Line 3: UTM link placeholder {{UTM_LINK}}.")
+        tags: str = dspy.OutputField(desc="JSON list of 10 tags: 3 broad (inbox management, customer support, B2B SaaS) + 7 specific.")
+        thumbnail_prompt: str = dspy.OutputField(desc="DALL-E prompt for thumbnail. Must show before/after state or visible problem. No logo only.")
+
+    class YouTubeIllustrationPrompts(dspy.Signature):
+        """Generate 6-10 DALL-E illustration prompts for an illustration-style video.
+        Each prompt must be prefixed with the brand style and show a real human situation with emotional body language.
+        No photorealistic renders, no stock-art figures, no UI elements, no text inside images."""
+
+        script: str = dspy.InputField(desc="Video script to generate scene illustrations for.")
+        pain_point: str = dspy.InputField(desc="ICP pain point — scenes should visually express this pain and its resolution.")
+        chapter_markers: str = dspy.InputField(desc="JSON chapter markers — one illustration per chapter beat.")
+
+        scene_prompts: str = dspy.OutputField(
+            desc=f"JSON list of 6-10 DALL-E prompts. Each prompt MUST start with: '{BRAND_STYLE_PREFIX}'. "
+            "Each scene shows a real human situation (person at desk overwhelmed, team in meeting, phone left unattended). "
+            "Emotional states via body language only — no text labels. No screenshots, no device mockups, no floating UI."
+        )
+
+    return {
+        "YouTubeLongFormScript": YouTubeLongFormScript,
+        "YouTubeShortScript": YouTubeShortScript,
+        "YouTubeSEOMetadata": YouTubeSEOMetadata,
+        "YouTubeIllustrationPrompts": YouTubeIllustrationPrompts,
+    }
+
+
+# Module-level references for direct import
+class YouTubeLongFormScript:
+    """Placeholder — use build_youtube_signatures(dspy) for the real DSPy signature."""
+    pass
+
+
+class YouTubeShortScript:
+    """Placeholder — use build_youtube_signatures(dspy) for the real DSPy signature."""
+    pass
+
+
+class YouTubeSEOMetadata:
+    """Placeholder — use build_youtube_signatures(dspy) for the real DSPy signature."""
+    pass
+
+
+class YouTubeIllustrationPrompts:
+    """Placeholder — use build_youtube_signatures(dspy) for the real DSPy signature."""
+    pass
