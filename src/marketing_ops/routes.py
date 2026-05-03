@@ -4,7 +4,7 @@ from src.settings import login_required_settings
 
 marketing_bp = Blueprint("marketing_ops", __name__)
 
-_VALID_SECTIONS = {"funnel", "content", "marketing", "campaigns", "linkedin"}
+_VALID_SECTIONS = {"funnel", "content", "marketing", "campaigns", "linkedin", "youtube"}
 _MARKETING_ROLES = {"owner", "admin"}
 
 # Sections that are restricted to Kalevent internal staff only
