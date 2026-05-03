@@ -75,7 +75,8 @@ Rule enforced at signature level: product name may not appear in `title` or with
 
 One row per named ICP pain point. Shared across YouTube, LinkedIn cadence, and blog post pipeline — single source of truth.
 
-**Dependency:** References `icp_configs` table — created by the LinkedIn cadence implementation. Not a new table.
+**New table:** `icp_pain_points` — requires `flask db migrate`.
+**Existing dependency:** `icp_config_id` FK points to `icp_configs`, which already exists (created by LinkedIn cadence). No migration needed for the parent.
 
 ```python
 class ICPPainPoint(db.Model):
@@ -292,13 +293,14 @@ Sent by `youtube.send_digest` at 8:30am. Three sections:
 
 | Item | Notes |
 |---|---|
-| `HEYGE_API_KEY` | HeyGen REST API key — new env var |
-| `HEYGE_AVATAR_ID` | Default avatar ID for InboxIQ brand voice |
-| `HEYGE_VOICE_ID` | Default voice ID |
-| `YOUTUBE_CLIENT_ID` | OAuth 2.0 client for YouTube Data API v3 |
-| `YOUTUBE_CLIENT_SECRET` | OAuth 2.0 secret |
-| `YOUTUBE_CHANNEL_ID` | Target channel for uploads |
-| `YOUTUBE_REFRESH_TOKEN` | Long-lived token for programmatic upload |
+| `HEYGEN_API_KEY` | HeyGen REST API key — PAYG, no subscription. Set in prod.env. |
+| `HEYGEN_AVATAR_ID` | `977b1ab85dba4eefb159a6072677effd` — Caroline (Public Avatar III, $1/min) |
+| `HEYGEN_AVATAR_LOOK` | `Caroline in Blue Suit` — professional look for B2B content |
+| `HEYGEN_VOICE_ID` | `41332f3d53e148aab6956b92d3e5503e` — Caroline Public (Natural, Explainer, Professional) |
+| `YOUTUBE_CLIENT_ID` | OAuth 2.0 client for YouTube Data API v3 — set up during implementation |
+| `YOUTUBE_CLIENT_SECRET` | OAuth 2.0 secret — set up during implementation |
+| `YOUTUBE_CHANNEL_ID` | Target channel for uploads — set up during implementation |
+| `YOUTUBE_REFRESH_TOKEN` | Long-lived token for programmatic upload — set up during implementation |
 
 ---
 
