@@ -61,10 +61,14 @@ def seed(account_id: int) -> None:
 
     icp_config = ICPConfig.query.filter_by(account_id=account_id).first()
     if not icp_config:
-        raise RuntimeError(
-            f"No ICPConfig found for account_id={account_id}. "
-            "Create an ICP config first via the settings UI."
-        )
+        icp_config = ICPConfig(account_id=account_id)
+        db.session.add(icp_config)
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
+        print(f"Created default ICPConfig for account_id={account_id}.")
 
     inserted = 0
     skipped = 0
