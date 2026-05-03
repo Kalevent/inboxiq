@@ -51,11 +51,10 @@ def _send_digest_core(account_id: int) -> dict:
 
     due = []
 
-    # Connection requests ready to send (pending with drafts)
+    # All pending connection requests — include those without drafts so nothing is silently dropped
     pending = db.session.query(LinkedInProspect).filter(
         LinkedInProspect.account_id == account_id,
         LinkedInProspect.status == "pending",
-        LinkedInProspect.msg_1_draft.isnot(None),
     ).all()
     for p in pending:
         due.append(_prospect_to_digest_item(p, "Send connection request", p.msg_1_draft))

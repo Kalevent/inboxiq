@@ -710,7 +710,12 @@ def send_linkedin_digest(to_email: str, prospects: list[dict], date_label: str) 
         company_name = _html.escape(p['company_name'])
         linkedin_url = _html.escape(p['linkedin_url'])
         action_label = _html.escape(p['action_label'])
-        msg_draft_html = _html.escape(p['msg_draft']).replace('\n', '<br>')
+        raw_draft = p['msg_draft']
+        msg_draft_html = (
+            _html.escape(raw_draft).replace('\n', '<br>')
+            if raw_draft
+            else '<span style="color:#f59e0b;">⚠ Draft not ready — message will be generated tonight. Visit the queue to draft manually.</span>'
+        )
         post_html = ""
         post_text = ""
         if p.get("suggested_post_title"):
@@ -741,7 +746,7 @@ def send_linkedin_digest(to_email: str, prospects: list[dict], date_label: str) 
             f"{p['name']} · {p['job_title']} · {p['company_name']}\n"
             f"{p['linkedin_url']}\n\n"
             f"Action: {p['action_label']}{post_text}\n\n"
-            f"{p['msg_draft']}\n\n"
+            f"{p['msg_draft'] or '[Draft not ready — visit queue to draft manually]'}\n\n"
             f"Mark as sent: {advance_url}\n"
         )
 
