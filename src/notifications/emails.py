@@ -928,3 +928,77 @@ def send_youtube_digest_email(
     except Exception:
         app.logger.exception({"event": "youtube_digest.send_failed", "to": to_email})
         return False
+
+
+def send_onboarding_video_email(to_email: str, recipient_name: str, video_url: str) -> bool:
+    """Send personalised onboarding video email. Returns True on success."""
+    app = current_app
+    host = app.config.get("SMTP_HOST")
+    port = app.config.get("SMTP_PORT")
+    user = app.config.get("SMTP_USER")
+    password = app.config.get("SMTP_PASSWORD")
+    use_tls = app.config.get("SMTP_USE_TLS", True)
+    use_ssl = app.config.get("SMTP_USE_SSL", False)
+    mail_from = app.config.get("MAIL_FROM", "noreply@kalevent.com")
+
+    if not host:
+        app.logger.info({"event": "email.disabled", "reason": "SMTP_HOST not configured", "to": to_email})
+        return False
+
+    first_name = recipient_name.split()[0] if recipient_name else "there"
+    subject = f"{first_name}, your personalised InboxIQ walkthrough is ready"
+
+    body = (
+        f"Hi {first_name},\n\n"
+        "Your personalised InboxIQ walkthrough video is ready.\n\n"
+        f"Watch your walkthrough → {video_url}\n\n"
+        "It covers:\n"
+        "• What InboxIQ is doing with your connected inbox right now\n"
+        "• What to expect in your first 24 hours\n"
+        "• How to get the most out of automated triage\n\n"
+        "Questions? Just reply to this email.\n\n"
+        "The InboxIQ team"
+    )
+
+    body_html = (
+        f"<p>Hi {first_name},</p>"
+        "<p>Your personalised InboxIQ walkthrough video is ready.</p>"
+        f'<p><a href="{video_url}" target="_blank" rel="noopener" '
+        'style="background:#6366f1;color:#fff;padding:12px 24px;border-radius:8px;'
+        'text-decoration:none;font-weight:600;display:inline-block;">'
+        "Watch your walkthrough &#8594;</a></p>"
+        "<p>It covers:</p>"
+        "<ul>"
+        "<li>What InboxIQ is doing with your connected inbox right now</li>"
+        "<li>What to expect in your first 24 hours</li>"
+        "<li>How to get the most out of automated triage</li>"
+        "</ul>"
+        "<p>Questions? Just reply to this email.</p>"
+        "<p>The InboxIQ team</p>"
+    )
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = mail_from
+    msg["To"] = to_email
+    msg.set_content(body)
+    msg.add_alternative(body_html, subtype="html")
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port) as server:
+                if user and password:
+                    server.login(user, password)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port) as server:
+                if use_tls:
+                    server.starttls()
+                if user and password:
+                    server.login(user, password)
+                server.send_message(msg)
+        app.logger.info({"event": "email.sent.onboarding_video", "to": to_email})
+        return True
+    except Exception as exc:
+        app.logger.warning({"event": "email.failed.onboarding_video", "to": to_email, "error": str(exc)})
+        return False
