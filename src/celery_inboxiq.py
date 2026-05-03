@@ -130,6 +130,10 @@ def make_celery(app) -> Celery:
     lead_discovery_max_leads = int(os.getenv("LEAD_DISCOVERY_MAX_LEADS", "50"))
     lead_discovery_hour = int(os.getenv("LEAD_DISCOVERY_HOUR", "2"))  # 2am daily
 
+    # YouTube cadence configuration
+    youtube_cadence_enabled = _parse_bool(os.getenv("YOUTUBE_CADENCE_ENABLED"), False)
+    youtube_account_id = int(os.getenv("YOUTUBE_ACCOUNT_ID", "0")) or None
+
     # Outreach follow-ups and reply detection
     outreach_enabled = _parse_bool(os.getenv("OUTREACH_ENABLED"), True)
 
@@ -409,6 +413,43 @@ def make_celery(app) -> Celery:
                 "schedule": crontab(hour=6, minute=0),
                 "options": {"queue": "inbox"},
             },
+            # YouTube cadence — script generation, render polling, publish, digest
+            **(
+                {
+                    "youtube_generate_scripts_1st": {
+                        "task": "youtube.generate_scripts",
+                        "schedule": crontab(day_of_month=1, hour=7, minute=0),
+                        "kwargs": {"account_id": youtube_account_id, "video_style": "avatar"},
+                        "options": {"queue": "content"},
+                    },
+                    "youtube_generate_scripts_15th": {
+                        "task": "youtube.generate_scripts",
+                        "schedule": crontab(day_of_month=15, hour=7, minute=0),
+                        "kwargs": {"account_id": youtube_account_id, "video_style": "illustration"},
+                        "options": {"queue": "content"},
+                    },
+                    "youtube_render_videos_daily": {
+                        "task": "youtube.render_videos",
+                        "schedule": crontab(hour=7, minute=30),
+                        "kwargs": {"account_id": youtube_account_id},
+                        "options": {"queue": "content"},
+                    },
+                    "youtube_publish_videos_daily": {
+                        "task": "youtube.publish_videos",
+                        "schedule": crontab(hour=8, minute=0),
+                        "kwargs": {"account_id": youtube_account_id},
+                        "options": {"queue": "content"},
+                    },
+                    "youtube_send_digest_daily": {
+                        "task": "youtube.send_digest",
+                        "schedule": crontab(hour=8, minute=30),
+                        "kwargs": {"account_id": youtube_account_id},
+                        "options": {"queue": "content"},
+                    },
+                }
+                if youtube_cadence_enabled
+                else {}
+            ),
         },
     )
 
@@ -426,7 +467,7 @@ def make_celery(app) -> Celery:
 
 app = create_app()
 celery = make_celery(app)
-celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox", "src.booking", "src.tasks.linkedin"])
+celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox", "src.booking", "src.tasks.linkedin", "src.tasks.youtube"])
 
 # Initialize OpenTelemetry for Celery workers
 from src.monitoring.observability import init_otel, get_tracer
