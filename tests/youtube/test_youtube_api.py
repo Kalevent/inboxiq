@@ -31,7 +31,7 @@ def test_list_videos_empty(client, app):
 def test_list_videos_returns_records(client, app, db):
     from src.models.leads import ICPPainPoint
     from src.models.marketing import ICPConfig
-    from src.models.campaigns import YouTubeVideo
+    from src.models.campaigns import YouTubeVideo, VideoRender
 
     with app.app_context():
         cfg = ICPConfig(account_id=2)
@@ -43,9 +43,13 @@ def test_list_videos_returns_records(client, app, db):
         )
         db.session.add(pp)
         db.session.flush()
+        render = VideoRender(account_id=2, programme="youtube", video_style="avatar", aspect_ratio="16:9")
+        db.session.add(render)
+        db.session.flush()
         v = YouTubeVideo(
             account_id=2, icp_pain_point_id=pp.id,
             video_type="long_form", video_style="avatar",
+            video_render_id=render.id,
             title="Never miss a support email", status="published",
         )
         db.session.add(v)
@@ -63,7 +67,7 @@ def test_list_videos_returns_records(client, app, db):
 def test_list_videos_status_filter(client, app, db):
     from src.models.leads import ICPPainPoint
     from src.models.marketing import ICPConfig
-    from src.models.campaigns import YouTubeVideo
+    from src.models.campaigns import YouTubeVideo, VideoRender
 
     with app.app_context():
         cfg = ICPConfig(account_id=2)
@@ -76,9 +80,13 @@ def test_list_videos_status_filter(client, app, db):
         db.session.add(pp)
         db.session.flush()
         for status in ("published", "rendering", "script_ready"):
+            render = VideoRender(account_id=2, programme="youtube", video_style="avatar", aspect_ratio="16:9")
+            db.session.add(render)
+            db.session.flush()
             db.session.add(YouTubeVideo(
                 account_id=2, icp_pain_point_id=pp.id,
-                video_type="long_form", video_style="avatar", status=status,
+                video_type="long_form", video_style="avatar",
+                video_render_id=render.id, status=status,
             ))
         db.session.commit()
 

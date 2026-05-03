@@ -289,7 +289,7 @@ class YouTubeVideo(db.Model):
     icp_pain_point_id = db.Column(db.String(64), db.ForeignKey("icp_pain_points.id", ondelete="RESTRICT"), nullable=False)
     parent_video_id = db.Column(db.String(64), db.ForeignKey("youtube_videos.id", ondelete="SET NULL"), nullable=True)
     video_render_id = db.Column(
-        db.String(64), db.ForeignKey("video_renders.id", ondelete="SET NULL"), nullable=True
+        db.String(64), db.ForeignKey("video_renders.id", ondelete="RESTRICT"), nullable=False
     )
 
     # Content
@@ -300,14 +300,6 @@ class YouTubeVideo(db.Model):
     description = db.Column(db.Text, nullable=True)
     tags = db.Column(db.JSON, nullable=True)
     thumbnail_prompt = db.Column(db.Text, nullable=True)
-
-    # Illustration frames (avatar style leaves these null)
-    illustration_prompts = db.Column(db.JSON, nullable=True)
-    dalle_frame_urls = db.Column(db.JSON, nullable=True)
-
-    # HeyGen
-    heygen_job_id = db.Column(db.String(128), nullable=True, unique=True)
-    heygen_render_url = db.Column(db.String(512), nullable=True)
 
     # YouTube
     youtube_video_id = db.Column(db.String(64), nullable=True)
@@ -322,8 +314,6 @@ class YouTubeVideo(db.Model):
     # Status + timing
     status = db.Column(db.String(32), nullable=False, server_default="script_pending")
     script_generated_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    render_submitted_at = db.Column(db.DateTime(timezone=True), nullable=True)
-    render_completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
     published_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     # Performance (refreshed daily by digest task)
