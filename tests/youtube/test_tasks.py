@@ -290,13 +290,56 @@ def test_send_digest_calls_email_function(app):
              patch("src.tasks.youtube.db") as mock_db:
 
             mock_db.session.query.return_value.filter.return_value.all.return_value = []
+            mock_db.session.query.return_value.join.return_value.filter.return_value.all.return_value = []
             mock_db.session.query.return_value.filter.return_value.scalar.return_value = 0
 
             import os
             os.environ["ADMIN_EMAILS"] = "admin@test.com"
 
             from src.tasks.youtube import send_digest
-            result = send_digest(account_id=2)
+            result = send_digest.run(account_id=2)
 
             assert result["status"] == "ok"
             mock_email.assert_called_once()
+
+
+def test_send_digest_marks_stale_renders_failed(app, db):
+    from src.models.campaigns import YouTubeVideo, VideoRender
+    from unittest.mock import patch
+    from datetime import timedelta
+    import os
+
+    with app.app_context():
+        old_submitted_at = datetime.now(timezone.utc) - timedelta(hours=25)
+        render = VideoRender(
+            account_id=2, programme="youtube", video_style="avatar",
+            aspect_ratio="16:9", script="Script.", status="rendering",
+            render_submitted_at=old_submitted_at,
+        )
+        db.session.add(render)
+        db.session.flush()
+        video = YouTubeVideo(
+            account_id=2, icp_pain_point_id="pain-1", video_type="long_form",
+            video_style="avatar", video_render_id=render.id,
+            utm_slug="yt-long-stale-test", utm_medium="long_form",
+            utm_campaign="stale-test", status="rendering",
+        )
+        db.session.add(video)
+        db.session.commit()
+        render_id = render.id
+        video_id = video.id
+
+    os.environ["ADMIN_EMAILS"] = "admin@test.com"
+
+    with patch("src.tasks.youtube.send_youtube_digest_email"), \
+         patch("src.tasks.youtube.youtube_mcp"):
+
+        with app.app_context():
+            from src.tasks.youtube import send_digest
+            send_digest.run(account_id=2)
+
+        with app.app_context():
+            r = db.session.get(VideoRender, render_id)
+            assert r.status == "failed"
+            v = db.session.get(YouTubeVideo, video_id)
+            assert v.status == "failed"

@@ -540,8 +540,9 @@ def send_digest(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
         for v in published
     ]
 
-    pipeline = (
-        db.session.query(YouTubeVideo)
+    pipeline_rows = (
+        db.session.query(YouTubeVideo, VideoRender)
+        .join(VideoRender, YouTubeVideo.video_render_id == VideoRender.id)
         .filter(
             YouTubeVideo.account_id == account_id,
             YouTubeVideo.status.notin_(["published", "failed"]),
@@ -551,8 +552,12 @@ def send_digest(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
 
     # Flag stale renders (>24h)
     stale_cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-    for video in pipeline:
-        if video.status == "rendering" and video.render_submitted_at and video.render_submitted_at < stale_cutoff:
+    for video, render in pipeline_rows:
+        submitted_at = render.render_submitted_at
+        if submitted_at is not None and submitted_at.tzinfo is None:
+            submitted_at = submitted_at.replace(tzinfo=timezone.utc)
+        if render.status == "rendering" and submitted_at and submitted_at < stale_cutoff:
+            render.status = "failed"
             video.status = "failed"
     try:
         db.session.commit()
@@ -561,7 +566,7 @@ def send_digest(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
 
     pipeline_data = [
         {"id": v.id, "title": v.title, "status": v.status, "type": v.video_type}
-        for v in pipeline
+        for v, _ in pipeline_rows
     ]
 
     youtube_visitors = (
