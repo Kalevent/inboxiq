@@ -1,3 +1,4 @@
+import html
 import smtplib
 from email.message import EmailMessage
 from typing import Optional
@@ -946,6 +947,8 @@ def send_onboarding_video_email(to_email: str, recipient_name: str, video_url: s
         return False
 
     first_name = recipient_name.split()[0] if recipient_name else "there"
+    safe_first_name = html.escape(first_name)
+    safe_video_url = html.escape(video_url)
     subject = f"{first_name}, your personalised InboxIQ walkthrough is ready"
 
     body = (
@@ -961,9 +964,9 @@ def send_onboarding_video_email(to_email: str, recipient_name: str, video_url: s
     )
 
     body_html = (
-        f"<p>Hi {first_name},</p>"
+        f"<p>Hi {safe_first_name},</p>"
         "<p>Your personalised InboxIQ walkthrough video is ready.</p>"
-        f'<p><a href="{video_url}" target="_blank" rel="noopener" '
+        f'<p><a href="{safe_video_url}" target="_blank" rel="noopener" '
         'style="background:#6366f1;color:#fff;padding:12px 24px;border-radius:8px;'
         'text-decoration:none;font-weight:600;display:inline-block;">'
         "Watch your walkthrough &#8594;</a></p>"
