@@ -361,6 +361,7 @@ class OnboardingVideo(db.Model):
     recipient_name = db.Column(db.String(128), nullable=False)
     recipient_company = db.Column(db.String(128), nullable=True)
     email_sent_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    banner_dismissed_at = db.Column(db.DateTime(timezone=True), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
 
 

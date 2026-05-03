@@ -760,3 +760,36 @@ class YouTubeSEOMetadata:
 class YouTubeIllustrationPrompts:
     """Placeholder — use build_youtube_signatures(dspy) for the real DSPy signature."""
     pass
+
+
+def build_onboarding_signatures(dspy: Any) -> Dict[str, Any]:
+    """Return the OnboardingVideoScript DSPy signature."""
+
+    class OnboardingVideoScript(dspy.Signature):
+        """Generate a personalised onboarding video script for a new InboxIQ customer.
+        Three beats: personalised welcome (10s), what InboxIQ is now doing with their
+        connected inbox (40s), what to expect in day 1 (30s). Warm, direct, under 90 seconds."""
+
+        recipient_name: str = dspy.InputField(desc="First name or full name of the new customer.")
+        recipient_company: str = dspy.InputField(desc="Company name. Use 'your company' if blank.")
+        referral_source: str = dspy.InputField(
+            desc="How they heard about InboxIQ (e.g. 'LinkedIn', 'Google search'). Use 'us' if blank."
+        )
+
+        script: str = dspy.OutputField(
+            desc="Full spoken script. Opens with '[Name], welcome to InboxIQ.' Three beats: welcome (10s), "
+            "what is happening now (40s), what to expect (30s). Under 90 seconds. No filler phrases."
+        )
+        hook_line: str = dspy.OutputField(
+            desc="First spoken sentence. Must address recipient by name and welcome them."
+        )
+        cta_line: str = dspy.OutputField(
+            desc="Final spoken sentence. One ask: go to the dashboard and check your first triaged emails."
+        )
+
+    return {"OnboardingVideoScript": OnboardingVideoScript}
+
+
+class OnboardingVideoScript:
+    """Placeholder — use build_onboarding_signatures(dspy) for the real DSPy signature."""
+    pass
