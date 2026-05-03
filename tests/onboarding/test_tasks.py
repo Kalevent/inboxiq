@@ -108,6 +108,87 @@ def test_send_onboarding_video_email_empty_name_uses_fallback(app):
         assert captured["subject"].startswith("there,")
 
 
+def test_queue_onboarding_video_creates_render_and_record(app, db):
+    from src.models.campaigns import VideoRender, OnboardingVideo
+    from unittest.mock import patch, MagicMock
+
+    mock_account = MagicMock()
+    mock_account.name = "Acme Corp"
+    mock_account.referral_source = "LinkedIn"
+
+    mock_user = MagicMock()
+    mock_user.name = "Sarah Jones"
+    mock_user.email = "sarah@acme.com"
+
+    with app.app_context():
+        with patch("src.tasks.onboarding_video.Account") as mock_account_cls, \
+             patch("src.tasks.onboarding_video.User") as mock_user_cls, \
+             patch("src.tasks.onboarding_video._run_onboarding_script_generation") as mock_dspy, \
+             patch("src.tasks.onboarding_video.heygen_mcp") as mock_heygen:
+
+            mock_account_cls.query.get.return_value = mock_account
+            mock_user_cls.query.get.return_value = mock_user
+            mock_dspy.return_value = {
+                "script": "Sarah, welcome to InboxIQ.",
+                "hook_line": "Sarah, welcome.",
+                "cta_line": "Check your dashboard now.",
+            }
+            mock_heygen.render_video.return_value = {"status": "submitted", "job_id": "job-onboard-001"}
+
+            from src.tasks.onboarding_video import queue_onboarding_video
+            result = queue_onboarding_video.run(account_id=2, user_id=1)
+
+        assert result["status"] == "ok"
+        assert "render_id" in result
+
+        render = db.session.query(VideoRender).filter_by(account_id=2, programme="onboarding").first()
+        assert render is not None
+        assert render.heygen_job_id == "job-onboard-001"
+        assert render.status == "rendering"
+        assert render.render_submitted_at is not None
+        onboarding = db.session.query(OnboardingVideo).filter_by(account_id=2).first()
+        assert onboarding is not None
+        assert onboarding.recipient_name == "Sarah Jones"
+        assert onboarding.recipient_company == "Acme Corp"
+
+
+def test_queue_onboarding_video_is_idempotent(app, db):
+    from src.models.campaigns import VideoRender, OnboardingVideo
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="onboarding", video_style="avatar", aspect_ratio="16:9"
+        )
+        db.session.add(render)
+        db.session.flush()
+        onboarding = OnboardingVideo(
+            account_id=2, video_render_id=render.id, recipient_user_id=1, recipient_name="Sarah"
+        )
+        db.session.add(onboarding)
+        db.session.commit()
+
+    with app.app_context():
+        with patch("src.tasks.onboarding_video.heygen_mcp") as mock_heygen:
+            from src.tasks.onboarding_video import queue_onboarding_video
+            result = queue_onboarding_video.run(account_id=2, user_id=1)
+
+        assert result["status"] == "skipped"
+        mock_heygen.render_video.assert_not_called()
+
+
+def test_queue_onboarding_video_skips_when_account_missing(app, db):
+    with app.app_context():
+        with patch("src.tasks.onboarding_video.Account") as mock_account_cls, \
+             patch("src.tasks.onboarding_video.heygen_mcp") as mock_heygen:
+            mock_account_cls.query.get.return_value = None
+
+            from src.tasks.onboarding_video import queue_onboarding_video
+            result = queue_onboarding_video.run(account_id=999, user_id=1)
+
+        assert result["status"] == "skipped"
+        mock_heygen.render_video.assert_not_called()
+
+
 def test_send_onboarding_video_email_returns_false_on_smtp_error(app):
     with app.app_context():
         app.config["SMTP_HOST"] = "smtp.example.com"
