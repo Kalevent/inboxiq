@@ -98,11 +98,11 @@ Body: brief text introducing the video, a prominent CTA button ("Watch your walk
 
 ### Dashboard route
 
-The dashboard route (`src/settings/routes.py` or equivalent) queries:
+The dashboard route is `dashboard_home()` in `src/app.py` (line 647), which renders `dashboard_welcome.html`. Add a query before the `render_template` call:
 ```python
-OnboardingVideo.query.filter_by(account_id=current_account_id).first()
+OnboardingVideo.query.filter_by(account_id=account_id).first()
 ```
-and passes the result to the dashboard template as `onboarding_video`. The template renders the banner and card only when:
+Pass the result as `onboarding_video=onboarding_video` to `render_template`. The template renders the banner and card only when:
 - `onboarding_video` is not None
 - `onboarding_video.email_sent_at` is not None (video is delivered)
 - `onboarding_video.banner_dismissed_at` is None (not yet dismissed)
