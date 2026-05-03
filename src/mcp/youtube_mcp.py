@@ -165,6 +165,8 @@ def post_pinned_comment(video_id: str, comment_text: str) -> Dict[str, Any]:
     """Post a comment on the video and pin it."""
     if not os.getenv("YOUTUBE_CLIENT_ID"):
         return {"status": "error", "error": "YOUTUBE_CLIENT_ID not configured"}
+    if not os.getenv("YOUTUBE_CHANNEL_ID"):
+        return {"status": "error", "error": "YOUTUBE_CHANNEL_ID not configured"}
 
     try:
         youtube = _build_youtube_client()
