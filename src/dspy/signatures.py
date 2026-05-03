@@ -634,31 +634,6 @@ def build_whitepaper_writer(dspy: Any) -> Any:
     return WhitepaperWriterModule()
 
 
-def build_meta_description_generator(dspy: Any) -> Any:
-    """Generate a concise SEO meta description for a blog post."""
-
-    class MetaDescriptionSignature(dspy.Signature):
-        """Write a compelling SEO meta description for a B2B SaaS blog post.
-        Output exactly one sentence, 140-160 characters, no quotes."""
-
-        title = dspy.InputField(desc="Blog post title")
-        excerpt = dspy.InputField(desc="First 300 characters of the post body")
-        primary_keyword = dspy.InputField(desc="Target SEO keyword (may be empty)")
-        meta_description = dspy.OutputField(
-            desc="SEO meta description: 140-160 chars, includes the keyword naturally, ends with a period"
-        )
-
-    class MetaDescriptionModule(dspy.Module):
-        def __init__(self) -> None:
-            super().__init__()
-            self.predict = dspy.Predict(MetaDescriptionSignature)
-
-        def forward(self, title: str, excerpt: str, primary_keyword: str = "") -> Any:
-            return self.predict(title=title, excerpt=excerpt, primary_keyword=primary_keyword)
-
-    return MetaDescriptionModule()
-
-
 def build_blog_quality_check(dspy: Any) -> Any:
     """DSPy module that scores a blog post and decides ready vs draft."""
 
@@ -688,16 +663,17 @@ def build_blog_quality_check(dspy: Any) -> Any:
 
 # ── YouTube Cadence Signatures ─────────────────────────────────────────────
 
+YOUTUBE_ILLUSTRATION_BRAND_STYLE = (
+    "Editorial illustration, hand-drawn ink lines with watercolour wash, "
+    "warm muted palette (navy, terracotta, cream), textured paper feel, "
+    "loose gestural linework, human figures with natural proportions, "
+    "professional magazine quality, no text, no UI chrome, no 3D render, "
+    "no gradients, no gloss — think New Yorker editorial, not stock photo. "
+)
+
+
 def build_youtube_signatures(dspy: Any) -> Dict[str, Any]:
     """Return all four YouTube cadence DSPy signatures."""
-
-    BRAND_STYLE_PREFIX = (
-        "Editorial illustration, hand-drawn ink lines with watercolour wash, "
-        "warm muted palette (navy, terracotta, cream), textured paper feel, "
-        "loose gestural linework, human figures with natural proportions, "
-        "professional magazine quality, no text, no UI chrome, no 3D render, "
-        "no gradients, no gloss — think New Yorker editorial, not stock photo. "
-    )
 
     class YouTubeLongFormScript(dspy.Signature):
         """Generate a pain-point-first YouTube long form script (8-12 min) for a specific ICP persona.
@@ -741,6 +717,7 @@ def build_youtube_signatures(dspy: Any) -> Dict[str, Any]:
         tags: str = dspy.OutputField(desc="JSON list of 10 tags: 3 broad (inbox management, customer support, B2B SaaS) + 7 specific.")
         thumbnail_prompt: str = dspy.OutputField(desc="DALL-E prompt for thumbnail. Must show before/after state or visible problem. No logo only.")
 
+    # brand_style_prefix is a module constant, not an input — prevents off-brand illustrations
     class YouTubeIllustrationPrompts(dspy.Signature):
         """Generate 6-10 DALL-E illustration prompts for an illustration-style video.
         Each prompt must be prefixed with the brand style and show a real human situation with emotional body language.
@@ -751,7 +728,7 @@ def build_youtube_signatures(dspy: Any) -> Dict[str, Any]:
         chapter_markers: str = dspy.InputField(desc="JSON chapter markers — one illustration per chapter beat.")
 
         scene_prompts: str = dspy.OutputField(
-            desc=f"JSON list of 6-10 DALL-E prompts. Each prompt MUST start with: '{BRAND_STYLE_PREFIX}'. "
+            desc=f"JSON list of 6-10 DALL-E prompts. Each prompt MUST start with: '{YOUTUBE_ILLUSTRATION_BRAND_STYLE}'. "
             "Each scene shows a real human situation (person at desk overwhelmed, team in meeting, phone left unattended). "
             "Emotional states via body language only — no text labels. No screenshots, no device mockups, no floating UI."
         )
