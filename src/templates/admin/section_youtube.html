@@ -1,1 +1,325 @@
-<div id="section-youtube"></div>
+<div class="admin-section" id="section-youtube">
+  <div class="content-container">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-100">YouTube Cadence</h2>
+        <p class="text-sm text-slate-400 mt-1">Auto-published · UTM-tracked · Attribution via /funnel/dashboard</p>
+      </div>
+    </div>
+
+    <!-- Pipeline Table -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Video Pipeline</h3>
+        <div class="flex gap-2">
+          <select id="yt-status-filter" onchange="loadYouTubeVideos()" class="bg-slate-800 border border-slate-700 text-slate-300 text-sm rounded-lg px-3 py-1.5">
+            <option value="">All statuses</option>
+            <option value="script_pending">Script pending</option>
+            <option value="script_ready">Script ready</option>
+            <option value="illustrating">Illustrating</option>
+            <option value="illustration_ready">Illustration ready</option>
+            <option value="rendering">Rendering</option>
+            <option value="render_complete">Render complete</option>
+            <option value="publishing">Publishing</option>
+            <option value="published">Published</option>
+            <option value="failed">Failed</option>
+          </select>
+          <select id="yt-type-filter" onchange="loadYouTubeVideos()" class="bg-slate-800 border border-slate-700 text-slate-300 text-sm rounded-lg px-3 py-1.5">
+            <option value="">All types</option>
+            <option value="long_form">Long form</option>
+            <option value="short">Short</option>
+          </select>
+        </div>
+      </div>
+      <div class="overflow-x-auto rounded-lg border border-slate-800">
+        <table class="w-full text-sm text-slate-300">
+          <thead class="bg-slate-900 text-slate-400 text-xs uppercase">
+            <tr>
+              <th class="px-4 py-3 text-left">Title</th>
+              <th class="px-4 py-3 text-left">Type</th>
+              <th class="px-4 py-3 text-left">Style</th>
+              <th class="px-4 py-3 text-left">Status</th>
+              <th class="px-4 py-3 text-left">Pain Point</th>
+              <th class="px-4 py-3 text-right">Views</th>
+              <th class="px-4 py-3 text-right">Clicks</th>
+              <th class="px-4 py-3 text-left">Published</th>
+            </tr>
+          </thead>
+          <tbody id="yt-pipeline-tbody">
+            <tr><td colspan="8" class="px-4 py-6 text-center text-slate-500">Loading&#8230;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Settings card with tabs -->
+    <div class="mt-10 border border-slate-800 rounded-lg">
+      <!-- Tab bar -->
+      <div class="flex border-b border-slate-800">
+        <button id="yt-tab-btn-pain" onclick="switchYtTab('pain')"
+          class="px-5 py-3 text-sm font-medium text-indigo-400 border-b-2 border-indigo-500 -mb-px">
+          Pain Points
+        </button>
+        <button id="yt-tab-btn-triggers" onclick="switchYtTab('triggers')"
+          class="px-5 py-3 text-sm font-medium text-slate-400 border-b-2 border-transparent -mb-px hover:text-slate-200">
+          Triggers
+        </button>
+      </div>
+
+      <!-- Pain Points tab -->
+      <div id="yt-tab-pain" class="p-5">
+        <p class="text-xs text-slate-500 mb-4">These pain points drive script generation. Higher priority = used first.</p>
+        <div class="overflow-x-auto rounded border border-slate-800 mb-4">
+          <table class="w-full text-sm text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 text-xs uppercase">
+              <tr>
+                <th class="px-4 py-2 text-left">Pain Point</th>
+                <th class="px-4 py-2 text-left">Persona</th>
+                <th class="px-4 py-2 text-right">Priority</th>
+              </tr>
+            </thead>
+            <tbody id="yt-pain-tbody">
+              <tr><td colspan="3" class="px-4 py-4 text-center text-slate-500">Loading&#8230;</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Add pain point form -->
+        <form id="yt-add-pain-form" onsubmit="submitAddPainPoint(event)" class="space-y-3 max-w-xl">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Pain Point *</label>
+              <input id="yt-pp-text" type="text" required placeholder="Support emails pile up unread"
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Consequence *</label>
+              <input id="yt-pp-consequence" type="text" required placeholder="Customers churn before Monday"
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Persona</label>
+              <input id="yt-pp-persona" type="text" placeholder="Head of Support"
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Priority (higher = used first)</label>
+              <input id="yt-pp-priority" type="number" value="5" min="0" max="100"
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
+              + Add Pain Point
+            </button>
+            <span id="yt-pp-msg" class="hidden text-sm"></span>
+          </div>
+        </form>
+      </div>
+
+      <!-- Triggers tab (hidden by default) -->
+      <div id="yt-tab-triggers" class="p-5 hidden">
+        <p class="text-xs text-slate-500 mb-4">Run cadence tasks on demand. Useful after adding a new pain point or fixing a stuck render.</p>
+        <div class="space-y-3 max-w-sm">
+          <div>
+            <button onclick="triggerTask('generate_scripts')"
+              id="yt-trigger-generate_scripts"
+              class="w-full text-left px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm rounded-lg transition-colors">
+              &#9654; Generate Scripts now
+            </button>
+          </div>
+          <div>
+            <button onclick="triggerTask('render_videos')"
+              id="yt-trigger-render_videos"
+              class="w-full text-left px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm rounded-lg transition-colors">
+              &#9654; Submit pending renders
+            </button>
+          </div>
+          <div>
+            <button onclick="triggerTask('publish_videos')"
+              id="yt-trigger-publish_videos"
+              class="w-full text-left px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm rounded-lg transition-colors">
+              &#9654; Publish render_complete videos
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── CSRF helper (same pattern as section_linkedin.html) ─────────────────────
+function _ytCsrfToken() {
+  const name = 'csrf_access_token=';
+  const ca = decodeURIComponent(document.cookie).split(';');
+  for (let c of ca) {
+    c = c.trimStart();
+    if (c.startsWith(name)) return c.substring(name.length);
+  }
+  return null;
+}
+const _ytHeaders = () => {
+  const h = { 'Content-Type': 'application/json' };
+  const csrf = _ytCsrfToken();
+  if (csrf) h['X-CSRF-TOKEN'] = csrf;
+  return h;
+};
+
+// ── Status badge config ─────────────────────────────────────────────────────
+const _YT_STATUS = {
+  script_pending:      { label: 'Script pending',      cls: 'bg-slate-700 text-slate-300' },
+  script_ready:        { label: 'Script ready',        cls: 'bg-violet-900 text-violet-300' },
+  illustrating:        { label: 'Illustrating',        cls: 'bg-violet-900 text-violet-300' },
+  illustration_ready:  { label: 'Illus. ready',        cls: 'bg-violet-800 text-violet-200' },
+  rendering:           { label: 'Rendering',           cls: 'bg-orange-900 text-orange-300' },
+  render_complete:     { label: 'Render complete',     cls: 'bg-blue-900 text-blue-300' },
+  publishing:          { label: 'Publishing',          cls: 'bg-blue-800 text-blue-200' },
+  published:           { label: 'Published',           cls: 'bg-emerald-900 text-emerald-400' },
+  failed:              { label: 'Failed',              cls: 'bg-red-900 text-red-400' },
+};
+const _YT_TYPE = {
+  long_form: { label: 'Long', cls: 'bg-indigo-900 text-indigo-300' },
+  short:     { label: 'Short', cls: 'bg-sky-900 text-sky-300' },
+};
+const _YT_STYLE = {
+  avatar:        { label: 'Avatar', cls: 'bg-sky-900 text-sky-300' },
+  illustration:  { label: 'Illus.', cls: 'bg-violet-900 text-violet-300' },
+};
+
+// ── Pipeline table ──────────────────────────────────────────────────────────
+async function loadYouTubeVideos() {
+  const status = document.getElementById('yt-status-filter').value;
+  const type = document.getElementById('yt-type-filter').value;
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (type) params.set('type', type);
+  const url = `/api/v1/youtube/videos${params.toString() ? '?' + params : ''}`;
+  const resp = await fetch(url, { credentials: 'include', headers: _ytHeaders() });
+  if (!resp.ok) return;
+  const videos = await resp.json();
+  const tbody = document.getElementById('yt-pipeline-tbody');
+  if (!videos.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-6 text-center text-slate-500">No videos in pipeline</td></tr>';
+    return;
+  }
+  tbody.innerHTML = videos.map(v => {
+    const st = _YT_STATUS[v.status] || { label: v.status, cls: 'bg-slate-700 text-slate-300' };
+    const tp = _YT_TYPE[v.video_type] || { label: v.video_type, cls: 'bg-slate-700 text-slate-300' };
+    const sy = _YT_STYLE[v.video_style] || { label: v.video_style, cls: 'bg-slate-700 text-slate-300' };
+    const titleCell = v.youtube_url
+      ? `<a href="${v.youtube_url}" target="_blank" class="text-indigo-400 hover:underline">${v.title || '&#8212;'}</a>`
+      : `<span class="text-slate-300">${v.title || '&#8212;'}</span>`;
+    const pubDate = v.published_at ? new Date(v.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '&#8212;';
+    return `<tr class="border-t border-slate-800 hover:bg-slate-800/40">
+      <td class="px-4 py-3">${titleCell}</td>
+      <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${tp.cls}">${tp.label}</span></td>
+      <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${sy.cls}">${sy.label}</span></td>
+      <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${st.cls}">${st.label}</span></td>
+      <td class="px-4 py-3 text-slate-400 text-xs">${v.pain_point || '&#8212;'}</td>
+      <td class="px-4 py-3 text-right text-slate-300">${v.view_count ?? '&#8212;'}</td>
+      <td class="px-4 py-3 text-right text-slate-300">${v.click_count ?? '&#8212;'}</td>
+      <td class="px-4 py-3 text-slate-400 text-xs">${pubDate}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Pain Points table ───────────────────────────────────────────────────────
+async function loadPainPoints() {
+  const resp = await fetch('/api/v1/youtube/pain_points', { credentials: 'include', headers: _ytHeaders() });
+  if (!resp.ok) return;
+  const items = await resp.json();
+  const tbody = document.getElementById('yt-pain-tbody');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-4 text-center text-slate-500">No pain points yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(pp =>
+    `<tr class="border-t border-slate-800">
+      <td class="px-4 py-2.5 text-slate-300">${pp.pain_point}</td>
+      <td class="px-4 py-2.5 text-slate-400 text-xs">${pp.persona || '&#8212;'}</td>
+      <td class="px-4 py-2.5 text-right text-slate-400">${pp.priority}</td>
+    </tr>`
+  ).join('');
+}
+
+// ── Tab switching ───────────────────────────────────────────────────────────
+function switchYtTab(tab) {
+  const tabs = ['pain', 'triggers'];
+  tabs.forEach(t => {
+    document.getElementById(`yt-tab-${t}`).classList.toggle('hidden', t !== tab);
+    const btn = document.getElementById(`yt-tab-btn-${t}`);
+    if (t === tab) {
+      btn.classList.add('text-indigo-400', 'border-indigo-500');
+      btn.classList.remove('text-slate-400', 'border-transparent');
+    } else {
+      btn.classList.remove('text-indigo-400', 'border-indigo-500');
+      btn.classList.add('text-slate-400', 'border-transparent');
+    }
+  });
+}
+
+// ── Add pain point ──────────────────────────────────────────────────────────
+async function submitAddPainPoint(e) {
+  e.preventDefault();
+  const msgEl = document.getElementById('yt-pp-msg');
+  msgEl.classList.add('hidden');
+  const payload = {
+    pain_point: document.getElementById('yt-pp-text').value.trim(),
+    consequence: document.getElementById('yt-pp-consequence').value.trim(),
+    persona: document.getElementById('yt-pp-persona').value.trim(),
+    priority: parseInt(document.getElementById('yt-pp-priority').value) || 5,
+  };
+  const resp = await fetch('/api/v1/youtube/pain_points', {
+    method: 'POST', headers: _ytHeaders(), credentials: 'include', body: JSON.stringify(payload),
+  });
+  if (resp.ok) {
+    document.getElementById('yt-add-pain-form').reset();
+    document.getElementById('yt-pp-priority').value = '5';
+    await loadPainPoints();
+    msgEl.textContent = 'Saved';
+    msgEl.className = 'text-green-400 text-sm';
+  } else {
+    const d = await resp.json().catch(() => ({}));
+    msgEl.textContent = d.error || 'Failed — try again';
+    msgEl.className = 'text-red-400 text-sm';
+  }
+  msgEl.classList.remove('hidden');
+  setTimeout(() => msgEl.classList.add('hidden'), 3000);
+}
+
+// ── Manual triggers ─────────────────────────────────────────────────────────
+async function triggerTask(taskName) {
+  const btn = document.getElementById(`yt-trigger-${taskName}`);
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Queuing…';
+  const resp = await fetch(`/api/v1/youtube/trigger/${taskName}`, {
+    method: 'POST', headers: _ytHeaders(), credentials: 'include',
+  });
+  if (resp.ok) {
+    btn.textContent = '✓ Queued';
+    btn.classList.add('text-green-400');
+  } else {
+    btn.textContent = '✗ Failed';
+    btn.classList.add('text-red-400');
+  }
+  setTimeout(() => {
+    btn.textContent = original;
+    btn.disabled = false;
+    btn.classList.remove('text-green-400', 'text-red-400');
+  }, 2000);
+}
+
+// ── Section activation ──────────────────────────────────────────────────────
+document.addEventListener('sectionChange', (e) => {
+  if (e.detail === 'youtube') {
+    loadYouTubeVideos();
+    loadPainPoints();
+  }
+});
+</script>
