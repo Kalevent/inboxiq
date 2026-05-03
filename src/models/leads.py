@@ -284,3 +284,22 @@ class FunnelMetricsDaily(db.Model):
         }
 
 
+class ICPPainPoint(db.Model):
+    """ICP pain points — shared source of truth for YouTube, LinkedIn, and blog pipelines."""
+    __tablename__ = "icp_pain_points"
+    __table_args__ = (
+        db.Index("idx_icp_pain_points_account", "account_id"),
+        db.Index("idx_icp_pain_points_priority", "account_id", "priority"),
+    )
+
+    id            = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id    = db.Column(db.Integer, nullable=False)
+    icp_config_id = db.Column(db.String(64), db.ForeignKey("icp_configs.id"), nullable=False)
+
+    pain_point    = db.Column(db.Text, nullable=False)
+    consequence   = db.Column(db.Text, nullable=False)
+    persona       = db.Column(db.String(255), nullable=True)
+    priority      = db.Column(db.Integer, nullable=False, default=0)
+    active        = db.Column(db.Boolean, nullable=False, default=True)
+
+    created_at    = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())

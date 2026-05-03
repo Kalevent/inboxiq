@@ -8,7 +8,7 @@ from src.models.core import Account, User, InboxConnection, AccountFeatureFlags,
 from src.models.auth import AuthEvent, Passkey, TOTPDevice, AuditLog
 from src.models.tickets import Ticket, TicketEmbedding, TriageLabelConfig, DraftReplyFeedback, TriageConfig, SenderProfile, ClassificationCorrection
 from src.models.ai import DspyTrainingMetric, AgentEvent, AgentModel, MCPServerCatalog
-from src.models.leads import Lead, LeadFunnelStage, LeadEngagementEvent, LeadAttribution, FunnelMetricsDaily
+from src.models.leads import Lead, LeadFunnelStage, LeadEngagementEvent, LeadAttribution, FunnelMetricsDaily, ICPPainPoint
 from src.models.content import BlogPost, KBIntegration, KBArticle, KBArticleEmbedding, GeneratedContent, PitchedBlogTopic
 from src.models.campaigns import CampaignSender, HunterDomainCache, EmailCampaign, EmailOutreach, NurtureEmailSend, LinkedInProspect
 from src.models.automation import AutomationStudioWaitlist, AutomationRule, AutomationRuleExecution, WebhookProvider, AutomationSuggestion, ApprovalPolicy
@@ -32,7 +32,7 @@ __all__ = [
     # ai
     "DspyTrainingMetric", "AgentEvent", "AgentModel", "MCPServerCatalog",
     # leads
-    "Lead", "LeadFunnelStage", "LeadEngagementEvent", "LeadAttribution", "FunnelMetricsDaily",
+    "Lead", "LeadFunnelStage", "LeadEngagementEvent", "LeadAttribution", "FunnelMetricsDaily", "ICPPainPoint",
     # content
     "BlogPost", "KBIntegration", "KBArticle", "KBArticleEmbedding", "GeneratedContent", "PitchedBlogTopic",
     # campaigns
