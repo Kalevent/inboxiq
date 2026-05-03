@@ -404,6 +404,11 @@ def make_celery(app) -> Celery:
                 "schedule": crontab(hour=8, minute=0),
                 "options": {"queue": "inbox"},
             },
+            "linkedin_expire_pending_connections": {
+                "task": "linkedin.expire_pending_connections",
+                "schedule": crontab(hour=6, minute=0),
+                "options": {"queue": "inbox"},
+            },
         },
     )
 

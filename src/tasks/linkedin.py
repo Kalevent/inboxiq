@@ -166,3 +166,31 @@ def send_digest_task():
     """Send today's LinkedIn action digest email."""
     for account_id in _all_account_ids():
         _send_digest_core(account_id)
+
+
+@shared_task(name="linkedin.expire_pending_connections")
+def expire_pending_connections():
+    """Disqualify connection requests that have not been accepted within 21 days."""
+    from datetime import datetime, timezone, timedelta
+    from src.models.campaigns import LinkedInProspect
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=21)
+    expired = db.session.query(LinkedInProspect).filter(
+        LinkedInProspect.status == "connection_sent",
+        LinkedInProspect.connection_sent_at <= cutoff,
+    ).all()
+
+    count = 0
+    for prospect in expired:
+        try:
+            prospect.status = "disqualified"
+            notes = prospect.notes or ""
+            prospect.notes = notes + "\n[auto-disqualified] Connection request not accepted after 21 days."
+            db.session.commit()
+            count += 1
+        except Exception:
+            db.session.rollback()
+            log.exception("linkedin.expire_pending_connections: failed to disqualify prospect %s", prospect.id)
+
+    log.info("linkedin.expire_pending_connections: disqualified %d prospects", count)
+    return {"disqualified": count}
