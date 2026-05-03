@@ -24,6 +24,8 @@ from src.extensions import db
 from src.models.campaigns import YouTubeVideo
 from src.models.leads import ICPPainPoint, LeadAttribution
 from src.models.content import BlogPost
+from src.mcp import heygen_mcp, youtube_mcp
+from src.notifications.emails import send_youtube_digest_email
 
 logger = logging.getLogger(__name__)
 
@@ -259,8 +261,6 @@ def _generate_dalle_frames(prompts: list, account_id: int) -> list:
 
 @shared_task(name="youtube.render_videos")
 def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
-    from src.mcp import heygen_mcp
-
     avatar_id = os.getenv("HEYGEN_AVATAR_ID", "")
     voice_id = os.getenv("HEYGEN_VOICE_ID", "")
     submitted = 0
@@ -366,8 +366,6 @@ def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
 
 @shared_task(name="youtube.publish_videos")
 def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
-    from src.mcp import youtube_mcp
-
     base_url = "https://inboxiq.com/start"
     published = 0
     failed = 0
@@ -457,8 +455,6 @@ def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
 @shared_task(name="youtube.send_digest")
 def send_digest(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
     """Daily 8:30am. Email admin: published this week, pipeline status, funnel attribution."""
-    from src.notifications.emails import send_youtube_digest_email
-
     admin_email = os.getenv("ADMIN_EMAILS", "").split(",")[0].strip()
     if not admin_email:
         return {"status": "skipped", "reason": "no ADMIN_EMAILS configured"}
@@ -476,7 +472,6 @@ def send_digest(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
     )
 
     # Refresh view + click counts
-    from src.mcp import youtube_mcp
     for video in published:
         if video.youtube_video_id:
             stats = youtube_mcp.get_video_stats(video.youtube_video_id)
