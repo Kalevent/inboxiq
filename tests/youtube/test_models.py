@@ -25,3 +25,4 @@ def test_icp_pain_point_requires_pain_point_and_consequence(db):
         pp = ICPPainPoint(account_id=1, icp_config_id="x")
         db.session.add(pp)
         db.session.commit()
+    db.session.rollback()

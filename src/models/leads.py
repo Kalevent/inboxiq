@@ -292,14 +292,14 @@ class ICPPainPoint(db.Model):
         db.Index("idx_icp_pain_points_priority", "account_id", "priority"),
     )
 
-    id            = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
-    account_id    = db.Column(db.Integer, nullable=False)
-    icp_config_id = db.Column(db.String(64), db.ForeignKey("icp_configs.id"), nullable=False)
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, nullable=False)
+    icp_config_id = db.Column(db.String(64), db.ForeignKey("icp_configs.id", ondelete="CASCADE"), nullable=False)
 
-    pain_point    = db.Column(db.Text, nullable=False)
-    consequence   = db.Column(db.Text, nullable=False)
-    persona       = db.Column(db.String(255), nullable=True)
-    priority      = db.Column(db.Integer, nullable=False, default=0)
-    active        = db.Column(db.Boolean, nullable=False, default=True)
+    pain_point = db.Column(db.Text, nullable=False)
+    consequence = db.Column(db.Text, nullable=False)
+    persona = db.Column(db.String(255), nullable=True)
+    priority = db.Column(db.Integer, nullable=False, default=0)
+    active = db.Column(db.Boolean, nullable=False, default=True)
 
-    created_at    = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
