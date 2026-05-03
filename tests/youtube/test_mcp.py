@@ -23,7 +23,7 @@ def test_heygen_render_video_success(monkeypatch):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {"data": {"video_id": "job-123"}}
-    with patch("requests.post", return_value=mock_response):
+    with patch("src.mcp.heygen_mcp.requests.post", return_value=mock_response):
         from src.mcp import heygen_mcp
         import importlib
         importlib.reload(heygen_mcp)
@@ -45,10 +45,25 @@ def test_heygen_get_render_status_complete(monkeypatch):
     mock_response.json.return_value = {
         "data": {"status": "completed", "video_url": "https://cdn.heygen.com/video.mp4"}
     }
-    with patch("requests.get", return_value=mock_response):
+    with patch("src.mcp.heygen_mcp.requests.get", return_value=mock_response):
         from src.mcp import heygen_mcp
         import importlib
         importlib.reload(heygen_mcp)
         result = heygen_mcp.get_render_status("job-123")
     assert result["status"] == "completed"
     assert result["render_url"] == "https://cdn.heygen.com/video.mp4"
+
+
+def test_heygen_render_illustration_video_empty_frames(monkeypatch):
+    monkeypatch.setenv("HEYGEN_API_KEY", "test-key")
+    from src.mcp import heygen_mcp
+    import importlib
+    importlib.reload(heygen_mcp)
+    result = heygen_mcp.render_illustration_video(
+        script="Test script.",
+        voice_id="test-voice",
+        frame_urls=[],
+        aspect_ratio="16:9",
+    )
+    assert result["status"] == "error"
+    assert "frame_urls" in result["error"]

@@ -10,6 +10,8 @@ import logging
 import os
 from typing import Any, Dict, List
 
+import requests
+
 logger = logging.getLogger(__name__)
 
 HEYGEN_API_BASE = "https://api.heygen.com"
@@ -29,8 +31,6 @@ def render_video(
         {"status": "submitted", "job_id": "..."} on success
         {"status": "error", "error": "..."} on failure
     """
-    import requests
-
     api_key = os.getenv("HEYGEN_API_KEY")
     if not api_key:
         return {"status": "error", "error": "HEYGEN_API_KEY not configured"}
@@ -87,8 +87,6 @@ def render_illustration_video(
 
     Returns: {"status": "submitted", "job_id": "..."} or {"status": "error", ...}
     """
-    import requests
-
     api_key = os.getenv("HEYGEN_API_KEY")
     if not api_key:
         return {"status": "error", "error": "HEYGEN_API_KEY not configured"}
@@ -101,16 +99,21 @@ def render_illustration_video(
         "9:16": {"width": 720, "height": 1280},
     }.get(aspect_ratio, {"width": 1280, "height": 720})
 
-    video_inputs = [
-        {
+    # First frame carries the full voiceover; subsequent frames are visual-only
+    video_inputs = []
+    for i, url in enumerate(frame_urls):
+        voice = (
+            {"type": "text", "input_text": script, "voice_id": voice_id}
+            if i == 0
+            else {"type": "silence", "duration": 1}
+        )
+        video_inputs.append({
             "character": {"type": "none"},
-            "voice": {"type": "text", "input_text": script, "voice_id": voice_id},
+            "voice": voice,
             "background": {"type": "image", "url": url},
-        }
-        for url in frame_urls
-    ]
+        })
 
-    payload = {"video_inputs": video_inputs, "dimension": dimension}
+    payload = {"video_inputs": video_inputs, "dimension": dimension, "aspect_ratio": aspect_ratio}
 
     try:
         resp = requests.post(
@@ -138,8 +141,6 @@ def get_render_status(job_id: str) -> Dict[str, Any]:
         {"status": "failed", "error": "..."} — failed
         {"status": "error", "error": "..."} — API/network error
     """
-    import requests
-
     api_key = os.getenv("HEYGEN_API_KEY")
     if not api_key:
         return {"status": "error", "error": "HEYGEN_API_KEY not configured"}
