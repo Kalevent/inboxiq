@@ -58,7 +58,7 @@ def test_generate_scripts_creates_long_form_and_shorts(app, mock_blog_post, mock
 
             assert result["status"] == "ok"
             assert result["long_form_created"] is True
-            assert result["shorts_created"] >= 2
+            assert result["shorts_created"] == 2
 
 
 def test_render_videos_submits_avatar_to_heygen(app):

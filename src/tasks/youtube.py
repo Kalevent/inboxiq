@@ -174,7 +174,16 @@ def generate_scripts(account_id: int = ACCOUNT_ID, video_style: str = "avatar") 
         except (ValueError, TypeError):
             tags = [tags]
 
-    illus = json.loads(generated["illustration_prompts"]) if generated.get("illustration_prompts") else None
+    raw_illus = generated.get("illustration_prompts")
+    if isinstance(raw_illus, list):
+        illus = raw_illus
+    elif raw_illus:
+        try:
+            illus = json.loads(raw_illus)
+        except (ValueError, TypeError):
+            illus = None
+    else:
+        illus = None
 
     long_render = VideoRender(
         account_id=account_id,
