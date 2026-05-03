@@ -9,6 +9,8 @@ docs/security/privacy_compliance_plan.md
 docs/strategy/native_inbox_intelligence_pipeline.md
 docs/superpowers/plans/2026-05-03-youtube-ui.md
 docs/superpowers/plans/2026-05-03-heygen-pipeline-foundation.md
+docs/superpowers/plans/2026-05-03-heygen-pipeline-youtube-migration.md
+docs/superpowers/plans/2026-05-04-onboarding-video.md
 *.pyc
 
 # Demo assets
