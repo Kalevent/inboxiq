@@ -47,7 +47,7 @@ Tools:
 
 **`YouTubeLongFormScript`**
 ```
-Inputs:  blog_post_content, icp_persona, pain_point, consequence
+Inputs:  blog_post_content, icp_persona, pain_point, consequence, video_style
 Outputs: script, hook_line (first spoken sentence — must name the pain),
          chapter_markers, cta_line
 ```
@@ -63,6 +63,14 @@ Outputs: short_script (≤60s), pattern_interrupt_line (0–3s), cta_line
 Inputs:  script, pain_point, blog_post_primary_keyword, video_type
 Outputs: title (≤60 chars, pain-outcome format), description (UTM link in line 3),
          tags (10 max), thumbnail_prompt
+```
+
+**`YouTubeIllustrationPrompts`** *(used only when video_style = "illustration")*
+```
+Inputs:  script, pain_point, chapter_markers, brand_style_prefix
+Outputs: scene_prompts (list of 6–10 DALL-E prompts, one per chapter/beat),
+         each prompt prefixed with brand style (flat design, B2B SaaS,
+         blue/white palette, no text in image)
 ```
 
 Rule enforced at signature level: product name may not appear in `title` or within the first 5 seconds of any script.
@@ -122,11 +130,16 @@ class YouTubeVideo(db.Model):
 
     # Content
     video_type           = db.Column(db.String, nullable=False)  # "long_form" | "short"
+    video_style          = db.Column(db.String, default="avatar") # "avatar" | "illustration"
     script               = db.Column(db.Text)
     title                = db.Column(db.String(100))
     description          = db.Column(db.Text)                    # includes UTM-tagged CTA link
     tags                 = db.Column(db.JSON)
     thumbnail_prompt     = db.Column(db.Text)
+
+    # Illustration frames (populated when video_style = "illustration")
+    illustration_prompts = db.Column(db.JSON)                    # list of DALL-E scene prompts
+    dalle_frame_urls     = db.Column(db.JSON)                    # S3 URLs of rendered frames
 
     # HeyGen
     heygen_job_id        = db.Column(db.String)
@@ -158,7 +171,8 @@ class YouTubeVideo(db.Model):
 
 **Status flow:**
 ```
-script_pending → script_ready → rendering → render_complete → publishing → published → failed
+Avatar:        script_pending → script_ready → rendering → render_complete → publishing → published → failed
+Illustration:  script_pending → script_ready → illustrating → illustration_ready → rendering → render_complete → publishing → published → failed
 ```
 
 ---
@@ -177,11 +191,40 @@ The SKILL.md file lives at `.claude/skills/youtube-cadence/SKILL.md`. It governs
 
 ### Cadence Rules
 
-| Cycle | Type | Source |
-|---|---|---|
-| 1st of month, 7am | Long form (8–12 min) | Latest published `BlogPost` |
-| 15th of month, 7am | Long form (8–12 min) | Second latest `BlogPost` |
-| Auto, after each long form | 2–3 Shorts (≤60s) | DSPy extracts up to 3 clips from the long form script; minimum 2 required before pipeline advances |
+| Cycle | Type | Style | Source |
+| --- | --- | --- | --- |
+| 1st of month, 7am | Long form (8–12 min) | **Avatar** — Caroline in Blue Suit | Latest published `BlogPost` |
+| 15th of month, 7am | Long form (8–12 min) | **Illustration** — hand-drawn editorial | Second latest `BlogPost` |
+| Auto, after each long form | 2–3 Shorts (≤60s) | Inherits parent style | DSPy extracts up to 3 clips; minimum 2 required before pipeline advances |
+
+Styles alternate every cycle. Avatar month-start, illustration mid-month — keeps the channel visually varied without manual intervention.
+
+### Illustration Style — Brand Definition
+
+**This is the most important constraint for illustration videos.** Illustrations must look human-made — like editorial artwork from a professional designer. They must never look AI-generated.
+
+**Mandatory brand style prefix** (prepended to every DALL-E scene prompt):
+```
+Editorial illustration, hand-drawn ink lines with watercolour wash,
+warm muted palette (navy, terracotta, cream), textured paper feel,
+loose gestural linework, human figures with natural proportions,
+professional magazine quality, no text, no UI chrome, no 3D render,
+no gradients, no gloss — think New Yorker editorial, not stock photo
+```
+
+**What scenes should show:**
+- Real human situations — a person at a desk overwhelmed, a team in a meeting, a phone left unattended
+- Emotional states — stress, relief, focus — conveyed through body language, not labels
+- No screenshots of software, no device mockups, no floating UI elements
+
+**What to avoid (agent rejects and regenerates if detected):**
+- Photorealistic renders
+- Generic "corporate" stock art (suited figures pointing at charts)
+- Glowing neon UI elements
+- Cartoonishly large heads (typical AI avatar style)
+- Any text rendered inside the illustration
+
+**Cost:** 8 frames per illustration video × $0.04–$0.08 (DALL-E 3) = ~$0.50 per video. Already in stack — no new credentials.
 
 ### Script Structure
 
@@ -235,6 +278,7 @@ The SKILL.md file lives at `.claude/skills/youtube-cadence/SKILL.md`. It governs
 - [ ] Short links back to parent Long form in pinned comment
 - [ ] Tags include at least one keyword matching `BlogPost.primary_keyword`
 - [ ] `thumbnail_prompt` populated (not null)
+- [ ] **Illustration videos only:** all frames use the brand style prefix — no photorealistic renders, no stock-art figures, no UI chrome, no text inside images
 
 ---
 
@@ -293,6 +337,7 @@ Sent by `youtube.send_digest` at 8:30am. Three sections:
 
 | Item | Notes |
 |---|---|
+| `OPENAI_API_KEY` | Already in prod.env — used for DALL-E 3 illustration frame generation |
 | `HEYGEN_API_KEY` | HeyGen REST API key — PAYG, no subscription. Set in prod.env. |
 | `HEYGEN_AVATAR_ID` | `977b1ab85dba4eefb159a6072677effd` — Caroline (Public Avatar III, $1/min) |
 | `HEYGEN_AVATAR_LOOK` | `Caroline in Blue Suit` — professional look for B2B content |
