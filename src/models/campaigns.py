@@ -280,6 +280,7 @@ class YouTubeVideo(db.Model):
     __table_args__ = (
         db.Index("idx_youtube_videos_account_status", "account_id", "status"),
         db.Index("idx_youtube_videos_published", "account_id", "published_at"),
+        db.Index("idx_youtube_videos_video_render_id", "video_render_id"),
     )
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
@@ -287,6 +288,9 @@ class YouTubeVideo(db.Model):
     blog_post_id = db.Column(db.String(64), db.ForeignKey("blog_posts.id", ondelete="SET NULL"), nullable=True)
     icp_pain_point_id = db.Column(db.String(64), db.ForeignKey("icp_pain_points.id", ondelete="RESTRICT"), nullable=False)
     parent_video_id = db.Column(db.String(64), db.ForeignKey("youtube_videos.id", ondelete="SET NULL"), nullable=True)
+    video_render_id = db.Column(
+        db.String(64), db.ForeignKey("video_renders.id", ondelete="SET NULL"), nullable=True
+    )
 
     # Content
     video_type = db.Column(db.String(20), nullable=False)  # "long_form" | "short"
