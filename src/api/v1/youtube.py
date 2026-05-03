@@ -27,7 +27,9 @@ def heygen_webhook():
     """
     data = request.get_json(silent=True) or {}
     event_type = data.get("event_type", "")
-    event_data = data.get("event_data", {})
+    event_data = data.get("event_data") or {}
+    if not isinstance(event_data, dict):
+        return jsonify({"error": "invalid event_data"}), 400
     heygen_job_id = event_data.get("video_id") or event_data.get("id")
 
     if not heygen_job_id:
@@ -141,13 +143,18 @@ def create_pain_point():
             db.session.rollback()
             return jsonify({"status": "error", "error": "Failed to create ICP config"}), 500
 
+    try:
+        priority = int(data.get("priority") or 5)
+    except (ValueError, TypeError):
+        priority = 5
+
     pp = ICPPainPoint(
         account_id=account_id,
         icp_config_id=icp_config.id,
         pain_point=pain_point_text,
         consequence=consequence,
         persona=(data.get("persona") or "").strip() or None,
-        priority=int(data.get("priority") or 5),
+        priority=priority,
         active=True,
     )
     db.session.add(pp)
