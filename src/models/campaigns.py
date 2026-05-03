@@ -329,3 +329,52 @@ class YouTubeVideo(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
+
+class VideoRender(db.Model):
+    """Central HeyGen render record — shared across all video programmes."""
+    __tablename__ = "video_renders"
+    __table_args__ = (
+        db.Index("idx_video_renders_account_programme_status", "account_id", "programme", "status"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    programme = db.Column(db.String(20), nullable=False)  # "youtube" | "onboarding" | "outreach"
+    video_style = db.Column(db.String(20), nullable=False, server_default="avatar")
+    aspect_ratio = db.Column(db.String(5), nullable=False, server_default="16:9")
+    script = db.Column(db.Text, nullable=True)
+    illustration_prompts = db.Column(db.JSON, nullable=True)
+    dalle_frame_urls = db.Column(db.JSON, nullable=True)
+    heygen_job_id = db.Column(db.String(128), nullable=True)
+    heygen_render_url = db.Column(db.String(512), nullable=True)
+    status = db.Column(db.String(32), nullable=False, server_default="pending")
+    render_submitted_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    render_completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class OnboardingVideo(db.Model):
+    """Personalised welcome video sent to a new customer on signup."""
+    __tablename__ = "onboarding_videos"
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    video_render_id = db.Column(db.String(64), db.ForeignKey("video_renders.id", ondelete="CASCADE"), nullable=False)
+    recipient_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    recipient_name = db.Column(db.String(128), nullable=False)
+    recipient_company = db.Column(db.String(128), nullable=True)
+    email_sent_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class OutreachVideo(db.Model):
+    """Per-lead personalised outreach video — delivered via email + LinkedIn DM simultaneously."""
+    __tablename__ = "outreach_videos"
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    video_render_id = db.Column(db.String(64), db.ForeignKey("video_renders.id", ondelete="CASCADE"), nullable=False)
+    lead_id = db.Column(db.String(64), db.ForeignKey("leads.id", ondelete="CASCADE"), nullable=False)
+    delivered_email_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    delivered_linkedin_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
