@@ -843,3 +843,88 @@ def send_email(
     except Exception as exc:
         app.logger.warning({"event": "email.failed", "to": to_email, "subject": subject, "error": str(exc)})
         return False
+
+
+def send_youtube_digest_email(
+    to_email: str,
+    published_this_week: list,
+    pipeline_status: list,
+    youtube_visitors: int,
+    youtube_trials: int,
+) -> bool:
+    """Daily YouTube cadence digest: published videos, pipeline status, funnel attribution."""
+    app = current_app
+
+    host = app.config.get("SMTP_HOST")
+    port = app.config.get("SMTP_PORT")
+    user = app.config.get("SMTP_USER")
+    password = app.config.get("SMTP_PASSWORD")
+    use_tls = app.config.get("SMTP_USE_TLS", True)
+    use_ssl = app.config.get("SMTP_USE_SSL", False)
+    mail_from = app.config.get("MAIL_FROM", "noreply@kalevent.com")
+
+    if not host:
+        app.logger.info({"event": "youtube_digest.disabled", "reason": "SMTP not configured"})
+        return False
+
+    published_rows = "".join(
+        f"<tr><td>{v['title']}</td><td>{v['type']}</td><td>{v['views']}</td>"
+        f"<td>{v['clicks']}</td><td><a href='{v['url']}'>Watch</a></td></tr>"
+        for v in published_this_week
+    ) or "<tr><td colspan='5'>No videos published this week</td></tr>"
+
+    pipeline_rows = "".join(
+        f"<tr><td>{v['title'] or v['id']}</td><td>{v['status']}</td><td>{v['type']}</td></tr>"
+        for v in pipeline_status
+    ) or "<tr><td colspan='3'>Pipeline is clear</td></tr>"
+
+    html = f"""
+    <div style="font-family:-apple-system,sans-serif;max-width:640px;margin:0 auto;padding:24px">
+      <h2 style="color:#1e293b">YouTube Cadence — Daily Digest</h2>
+      <h3>Published this week</h3>
+      <table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse">
+        <tr><th>Title</th><th>Type</th><th>Views</th><th>Clicks</th><th>Link</th></tr>
+        {published_rows}
+      </table>
+      <h3>Pipeline status</h3>
+      <table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse">
+        <tr><th>Video</th><th>Status</th><th>Type</th></tr>
+        {pipeline_rows}
+      </table>
+      <h3>Funnel attribution (this week)</h3>
+      <p>YouTube visitors: <strong>{youtube_visitors}</strong></p>
+      <p>Trial starts from YouTube: <strong>{youtube_trials}</strong></p>
+    </div>
+    """
+
+    msg = EmailMessage()
+    msg["Subject"] = "YouTube Cadence Digest"
+    msg["From"] = mail_from
+    msg["To"] = to_email
+    msg.set_content(
+        f"YouTube Cadence Digest\n\n"
+        f"Published this week: {len(published_this_week)} videos\n"
+        f"Pipeline pending: {len(pipeline_status)} videos\n"
+        f"YouTube visitors this week: {youtube_visitors}\n"
+        f"Trial starts from YouTube: {youtube_trials}\n"
+    )
+    msg.add_alternative(html, subtype="html")
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, int(port)) as s:
+                if user and password:
+                    s.login(user, password)
+                s.send_message(msg)
+        else:
+            with smtplib.SMTP(host, int(port)) as s:
+                if use_tls:
+                    s.starttls()
+                if user and password:
+                    s.login(user, password)
+                s.send_message(msg)
+        app.logger.info({"event": "youtube_digest.sent", "to": to_email})
+        return True
+    except Exception:
+        app.logger.exception({"event": "youtube_digest.send_failed", "to": to_email})
+        return False
