@@ -312,6 +312,8 @@ def create_app() -> Flask:
   from src.api.v1.linkedin import linkedin_api_bp, linkedin_ui_bp
   app.register_blueprint(linkedin_api_bp)
   app.register_blueprint(linkedin_ui_bp)
+  from src.api.v1.youtube import bp as youtube_api_bp
+  app.register_blueprint(youtube_api_bp)
 
   # Register SEO cleanup handlers for old URLs
   from src.marketing.seo_cleanup import register_seo_cleanup
