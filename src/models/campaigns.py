@@ -283,14 +283,14 @@ class YouTubeVideo(db.Model):
     )
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
-    account_id = db.Column(db.Integer, nullable=False)
-    blog_post_id = db.Column(db.String(64), db.ForeignKey("blog_posts.id"), nullable=True)
-    icp_pain_point_id = db.Column(db.String(64), db.ForeignKey("icp_pain_points.id"), nullable=False)
-    parent_video_id = db.Column(db.String(64), db.ForeignKey("youtube_videos.id"), nullable=True)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    blog_post_id = db.Column(db.String(64), db.ForeignKey("blog_posts.id", ondelete="SET NULL"), nullable=True)
+    icp_pain_point_id = db.Column(db.String(64), db.ForeignKey("icp_pain_points.id", ondelete="RESTRICT"), nullable=False)
+    parent_video_id = db.Column(db.String(64), db.ForeignKey("youtube_videos.id", ondelete="SET NULL"), nullable=True)
 
     # Content
     video_type = db.Column(db.String(20), nullable=False)  # "long_form" | "short"
-    video_style = db.Column(db.String(20), nullable=False, default="avatar")  # "avatar" | "illustration"
+    video_style = db.Column(db.String(20), nullable=False, server_default="avatar")  # "avatar" | "illustration"
     script = db.Column(db.Text, nullable=True)
     title = db.Column(db.String(100), nullable=True)
     description = db.Column(db.Text, nullable=True)
@@ -311,20 +311,20 @@ class YouTubeVideo(db.Model):
 
     # UTM / funnel tracking
     utm_slug = db.Column(db.String(128), nullable=True, unique=True)
-    utm_source = db.Column(db.String(64), nullable=False, default="youtube")
+    utm_source = db.Column(db.String(64), nullable=False, server_default="youtube")
     utm_medium = db.Column(db.String(64), nullable=True)  # "long_form" | "short"
     utm_campaign = db.Column(db.String(128), nullable=True)
 
     # Status + timing
-    status = db.Column(db.String(32), nullable=False, default="script_pending")
+    status = db.Column(db.String(32), nullable=False, server_default="script_pending")
     script_generated_at = db.Column(db.DateTime(timezone=True), nullable=True)
     render_submitted_at = db.Column(db.DateTime(timezone=True), nullable=True)
     render_completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
     published_at = db.Column(db.DateTime(timezone=True), nullable=True)
 
     # Performance (refreshed daily by digest task)
-    view_count = db.Column(db.Integer, nullable=False, default=0)
-    click_count = db.Column(db.Integer, nullable=False, default=0)
+    view_count = db.Column(db.Integer, nullable=False, server_default="0")
+    click_count = db.Column(db.Integer, nullable=False, server_default="0")
 
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
