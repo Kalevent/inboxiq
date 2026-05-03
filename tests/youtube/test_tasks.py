@@ -98,7 +98,6 @@ def test_publish_videos_uploads_to_youtube(app):
             mock_video = MagicMock()
             mock_video.id = "vid-1"
             mock_video.video_type = "long_form"
-            mock_video.heygen_render_url = "https://cdn.heygen.com/video.mp4"
             mock_video.title = "Never miss a support email again | InboxIQ"
             mock_video.description = "Pain.\nResolution.\n{{UTM_LINK}}"
             mock_video.tags = ["inbox management"]
@@ -107,7 +106,13 @@ def test_publish_videos_uploads_to_youtube(app):
             mock_video.utm_campaign = "inbox-may-2026"
             mock_video.parent_video_id = None
 
-            mock_db.session.query.return_value.filter.return_value.all.return_value = [mock_video]
+            mock_render = MagicMock()
+            mock_render.heygen_render_url = "https://cdn.heygen.com/video.mp4"
+            mock_render.status = "render_complete"
+
+            mock_db.session.query.return_value.join.return_value.filter.return_value.all.return_value = [
+                (mock_video, mock_render)
+            ]
             mock_db.session.get.return_value = None
             mock_yt.upload_video.return_value = {
                 "status": "published",
@@ -119,7 +124,7 @@ def test_publish_videos_uploads_to_youtube(app):
             mock_yt.post_pinned_comment.return_value = {"status": "ok"}
 
             from src.tasks.youtube import publish_videos
-            result = publish_videos(account_id=2)
+            result = publish_videos.run(account_id=2)
 
             assert result["status"] == "ok"
             assert result["published"] == 1
@@ -223,6 +228,60 @@ def test_render_videos_writes_to_video_render(app, db):
             assert r.render_submitted_at is not None
             v = db.session.get(YouTubeVideo, video_id)
             assert v.status == "rendering"
+
+
+def test_publish_videos_uses_render_url_and_sets_delivered(app, db):
+    from src.models.campaigns import YouTubeVideo, VideoRender
+    from unittest.mock import patch
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="youtube", video_style="avatar",
+            aspect_ratio="16:9", script="Script.", status="render_complete",
+            heygen_render_url="https://cdn.heygen.com/out.mp4",
+        )
+        db.session.add(render)
+        db.session.flush()
+        video = YouTubeVideo(
+            account_id=2, icp_pain_point_id="pain-1", video_type="long_form",
+            video_style="avatar", video_render_id=render.id,
+            title="Fix your inbox | InboxIQ",
+            description="Pain.\n{{UTM_LINK}}",
+            tags=["inbox"],
+            utm_slug="yt-long-pub-test", utm_medium="long_form",
+            utm_campaign="pub-test", status="render_complete",
+        )
+        db.session.add(video)
+        db.session.commit()
+        render_id = render.id
+        video_id = video.id
+
+    with patch("src.tasks.youtube.youtube_mcp") as mock_yt:
+        mock_yt.upload_video.return_value = {
+            "status": "published",
+            "youtube_video_id": "yt-pub001",
+            "youtube_url": "https://www.youtube.com/watch?v=yt-pub001",
+        }
+        mock_yt.add_end_screen.return_value = {"status": "ok"}
+        mock_yt.add_card.return_value = {"status": "ok"}
+        mock_yt.post_pinned_comment.return_value = {"status": "ok"}
+
+        with app.app_context():
+            from src.tasks.youtube import publish_videos
+            result = publish_videos.run(account_id=2)
+
+        assert result["status"] == "ok"
+        assert result["published"] == 1
+
+        with app.app_context():
+            r = db.session.get(VideoRender, render_id)
+            assert r.status == "delivered"
+            v = db.session.get(YouTubeVideo, video_id)
+            assert v.status == "published"
+            assert v.youtube_video_id == "yt-pub001"
+
+        call_kwargs = mock_yt.upload_video.call_args
+        assert call_kwargs.kwargs["file_url"] == "https://cdn.heygen.com/out.mp4"
 
 
 def test_send_digest_calls_email_function(app):

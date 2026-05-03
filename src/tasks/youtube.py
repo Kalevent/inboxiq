@@ -415,17 +415,17 @@ def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
     published = 0
     failed = 0
 
-    ready = (
-        db.session.query(YouTubeVideo)
+    rows = (
+        db.session.query(YouTubeVideo, VideoRender)
+        .join(VideoRender, YouTubeVideo.video_render_id == VideoRender.id)
         .filter(
             YouTubeVideo.account_id == account_id,
-            YouTubeVideo.status == "render_complete",
-            YouTubeVideo.heygen_render_url.isnot(None),
+            VideoRender.status == "render_complete",
         )
         .all()
     )
 
-    for video in ready:
+    for video, render in rows:
         try:
             utm_url = (
                 f"{base_url}?utm_source=youtube"
@@ -442,7 +442,7 @@ def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
                 raise
 
             result = youtube_mcp.upload_video(
-                file_url=video.heygen_render_url,
+                file_url=render.heygen_render_url,
                 title=video.title or "",
                 description=description,
                 tags=video.tags or [],
@@ -475,6 +475,7 @@ def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
 
             video.status = "published"
             video.published_at = datetime.now(timezone.utc)
+            render.status = "delivered"
             try:
                 db.session.commit()
             except Exception:
