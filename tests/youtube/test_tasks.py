@@ -70,16 +70,21 @@ def test_render_videos_submits_avatar_to_heygen(app):
             mock_video.id = "vid-1"
             mock_video.video_style = "avatar"
             mock_video.video_type = "long_form"
-            mock_video.script = "You are drowning in support emails."
-            mock_video.illustration_prompts = None
             mock_video.status = "script_ready"
 
-            mock_db.session.query.return_value.filter.return_value.all.return_value = [mock_video]
-            mock_db.session.query.return_value.filter.return_value.filter.return_value.all.return_value = []
+            mock_render = MagicMock()
+            mock_render.script = "You are drowning in support emails."
+            mock_render.aspect_ratio = "16:9"
+            mock_render.illustration_prompts = None
+            mock_render.dalle_frame_urls = None
+
+            mock_db.session.query.return_value.join.return_value.filter.return_value.all.return_value = [
+                (mock_video, mock_render)
+            ]
             mock_heygen.render_video.return_value = {"status": "submitted", "job_id": "heygen-job-1"}
 
             from src.tasks.youtube import render_videos
-            result = render_videos(account_id=2)
+            result = render_videos.run(account_id=2)
 
             mock_heygen.render_video.assert_called_once()
             assert result["status"] == "ok"
@@ -177,6 +182,47 @@ def test_generate_scripts_creates_video_render(app, db):
         assert render.programme == "youtube"
         aspect = "16:9" if video.video_type == "long_form" else "9:16"
         assert render.aspect_ratio == aspect
+
+
+def test_render_videos_writes_to_video_render(app, db):
+    from src.models.campaigns import YouTubeVideo, VideoRender
+    from unittest.mock import patch
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="youtube", video_style="avatar",
+            aspect_ratio="16:9", script="Your inbox is chaos.", status="pending",
+        )
+        db.session.add(render)
+        db.session.flush()
+        video = YouTubeVideo(
+            account_id=2, icp_pain_point_id="pain-1", video_type="long_form",
+            video_style="avatar", video_render_id=render.id,
+            utm_slug="yt-long-test-render", utm_medium="long_form",
+            status="script_ready",
+        )
+        db.session.add(video)
+        db.session.commit()
+        render_id = render.id
+        video_id = video.id
+
+    with patch("src.tasks.youtube.heygen_mcp") as mock_heygen:
+        mock_heygen.render_video.return_value = {"status": "submitted", "job_id": "job-render-001"}
+
+        with app.app_context():
+            from src.tasks.youtube import render_videos
+            result = render_videos.run(account_id=2)
+
+        assert result["status"] == "ok"
+        assert result["submitted"] == 1
+
+        with app.app_context():
+            r = db.session.get(VideoRender, render_id)
+            assert r.heygen_job_id == "job-render-001"
+            assert r.status == "rendering"
+            assert r.render_submitted_at is not None
+            v = db.session.get(YouTubeVideo, video_id)
+            assert v.status == "rendering"
 
 
 def test_send_digest_calls_email_function(app):

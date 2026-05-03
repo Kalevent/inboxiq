@@ -306,8 +306,9 @@ def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
     submitted = 0
     failed = 0
 
-    ready_videos = (
-        db.session.query(YouTubeVideo)
+    rows = (
+        db.session.query(YouTubeVideo, VideoRender)
+        .join(VideoRender, YouTubeVideo.video_render_id == VideoRender.id)
         .filter(
             YouTubeVideo.account_id == account_id,
             YouTubeVideo.status.in_(["script_ready", "illustration_ready"]),
@@ -315,10 +316,10 @@ def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
         .all()
     )
 
-    for video in ready_videos:
+    for video, render in rows:
         try:
             if video.video_style == "illustration" and video.status == "script_ready":
-                prompts = video.illustration_prompts or []
+                prompts = render.illustration_prompts or []
                 if not prompts:
                     logger.warning("youtube.render_videos: no illustration_prompts for %s", video.id)
                     continue
@@ -327,7 +328,7 @@ def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
                     logger.error("youtube.render_videos: DALL-E mostly failed for %s", video.id)
                     failed += 1
                     continue
-                video.dalle_frame_urls = frame_urls
+                render.dalle_frame_urls = frame_urls
                 video.status = "illustration_ready"
                 try:
                     db.session.commit()
@@ -335,26 +336,27 @@ def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
                     db.session.rollback()
                     raise
 
-            if video.video_style == "illustration" and video.dalle_frame_urls:
+            if video.video_style == "illustration" and render.dalle_frame_urls:
                 result = heygen_mcp.render_illustration_video(
-                    script=video.script or "",
+                    script=render.script or "",
                     voice_id=voice_id,
-                    frame_urls=video.dalle_frame_urls,
-                    aspect_ratio="16:9" if video.video_type == "long_form" else "9:16",
+                    frame_urls=render.dalle_frame_urls,
+                    aspect_ratio=render.aspect_ratio,
                 )
             else:
                 result = heygen_mcp.render_video(
-                    script=video.script or "",
+                    script=render.script or "",
                     avatar_id=avatar_id,
                     voice_id=voice_id,
                     video_format="mp4",
-                    aspect_ratio="16:9" if video.video_type == "long_form" else "9:16",
+                    aspect_ratio=render.aspect_ratio,
                 )
 
             if result["status"] == "submitted":
-                video.heygen_job_id = result["job_id"]
+                render.heygen_job_id = result["job_id"]
+                render.status = "rendering"
+                render.render_submitted_at = datetime.now(timezone.utc)
                 video.status = "rendering"
-                video.render_submitted_at = datetime.now(timezone.utc)
                 try:
                     db.session.commit()
                 except Exception:
@@ -371,28 +373,31 @@ def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
 
     # Fallback poll for renders stuck >30 min (webhook is primary signal)
     stale_cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
-    stale_videos = (
-        db.session.query(YouTubeVideo)
+    stale_rows = (
+        db.session.query(YouTubeVideo, VideoRender)
+        .join(VideoRender, YouTubeVideo.video_render_id == VideoRender.id)
         .filter(
             YouTubeVideo.account_id == account_id,
-            YouTubeVideo.status == "rendering",
-            YouTubeVideo.render_submitted_at < stale_cutoff,
+            VideoRender.status == "rendering",
+            VideoRender.render_submitted_at < stale_cutoff,
         )
         .all()
     )
-    for video in stale_videos:
-        if not video.heygen_job_id:
+    for video, render in stale_rows:
+        if not render.heygen_job_id:
             continue
-        poll = heygen_mcp.get_render_status(video.heygen_job_id)
+        poll = heygen_mcp.get_render_status(render.heygen_job_id)
         if poll["status"] == "completed":
-            video.heygen_render_url = poll["render_url"]
+            render.heygen_render_url = poll["render_url"]
+            render.status = "render_complete"
+            render.render_completed_at = datetime.now(timezone.utc)
             video.status = "render_complete"
-            video.render_completed_at = datetime.now(timezone.utc)
             try:
                 db.session.commit()
             except Exception:
                 db.session.rollback()
         elif poll["status"] == "failed":
+            render.status = "failed"
             video.status = "failed"
             try:
                 db.session.commit()
