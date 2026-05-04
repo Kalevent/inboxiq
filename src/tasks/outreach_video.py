@@ -5,6 +5,7 @@ import logging
 import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List
+from urllib.parse import urlparse
 
 import requests
 from celery import shared_task
@@ -278,7 +279,7 @@ def queue_outreach_videos() -> Dict[str, Any]:
 @shared_task(name="outreach.deliver_videos", queue="content")
 def deliver_outreach_videos() -> Dict[str, Any]:
     """Deliver completed HeyGen renders to leads by email, then post a LinkedIn teaser."""
-    if os.getenv("OUTREACH_VIDEO_ENABLED") != "true":
+    if os.getenv("OUTREACH_VIDEO_ENABLED", "false").lower() != "true":
         return {"status": "skipped", "reason": "disabled"}
 
     rows = (
@@ -296,9 +297,19 @@ def deliver_outreach_videos() -> Dict[str, Any]:
     delivered_account_ids = set()
 
     for ov, render in rows:
-        lead = Lead.query.get(ov.lead_id)
+        lead = db.session.get(Lead, ov.lead_id)
         if lead is None:
             logger.warning("outreach.deliver_videos: lead %s not found, skipping", ov.lead_id)
+            failed += 1
+            continue
+
+        url = render.heygen_render_url or ""
+        parsed = urlparse(url)
+        if parsed.scheme not in ("https", "http"):
+            logger.warning(
+                "deliver_videos: skipping render %s — unexpected URL scheme '%s'",
+                render.id, parsed.scheme,
+            )
             failed += 1
             continue
 

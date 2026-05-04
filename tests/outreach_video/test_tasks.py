@@ -253,11 +253,25 @@ def test_deliver_outreach_videos_sends_email_and_sets_delivered_at(app, db):
 
     with app.app_context():
         with patch.dict(os.environ, {"OUTREACH_VIDEO_ENABLED": "true"}), \
-             patch("src.tasks.outreach_video.Lead") as mock_lead_cls, \
+             patch("src.tasks.outreach_video.db") as mock_db, \
              patch("src.tasks.outreach_video.send_outreach_video_email") as mock_email, \
              patch("src.tasks.outreach_video.post_outreach_video_to_linkedin"):
 
-            mock_lead_cls.query.get.return_value = mock_lead
+            # Re-read the real rows via the real session, then hand them to the task via mock
+            from src.extensions import db as real_db
+            from src.models.campaigns import VideoRender as RealRender, OutreachVideo as RealOV
+            real_rows = (
+                real_db.session.query(RealOV, RealRender)
+                .join(RealRender, RealRender.id == RealOV.video_render_id)
+                .filter(RealRender.status == "render_complete", RealOV.delivered_email_at.is_(None))
+                .all()
+            )
+            real_ov, real_render = real_rows[0]
+
+            mock_db.session.query.return_value.join.return_value.filter.return_value.all.return_value = real_rows
+            mock_db.session.get.return_value = mock_lead
+            mock_db.session.commit = real_db.session.commit
+            mock_db.session.rollback = real_db.session.rollback
             mock_email.return_value = True
 
             from src.tasks.outreach_video import deliver_outreach_videos
@@ -347,11 +361,23 @@ def test_deliver_outreach_videos_posts_to_linkedin_after_send(app, db):
 
     with app.app_context():
         with patch.dict(os.environ, {"OUTREACH_VIDEO_ENABLED": "true"}), \
-             patch("src.tasks.outreach_video.Lead") as mock_lead_cls, \
+             patch("src.tasks.outreach_video.db") as mock_db, \
              patch("src.tasks.outreach_video.send_outreach_video_email") as mock_email, \
              patch("src.tasks.outreach_video.post_outreach_video_to_linkedin") as mock_linkedin:
 
-            mock_lead_cls.query.get.return_value = mock_lead
+            from src.extensions import db as real_db
+            from src.models.campaigns import VideoRender as RealRender, OutreachVideo as RealOV
+            real_rows = (
+                real_db.session.query(RealOV, RealRender)
+                .join(RealRender, RealRender.id == RealOV.video_render_id)
+                .filter(RealRender.status == "render_complete", RealOV.delivered_email_at.is_(None))
+                .all()
+            )
+
+            mock_db.session.query.return_value.join.return_value.filter.return_value.all.return_value = real_rows
+            mock_db.session.get.return_value = mock_lead
+            mock_db.session.commit = real_db.session.commit
+            mock_db.session.rollback = real_db.session.rollback
             mock_email.return_value = True
 
             from src.tasks.outreach_video import deliver_outreach_videos
