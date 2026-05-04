@@ -115,10 +115,12 @@ def test_queue_onboarding_video_creates_render_and_record(app, db):
     mock_account = MagicMock()
     mock_account.name = "Acme Corp"
     mock_account.referral_source = "LinkedIn"
+    mock_account.account_id = 2
 
     mock_user = MagicMock()
     mock_user.name = "Sarah Jones"
     mock_user.email = "sarah@acme.com"
+    mock_user.account_id = 2
 
     with app.app_context():
         with patch("src.tasks.onboarding_video.Account") as mock_account_cls, \
@@ -187,6 +189,54 @@ def test_queue_onboarding_video_skips_when_account_missing(app, db):
 
         assert result["status"] == "skipped"
         mock_heygen.render_video.assert_not_called()
+
+
+def test_queue_onboarding_video_returns_error_on_dspy_failure(app, db):
+    with app.app_context():
+        with patch("src.tasks.onboarding_video.Account") as mock_account_cls, \
+             patch("src.tasks.onboarding_video.User") as mock_user_cls, \
+             patch("src.tasks.onboarding_video._run_onboarding_script_generation") as mock_dspy:
+            mock_account = MagicMock()
+            mock_account.name = "Acme"
+            mock_account.referral_source = ""
+            mock_account.account_id = 2
+            mock_account_cls.query.get.return_value = mock_account
+
+            mock_user = MagicMock()
+            mock_user.name = "Sarah"
+            mock_user.email = "s@a.com"
+            mock_user.account_id = 2
+            mock_user_cls.query.get.return_value = mock_user
+
+            mock_dspy.side_effect = RuntimeError("DSPy model unavailable")
+
+            from src.tasks.onboarding_video import queue_onboarding_video
+            result = queue_onboarding_video.run(account_id=2, user_id=1)
+
+        assert result["status"] == "error"
+        assert result["reason"] == "dspy generation failed"
+
+
+def test_queue_onboarding_video_skips_when_user_wrong_account(app, db):
+    with app.app_context():
+        with patch("src.tasks.onboarding_video.Account") as mock_account_cls, \
+             patch("src.tasks.onboarding_video.User") as mock_user_cls:
+            mock_account = MagicMock()
+            mock_account.name = "Acme"
+            mock_account.referral_source = ""
+            mock_account_cls.query.get.return_value = mock_account
+
+            mock_user = MagicMock()
+            mock_user.name = "Sarah"
+            mock_user.email = "s@a.com"
+            mock_user.account_id = 99  # Different account!
+            mock_user_cls.query.get.return_value = mock_user
+
+            from src.tasks.onboarding_video import queue_onboarding_video
+            result = queue_onboarding_video.run(account_id=2, user_id=1)
+
+        assert result["status"] == "skipped"
+        assert "account" in result["reason"]
 
 
 def test_send_onboarding_video_email_returns_false_on_smtp_error(app):

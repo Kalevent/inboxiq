@@ -12,7 +12,6 @@ from src.extensions import db
 from src.models.campaigns import VideoRender, OnboardingVideo
 from src.models.core import Account, User
 from src.mcp import heygen_mcp
-from src.notifications.emails import send_onboarding_video_email
 
 logger = logging.getLogger(__name__)
 
@@ -65,9 +64,16 @@ def queue_onboarding_video(account_id: int, user_id: int) -> Dict[str, Any]:
         )
         return {"status": "skipped", "reason": "account or user not found"}
 
-    recipient_name = user.name or user.email.split("@")[0]
-    recipient_company = account.name or ""
-    referral_source = account.referral_source or ""
+    if user.account_id != account_id:
+        logger.warning(
+            "onboarding.queue_video: user %s does not belong to account %s",
+            user_id, account_id,
+        )
+        return {"status": "skipped", "reason": "user does not belong to account"}
+
+    recipient_name = (user.name or user.email.split("@")[0])[:200]
+    recipient_company = (account.name or "")[:200]
+    referral_source = (account.referral_source or "")[:128]
 
     try:
         generated = _run_onboarding_script_generation(recipient_name, recipient_company, referral_source)
@@ -116,7 +122,11 @@ def queue_onboarding_video(account_id: int, user_id: int) -> Dict[str, Any]:
         return {"status": "error", "reason": "heygen submission failed"}
 
     if heygen_result.get("status") == "submitted":
-        render.heygen_job_id = heygen_result["job_id"]
+        job_id = str(heygen_result.get("job_id") or "")[:128]
+        if not job_id:
+            logger.error("onboarding.queue_video: HeyGen returned empty job_id for account %s", account_id)
+            return {"status": "error", "reason": "heygen returned empty job_id"}
+        render.heygen_job_id = job_id
         render.status = "rendering"
         render.render_submitted_at = datetime.now(timezone.utc)
         try:
