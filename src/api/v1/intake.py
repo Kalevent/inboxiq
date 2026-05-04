@@ -489,7 +489,11 @@ def _generate_chat_reply(account_id_int: int, message: str, name: str, company: 
     from src.dspy.config import _configure_dspy
     from src.dspy.signatures import build_chat_widget_reply
 
-    account_name = "InboxIQ"
+    try:
+        account = Account.query.get(account_id_int)
+        account_name = (account.display_name or account.name or "InboxIQ") if account else "InboxIQ"
+    except Exception:
+        account_name = "InboxIQ"
 
     try:
         _, _, dspy = _configure_dspy()
