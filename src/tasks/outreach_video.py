@@ -12,7 +12,6 @@ from src.extensions import db
 from src.models.campaigns import VideoRender, OutreachVideo, EmailCampaign, EmailOutreach
 from src.models.leads import Lead
 from src.mcp import heygen_mcp
-from src.notifications.emails import send_outreach_video_email
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +73,7 @@ def _get_eligible_leads(campaign_id: str, account_id: int, limit: int) -> List[A
     leads = (
         db.session.query(Lead)
         .filter(
+            Lead.account_id == account_id,
             Lead.id.in_(step2_subq),
             Lead.id.notin_(replied_subq),
             Lead.id.in_(opened_subq),
@@ -218,6 +218,12 @@ def queue_outreach_videos() -> Dict[str, Any]:
                 logger.exception(
                     "outreach.queue_videos: HeyGen submission failed for lead %s", lead.id
                 )
+                db.session.delete(outreach_vid)
+                db.session.delete(render)
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
                 errors += 1
                 continue
 
@@ -227,6 +233,12 @@ def queue_outreach_videos() -> Dict[str, Any]:
                     logger.error(
                         "outreach.queue_videos: HeyGen returned empty job_id for lead %s", lead.id
                     )
+                    db.session.delete(outreach_vid)
+                    db.session.delete(render)
+                    try:
+                        db.session.commit()
+                    except Exception:
+                        db.session.rollback()
                     errors += 1
                     continue
                 render.heygen_job_id = job_id
@@ -248,6 +260,12 @@ def queue_outreach_videos() -> Dict[str, Any]:
                     "outreach.queue_videos: HeyGen non-submitted status for lead %s: %s",
                     lead.id, heygen_result,
                 )
+                db.session.delete(outreach_vid)
+                db.session.delete(render)
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
                 errors += 1
 
     return {"status": "ok", "queued": queued, "errors": errors}
