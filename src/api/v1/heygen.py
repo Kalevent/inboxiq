@@ -1,7 +1,10 @@
 """Generic HeyGen webhook — programme-agnostic render completion handler."""
 from __future__ import annotations
 
+import hashlib
+import hmac
 import logging
+import os
 from datetime import datetime, timezone
 
 from flask import Blueprint, request, jsonify
@@ -13,10 +16,31 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("heygen_api", __name__, url_prefix="/api/v1/heygen")
 
 
+def _verify_signature() -> bool:
+    """Verify HeyGen's HMAC-SHA256 request signature.
+
+    HeyGen signs the raw request body with the webhook secret and sends the
+    hex digest in the 'Signature' header. The secret is returned when the
+    webhook endpoint is registered via the HeyGen API and stored as
+    HEYGEN_WEBHOOK_SECRET. Verification is skipped when the env var is unset.
+    """
+    secret = os.getenv("HEYGEN_WEBHOOK_SECRET", "")
+    if not secret:
+        return True
+    received = request.headers.get("Signature", "")
+    if not received:
+        return False
+    mac = hmac.new(secret.encode(), request.data, hashlib.sha256)
+    return hmac.compare_digest(mac.hexdigest(), received)
+
+
 @bp.route("/webhook", methods=["POST"])  # nosemgrep: semgrep.inboxiq.auth.unprotected-write-endpoint
 def heygen_webhook():
     # Intentionally public — called by HeyGen's servers, not browsers.
-    # TODO: add HMAC-SHA256 signature verification once HeyGen webhook signing docs are confirmed.
+    if not _verify_signature():
+        logger.warning("heygen_webhook: invalid signature")
+        return jsonify({"error": "invalid signature"}), 401
+
     data = request.get_json(silent=True) or {}
     event_data = data.get("event_data") or {}
     if not isinstance(event_data, dict):
