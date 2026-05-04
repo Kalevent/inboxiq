@@ -12,6 +12,7 @@ from src.extensions import db
 from src.models.campaigns import VideoRender, OnboardingVideo
 from src.models.core import Account, User
 from src.mcp import heygen_mcp
+from src.notifications.emails import send_onboarding_video_email
 
 logger = logging.getLogger(__name__)
 
@@ -141,3 +142,51 @@ def queue_onboarding_video(account_id: int, user_id: int) -> Dict[str, Any]:
         account_id, heygen_result,
     )
     return {"status": "error", "reason": "heygen did not accept submission"}
+
+
+@shared_task(name="onboarding.deliver_videos")
+def deliver_onboarding_videos() -> Dict[str, Any]:
+    rows = (
+        db.session.query(OnboardingVideo, VideoRender)
+        .join(VideoRender, OnboardingVideo.video_render_id == VideoRender.id)
+        .filter(
+            VideoRender.status == "render_complete",
+            OnboardingVideo.email_sent_at.is_(None),
+        )
+        .all()
+    )
+
+    sent = 0
+    failed = 0
+
+    for onboarding, render in rows:
+        user = User.query.get(onboarding.recipient_user_id)
+        if not user:
+            logger.warning(
+                "onboarding.deliver_videos: user not found for onboarding %s", onboarding.id
+            )
+            failed += 1
+            continue
+
+        success = send_onboarding_video_email(
+            to_email=user.email,
+            recipient_name=onboarding.recipient_name,
+            video_url=render.heygen_render_url,
+        )
+
+        if success:
+            onboarding.email_sent_at = datetime.now(timezone.utc)
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                logger.exception(
+                    "onboarding.deliver_videos: failed to save email_sent_at for %s", onboarding.id
+                )
+                failed += 1
+                continue
+            sent += 1
+        else:
+            failed += 1
+
+    return {"status": "ok", "sent": sent, "failed": failed}

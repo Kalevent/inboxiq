@@ -262,3 +262,82 @@ def test_send_onboarding_video_email_returns_false_on_smtp_error(app):
             )
 
         assert result is False
+
+
+def test_deliver_onboarding_videos_sends_email_and_sets_sent_at(app, db):
+    from src.models.campaigns import VideoRender, OnboardingVideo
+    from unittest.mock import patch, MagicMock
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="onboarding", video_style="avatar",
+            aspect_ratio="16:9", status="render_complete",
+            heygen_render_url="https://cdn.heygen.com/onboard.mp4",
+        )
+        db.session.add(render)
+        db.session.flush()
+        onboarding = OnboardingVideo(
+            account_id=2, video_render_id=render.id, recipient_user_id=1,
+            recipient_name="Sarah Jones",
+        )
+        db.session.add(onboarding)
+        db.session.commit()
+        render_id = render.id
+        onboarding_id = onboarding.id
+
+    mock_user = MagicMock()
+    mock_user.email = "sarah@acme.com"
+
+    with patch("src.tasks.onboarding_video.User") as mock_user_cls, \
+         patch("src.tasks.onboarding_video.send_onboarding_video_email") as mock_email:
+
+        mock_user_cls.query.get.return_value = mock_user
+        mock_email.return_value = True
+
+        with app.app_context():
+            from src.tasks.onboarding_video import deliver_onboarding_videos
+            result = deliver_onboarding_videos.run()
+
+        assert result["status"] == "ok"
+        assert result["sent"] == 1
+        assert result["failed"] == 0
+        mock_email.assert_called_once_with(
+            to_email="sarah@acme.com",
+            recipient_name="Sarah Jones",
+            video_url="https://cdn.heygen.com/onboard.mp4",
+        )
+
+        with app.app_context():
+            from src.models.campaigns import OnboardingVideo as OV
+            ov = db.session.get(OV, onboarding_id)
+            assert ov.email_sent_at is not None
+
+
+def test_deliver_onboarding_videos_skips_already_sent(app, db):
+    from src.models.campaigns import VideoRender, OnboardingVideo
+    from unittest.mock import patch
+    from datetime import datetime, timezone
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="onboarding", video_style="avatar",
+            aspect_ratio="16:9", status="render_complete",
+            heygen_render_url="https://cdn.heygen.com/onboard.mp4",
+        )
+        db.session.add(render)
+        db.session.flush()
+        onboarding = OnboardingVideo(
+            account_id=2, video_render_id=render.id, recipient_user_id=1,
+            recipient_name="Sarah Jones",
+            email_sent_at=datetime.now(timezone.utc),
+        )
+        db.session.add(onboarding)
+        db.session.commit()
+
+    with patch("src.tasks.onboarding_video.send_onboarding_video_email") as mock_email:
+        with app.app_context():
+            from src.tasks.onboarding_video import deliver_onboarding_videos
+            result = deliver_onboarding_videos.run()
+
+        assert result["sent"] == 0
+        mock_email.assert_not_called()

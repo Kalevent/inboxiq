@@ -450,6 +450,17 @@ def make_celery(app) -> Celery:
                 if youtube_cadence_enabled
                 else {}
             ),
+            **(
+                {
+                    "onboarding_deliver_videos_daily": {
+                        "task": "onboarding.deliver_videos",
+                        "schedule": crontab(hour=9, minute=0),
+                        "options": {"queue": "content"},
+                    },
+                }
+                if os.getenv("ONBOARDING_VIDEO_ENABLED", "false").lower() == "true"
+                else {}
+            ),
         },
     )
 
