@@ -359,3 +359,28 @@ def test_deliver_outreach_videos_posts_to_linkedin_after_send(app, db):
 
         assert result["sent"] == 1
         mock_linkedin.assert_called_once_with(2)
+
+
+def test_deliver_outreach_videos_skips_when_flag_off(app, db):
+    import os
+    from unittest.mock import patch
+
+    with app.app_context():
+        with patch.dict(os.environ, {"OUTREACH_VIDEO_ENABLED": "false"}):
+            from src.tasks.outreach_video import deliver_outreach_videos
+            result = deliver_outreach_videos.run()
+        assert result["status"] == "skipped"
+
+
+def test_post_outreach_video_to_linkedin_skips_when_no_connection(app, db):
+    from unittest.mock import patch, MagicMock
+
+    with app.app_context():
+        mock_query = MagicMock()
+        mock_query.filter_by.return_value.first.return_value = None
+        with patch("src.tasks.outreach_video.InboxConnection") as mock_conn_cls, \
+             patch("requests.post") as mock_post:
+            mock_conn_cls.query = mock_query
+            from src.tasks.outreach_video import post_outreach_video_to_linkedin
+            post_outreach_video_to_linkedin(account_id=999)
+        mock_post.assert_not_called()
