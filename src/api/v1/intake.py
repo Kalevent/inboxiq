@@ -304,6 +304,7 @@ def chat_submit():
     name = sanitize_html(str(context.get("name", "")).strip())[:100]  # Max 100 chars
     email = str(context.get("email", "")).strip().lower()[:200]  # Max 200 chars
     company = sanitize_html(str(context.get("company", "")).strip())[:100]  # Max 100 chars
+    branch = str(context.get("branch", "demo")).strip()[:20]
     message = sanitize_html(str(payload.get("body", "")).strip())[:5000]  # Max 5000 chars
 
     # Validate required fields
@@ -473,14 +474,14 @@ def chat_submit():
             chat_history.append({"role": role, "content": content})
 
     # Generate AI reply regardless of whether Celery succeeded
-    reply = _generate_chat_reply(account_id_int, message, name, company, history=chat_history)
+    reply = _generate_chat_reply(account_id_int, message, name, company, history=chat_history, branch=branch)
     if not reply:
         reply = "Thanks for reaching out! A member of our team will get back to you shortly."
 
     return jsonify({"success": True, "status": "queued" if task_id else "ai_only", "task_id": task_id, "reply": reply}), 200
 
 
-def _generate_chat_reply(account_id_int: int, message: str, name: str, company: str, history: list | None = None) -> str | None:
+def _generate_chat_reply(account_id_int: int, message: str, name: str, company: str, history: list | None = None, branch: str = "demo") -> str | None:
     """Generate a contextual AI reply for the chat widget. Returns None if AI is unavailable."""
     import json as _json
     from src.dspy.config import _configure_dspy
@@ -498,6 +499,7 @@ def _generate_chat_reply(account_id_int: int, message: str, name: str, company: 
         result = module(
             account_name=account_name,
             visitor_name=name or "",
+            branch=branch,
             conversation_history=_json.dumps(history or []),
             message=message,
         )

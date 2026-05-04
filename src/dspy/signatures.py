@@ -247,9 +247,11 @@ def build_chat_widget_reply(dspy: Any) -> Any:
         Help website visitors understand the product, answer feature questions, and encourage them to start a free trial.
         Keep replies to 2-3 sentences. If asked about pricing, mention the free trial.
         If you cannot answer, suggest they start a free trial or contact the team.
+        If branch is 'talk', the visitor wants a human follow-up — be warm and reassuring, not salesy.
         """
         account_name = dspy.InputField(desc="Name of the company whose chat widget this is.")
         visitor_name = dspy.InputField(desc="Name of the website visitor (may be empty).")
+        branch = dspy.InputField(desc="Widget branch: 'demo' (exploring the product) or 'talk' (wants human contact).")
         conversation_history = dspy.InputField(desc="Prior messages in this chat as a JSON array, oldest first.")
         message = dspy.InputField(desc="The visitor's latest message.")
         reply = dspy.OutputField(desc="A helpful, concise reply of 2-3 sentences.")
@@ -259,10 +261,11 @@ def build_chat_widget_reply(dspy: Any) -> Any:
             super().__init__()
             self.predict = dspy.Predict(ChatWidgetReplySignature)
 
-        def forward(self, account_name: str, visitor_name: str, conversation_history: str, message: str) -> Any:
+        def forward(self, account_name: str, visitor_name: str, branch: str, conversation_history: str, message: str) -> Any:
             return self.predict(
                 account_name=account_name,
                 visitor_name=visitor_name,
+                branch=branch,
                 conversation_history=conversation_history,
                 message=message,
             )
