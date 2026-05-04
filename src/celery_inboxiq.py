@@ -466,10 +466,12 @@ def make_celery(app) -> Celery:
                     "outreach.queue_videos": {
                         "task": "outreach.queue_videos",
                         "schedule": crontab(hour=8, minute=0),
+                        "options": {"queue": "content"},
                     },
                     "outreach.deliver_videos": {
                         "task": "outreach.deliver_videos",
                         "schedule": crontab(hour=9, minute=30),
+                        "options": {"queue": "content"},
                     },
                 }
                 if os.getenv("OUTREACH_VIDEO_ENABLED", "false").lower() == "true"
