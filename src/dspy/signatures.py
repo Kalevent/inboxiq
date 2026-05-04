@@ -835,3 +835,42 @@ def build_outreach_signatures(dspy: Any) -> Dict[str, Any]:
 class OutreachVideoScript:
     """Placeholder — use build_outreach_signatures(dspy) for the real DSPy signature."""
     pass
+
+
+def build_linkedin_message_draft(dspy: Any) -> Any:
+    """DSPy module that drafts three LinkedIn outreach messages for a single prospect.
+
+    first_name is always resolved in Python before calling this — the LLM must never
+    derive or change the name, only use it verbatim in the greeting.
+    """
+
+    class LinkedInMessageDraftSignature(dspy.Signature):
+        """
+        Draft three personalised LinkedIn outreach messages for a cold prospect.
+        Rules:
+        - msg_1 is the connection request note. Must start with 'Hi {first_name},'.
+          Must be under 200 characters including the greeting. No pitch — one sentence of shared context.
+        - msg_2 is sent after the connection is accepted. Adds genuine value: share the blog_post_url
+          if provided, or a relevant insight. No direct pitch.
+        - msg_3 is a soft ask for a 15-minute call. One sentence. No pressure.
+        - Use first_name exactly as provided. Never substitute, abbreviate, or change it.
+        """
+        first_name: str = dspy.InputField(desc="Prospect's first name. Use this exact string in every greeting.")
+        company_name: str = dspy.InputField(desc="Prospect's company name.")
+        job_title: str = dspy.InputField(desc="Prospect's job title.")
+        industry: str = dspy.InputField(desc="Prospect's industry.")
+        product_name: str = dspy.InputField(desc="Our product name and one-line value proposition.")
+        blog_post_url: str = dspy.InputField(desc="URL of a relevant blog post to share in msg_2. Empty string if none found.")
+        msg_1: str = dspy.OutputField(desc="Connection request note. Start with 'Hi {first_name},'. Under 200 chars total.")
+        msg_2: str = dspy.OutputField(desc="Value-add follow-up after connecting. Reference blog_post_url if provided.")
+        msg_3: str = dspy.OutputField(desc="Soft ask for a 15-minute call. One sentence.")
+
+    class LinkedInMessageDraftModule(dspy.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.draft = dspy.ChainOfThought(LinkedInMessageDraftSignature)
+
+        def forward(self, **kwargs: Any) -> Any:
+            return self.draft(**kwargs)
+
+    return LinkedInMessageDraftModule()

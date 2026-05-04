@@ -148,17 +148,80 @@ def discover_prospects():
 
 @shared_task(name="linkedin.draft_messages")
 def draft_messages_task():
-    """Draft outreach messages for pending prospects."""
-    from src.agents.linkedin_cadence import LinkedInCadenceAgent
+    """Draft outreach messages for pending prospects.
+
+    First name is resolved in Python before the LLM is called — the model never
+    derives or substitutes names, preventing cross-prospect name contamination.
+    """
+    import dspy as _dspy
+    from src.dspy.config import _configure_dspy
+    from src.dspy.signatures import build_linkedin_message_draft
+    from src.models.campaigns import LinkedInProspect
+    from src.models.content import BlogPost
+    from src.sanitize import sanitize_html
+
+    _configure_dspy()
+    draft_module = build_linkedin_message_draft(_dspy)
+
     for account_id in _all_account_ids():
-        LinkedInCadenceAgent(account_id=account_id).execute(
-            "For each prospect from get_pending_prospects: "
-            "1) Call get_relevant_blog_post with the prospect's industry to find a relevant blog post. "
-            "2) Draft three LinkedIn outreach messages — msg_1 is a concise connection request (under 200 chars), "
-            "msg_2 is a value-add message that references the blog post URL if one was found, "
-            "msg_3 is a soft ask for a 15-minute call. "
-            "3) Call save_drafted_messages with all three drafts and the suggested_post_id if a blog post was found."
+        prospects = (
+            db.session.query(LinkedInProspect)
+            .filter(
+                LinkedInProspect.account_id == account_id,
+                LinkedInProspect.status == "pending",
+                LinkedInProspect.msg_1_draft.is_(None),
+            )
+            .order_by(LinkedInProspect.created_at.asc())
+            .all()
         )
+
+        for prospect in prospects:
+            # Resolve first name in Python — never delegate this to the LLM
+            raw_name = (prospect.name or "").strip()
+            first_name = raw_name.split()[0] if raw_name else "there"
+
+            # Find a relevant published blog post for msg_2
+            industry = (prospect.industry or "").strip()
+            post = None
+            if industry:
+                post = (
+                    db.session.query(BlogPost)
+                    .filter(
+                        BlogPost.status == "published",
+                        BlogPost.title.ilike(f"%{industry.split()[0]}%"),
+                    )
+                    .order_by(BlogPost.published_at.desc())
+                    .first()
+                )
+            if not post:
+                post = (
+                    db.session.query(BlogPost)
+                    .filter(BlogPost.status == "published")
+                    .order_by(BlogPost.published_at.desc())
+                    .first()
+                )
+
+            blog_url = f"https://kalevent.com/blog/{post.slug}" if post else ""
+
+            try:
+                result = draft_module(
+                    first_name=first_name,
+                    company_name=prospect.company_name or "",
+                    job_title=prospect.job_title or "",
+                    industry=industry,
+                    product_name="InboxIQ — AI email triage and inbox automation for support teams",
+                    blog_post_url=blog_url,
+                )
+                prospect.msg_1_draft = sanitize_html(result.msg_1)
+                prospect.msg_2_draft = sanitize_html(result.msg_2)
+                prospect.msg_3_draft = sanitize_html(result.msg_3)
+                if post:
+                    prospect.suggested_post_id = post.id
+                db.session.commit()
+                log.info("linkedin.draft_messages: drafted for prospect %s (first_name=%s)", prospect.id, first_name)
+            except Exception:
+                db.session.rollback()
+                log.exception("linkedin.draft_messages: failed for prospect %s", prospect.id)
 
 
 @shared_task(name="linkedin.send_digest")
