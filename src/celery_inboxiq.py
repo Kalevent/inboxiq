@@ -461,6 +461,20 @@ def make_celery(app) -> Celery:
                 if os.getenv("ONBOARDING_VIDEO_ENABLED", "false").lower() == "true"
                 else {}
             ),
+            **(
+                {
+                    "outreach.queue_videos": {
+                        "task": "outreach.queue_videos",
+                        "schedule": crontab(hour=8, minute=0),
+                    },
+                    "outreach.deliver_videos": {
+                        "task": "outreach.deliver_videos",
+                        "schedule": crontab(hour=9, minute=30),
+                    },
+                }
+                if os.getenv("OUTREACH_VIDEO_ENABLED", "false").lower() == "true"
+                else {}
+            ),
         },
     )
 
@@ -478,7 +492,7 @@ def make_celery(app) -> Celery:
 
 app = create_app()
 celery = make_celery(app)
-celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox", "src.booking", "src.tasks.linkedin", "src.tasks.onboarding_video", "src.tasks.youtube"])
+celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox", "src.booking", "src.tasks.linkedin", "src.tasks.onboarding_video", "src.tasks.youtube", "src.tasks.outreach_video"])
 
 # Initialize OpenTelemetry for Celery workers
 from src.monitoring.observability import init_otel, get_tracer
