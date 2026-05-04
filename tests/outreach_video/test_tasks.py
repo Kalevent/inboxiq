@@ -173,6 +173,18 @@ def test_queue_outreach_videos_dspy_failure_continues(app, db):
     """DSPy failure on one lead must not abort the whole run."""
     import os
     from unittest.mock import patch, MagicMock
+    from src.models.campaigns import EmailCampaign
+
+    with app.app_context():
+        campaign = EmailCampaign(
+            name="Fail Campaign",
+            subject_template="Hi",
+            body_template="Body",
+            from_email="k@example.com",
+            outreach_video_enabled=True,
+        )
+        db.session.add(campaign)
+        db.session.commit()
 
     mock_lead = MagicMock()
     mock_lead.id = "lead-fail"
