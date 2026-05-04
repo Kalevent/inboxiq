@@ -3,7 +3,7 @@
 
   const account = window.InboxIQ?.account || '2';
   const primaryColor = window.InboxIQ?.config?.primaryColor || '#6366f1';
-  const signupUrl = '/auth/register';
+  const signupUrl = '/signup';
   const AVATAR_URL = '/static/img/aria-avatar.jpg';
   const SESSION_KEY = 'inboxiq_chat_v2';
 
