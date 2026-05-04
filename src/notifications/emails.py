@@ -1005,3 +1005,76 @@ def send_onboarding_video_email(to_email: str, recipient_name: str, video_url: s
     except Exception as exc:
         app.logger.warning({"event": "email.failed.onboarding_video", "to": to_email, "error": str(exc)})
         return False
+
+
+def send_outreach_video_email(
+    to_email: str, recipient_name: str, video_url: str, subject: str
+) -> bool:
+    """Send personalised outreach video email. Subject is the DSPy-generated subject_line. Returns True on success."""
+    app = current_app
+    host = app.config.get("SMTP_HOST")
+    port = app.config.get("SMTP_PORT")
+    user = app.config.get("SMTP_USER")
+    password = app.config.get("SMTP_PASSWORD")
+    use_tls = app.config.get("SMTP_USE_TLS", True)
+    use_ssl = app.config.get("SMTP_USE_SSL", False)
+    mail_from = app.config.get("MAIL_FROM", "noreply@kalevent.com")
+
+    if not host:
+        app.logger.info({"event": "email.disabled", "reason": "SMTP_HOST not configured", "to": to_email})
+        return False
+
+    first_name = recipient_name.split()[0] if recipient_name else "there"
+    safe_first_name = html.escape(first_name)
+    safe_video_url = html.escape(video_url)
+
+    body = (
+        f"Hi {first_name},\n\n"
+        "I made a short personalised video for you.\n\n"
+        f"Watch your video → {video_url}\n\n"
+        "It's under a minute — covers something specific I noticed about your company "
+        "and how InboxIQ might help.\n\n"
+        "Happy to chat if it resonates.\n\n"
+        "Kofi\nInboxIQ"
+    )
+
+    body_html = (
+        f"<p>Hi {safe_first_name},</p>"
+        "<p>I made a short personalised video for you.</p>"
+        f'<p><a href="{safe_video_url}" target="_blank" rel="noopener" '
+        'style="background:#6366f1;color:#fff;padding:12px 24px;border-radius:8px;'
+        'text-decoration:none;font-weight:600;display:inline-block;">'
+        "Watch your personalised video &#8594;</a></p>"
+        "<p>It's under a minute — covers something specific I noticed about your company "
+        "and how InboxIQ might help.</p>"
+        "<p>Happy to chat if it resonates.</p>"
+        "<p>Kofi<br>InboxIQ</p>"
+        f'<p style="color:#94a3b8;font-size:12px">Can\'t see the button? '
+        f'Copy this link: {safe_video_url}</p>'
+    )
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = mail_from
+    msg["To"] = to_email
+    msg.set_content(body)
+    msg.add_alternative(body_html, subtype="html")
+
+    try:
+        if use_ssl:
+            with smtplib.SMTP_SSL(host, port) as server:
+                if user and password:
+                    server.login(user, password)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(host, port) as server:
+                if use_tls:
+                    server.starttls()
+                if user and password:
+                    server.login(user, password)
+                server.send_message(msg)
+        app.logger.info({"event": "email.sent.outreach_video", "to": to_email})
+        return True
+    except Exception as exc:
+        app.logger.warning({"event": "email.failed.outreach_video", "to": to_email, "error": str(exc)})
+        return False
