@@ -98,7 +98,11 @@
 
   function mkMsg(text, role) {
     const m = el('div', { class: `iq-msg ${role}` });
-    m.innerHTML = text;
+    if (role === 'user') {
+      m.textContent = text;
+    } else {
+      m.innerHTML = text;
+    }
     return m;
   }
 
@@ -122,6 +126,10 @@
       ]),
       el('button', { class: 'iq-close', 'aria-label': 'Close', on: { click: onClose } }, '×'),
     ]);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function scrollMsgs(msgsEl) { msgsEl.scrollTop = msgsEl.scrollHeight; }
@@ -262,7 +270,7 @@
   function renderTalkChat(body) {
     const msgsEl = el('div', { class: 'iq-msgs' });
     const confirm = mkMsg('', 'bot');
-    confirm.innerHTML = `Got it! Someone from the team will follow up at <strong>${state.email}</strong>. While you wait, is there anything I can help you with now?`;
+    confirm.innerHTML = `Got it! Someone from the team will follow up at <strong>${escapeHtml(state.email)}</strong>. While you wait, is there anything I can help you with now?`;
     msgsEl.appendChild(confirm);
     state.messages.forEach(m => msgsEl.appendChild(mkMsg(m.text, m.role)));
     body.appendChild(msgsEl);
@@ -336,8 +344,12 @@
     // Auto-open: badge pulse at 5 s, panel opens at 6.5 s — fresh sessions only
     if (!state.dismissed && state.phase === 'closed') {
       setTimeout(() => {
+        if (state.dismissed || state.phase !== 'closed') return;
         document.getElementById('iq-bubble')?.classList.add('has-badge');
-        setTimeout(() => transition('greeting'), 1500);
+        setTimeout(() => {
+          if (state.dismissed || state.phase !== 'closed') return;
+          transition('greeting');
+        }, 1500);
       }, 5000);
     }
   }
