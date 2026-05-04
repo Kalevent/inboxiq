@@ -304,7 +304,8 @@ def chat_submit():
     name = sanitize_html(str(context.get("name", "")).strip())[:100]  # Max 100 chars
     email = str(context.get("email", "")).strip().lower()[:200]  # Max 200 chars
     company = sanitize_html(str(context.get("company", "")).strip())[:100]  # Max 100 chars
-    branch = str(context.get("branch", "demo")).strip()[:20]
+    branch = str(context.get("branch", "demo")).strip()[:20]  # Max 20 chars
+    branch = branch if branch in ("demo", "talk") else "demo"
     message = sanitize_html(str(payload.get("body", "")).strip())[:5000]  # Max 5000 chars
 
     # Validate required fields
