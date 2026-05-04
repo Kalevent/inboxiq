@@ -338,6 +338,7 @@ class VideoRender(db.Model):
     video_style = db.Column(db.String(20), nullable=False, server_default="avatar")
     aspect_ratio = db.Column(db.String(5), nullable=False, server_default="16:9")
     script = db.Column(db.Text, nullable=True)
+    subject_line = db.Column(db.String(255), nullable=True, comment="DSPy-generated email subject (outreach programme)")
     illustration_prompts = db.Column(db.JSON, nullable=True)
     dalle_frame_urls = db.Column(db.JSON, nullable=True)
     heygen_job_id = db.Column(db.String(128), nullable=True, unique=True)
