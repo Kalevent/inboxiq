@@ -84,7 +84,7 @@ def _run_dspy_script_generation(
     import dspy
     from src.dspy.signatures import build_youtube_signatures
 
-    _configure_dspy()
+    _configure_dspy(max_tokens=4000, temperature=0.7)
     sigs = build_youtube_signatures(dspy)
 
     icp_persona = "Head of Support / Founder, B2B SaaS, 10-50 employees, UK/US/Nigeria"
