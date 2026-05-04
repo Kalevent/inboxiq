@@ -57,15 +57,19 @@ def _get_eligible_leads(campaign_id: str, account_id: int, limit: int) -> List[A
         .subquery()
     )
 
-    has_video_subq = (
-        db.session.query(OutreachVideo.lead_id)
-        .filter(OutreachVideo.account_id == account_id)
-        .subquery()
-    )
-
     if campaign_id is None:
         # No campaign configured — nothing to process
         return []
+
+    has_video_subq = (
+        db.session.query(OutreachVideo.lead_id)
+        .filter(
+            OutreachVideo.account_id == account_id,
+            OutreachVideo.lead_id == Lead.id,
+        )
+        .correlate(Lead)
+        .exists()
+    )
 
     leads = (
         db.session.query(Lead)
@@ -73,7 +77,7 @@ def _get_eligible_leads(campaign_id: str, account_id: int, limit: int) -> List[A
             Lead.id.in_(step2_subq),
             Lead.id.notin_(replied_subq),
             Lead.id.in_(opened_subq),
-            Lead.id.notin_(has_video_subq),
+            ~has_video_subq,
             Lead.fit_score >= fit_min,
         )
         .limit(limit)
@@ -130,7 +134,7 @@ def _run_outreach_script_generation(lead: Any) -> Dict[str, Any]:
     }
 
 
-@shared_task(name="outreach.queue_videos")
+@shared_task(name="outreach.queue_videos", queue="content")
 def queue_outreach_videos() -> Dict[str, Any]:
     if os.getenv("OUTREACH_VIDEO_ENABLED", "false").lower() != "true":
         return {"status": "skipped", "reason": "OUTREACH_VIDEO_ENABLED not set"}
@@ -138,112 +142,112 @@ def queue_outreach_videos() -> Dict[str, Any]:
     daily_limit = int(os.getenv("OUTREACH_VIDEO_DAILY_LIMIT", "20"))
 
     # Resolve the campaign(s) with outreach video enabled.
-    # Use the first matching campaign for lead-eligibility queries;
     # account_id is always sourced from DB objects (campaign or lead) — never user input.
     campaigns = EmailCampaign.query.filter_by(outreach_video_enabled=True).all()
-    campaign = campaigns[0] if campaigns else None
-    campaign_id = campaign.id if campaign else None
-    account_id_from_campaign = campaign.account_id if campaign else None
 
     queued = 0
     errors = 0
     remaining = daily_limit
 
-    leads = _get_eligible_leads(campaign_id, account_id_from_campaign, remaining)
-
-    for lead in leads:
+    for campaign in campaigns:
         if remaining <= 0:
             break
 
-        # account_id sourced from the DB lead object — never from user-controlled input
-        account_id = lead.account_id
+        leads = _get_eligible_leads(campaign.id, campaign.account_id, remaining)
 
-        existing = OutreachVideo.query.filter_by(
-            account_id=account_id, lead_id=lead.id
-        ).first()
-        if existing:
-            continue
+        for lead in leads:
+            if remaining <= 0:
+                break
 
-        try:
-            generated = _run_outreach_script_generation(lead)
-        except Exception:
-            logger.exception(
-                "outreach.queue_videos: DSPy generation failed for lead %s", lead.id
-            )
-            errors += 1
-            continue
+            # account_id sourced from the DB lead object — never from user-controlled input
+            account_id = lead.account_id
 
-        render = VideoRender(
-            account_id=account_id,
-            programme="outreach",
-            video_style="avatar",
-            aspect_ratio="16:9",
-            script=generated["script"],
-            subject_line=generated["subject_line"],
-        )
-        try:
-            db.session.add(render)
-            db.session.flush()
-            outreach_vid = OutreachVideo(
-                account_id=account_id,
-                video_render_id=render.id,
-                lead_id=lead.id,
-            )
-            db.session.add(outreach_vid)
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            logger.exception(
-                "outreach.queue_videos: DB write failed for lead %s", lead.id
-            )
-            errors += 1
-            continue
+            existing = OutreachVideo.query.filter_by(
+                account_id=account_id, lead_id=lead.id
+            ).first()
+            if existing:
+                continue
 
-        avatar_id = os.getenv("HEYGEN_AVATAR_ID", "")
-        voice_id = os.getenv("HEYGEN_VOICE_ID", "")
-
-        try:
-            heygen_result = heygen_mcp.render_video(
-                script=generated["script"],
-                avatar_id=avatar_id,
-                voice_id=voice_id,
-                video_format="mp4",
-                aspect_ratio="16:9",
-            )
-        except Exception:
-            logger.exception(
-                "outreach.queue_videos: HeyGen submission failed for lead %s", lead.id
-            )
-            errors += 1
-            continue
-
-        if heygen_result.get("status") == "submitted":
-            job_id = str(heygen_result.get("job_id") or "")[:128]
-            if not job_id:
-                logger.error(
-                    "outreach.queue_videos: HeyGen returned empty job_id for lead %s", lead.id
+            try:
+                generated = _run_outreach_script_generation(lead)
+            except Exception:
+                logger.exception(
+                    "outreach.queue_videos: DSPy generation failed for lead %s", lead.id
                 )
                 errors += 1
                 continue
-            render.heygen_job_id = job_id
-            render.status = "rendering"
-            render.render_submitted_at = datetime.now(timezone.utc)
+
+            render = VideoRender(
+                account_id=account_id,
+                programme="outreach",
+                video_style="avatar",
+                aspect_ratio="16:9",
+                script=generated["script"],
+                subject_line=generated["subject_line"],
+            )
             try:
+                db.session.add(render)
+                db.session.flush()
+                outreach_vid = OutreachVideo(
+                    account_id=account_id,
+                    video_render_id=render.id,
+                    lead_id=lead.id,
+                )
+                db.session.add(outreach_vid)
                 db.session.commit()
             except Exception:
                 db.session.rollback()
                 logger.exception(
-                    "outreach.queue_videos: failed to save HeyGen job_id for lead %s", lead.id
+                    "outreach.queue_videos: DB write failed for lead %s", lead.id
                 )
                 errors += 1
                 continue
-            queued += 1
-            remaining -= 1
-        else:
-            logger.error(
-                "outreach.queue_videos: HeyGen non-submitted status for lead %s: %s",
-                lead.id, heygen_result,
-            )
-            errors += 1
+
+            avatar_id = os.getenv("HEYGEN_AVATAR_ID", "")
+            voice_id = os.getenv("HEYGEN_VOICE_ID", "")
+
+            try:
+                heygen_result = heygen_mcp.render_video(
+                    script=generated["script"],
+                    avatar_id=avatar_id,
+                    voice_id=voice_id,
+                    video_format="mp4",
+                    aspect_ratio="16:9",
+                )
+            except Exception:
+                logger.exception(
+                    "outreach.queue_videos: HeyGen submission failed for lead %s", lead.id
+                )
+                errors += 1
+                continue
+
+            if heygen_result.get("status") == "submitted":
+                job_id = str(heygen_result.get("job_id") or "")[:128]
+                if not job_id:
+                    logger.error(
+                        "outreach.queue_videos: HeyGen returned empty job_id for lead %s", lead.id
+                    )
+                    errors += 1
+                    continue
+                render.heygen_job_id = job_id
+                render.status = "rendering"
+                render.render_submitted_at = datetime.now(timezone.utc)
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                    logger.exception(
+                        "outreach.queue_videos: failed to save HeyGen job_id for lead %s", lead.id
+                    )
+                    errors += 1
+                    continue
+                queued += 1
+                remaining -= 1
+            else:
+                logger.error(
+                    "outreach.queue_videos: HeyGen non-submitted status for lead %s: %s",
+                    lead.id, heygen_result,
+                )
+                errors += 1
 
     return {"status": "ok", "queued": queued, "errors": errors}
