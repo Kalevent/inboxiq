@@ -330,6 +330,17 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
                 "send_demo_emails_task could not be queued for connection %s", conn.id
             )
 
+        try:
+            from src.tasks.onboarding_video import queue_onboarding_video
+            queue_onboarding_video.apply_async(
+                kwargs={"account_id": conn.account_id, "user_id": conn.user_id},
+                countdown=30,
+            )
+        except Exception:
+            current_app.logger.warning(
+                "queue_onboarding_video could not be queued for connection %s", conn.id
+            )
+
     return conn
 
 
