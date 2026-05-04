@@ -129,6 +129,7 @@ class EmailCampaign(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     started_at = db.Column(db.DateTime(timezone=True), nullable=True)
     completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    outreach_video_enabled = db.Column(db.Boolean, default=False, nullable=False, server_default="false", comment="Enable personalised outreach video for qualifying leads")
 
 
 class EmailOutreach(db.Model):
