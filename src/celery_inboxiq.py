@@ -370,9 +370,14 @@ def make_celery(app) -> Celery:
                 if nurture_campaigns_enabled
                 else {}
             ),
-            # Outreach: follow-ups every 4 hours, reply scan every 4 hours (offset by 2h)
+            # Outreach: initial sends daily, follow-ups every 4 hours, reply scan every 4 hours
             **(
                 {
+                    "outreach_process_all_campaigns": {
+                        "task": "outreach.process_all_campaigns",
+                        "schedule": crontab(hour=7, minute=0),
+                        "options": {"queue": "leads"},
+                    },
                     "outreach_process_followups": {
                         "task": "outreach.process_followups",
                         "schedule": crontab(minute=0, hour="*/4"),

@@ -8,6 +8,22 @@ from src.extensions import db
 from datetime import datetime, timedelta
 
 
+@shared_task(name="outreach.process_all_campaigns", queue="leads")
+def process_all_campaigns(max_emails_per_campaign: int = 6):
+    """Send initial outreach emails for all active campaigns. Runs daily via beat schedule."""
+    campaigns = db.session.query(EmailCampaign).filter(
+        EmailCampaign.status == "active",
+    ).all()
+    results = []
+    for campaign in campaigns:
+        try:
+            result = process_campaign_outreach(campaign.id, max_emails=max_emails_per_campaign)
+            results.append({"campaign_id": campaign.id, **result})
+        except Exception as exc:
+            results.append({"campaign_id": campaign.id, "error": str(exc), "sent": 0})
+    return results
+
+
 @shared_task(name="outreach.send_campaign_emails", bind=True, max_retries=3, queue="leads")
 def send_campaign_emails(self, campaign_id: str, max_emails: int = 6):
     # Default capped at 6/week to stay within Hunter.io free plan (25/month).
