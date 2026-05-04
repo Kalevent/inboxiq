@@ -470,9 +470,10 @@ def chat_submit():
     chat_history = []
     for entry in raw_history[-10:]:
         role = str(entry.get("role", ""))
-        content = sanitize_html(str(entry.get("content", "")))[:800]
-        if role in ("user", "assistant") and content:
-            chat_history.append({"role": role, "content": content})
+        content = sanitize_html(str(entry.get("text", entry.get("content", ""))))[:800]
+        if role in ("user", "assistant", "bot") and content:
+            normalized_role = "assistant" if role == "bot" else role
+            chat_history.append({"role": normalized_role, "content": content})
 
     # Generate AI reply regardless of whether Celery succeeded
     reply = _generate_chat_reply(account_id_int, message, name, company, history=chat_history, branch=branch)
@@ -504,7 +505,7 @@ def _generate_chat_reply(account_id_int: int, message: str, name: str, company: 
             conversation_history=_json.dumps(history or []),
             message=message,
         )
-        reply = (result.reply or "").strip()
+        reply = sanitize_html((result.reply or "").strip())
         return reply or None
     except Exception as exc:
         current_app.logger.debug("Chat AI reply failed: %s", exc)
