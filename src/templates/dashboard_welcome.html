@@ -81,6 +81,26 @@
       </div>
     </header>
 
+  {% if onboarding_video and onboarding_video.email_sent_at and not onboarding_video.banner_dismissed_at and onboarding_render_url %}
+  <div id="onboarding-video-banner" class="bg-indigo-950 border-b border-indigo-800 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center gap-3">
+        <span class="text-xl">&#127916;</span>
+        <span class="text-sm font-medium text-indigo-100">Your personalised InboxIQ walkthrough is ready</span>
+      </div>
+      <div class="flex items-center gap-3 shrink-0">
+        <a href="{{ onboarding_render_url }}" target="_blank" rel="noopener noreferrer"
+           class="text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-400 px-4 py-1.5 rounded-full transition">
+          Watch now &#8594;
+        </a>
+        <button onclick="dismissOnboardingBanner()"
+                class="text-indigo-400 hover:text-white transition text-xl leading-none font-bold"
+                aria-label="Dismiss">&#215;</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
     <main class="flex-1 bg-gradient-to-br from-slate-100 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
       <div class="max-w-6xl mx-auto px-4 py-10 lg:py-14">
 
@@ -136,6 +156,23 @@
               </div>
             </div>
             {% endfor %}
+
+            <!-- Onboarding video card -->
+            {% if onboarding_video and onboarding_video.email_sent_at and not onboarding_video.banner_dismissed_at and onboarding_render_url %}
+            <div id="onboarding-video-card" class="bg-indigo-900/30 border border-indigo-700/50 rounded-xl p-4 flex items-center justify-between gap-4 mb-4">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-lg bg-indigo-500/20 flex items-center justify-center text-xl shrink-0">&#127916;</div>
+                <div>
+                  <div class="text-sm font-semibold text-indigo-100">Your personalised walkthrough</div>
+                  <div class="text-xs text-slate-400 mt-0.5">A video made just for you &#8212; covers what InboxIQ is doing right now</div>
+                </div>
+              </div>
+              <a href="{{ onboarding_render_url }}" target="_blank" rel="noopener noreferrer"
+                 class="text-sm font-semibold text-indigo-300 hover:text-white transition shrink-0">
+                Watch &#8594;
+              </a>
+            </div>
+            {% endif %}
 
             <!-- Metric cards -->
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -351,6 +388,23 @@
       } finally {
         btn.disabled = false;
       }
+    }
+  </script>
+  <script>
+    function dismissOnboardingBanner() {
+      var token = localStorage.getItem('access_token') || '';
+      fetch('/api/v1/onboarding/dismiss-video-banner', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        }
+      }).then(function() {
+        var banner = document.getElementById('onboarding-video-banner');
+        if (banner) { banner.remove(); }
+        var card = document.getElementById('onboarding-video-card');
+        if (card) { card.remove(); }
+      }).catch(function() {});
     }
   </script>
 </body>

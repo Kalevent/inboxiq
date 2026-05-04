@@ -965,8 +965,18 @@ def create_app() -> Flask:
       automation_executions_30d = 0
       automation_time_saved_display = "0h"
 
+    from src.models.campaigns import OnboardingVideo, VideoRender as _VR
+    onboarding_video = OnboardingVideo.query.filter_by(account_id=account_id).first()
+    onboarding_render_url = None
+    if onboarding_video and onboarding_video.video_render_id:
+        _ov_render = db.session.get(_VR, onboarding_video.video_render_id)
+        if _ov_render and _ov_render.heygen_render_url and _ov_render.heygen_render_url.startswith("https://"):
+            onboarding_render_url = _ov_render.heygen_render_url
+
     return render_template(
       "dashboard_welcome.html",
+      onboarding_video=onboarding_video,
+      onboarding_render_url=onboarding_render_url,
       recent_tickets=recent,
       tickets_today=tickets_today,
       total_tickets=total_tickets,
