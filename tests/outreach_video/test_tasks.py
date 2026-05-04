@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+
+
 def test_email_campaign_has_outreach_video_enabled(app, db):
     from src.models.campaigns import EmailCampaign
 
@@ -211,3 +214,148 @@ def test_queue_outreach_videos_dspy_failure_continues(app, db):
         assert result["queued"] == 0
         assert result["errors"] >= 1
         mock_heygen.render_video.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Task 5: deliver_outreach_videos + post_outreach_video_to_linkedin
+# ---------------------------------------------------------------------------
+
+def test_deliver_outreach_videos_sends_email_and_sets_delivered_at(app, db):
+    """Happy path: render_complete row → email sent, delivered_email_at stamped."""
+    import os
+    from unittest.mock import patch, MagicMock
+    from src.models.campaigns import VideoRender, OutreachVideo
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2,
+            programme="outreach",
+            video_style="avatar",
+            aspect_ratio="16:9",
+            status="render_complete",
+            heygen_render_url="https://cdn.heygen.com/out.mp4",
+            subject_line="James, spotted something about Acme",
+        )
+        db.session.add(render)
+        db.session.flush()
+        ov = OutreachVideo(
+            account_id=2,
+            video_render_id=render.id,
+            lead_id="lead-001",
+        )
+        db.session.add(ov)
+        db.session.commit()
+        ov_id = ov.id
+
+    mock_lead = MagicMock()
+    mock_lead.email = "james@acme.com"
+    mock_lead.name = "James Brown"
+
+    with app.app_context():
+        with patch.dict(os.environ, {"OUTREACH_VIDEO_ENABLED": "true"}), \
+             patch("src.tasks.outreach_video.Lead") as mock_lead_cls, \
+             patch("src.tasks.outreach_video.send_outreach_video_email") as mock_email, \
+             patch("src.tasks.outreach_video.post_outreach_video_to_linkedin"):
+
+            mock_lead_cls.query.get.return_value = mock_lead
+            mock_email.return_value = True
+
+            from src.tasks.outreach_video import deliver_outreach_videos
+            result = deliver_outreach_videos.run()
+
+        assert result["sent"] == 1
+        assert result["failed"] == 0
+
+        delivered_ov = db.session.get(OutreachVideo, ov_id)
+        assert delivered_ov.delivered_email_at is not None
+
+        mock_email.assert_called_once_with(
+            to_email="james@acme.com",
+            recipient_name="James Brown",
+            video_url="https://cdn.heygen.com/out.mp4",
+            subject="James, spotted something about Acme",
+        )
+
+
+def test_deliver_outreach_videos_skips_already_delivered(app, db):
+    """Rows with delivered_email_at already set must be excluded from the query."""
+    import os
+    from unittest.mock import patch
+    from src.models.campaigns import VideoRender, OutreachVideo
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2,
+            programme="outreach",
+            video_style="avatar",
+            aspect_ratio="16:9",
+            status="render_complete",
+            heygen_render_url="https://cdn.heygen.com/out2.mp4",
+            subject_line="Already delivered",
+        )
+        db.session.add(render)
+        db.session.flush()
+        ov = OutreachVideo(
+            account_id=2,
+            video_render_id=render.id,
+            lead_id="lead-002",
+            delivered_email_at=datetime.now(timezone.utc),
+        )
+        db.session.add(ov)
+        db.session.commit()
+
+    with app.app_context():
+        with patch.dict(os.environ, {"OUTREACH_VIDEO_ENABLED": "true"}), \
+             patch("src.tasks.outreach_video.send_outreach_video_email") as mock_email:
+
+            from src.tasks.outreach_video import deliver_outreach_videos
+            result = deliver_outreach_videos.run()
+
+        assert result["sent"] == 0
+        mock_email.assert_not_called()
+
+
+def test_deliver_outreach_videos_posts_to_linkedin_after_send(app, db):
+    """After at least one successful send, post_outreach_video_to_linkedin is called once per account_id."""
+    import os
+    from unittest.mock import patch, MagicMock
+    from src.models.campaigns import VideoRender, OutreachVideo
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2,
+            programme="outreach",
+            video_style="avatar",
+            aspect_ratio="16:9",
+            status="render_complete",
+            heygen_render_url="https://cdn.heygen.com/out3.mp4",
+            subject_line="LinkedIn teaser test",
+        )
+        db.session.add(render)
+        db.session.flush()
+        ov = OutreachVideo(
+            account_id=2,
+            video_render_id=render.id,
+            lead_id="lead-003",
+        )
+        db.session.add(ov)
+        db.session.commit()
+
+    mock_lead = MagicMock()
+    mock_lead.email = "james@acme.com"
+    mock_lead.name = "James Brown"
+
+    with app.app_context():
+        with patch.dict(os.environ, {"OUTREACH_VIDEO_ENABLED": "true"}), \
+             patch("src.tasks.outreach_video.Lead") as mock_lead_cls, \
+             patch("src.tasks.outreach_video.send_outreach_video_email") as mock_email, \
+             patch("src.tasks.outreach_video.post_outreach_video_to_linkedin") as mock_linkedin:
+
+            mock_lead_cls.query.get.return_value = mock_lead
+            mock_email.return_value = True
+
+            from src.tasks.outreach_video import deliver_outreach_videos
+            result = deliver_outreach_videos.run()
+
+        assert result["sent"] == 1
+        mock_linkedin.assert_called_once_with(2)

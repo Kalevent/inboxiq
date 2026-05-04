@@ -6,11 +6,15 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+import requests
 from celery import shared_task
 
 from src.extensions import db
 from src.models.campaigns import VideoRender, OutreachVideo, EmailCampaign, EmailOutreach
 from src.models.leads import Lead
+from src.models.core import InboxConnection
+from src.notifications.emails import send_outreach_video_email
+from src.crypto import decrypt_value
 from src.mcp import heygen_mcp
 
 logger = logging.getLogger(__name__)
@@ -269,3 +273,150 @@ def queue_outreach_videos() -> Dict[str, Any]:
                 errors += 1
 
     return {"status": "ok", "queued": queued, "errors": errors}
+
+
+@shared_task(name="outreach.deliver_videos", queue="content")
+def deliver_outreach_videos() -> Dict[str, Any]:
+    """Deliver completed HeyGen renders to leads by email, then post a LinkedIn teaser."""
+    if os.getenv("OUTREACH_VIDEO_ENABLED") != "true":
+        return {"status": "skipped", "reason": "disabled"}
+
+    rows = (
+        db.session.query(OutreachVideo, VideoRender)
+        .join(VideoRender, VideoRender.id == OutreachVideo.video_render_id)
+        .filter(
+            VideoRender.status == "render_complete",
+            OutreachVideo.delivered_email_at.is_(None),
+        )
+        .all()
+    )
+
+    sent = 0
+    failed = 0
+    delivered_account_ids = set()
+
+    for ov, render in rows:
+        lead = Lead.query.get(ov.lead_id)
+        if lead is None:
+            logger.warning("outreach.deliver_videos: lead %s not found, skipping", ov.lead_id)
+            failed += 1
+            continue
+
+        try:
+            success = send_outreach_video_email(
+                to_email=lead.email,
+                recipient_name=lead.name,
+                video_url=render.heygen_render_url,
+                subject=render.subject_line,
+            )
+        except Exception:
+            logger.exception(
+                "outreach.deliver_videos: email send raised for lead %s", ov.lead_id
+            )
+            failed += 1
+            continue
+
+        if success:
+            ov.delivered_email_at = datetime.now(timezone.utc)
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                logger.exception(
+                    "outreach.deliver_videos: DB commit failed for lead %s", ov.lead_id
+                )
+                failed += 1
+                continue
+            sent += 1
+            delivered_account_ids.add(ov.account_id)
+        else:
+            failed += 1
+
+    if sent >= 1:
+        for account_id in delivered_account_ids:
+            post_outreach_video_to_linkedin(account_id)
+
+    return {"status": "ok", "sent": sent, "failed": failed}
+
+
+def post_outreach_video_to_linkedin(account_id: int) -> None:
+    """Post a public LinkedIn teaser for the outreach video run (best-effort, no raise)."""
+    conn = InboxConnection.query.filter_by(
+        account_id=account_id,
+        provider="linkedin_social",
+    ).first()
+    if not conn:
+        logger.info(
+            "post_outreach_video_to_linkedin: no linkedin_social connection for account %s",
+            account_id,
+        )
+        return
+
+    if not conn.metadata_json:
+        logger.warning(
+            "post_outreach_video_to_linkedin: connection has no metadata_json for account %s",
+            account_id,
+        )
+        return
+
+    enc = conn.metadata_json.get("access_token_enc")
+    if not enc:
+        logger.warning(
+            "post_outreach_video_to_linkedin: no access_token_enc for account %s", account_id
+        )
+        return
+
+    try:
+        token = decrypt_value(enc)
+    except Exception:
+        logger.exception(
+            "post_outreach_video_to_linkedin: token decrypt failed for account %s", account_id
+        )
+        return
+
+    org_id = os.getenv("LINKEDIN_ORG_ID", "")
+    if not org_id:
+        logger.warning(
+            "post_outreach_video_to_linkedin: LINKEDIN_ORG_ID not set, skipping for account %s",
+            account_id,
+        )
+        return
+
+    teaser_text = (
+        "Sending personalised video outreach this week — if you're a B2B SaaS founder "
+        "dealing with inbox overload, expect a personal video from me."
+    )
+
+    body = {
+        "author": f"urn:li:organization:{org_id}",
+        "lifecycleState": "PUBLISHED",
+        "specificContent": {
+            "com.linkedin.ugc.ShareContent": {
+                "shareCommentary": {"text": teaser_text},
+                "shareMediaCategory": "NONE",
+            }
+        },
+        "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"},
+    }
+
+    try:
+        resp = requests.post(
+            "https://api.linkedin.com/v2/ugcPosts",
+            json=body,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "X-Restli-Protocol-Version": "2.0.0",
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        post_id = resp.json().get("id", "")
+        logger.info(
+            "post_outreach_video_to_linkedin: posted for account %s, post_id=%s",
+            account_id, post_id,
+        )
+    except Exception:
+        logger.exception(
+            "post_outreach_video_to_linkedin: LinkedIn API call failed for account %s", account_id
+        )
