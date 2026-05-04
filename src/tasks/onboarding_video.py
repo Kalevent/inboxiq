@@ -168,6 +168,13 @@ def deliver_onboarding_videos() -> Dict[str, Any]:
             failed += 1
             continue
 
+        if not render.heygen_render_url:
+            logger.warning(
+                "onboarding.deliver_videos: no render URL for onboarding %s", onboarding.id
+            )
+            failed += 1
+            continue
+
         success = send_onboarding_video_email(
             to_email=user.email,
             recipient_name=onboarding.recipient_name,

@@ -392,13 +392,10 @@
   </script>
   <script>
     function dismissOnboardingBanner() {
-      var token = localStorage.getItem('access_token') || '';
       fetch('/api/v1/onboarding/dismiss-video-banner', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       }).then(function() {
         var banner = document.getElementById('onboarding-video-banner');
         if (banner) { banner.remove(); }
