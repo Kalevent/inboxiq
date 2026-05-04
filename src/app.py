@@ -316,6 +316,8 @@ def create_app() -> Flask:
   app.register_blueprint(youtube_api_bp)
   from src.api.v1.heygen import bp as heygen_api_bp
   app.register_blueprint(heygen_api_bp)
+  from src.api.v1.onboarding import bp as onboarding_api_bp
+  app.register_blueprint(onboarding_api_bp)
 
   # Register SEO cleanup handlers for old URLs
   from src.marketing.seo_cleanup import register_seo_cleanup

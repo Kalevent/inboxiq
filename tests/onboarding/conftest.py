@@ -39,5 +39,5 @@ def db(app):
 def auth_headers(app):
     from flask_jwt_extended import create_access_token
     with app.app_context():
-        token = create_access_token(identity=2)
+        token = create_access_token(identity="2")
     return {"Authorization": f"Bearer {token}"}
