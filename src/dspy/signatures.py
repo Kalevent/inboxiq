@@ -793,3 +793,45 @@ def build_onboarding_signatures(dspy: Any) -> Dict[str, Any]:
 class OnboardingVideoScript:
     """Placeholder — use build_onboarding_signatures(dspy) for the real DSPy signature."""
     pass
+
+
+def build_outreach_signatures(dspy: Any) -> Dict[str, Any]:
+    """Return the OutreachVideoScript DSPy signature."""
+
+    class OutreachVideoScript(dspy.Signature):
+        """Generate a personalised outreach video script for a high-fit warm non-responder.
+        Three beats: hook using fresh intent signal (10s), pain + solution connecting the
+        signal to inbox overload (40s), single CTA ask (10s). Direct, specific, under 60 seconds."""
+
+        recipient_name: str = dspy.InputField(desc="First name or full name of the lead.")
+        recipient_company: str = dspy.InputField(desc="Lead's company name.")
+        industry: str = dspy.InputField(desc="Lead's industry. Use 'B2B SaaS' if blank.")
+        intent_signals: str = dspy.InputField(
+            desc="Fresh buying intent signals for the company (e.g. 'hiring VP of Operations'). "
+            "Use 'no recent signals found' if unavailable."
+        )
+        pain_point: str = dspy.InputField(
+            desc="Specific pain point derived from the lead's industry and ICP fit."
+        )
+
+        script: str = dspy.OutputField(
+            desc="Full spoken script. Beat 1 (10s): hook opening with the intent signal. "
+            "Beat 2 (40s): connect signal to inbox overload problem InboxIQ solves. "
+            "Beat 3 (10s): one ask — reply to this email or book a 15-min call. Under 60 seconds."
+        )
+        hook_line: str = dspy.OutputField(
+            desc="First spoken sentence. Must reference the intent signal. No greeting."
+        )
+        cta_line: str = dspy.OutputField(
+            desc="Final spoken sentence. One ask only: reply to email or book a call."
+        )
+        subject_line: str = dspy.OutputField(
+            desc="Email subject line for the video delivery email. Personalised, <=60 chars."
+        )
+
+    return {"OutreachVideoScript": OutreachVideoScript}
+
+
+class OutreachVideoScript:
+    """Placeholder — use build_outreach_signatures(dspy) for the real DSPy signature."""
+    pass
