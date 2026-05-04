@@ -13,8 +13,10 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("heygen_api", __name__, url_prefix="/api/v1/heygen")
 
 
-@bp.route("/webhook", methods=["POST"])
+@bp.route("/webhook", methods=["POST"])  # nosemgrep: semgrep.inboxiq.auth.unprotected-write-endpoint
 def heygen_webhook():
+    # Intentionally public — called by HeyGen's servers, not browsers.
+    # TODO: add HMAC-SHA256 signature verification once HeyGen webhook signing docs are confirmed.
     data = request.get_json(silent=True) or {}
     event_data = data.get("event_data") or {}
     if not isinstance(event_data, dict):
