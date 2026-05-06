@@ -56,10 +56,10 @@
     },
 
     {
-      "description": "litellm must never go below 1.83.7 — CVE-2026-42208 (SQL injection) is fixed from 1.83.7 onwards",
+      "description": "litellm must stay at 1.83.7 — only Python 3.14-compatible CVE-fixed version; 1.83.8+ declare Requires-Python: <3.14 which breaks our Docker build",
       "matchManagers": ["pip_requirements", "pip-compile"],
       "matchPackageNames": ["litellm"],
-      "allowedVersions": ">=1.83.7"
+      "allowedVersions": "==1.83.7"
     },
 
     {
