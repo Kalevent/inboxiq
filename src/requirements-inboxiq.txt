@@ -51,4 +51,4 @@ opentelemetry-distro>=0.61b0
 prometheus-flask-exporter>=0.23.0
 
 # CVE-2026-42208: SQL injection fixed in 1.83.7. Never go below this.
-litellm>=1.83.7
+litellm==1.83.7

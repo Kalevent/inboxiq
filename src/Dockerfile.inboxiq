@@ -16,7 +16,7 @@ RUN python -m venv /usr/src/.venv
 ENV PATH="/usr/src/.venv/bin:$PATH"
 
 COPY src/requirements-inboxiq.lock.txt /usr/src/requirements-inboxiq.lock.txt
-RUN pip install --no-cache-dir --no-compile -r /usr/src/requirements-inboxiq.lock.txt
+RUN pip install --no-cache-dir --no-compile --no-deps -r /usr/src/requirements-inboxiq.lock.txt
 
 # --- runtime ---
 FROM python:3.14-slim
