@@ -456,6 +456,90 @@ def cli_seed_cost_of_slow_support():
     click.echo(f"created {slug}")
 
 
+@app.cli.command("seed-ai-support-agent")
+def cli_seed_ai_support_agent():
+    """
+    Seed the 'ai-support-agent' blog post.
+    Safe to re-run: skips if the slug already exists.
+    """
+    from src.models.content import BlogPost
+    from datetime import datetime, timezone
+
+    slug = "ai-support-agent"
+    existing = BlogPost.query.filter_by(slug=slug).first()
+    if existing:
+        click.echo(f"skip {slug} (already in DB as {existing.status})")
+        return
+
+    CONTENT_HTML = '<section class="prose prose-invert max-w-none">\n  <p>AI support agents read customer messages, understand intent and urgency, and take action—triaging, replying, and routing—without waiting for a human to sort the queue. Teams adopt them to cut response times, shrink backlogs, and keep SLAs green without adding headcount.</p>\n\n  <h2>Why teams adopt AI support agents</h2>\n  <ul>\n    <li>Slower first-response times during spikes.</li>\n    <li>Manual routing creates inconsistent SLAs.</li>\n    <li>Backlogs spill over weekends or launches.</li>\n    <li>Expensive outsourcing that still misses context.</li>\n  </ul>\n\n  <h2>What an AI support agent does</h2>\n  <ul>\n    <li>Understands intent (billing, refunds, access, bug, sales).</li>\n    <li>Assigns priority with sentiment + SLA + account tier.</li>\n    <li>Creates tickets with owners and due times.</li>\n    <li>Suggests or drafts replies for human review.</li>\n    <li>Escalates edge cases (negative sentiment + VIP domain).</li>\n  </ul>\n\n  <h2>How it works in your stack</h2>\n  <ul>\n    <li>Connect inboxes (Gmail/Outlook/shared) to a triage lane.</li>\n    <li>Run classification (intent, priority, sentiment) per message.</li>\n    <li>Auto-create tickets in your helpdesk with owners and SLA timers.</li>\n    <li>Provide agent-crafted replies for common intents; require human send on risky cases.</li>\n    <li>Log decisions for audit and continuous improvement.</li>\n  </ul>\n\n  <h2>Comparison to legacy workflows</h2>\n  <ul>\n    <li><strong>Manual triage:</strong> slow, inconsistent, high cognitive load.</li>\n    <li><strong>Outsourcing:</strong> faster headcount but low context, higher cost, inconsistent quality.</li>\n    <li><strong>AI agent:</strong> consistent routing, faster FRT, lower cost per ticket, better auditability.</li>\n  </ul>\n\n  <h2>Guardrails for quality</h2>\n  <ul>\n    <li>Confidence thresholds before auto-send.</li>\n    <li>Human-in-loop for negative sentiment, VIP, or payment disputes.</li>\n    <li>Daily spot-checks of 10–20 AI-handled tickets.</li>\n    <li>One-click corrections to retrain routing rules.</li>\n  </ul>\n\n  <h2>Metrics to track (BOFU focus)</h2>\n  <ul>\n    <li><strong>Trial signups and activations:</strong> inbox connected + ticket created.</li>\n    <li><strong>Speed:</strong> first-response time by priority.</li>\n    <li><strong>SLA:</strong> attainment for P1/P2.</li>\n    <li><strong>Automation:</strong> % of tickets auto-routed and auto-drafted replies.</li>\n  </ul>\n\n  <h2>Implementation checklist</h2>\n  <ul>\n    <li>Map top intents and SLAs (P1/P2/P3) with VIP rules.</li>\n    <li>Enable AI triage in observe mode; review 50+ samples.</li>\n    <li>Turn on auto-routing for low-risk intents; keep human send for sensitive cases.</li>\n    <li>Add alerts: P1 unassigned for 15 minutes; P2 no response for 4 hours.</li>\n    <li>Roll out macros + AI drafts; require human send for billing disputes/VIP refunds.</li>\n  </ul>\n\n  <h2>Final thoughts</h2>\n  <p>AI support agents aren’t about replacing humans—they remove the manual work that slows humans down. The result: faster replies, consistent SLAs, calmer teams, and fewer missed opportunities.</p>\n\n  <p class="mt-4 text-indigo-200">Next step: <a href="/upgrade" class="font-semibold">Start a trial and connect your inbox</a>.</p>\n</section>'
+
+    post = BlogPost(
+        title="What Is an AI Support Agent? (And Why Teams Are Adopting Them)",
+        slug=slug,
+        status="published",
+        content_html=CONTENT_HTML,
+        meta_description="Understand what an AI support agent does, how it improves response times and SLAs, and why teams adopt it to drive trial activation.",
+        primary_keyword="ai support agent",
+        funnel_stage="bofu",
+        canonical_url="/blog/ai-support-agent",
+        internal_links=[
+            {"href": "/upgrade", "label": "Start trial", "rel": "next"},
+            {"href": "/blog/ai-email-triage", "label": "AI Email Triage", "rel": "next"},
+        ],
+        word_count=420,
+        read_time_minutes=2,
+        published_at=datetime(2025, 12, 13, 12, 42, 33, tzinfo=timezone.utc),
+    )
+    db.session.add(post)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    click.echo(f"created {slug}")
+
+
+@app.cli.command("seed-email-to-ticket-automation")
+def cli_seed_email_to_ticket_automation():
+    """
+    Seed the 'email-to-ticket-automation' blog post.
+    Safe to re-run: skips if the slug already exists.
+    """
+    from src.models.content import BlogPost
+    from datetime import datetime, timezone
+
+    slug = "email-to-ticket-automation"
+    existing = BlogPost.query.filter_by(slug=slug).first()
+    if existing:
+        click.echo(f"skip {slug} (already in DB as {existing.status})")
+        return
+
+    CONTENT_HTML = '<section class="prose prose-invert max-w-none">\n  <p>Email to ticket automation turns every inbound customer email into a trackable ticket with an owner, SLA, and audit trail—without manual sorting. This guide shows how to implement it step by step so nothing gets missed and every response is accountable.</p>\n\n  <h2>Why automate email to ticket</h2>\n  <ul>\n    <li>Shared inboxes lose ownership.</li>\n    <li>Urgent messages get buried.</li>\n    <li>Manual tagging is slow and inconsistent.</li>\n    <li>No SLA clock or visibility once an email is “read.”</li>\n  </ul>\n\n  <h2>What great automation does</h2>\n  <ul>\n    <li>Captures every email into a single triage lane.</li>\n    <li>Classifies intent (billing, refunds, access, bug, sales).</li>\n    <li>Sets priority (sentiment + SLA tier + VIP domain).</li>\n    <li>Creates tickets with owner, due time, and status.</li>\n    <li>Routes to the right queue/team automatically.</li>\n    <li>Logs decisions for audit and learning.</li>\n  </ul>\n\n  <h2>Implementation blueprint (step-by-step)</h2>\n  <ol>\n    <li><strong>Centralise inboxes:</strong> forward or connect Gmail/Outlook/shared mailboxes into one triage lane.</li>\n    <li><strong>Define categories and SLAs:</strong> 8–10 intents, plus P1/P2/P3 rules (VIP, sentiment, outage keywords).</li>\n    <li><strong>Enable AI classification:</strong> intent + priority + sentiment; run in observe mode for 1–2 days.</li>\n    <li><strong>Auto-create tickets:</strong> every email becomes a ticket with owner, status, and due time; no unassigned items.</li>\n    <li><strong>Routing rules:</strong> route by category/priority/SLA; send P1 to humans immediately.</li>\n    <li><strong>Alerts:</strong> P1 unassigned &gt;15m; P2 no reply &gt;4h; daily digest of stuck tickets.</li>\n    <li><strong>QA loop:</strong> spot-check 20 tickets daily; correct misroutes; tighten rules weekly.</li>\n  </ol>\n\n  <h2>What to automate vs keep human</h2>\n  <ul>\n    <li><strong>Automate:</strong> categorisation, priority tags, ticket creation, routing, SLA flags, first acknowledgements.</li>\n    <li><strong>Keep human:</strong> empathy, pricing exceptions, complex troubleshooting, high-stakes refunds.</li>\n  </ul>\n\n  <h2>Guardrails</h2>\n  <ul>\n    <li>Confidence thresholds before auto-actions.</li>\n    <li>Human-in-loop for negative sentiment + VIP or payment disputes.</li>\n    <li>One-click reclassify to correct AI decisions.</li>\n    <li>Audit trail on every classification/routing event.</li>\n  </ul>\n\n  <h2>Metrics to track (MOFU)</h2>\n  <ul>\n    <li>Internal clicks to demo/BOFU comparison from this article.</li>\n    <li>Demo views originating from /blog/email-to-ticket-automation.</li>\n    <li>Operational: % auto-routed, median first-response time by priority, SLA attainment for P1/P2.</li>\n  </ul>\n\n  <h2>Expected outcomes</h2>\n  <ul>\n    <li>100% of emails captured as tickets.</li>\n    <li>Manual sorting reduced by 60–80%.</li>\n    <li>Faster FRT and fewer SLA breaches during spikes.</li>\n  </ul>\n\n  <h2>Final thoughts</h2>\n  <p>Email to ticket automation isn’t just speed—it’s accountability. When every email is a ticket with an owner, a clock, and clear routing, teams reply faster, customers stay happier, and SLAs stay green.</p>\n\n  <p class="mt-4 text-indigo-200">Next step: watch the demo and compare AI support agents for your team.</p>\n</section>'
+
+    post = BlogPost(
+        title="Email to Ticket Automation: How It Works (Step-by-Step)",
+        slug=slug,
+        status="published",
+        content_html=CONTENT_HTML,
+        meta_description="Step-by-step guide to email to ticket automation with AI classification, routing, SLAs, and full accountability.",
+        primary_keyword="email to ticket automation",
+        funnel_stage="mofu",
+        canonical_url="/blog/email-to-ticket-automation",
+        internal_links=[
+            {"href": "/upgrade#demo", "label": "See the demo", "rel": "next"},
+            {"href": "/blog/ai-support-agent", "label": "AI Support Agent", "rel": "next"},
+        ],
+        word_count=430,
+        read_time_minutes=2,
+        published_at=datetime(2025, 12, 13, 16, 50, 32, tzinfo=timezone.utc),
+    )
+    db.session.add(post)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    click.echo(f"created {slug}")
 
 
 @app.cli.command("backfill-meta-descriptions")

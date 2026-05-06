@@ -97,12 +97,52 @@ def _strip_leading_image(raw: str) -> str:
     return raw
 
 
+def _strip_dead_blog_links(raw: str, published: set) -> str:
+  """Replace <a href="/blog/SLUG">…</a> with plain text when SLUG isn't published."""
+  if not raw or not published:
+    return raw
+
+  def _replace(m):
+    slug = m.group(1)
+    inner = m.group(2)
+    if slug in published:
+      return m.group(0)
+    current_app.logger.warning("content_html: stripping dead blog link /blog/%s", slug)
+    return inner
+
+  try:
+    return re.sub(
+      r'<a\s[^>]*href=["\']\/blog\/([a-z0-9-]+)["\'][^>]*>(.*?)<\/a>',
+      _replace,
+      raw,
+      flags=re.IGNORECASE | re.DOTALL,
+    )
+  except Exception:
+    return raw
+
+
+def _published_blog_slugs() -> set:
+  """Return the set of slugs for all currently published blog posts."""
+  try:
+    rows = BlogPost.query.with_entities(BlogPost.slug).filter_by(status="published").all()
+    return {r[0] for r in rows}
+  except Exception:
+    return set()
+
+
 def _safe_internal_links(links):
+  published = _published_blog_slugs()
   cleaned = []
   for link in links or []:
     href = link.get("href")
-    if not href or (href.startswith("javascript:")):  # guard obvious bad inputs
+    if not href or href.startswith("javascript:"):
       continue
+    # Drop /blog/<slug> links whose target post isn't published yet.
+    if href.startswith("/blog/"):
+      slug = href.split("/blog/", 1)[1].split("?")[0].split("#")[0]
+      if slug and slug not in published:
+        current_app.logger.warning("internal_links: dropping dead link %s (not published)", href)
+        continue
     cleaned.append(link)
   return cleaned
 
@@ -125,11 +165,13 @@ def load_blog_posts():
       .all()
     )
     if posts:
+      published = _published_blog_slugs()
       safe_posts = []
       for p in posts:
         data = p.to_dict()
         raw_html = data.get("content_html") or ""
         cleaned_html = _strip_leading_image(_strip_leading_heading(raw_html))
+        cleaned_html = _strip_dead_blog_links(cleaned_html, published)
         data["content_html"] = _sanitize_html(cleaned_html)
         data["internal_links"] = _resolve_internal_links(data.get("internal_links"))
         safe_posts.append(data)
@@ -144,9 +186,11 @@ def load_blog_post(slug: str):
   try:
     post = BlogPost.query.filter_by(slug=slug, status="published").first()
     if post:
+      published = _published_blog_slugs()
       data = post.to_dict()
       raw_html = data.get("content_html") or ""
       cleaned_html = _strip_leading_image(_strip_leading_heading(raw_html))
+      cleaned_html = _strip_dead_blog_links(cleaned_html, published)
       data["content_html"] = _sanitize_html(cleaned_html)
       data["internal_links"] = _resolve_internal_links(data.get("internal_links"))
       return data
