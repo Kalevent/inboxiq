@@ -84,7 +84,6 @@ jobs:
         run: |
           pip install --quiet pip-tools
           pip-compile \
-            --quiet \
             --no-header \
             --no-annotate \
             --strip-extras \
@@ -154,7 +153,6 @@ jobs:
         run: |
           pip install --quiet pip-tools
           pip-compile \
-            --quiet \
             --no-header \
             --no-annotate \
             --strip-extras \
