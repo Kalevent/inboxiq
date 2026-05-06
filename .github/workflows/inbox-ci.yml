@@ -71,7 +71,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - name: Verify lockfile is installable
         run: |
@@ -83,7 +83,7 @@ jobs:
       - name: Check lockfile freshness
         run: |
           pip install --quiet pip-tools
-          pip-compile \
+          PIP_NO_CACHE_DIR=1 pip-compile \
             --no-header \
             --no-annotate \
             --strip-extras \
@@ -146,13 +146,13 @@ jobs:
       - name: Set up Python (pip-compile)
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - name: Regenerate lockfile
         id: lockfile
         run: |
           pip install --quiet pip-tools
-          pip-compile \
+          PIP_NO_CACHE_DIR=1 pip-compile \
             --no-header \
             --no-annotate \
             --strip-extras \
