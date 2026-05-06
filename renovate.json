@@ -38,6 +38,7 @@
       "matchManagers": ["pip_requirements", "pip-compile"],
       "matchPackageNames": [
         "litellm",
+        "dspy-ai",
         "aiohttp",
         "click",
         "openai",
