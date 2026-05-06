@@ -17,6 +17,8 @@ from celery import shared_task
 log = logging.getLogger(__name__)
 
 from src.extensions import db
+from sqlalchemy import or_
+
 from src.funnel.stages import VISITS, DISCOVERY, CONSIDERATION, RETENTION
 from src.models.leads import Lead, LeadFunnelStage, LeadEngagementEvent, FunnelMetricsDaily
 
@@ -197,12 +199,12 @@ def check_stage_progression():
     }
 
     try:
-        # Queue qualification for leads that have never been scored (fit_score is null).
-        # Without this, new leads are permanently stuck in VISITS because the check
-        # below only re-qualifies leads that already have fit_score >= 6.
+        # Queue qualification for leads that have never been scored.
+        # fit_score server_default is 0 (not NULL), so we treat both NULL and 0
+        # as "unscored" — otherwise every new lead is permanently stuck in VISITS.
         unscored_leads = db.session.query(Lead).filter(
             Lead.current_funnel_stage == VISITS,
-            Lead.fit_score.is_(None),
+            or_(Lead.fit_score.is_(None), Lead.fit_score == 0),
             Lead.stage_entered_at < datetime.now() - timedelta(hours=1)
         ).limit(100).all()
 

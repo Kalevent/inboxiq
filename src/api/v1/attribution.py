@@ -92,6 +92,13 @@ def track_attribution():
 
                 logger.info(f"Created new lead from attribution tracking: {lead_email}")
 
+                # Queue qualification immediately — don't wait for check_stage_progression
+                try:
+                    from src.funnel.tasks import qualify_visitor
+                    qualify_visitor.apply_async(args=[str(lead.id)], countdown=60)
+                except Exception:
+                    logger.warning("qualify_visitor enqueue failed for lead %s", lead.id)
+
         # Determine touchpoint order
         existing_count = db.session.query(LeadAttribution).filter(
             LeadAttribution.lead_id == lead.id
