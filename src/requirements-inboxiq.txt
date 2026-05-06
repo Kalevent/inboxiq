@@ -5,11 +5,11 @@ Flask-Migrate==4.1.0
 psycopg2-binary==2.9.12
 gunicorn==25.3.0
 celery==5.6.3
-python-dotenv==1.2.2
+python-dotenv>=1.0.0
 PyJWT==2.12.1
 PyPDF2==3.0.1
 dspy-ai==3.2.0
-openai==2.32.0
+openai>=2.0.0,<3.0.0
 Flask-JWT-Extended==4.7.1
 Flask-Caching==2.4.0
 redis==7.4.0
@@ -48,3 +48,6 @@ opentelemetry-distro==0.61b0
 
 # Prometheus metrics endpoint for Flask (cost per endpoint dashboards)
 prometheus-flask-exporter==0.23.2
+
+# Explicit lower-bound so Renovate/pip-compile can never downgrade below the CVE fix
+litellm>=1.83.7

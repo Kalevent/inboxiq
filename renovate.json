@@ -34,10 +34,38 @@
     },
 
     {
+      "description": "litellm pins ALL its dependencies with exact == versions. Group them so they always move together and never conflict.",
+      "matchManagers": ["pip_requirements", "pip-compile"],
+      "matchPackageNames": [
+        "litellm",
+        "aiohttp",
+        "click",
+        "openai",
+        "httpx",
+        "pydantic",
+        "tiktoken",
+        "tokenizers",
+        "python-dotenv",
+        "jsonschema",
+        "importlib-metadata",
+        "fastuuid"
+      ],
+      "groupName": "litellm and pinned deps",
+      "automerge": false
+    },
+
+    {
+      "description": "litellm must never go below 1.83.7 — CVE-2026-42208 (SQL injection) is fixed from 1.83.7 onwards",
+      "matchManagers": ["pip_requirements", "pip-compile"],
+      "matchPackageNames": ["litellm"],
+      "allowedVersions": ">=1.83.7"
+    },
+
+    {
       "description": "Security patches on safe packages can automerge once lock file is consistent",
       "matchManagers": ["pip_requirements", "pip-compile"],
       "matchUpdateTypes": ["patch"],
-      "matchPackageNames": ["PyJWT", "cryptography", "requests", "aiohttp", "stripe"],
+      "matchPackageNames": ["PyJWT", "cryptography", "requests", "stripe"],
       "automerge": true
     },
 

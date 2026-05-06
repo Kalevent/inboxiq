@@ -36,7 +36,7 @@ env:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write  # needed to push regenerated lockfile back to main
 
 jobs:
   secret-scan:
@@ -79,6 +79,24 @@ jobs:
           # This catches missing/yanked packages without hitting pip's depth limit.
           pip install --quiet --no-deps -r src/requirements-inboxiq.lock.txt
           echo "All dependencies resolved successfully"
+
+      - name: Check lockfile freshness
+        run: |
+          pip install --quiet pip-tools
+          pip-compile \
+            --quiet \
+            --no-header \
+            --no-annotate \
+            --strip-extras \
+            --output-file /tmp/requirements-check.lock.txt \
+            src/requirements-inboxiq.txt
+          if ! diff -q src/requirements-inboxiq.lock.txt /tmp/requirements-check.lock.txt > /dev/null 2>&1; then
+            echo "::error::Lockfile is out of date with requirements-inboxiq.txt"
+            echo "::error::Run locally: pip-compile --no-header --no-annotate --strip-extras src/requirements-inboxiq.txt -o src/requirements-inboxiq.lock.txt"
+            diff src/requirements-inboxiq.lock.txt /tmp/requirements-check.lock.txt || true
+            exit 1
+          fi
+          echo "Lockfile is up to date"
 
   build-and-deploy:
     needs: [secret-scan]
@@ -126,9 +144,39 @@ jobs:
         run: |
           aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
 
-      - name: Verify InboxIQ lockfile
+      - name: Set up Python (pip-compile)
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
+        with:
+          python-version: '3.14'
+
+      - name: Regenerate lockfile
+        id: lockfile
         run: |
-          test -s src/requirements-inboxiq.lock.txt
+          pip install --quiet pip-tools
+          pip-compile \
+            --quiet \
+            --no-header \
+            --no-annotate \
+            --strip-extras \
+            --output-file src/requirements-inboxiq.lock.txt \
+            src/requirements-inboxiq.txt
+          if git diff --quiet src/requirements-inboxiq.lock.txt; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Lockfile unchanged"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Lockfile regenerated — changes will be committed back to main:"
+            git diff src/requirements-inboxiq.lock.txt
+          fi
+
+      - name: Commit regenerated lockfile
+        if: steps.lockfile.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/requirements-inboxiq.lock.txt
+          git commit -m "chore: regenerate requirements-inboxiq.lock.txt [skip ci]"
+          git push
 
       - name: Build and push image
         run: |
