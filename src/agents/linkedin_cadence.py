@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Dict, List
+from urllib.parse import urlparse
 
 from src.agents.base import BaseAgent
 from src.extensions import db
@@ -11,6 +13,47 @@ log = logging.getLogger(__name__)
 
 _LEAD_DISCOVERY_LABEL = "lead-discovery"
 _PLAYWRIGHT_LABEL = "playwright-mcp"
+
+_TOKEN_RE = re.compile(r"[a-z0-9]+")
+_MIN_TOKEN_LEN = 3
+
+
+def name_url_tokens_match(name: str, linkedin_url: str) -> bool:
+    """
+    Heuristic guard: does this LinkedIn URL plausibly belong to this person?
+
+    Compares meaningful tokens (>= 3 chars, alphanumeric) from the name against
+    the URL slug after `/in/`. Passes if any name token appears as a substring
+    of the slug or matches a hyphen/underscore-split slug segment.
+
+    Why: the agent picks the URL via LLM judgement on browser snapshots; this
+    catches cases where it persists someone else's profile against a named lead
+    (e.g., name="Mieke Fonteyn" but url="/in/namnnguyen").
+
+    Permissive on missing inputs / unparseable slugs / very short names — the
+    goal is to catch obvious mismatches, not block legitimate edge cases.
+    """
+    if not name or not linkedin_url:
+        return True
+    name_tokens = [t for t in _TOKEN_RE.findall(name.lower()) if len(t) >= _MIN_TOKEN_LEN]
+    if not name_tokens:
+        return True
+    try:
+        path = urlparse(linkedin_url).path or ""
+    except Exception:
+        return True
+    parts = [p for p in path.split("/") if p]
+    if "in" not in parts:
+        return True
+    try:
+        slug = parts[parts.index("in") + 1].lower()
+    except IndexError:
+        return True
+    slug_segments = set(_TOKEN_RE.findall(slug))
+    for token in name_tokens:
+        if token in slug or token in slug_segments:
+            return True
+    return False
 
 
 class LinkedInCadenceAgent(BaseAgent):
@@ -95,6 +138,15 @@ class LinkedInCadenceAgent(BaseAgent):
             return {"saved": False, "error": "lead not found"}
         if not (clean_url.startswith("https://www.linkedin.com/") or clean_url.startswith("https://linkedin.com/")):
             return {"saved": False, "error": "invalid linkedin_url"}
+
+        effective_name = name if (name and (not lead.name or lead.name == lead.company_name)) else lead.name
+        if effective_name and not name_url_tokens_match(effective_name, clean_url):
+            log.warning(
+                "linkedin enrichment refused: name/url mismatch lead=%s name=%r url=%s",
+                lead_id, effective_name, clean_url,
+            )
+            return {"saved": False, "error": "name/url mismatch"}
+
         lead.linkedin_url = clean_url
         if name and (not lead.name or lead.name == lead.company_name):
             lead.name = name

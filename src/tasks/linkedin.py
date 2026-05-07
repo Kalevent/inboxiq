@@ -257,3 +257,44 @@ def expire_pending_connections():
 
     log.info("linkedin.expire_pending_connections: disqualified %d prospects", count)
     return {"disqualified": count}
+
+
+@shared_task(name="linkedin.review_mismatched_prospects")
+def review_mismatched_prospects():
+    """Flip prospect rows whose name and URL slug share no meaningful tokens.
+
+    The enrichment agent picks LinkedIn URLs via LLM judgement, with no
+    deterministic check that the URL belongs to the named lead. This sweeps
+    rows already in the cadence whose stored name/URL pair fails the same
+    token-overlap heuristic the enrichment guardrail now applies on write,
+    moving them to needs_review so they drop out of the daily digest.
+    """
+    from src.models.campaigns import LinkedInProspect
+    from src.agents.linkedin_cadence import name_url_tokens_match
+
+    active_statuses = ["pending", "connection_sent", "connected", "message_2_sent", "message_3_sent", "replied"]
+    candidates = db.session.query(LinkedInProspect).filter(
+        LinkedInProspect.status.in_(active_statuses),
+        LinkedInProspect.name.isnot(None),
+        LinkedInProspect.linkedin_url.isnot(None),
+    ).all()
+
+    flagged = 0
+    for prospect in candidates:
+        if name_url_tokens_match(prospect.name, prospect.linkedin_url):
+            continue
+        prospect.status = "needs_review"
+        notes = prospect.notes or ""
+        prospect.notes = notes + f"\n[auto-flagged] name={prospect.name!r} did not match URL slug {prospect.linkedin_url}"
+        flagged += 1
+
+    if flagged:
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            log.exception("linkedin.review_mismatched_prospects: commit failed")
+            return {"flagged": 0}
+
+    log.info("linkedin.review_mismatched_prospects: flagged %d prospects", flagged)
+    return {"flagged": flagged}

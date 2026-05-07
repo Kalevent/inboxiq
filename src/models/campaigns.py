@@ -255,6 +255,7 @@ class LinkedInProspect(db.Model):
             "replied",
             "qualified",
             "disqualified",
+            "needs_review",
             name="linkedin_prospect_status_enum",
         ),
         nullable=False,
