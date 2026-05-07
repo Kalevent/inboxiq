@@ -19,6 +19,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict
 
+import dspy as _dspy_module
+
 # Use cloudpickle for serializing dynamically-created DSPy classes
 # (standard pickle can't serialize classes defined inside functions)
 try:
@@ -332,6 +334,27 @@ def _load_compiled_module(
             })
             return None
 
+    # DSPy library version check (warn-only, do not block)
+    if meta:
+        current_dspy_version = getattr(_dspy_module, "__version__", None)
+        artifact_dspy_version = meta.get("dspy_version")
+        if artifact_dspy_version is None:
+            logger.info(
+                "DSPy artifact %s predates dspy_version tracking; "
+                "current dspy=%s",
+                path,
+                current_dspy_version,
+            )
+        elif artifact_dspy_version != current_dspy_version:
+            logger.warning(
+                "DSPy version mismatch for artifact %s: "
+                "compiled with dspy=%s, loading under dspy=%s "
+                "(possible prompt/signature drift)",
+                path,
+                artifact_dspy_version,
+                current_dspy_version,
+            )
+
     # Load module
     try:
         if hasattr(dspy, "load"):
@@ -420,6 +443,7 @@ def _save_compiled_module(
         "account_id": account_id,
         "labels_hash": _labels_hash(labels),
         "version": "v1",
+        "dspy_version": getattr(_dspy_module, "__version__", None),
         "compiled_at": datetime.now(timezone.utc).isoformat(),
         "signature": signature,
         "signature_algorithm": "hmac-sha256",

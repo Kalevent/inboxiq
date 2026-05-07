@@ -25,7 +25,12 @@ class StripeProvider(PaymentProvider):
     def create_payment_method_from_token(self, token: str, email: str) -> Dict[str, Any]:
         self._guard()
         pm = stripe.PaymentMethod.create(type="card", card={"token": token}, billing_details={"email": email})
-        return {"id": pm["id"], "brand": pm.get("card", {}).get("brand"), "last4": pm.get("card", {}).get("last4")}
+        card = getattr(pm, "card", None)
+        return {
+            "id": pm["id"],
+            "brand": getattr(card, "brand", None) if card else None,
+            "last4": getattr(card, "last4", None) if card else None,
+        }
 
     def attach_payment_method_to_customer(self, payment_method_id: str, customer_ref: str) -> Dict[str, Any]:
         self._guard()
@@ -45,17 +50,27 @@ class StripeProvider(PaymentProvider):
         self._guard()
         # Assumes plan_code maps to a Stripe price id
         sub = stripe.Subscription.create(customer=customer_ref, items=[{"price": plan_code}], expand=["latest_invoice.payment_intent"])
-        return {"id": sub["id"], "status": sub.get("status"), "client_secret": sub.get("latest_invoice", {}).get("payment_intent", {}).get("client_secret")}
+        latest_invoice = getattr(sub, "latest_invoice", None)
+        payment_intent = getattr(latest_invoice, "payment_intent", None) if latest_invoice else None
+        return {
+            "id": sub["id"],
+            "status": getattr(sub, "status", None),
+            "client_secret": getattr(payment_intent, "client_secret", None) if payment_intent else None,
+        }
 
     def create_invoice(self, customer_ref: str, amount_cents: int, currency: str) -> Dict[str, Any]:
         self._guard()
         invoice = stripe.Invoice.create(customer=customer_ref, auto_advance=True, collection_method="charge_automatically")
-        return {"id": invoice["id"], "status": invoice.get("status")}
+        return {"id": invoice["id"], "status": getattr(invoice, "status", None)}
 
     def pay_invoice(self, invoice_provider_id: str) -> Dict[str, Any]:
         self._guard()
         inv = stripe.Invoice.pay(invoice_provider_id)
-        return {"id": inv["id"], "status": inv.get("status"), "payment_intent": inv.get("payment_intent")}
+        return {
+            "id": inv["id"],
+            "status": getattr(inv, "status", None),
+            "payment_intent": getattr(inv, "payment_intent", None),
+        }
 
     def handle_webhook(self, payload: Dict[str, Any], headers: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
         # Do not verify signature here; leave to caller to keep this adapter simple.

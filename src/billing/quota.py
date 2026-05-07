@@ -8,8 +8,9 @@ check_and_increment(meter, account_id) is the single call-site entry point:
   3. If the feature flag for this meter is off on the plan → raises FeatureDisabled (403).
   4. If limit is None  → unlimited plan; increment and return.
   5. If within limit   → increment and return.
-  6. If over limit     → increment (we bill overage, not block) and report overage
-                         units to Stripe via create_usage_record().
+  6. If over limit     → increment (we bill overage, not block). Reporting to
+                         Stripe is currently disabled pending v15 MeterEvent migration
+                         (see _report_stripe_overage); overage is logged loudly.
 
 Meters:
   ai_decisions, chat_conversations, automation_runs,
@@ -88,14 +89,11 @@ def _get_subscription_item_id(subscription_provider_id: str, overage_price_id: s
 
 def _report_stripe_overage(plan: Plan, account_id: int, meter: str, units: int) -> None:
     """
-    Report overage units to Stripe via create_usage_record() on the subscription item.
+    Look up the Stripe subscription item for an overage price and log that overage
+    occurred. Reporting to Stripe is disabled until we migrate from the removed
+    SubscriptionItem.create_usage_record (stripe-python v14) to stripe.billing.MeterEvent
+    (v15+); see the call site below.
     Best-effort: errors are logged, never raised.
-
-    Flow:
-      1. Look up overage price ID from the Plan row.
-      2. Find the account's active Stripe subscription via CustomerBillingProfile → Subscription.
-      3. Find the subscription item matching the overage price.
-      4. Call create_usage_record(quantity=units, action='increment').
     """
     overage_attr = _STRIPE_OVERAGE_ATTR.get(meter)
     if not overage_attr:
@@ -136,14 +134,14 @@ def _report_stripe_overage(plan: Plan, account_id: int, meter: str, units: int) 
             )
             return
 
-        stripe.SubscriptionItem.create_usage_record(
-            si_id,
-            quantity=units,
-            action="increment",
-        )
-        logger.info(
-            "Stripe overage reported: account=%d meter=%s units=%d si=%s",
-            account_id, meter, units, si_id,
+        # stripe-python v15 removed SubscriptionItem.create_usage_record. Metered usage
+        # now goes through stripe.billing.MeterEvent, which requires a Meter to be
+        # configured on the Stripe side and an event_name on each Plan row — neither
+        # is wired up yet. Until that work lands, overage events are not reported to
+        # Stripe and customers will be undercharged on overage.
+        logger.error(
+            "Stripe overage NOT reported (v15 migration pending): account=%d meter=%s units=%d si=%s price=%s",
+            account_id, meter, units, si_id, price_id,
         )
     except Exception as exc:
         logger.warning("Stripe overage report failed account=%d meter=%s units=%d: %s", account_id, meter, units, exc)

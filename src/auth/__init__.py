@@ -31,10 +31,12 @@ from webauthn import (
     verify_authentication_response,
 )
 from webauthn.helpers.bytes_to_base64url import bytes_to_base64url
+from webauthn.helpers import (
+    parse_registration_credential_json,
+    parse_authentication_credential_json,
+)
 from webauthn.helpers.structs import (
     PublicKeyCredentialCreationOptions,
-    RegistrationCredential,
-    AuthenticationCredential,
     UserVerificationRequirement,
     AuthenticatorSelectionCriteria,
 )
@@ -453,7 +455,7 @@ def passkey_registration_verify():
     if not expected_challenge:
         return jsonify({"error": "registration challenge expired"}), 400
     try:
-        credential = RegistrationCredential.model_validate_json(json.dumps(data))
+        credential = parse_registration_credential_json(data)
         verification = verify_registration_response(
             credential=credential,
             expected_challenge=expected_challenge,
@@ -580,7 +582,7 @@ def passkey_authenticate_verify():
         return jsonify({"error": "authentication challenge expired"}), 400
 
     try:
-        credential = AuthenticationCredential.model_validate_json(json.dumps(data))
+        credential = parse_authentication_credential_json(data)
         verification = verify_authentication_response(
             credential=credential,
             expected_challenge=expected_challenge,
