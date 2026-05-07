@@ -23,7 +23,8 @@ def test_get_book_valid_token_returns_200(client, app):
 
     with patch("src.booking.routes.Booking") as MockBooking, \
          patch("src.booking.routes.get_available_slots", return_value=[]), \
-         patch("src.booking.routes.Account") as MockAccount:
+         patch("src.booking.routes.Account") as MockAccount, \
+         patch("src.booking.routes._detect_provider", return_value=None):
         MockBooking.query.filter_by.return_value.first.return_value = None
         MockAccount.query.get.return_value = MagicMock(name="Acme")
         resp = client.get(f"/book/{token}")

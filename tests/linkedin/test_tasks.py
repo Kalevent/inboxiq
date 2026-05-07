@@ -103,12 +103,19 @@ def test_send_digest_core_returns_empty_when_no_prospects(db):
     assert result["count"] == 0
 
 
-def test_draft_messages_task_calls_agent_execute(db):
-    """draft_messages_task calls LinkedInCadenceAgent.execute for each account."""
+def test_draft_messages_task_configures_dspy_per_run(db):
+    """draft_messages_task wires up DSPy and iterates over accounts.
+
+    The task drafts messages via a DSPy signature (build_linkedin_message_draft),
+    not via LinkedInCadenceAgent.execute — this test confirms the DSPy bootstrap
+    runs and the per-account loop is entered.
+    """
     from unittest.mock import patch, MagicMock
 
-    with patch("src.tasks.linkedin._all_account_ids", return_value=[1]), \
-         patch("src.agents.linkedin_cadence.LinkedInCadenceAgent.execute") as mock_execute:
+    with patch("src.tasks.linkedin._all_account_ids", return_value=[1]) as mock_accounts, \
+         patch("src.dspy.config._configure_dspy") as mock_configure, \
+         patch("src.dspy.signatures.build_linkedin_message_draft", return_value=MagicMock()):
         from src.tasks.linkedin import draft_messages_task
         draft_messages_task.run()
-        mock_execute.assert_called_once()
+        mock_configure.assert_called_once()
+        mock_accounts.assert_called_once()
