@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 
 from src.extensions import db
-from src.models.campaigns import VideoRender
+from src.models.campaigns import VideoRender, YouTubeVideo
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("heygen_api", __name__, url_prefix="/api/v1/heygen")
@@ -56,12 +56,20 @@ def heygen_webhook():
         return jsonify({"ok": True}), 200
 
     event_type = data.get("event_type", "")
+    new_status = None
     if "success" in event_type or "complete" in event_type:
         render.heygen_render_url = event_data.get("video_url") or event_data.get("url")
         render.status = "render_complete"
         render.render_completed_at = datetime.now(timezone.utc)
+        new_status = "render_complete"
     elif "fail" in event_type or "error" in event_type:
         render.status = "failed"
+        new_status = "failed"
+
+    if new_status:
+        video = YouTubeVideo.query.filter_by(video_render_id=render.id).first()
+        if video:
+            video.status = new_status
 
     try:
         db.session.commit()
