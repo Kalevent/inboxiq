@@ -7,6 +7,8 @@ from src.settings import login_required_settings
 
 from src.extensions import db
 from src.models.campaigns import LinkedInProspect
+from src.models.marketing import ICPExperiment, ICPVariant
+from src.marketing.experiment_metrics import compute_experiment_metrics
 
 log = logging.getLogger(__name__)
 
@@ -218,3 +220,56 @@ def api_save_icp():
     except Exception:
         db.session.rollback()
         return jsonify({"error": "internal error"}), 500
+
+
+# ── ICP A/B Experiments — read-only ─────────────────────────────────────────
+
+def _serialize_experiment_summary(exp) -> dict:
+    return {
+        "id": exp.id,
+        "name": exp.name,
+        "status": exp.status,
+        "traffic_split": exp.traffic_split,
+        "winner_variant": exp.winner_variant,
+        "created_at": exp.created_at.isoformat() if exp.created_at else None,
+    }
+
+
+def _serialize_variant(v) -> dict:
+    return {
+        "id": v.id,
+        "label": v.label,
+        "titles": v.titles,
+        "industries": v.industries,
+        "company_size_min": v.company_size_min,
+        "company_size_max": v.company_size_max,
+        "geographies": v.geographies,
+    }
+
+
+@linkedin_api_bp.route("/experiments", methods=["GET"])
+@login_required_settings
+def api_list_experiments():
+    account_id = g.current_account_id
+    exps = (
+        ICPExperiment.query
+        .filter_by(account_id=account_id)
+        .order_by(ICPExperiment.created_at.desc())
+        .all()
+    )
+    return jsonify({"experiments": [_serialize_experiment_summary(e) for e in exps]})
+
+
+@linkedin_api_bp.route("/experiments/<exp_id>", methods=["GET"])
+@login_required_settings
+def api_get_experiment(exp_id: str):
+    account_id = g.current_account_id
+    exp = ICPExperiment.query.filter_by(id=exp_id, account_id=account_id).first()
+    if not exp:
+        return jsonify({"error": "not found"}), 404
+    variants = ICPVariant.query.filter_by(experiment_id=exp.id).all()
+    return jsonify({
+        **_serialize_experiment_summary(exp),
+        "variants": [_serialize_variant(v) for v in variants],
+        "metrics": compute_experiment_metrics(exp),
+    })
