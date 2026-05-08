@@ -1491,9 +1491,23 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
         if "401" in msg or "403" in msg or "Invalid Credentials" in msg or "service has been disabled" in msg:
             fetch_status = "auth_error"
             fetch_error = msg
-            current_app.logger.error(
-                {"event": "inbox.poll.auth_error", "connection_id": conn.id, "provider": conn.provider, "error": msg}
-            )
+            from src.inbox.auth_health import record_auth_error
+            transitioned = record_auth_error(conn)
+            # Log at ERROR (which fires the SMTPHandler crash email) only on
+            # the transition to needs_reconnect — every subsequent poll while
+            # in that state would otherwise fan out one email per cycle.
+            log_payload = {
+                "event": "inbox.poll.auth_error",
+                "connection_id": conn.id,
+                "provider": conn.provider,
+                "error": msg,
+                "consecutive_auth_errors": (conn.metadata_json or {}).get("consecutive_auth_errors"),
+                "auto_disabled": transitioned,
+            }
+            if transitioned:
+                current_app.logger.error(log_payload)
+            else:
+                current_app.logger.warning(log_payload)
             messages = []
         else:
             # Log at error level so crash email/alerts fire when a poll fails.
@@ -1649,6 +1663,11 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
     elif fetch_status == "ok" and not messages:
         fetch_status = "ok_no_new"
         fetch_error = None
+
+    # Reset auth-error counter on any non-auth poll outcome so a single
+    # successful (or non-auth-failing) poll re-arms the threshold.
+    from src.inbox.auth_health import record_poll_success
+    record_poll_success(conn)
 
     meta = conn.metadata_json or {}
     meta.update(

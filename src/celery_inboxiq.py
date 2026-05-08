@@ -174,6 +174,11 @@ def make_celery(app) -> Celery:
                 "schedule": crontab(hour=3, minute=0),  # 3am daily
                 "options": {"queue": "inbox"},
             },
+            "monitoring_smoke_test": {
+                "task": "monitoring.run_smoke_test",
+                "schedule": crontab(minute="*/15"),  # every 15 min between deploys
+                "options": {"queue": "inbox"},
+            },
             **(
                 {
                     "dspy_train_overrides_daily": {
@@ -499,7 +504,7 @@ def make_celery(app) -> Celery:
 
 app = create_app()
 celery = make_celery(app)
-celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox", "src.booking", "src.tasks.linkedin", "src.tasks.onboarding_video", "src.tasks.youtube", "src.tasks.outreach_video"])
+celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox", "src.booking", "src.tasks.linkedin", "src.tasks.onboarding_video", "src.tasks.youtube", "src.tasks.outreach_video", "src.tasks.smoke"])
 
 # Wire Celery task_failure into app.logger so the SMTPHandler attached by
 # configure_crash_email also pages on failed background tasks (otherwise
