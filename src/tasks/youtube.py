@@ -502,6 +502,35 @@ def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
             )
             description = (video.description or "").replace("{{UTM_LINK}}", utm_url)
 
+            # The webhook stores HeyGen's gif preview URL (event_data.video_url
+            # is the gif, not the mp4). Re-fetch via /v1/video_status.get to
+            # get the signed mp4 URL — also handles signed URL expiry by
+            # always pulling a fresh one at upload time.
+            if not render.heygen_job_id:
+                logger.error("youtube.publish_videos: render %s missing heygen_job_id", render.id)
+                video.status = "failed"
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                failed += 1
+                continue
+
+            poll = heygen_mcp.get_render_status(render.heygen_job_id)
+            if poll.get("status") != "completed" or not poll.get("render_url"):
+                logger.error(
+                    "youtube.publish_videos: HeyGen status %r for job %s, marking failed",
+                    poll.get("status"), render.heygen_job_id,
+                )
+                video.status = "failed"
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                failed += 1
+                continue
+            mp4_url = poll["render_url"]
+
             video.status = "publishing"
             try:
                 db.session.commit()
@@ -510,7 +539,7 @@ def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
                 raise
 
             result = youtube_mcp.upload_video(
-                file_url=render.heygen_render_url,
+                file_url=mp4_url,
                 title=video.title or "",
                 description=description,
                 tags=video.tags or [],

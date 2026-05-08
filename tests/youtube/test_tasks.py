@@ -95,7 +95,8 @@ def test_render_videos_submits_avatar_to_heygen(app):
 
 def test_publish_videos_uploads_to_youtube(app):
     with app.app_context():
-        with patch("src.tasks.youtube.youtube_mcp") as mock_yt, \
+        with patch("src.tasks.youtube.heygen_mcp") as mock_heygen, \
+             patch("src.tasks.youtube.youtube_mcp") as mock_yt, \
              patch("src.tasks.youtube.db") as mock_db:
 
             mock_video = MagicMock()
@@ -110,6 +111,7 @@ def test_publish_videos_uploads_to_youtube(app):
             mock_video.parent_video_id = None
 
             mock_render = MagicMock()
+            mock_render.heygen_job_id = "job-upload-1"
             mock_render.heygen_render_url = "https://cdn.heygen.com/video.mp4"
             mock_render.status = "render_complete"
 
@@ -117,6 +119,10 @@ def test_publish_videos_uploads_to_youtube(app):
                 (mock_video, mock_render)
             ]
             mock_db.session.get.return_value = None
+            mock_heygen.get_render_status.return_value = {
+                "status": "completed",
+                "render_url": "https://files2.heygen.ai/video/job-upload-1.mp4?Expires=1&Signature=x",
+            }
             mock_yt.upload_video.return_value = {
                 "status": "published",
                 "youtube_video_id": "yt-abc123",
@@ -246,7 +252,8 @@ def test_publish_videos_uses_render_url_and_sets_delivered(app, db):
         render = VideoRender(
             account_id=2, programme="youtube", video_style="avatar",
             aspect_ratio="16:9", script="Script.", status="render_complete",
-            heygen_render_url="https://cdn.heygen.com/out.mp4",
+            heygen_job_id="job-pub-test",
+            heygen_render_url="https://resource2.heygen.ai/video/job-pub-test/gif.gif",
         )
         db.session.add(render)
         db.session.flush()
@@ -264,7 +271,12 @@ def test_publish_videos_uses_render_url_and_sets_delivered(app, db):
         render_id = render.id
         video_id = video.id
 
-    with patch("src.tasks.youtube.youtube_mcp") as mock_yt:
+    fresh_mp4 = "https://files2.heygen.ai/video/job-pub-test.mp4?Expires=1&Signature=y"
+    with patch("src.tasks.youtube.heygen_mcp") as mock_heygen, \
+         patch("src.tasks.youtube.youtube_mcp") as mock_yt:
+        mock_heygen.get_render_status.return_value = {
+            "status": "completed", "render_url": fresh_mp4,
+        }
         mock_yt.upload_video.return_value = {
             "status": "published",
             "youtube_video_id": "yt-pub001",
@@ -289,7 +301,7 @@ def test_publish_videos_uses_render_url_and_sets_delivered(app, db):
             assert v.youtube_video_id == "yt-pub001"
 
         call_kwargs = mock_yt.upload_video.call_args
-        assert call_kwargs.kwargs["file_url"] == "https://cdn.heygen.com/out.mp4"
+        assert call_kwargs.kwargs["file_url"] == fresh_mp4
 
 
 def test_render_videos_skips_script_missing_product_name(app, db):
@@ -566,6 +578,109 @@ def test_generate_scripts_persists_short_seo_to_db(app, db):
         assert s.title, f"Short {s.id} has empty title"
         assert s.description, f"Short {s.id} has empty description"
         assert s.tags, f"Short {s.id} has empty tags"
+
+
+def test_publish_videos_refetches_signed_mp4_url_via_heygen(app, db):
+    """publish_videos must call heygen_mcp.get_render_status to fetch the
+    fresh signed mp4 URL — the URL stored on VideoRender by the webhook is
+    the gif preview (HeyGen webhook payload uses different field names than
+    /v1/video_status.get) AND is signed with an Expires param, so always
+    refetching at publish time is correct in two ways."""
+    from src.models.campaigns import YouTubeVideo, VideoRender
+    from unittest.mock import patch
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="youtube", video_style="avatar",
+            aspect_ratio="16:9", script="Script.", status="render_complete",
+            heygen_job_id="job-publish-001",
+            # The webhook-stored URL is the gif preview — publish must IGNORE this.
+            heygen_render_url="https://resource2.heygen.ai/video/job-publish-001/gif.gif",
+        )
+        db.session.add(render)
+        db.session.flush()
+        video = YouTubeVideo(
+            account_id=2, icp_pain_point_id="pain-pub-1", video_type="long_form",
+            video_style="avatar", video_render_id=render.id,
+            title="Title | InboxIQ",
+            description="Pain.\n{{UTM_LINK}}",
+            tags=["inbox"],
+            utm_slug="yt-long-publish-mp4",
+            utm_medium="long_form", utm_campaign="publish-mp4",
+            status="render_complete",
+        )
+        db.session.add(video)
+        db.session.commit()
+
+    fresh_mp4 = "https://files2.heygen.ai/aws_pacific/.../job-publish-001.mp4?Expires=1779999999&Signature=abc"
+
+    with patch("src.tasks.youtube.heygen_mcp") as mock_heygen, \
+         patch("src.tasks.youtube.youtube_mcp") as mock_yt:
+        mock_heygen.get_render_status.return_value = {
+            "status": "completed",
+            "render_url": fresh_mp4,
+        }
+        mock_yt.upload_video.return_value = {
+            "status": "published",
+            "youtube_video_id": "yt-pub-mp4",
+            "youtube_url": "https://www.youtube.com/watch?v=yt-pub-mp4",
+        }
+        mock_yt.add_end_screen.return_value = {"status": "ok"}
+        mock_yt.add_card.return_value = {"status": "ok"}
+        mock_yt.post_pinned_comment.return_value = {"status": "ok"}
+
+        with app.app_context():
+            from src.tasks.youtube import publish_videos
+            result = publish_videos.run(account_id=2)
+
+        assert result["published"] == 1
+        mock_heygen.get_render_status.assert_called_once_with("job-publish-001")
+        upload_kwargs = mock_yt.upload_video.call_args.kwargs
+        assert upload_kwargs["file_url"] == fresh_mp4, \
+            "upload_video must receive the freshly-fetched mp4, not the gif"
+
+
+def test_publish_videos_marks_failed_when_heygen_status_not_completed(app, db):
+    """If get_render_status returns anything other than 'completed', mark
+    the video failed and skip the YouTube upload — uploading the wrong
+    bytes corrupts the channel."""
+    from src.models.campaigns import YouTubeVideo, VideoRender
+    from unittest.mock import patch
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="youtube", video_style="avatar",
+            aspect_ratio="16:9", script="Script.", status="render_complete",
+            heygen_job_id="job-publish-002",
+            heygen_render_url="https://resource2.heygen.ai/video/job-publish-002/gif.gif",
+        )
+        db.session.add(render)
+        db.session.flush()
+        video = YouTubeVideo(
+            account_id=2, icp_pain_point_id="pain-pub-2", video_type="long_form",
+            video_style="avatar", video_render_id=render.id,
+            title="Title | InboxIQ", description="Desc.",
+            utm_slug="yt-long-publish-fail",
+            utm_medium="long_form", utm_campaign="publish-fail",
+            status="render_complete",
+        )
+        db.session.add(video)
+        db.session.commit()
+        video_id = video.id
+
+    with patch("src.tasks.youtube.heygen_mcp") as mock_heygen, \
+         patch("src.tasks.youtube.youtube_mcp") as mock_yt:
+        mock_heygen.get_render_status.return_value = {"status": "processing"}
+
+        with app.app_context():
+            from src.tasks.youtube import publish_videos
+            publish_videos.run(account_id=2)
+
+        mock_yt.upload_video.assert_not_called()
+
+        with app.app_context():
+            v = db.session.get(YouTubeVideo, video_id)
+            assert v.status == "failed"
 
 
 def test_send_digest_calls_email_function(app):
