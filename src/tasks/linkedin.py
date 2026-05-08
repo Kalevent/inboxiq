@@ -1,14 +1,9 @@
 """LinkedIn outreach cadence tasks."""
 import logging
-import os
 
 from celery import shared_task
 
-from src.agents.linkedin_cadence import LinkedInCadenceAgent
 from src.extensions import db
-from src.marketing.experiment_metrics import derive_status
-from src.marketing.icp_match import lead_matches_variant
-from src.models.marketing import ICPMetric, ICPExperiment, ICPVariant, ICPLeadAssignment
 
 log = logging.getLogger(__name__)
 
@@ -140,82 +135,11 @@ def enrich_linkedin_urls():
 
 @shared_task(name="linkedin.discover_prospects")
 def discover_prospects():
-    """Promote enriched leads into the prospect queue.
-
-    For accounts with a running ICPExperiment, qualified leads are routed into
-    variant A or B per quotas computed from the experiment's traffic_split, and
-    each promoted lead gets one ICPLeadAssignment row. Leads already assigned
-    to ANY experiment are skipped (lead_id UNIQUE).
-
-    For accounts WITHOUT a running experiment, the legacy single-ICP path runs
-    unchanged.
-    """
-    leads = _qualified_leads()
-    if not leads:
-        return {"created": 0}
-
-    # Group leads by account so we look up the experiment once per account
-    by_account = {}
-    for lead in leads:
-        by_account.setdefault(lead.account_id, []).append(lead)
-
-    budget = int(os.getenv("LEAD_DISCOVERY_MAX_LEADS", "50"))
-    created = 0
-
-    for account_id, account_leads in by_account.items():
-        exp = _running_experiment(account_id)
-        if exp is None:
-            # Legacy path — unchanged behaviour
-            for lead in account_leads:
-                agent = LinkedInCadenceAgent(account_id=account_id)
-                if agent._tool_add_to_prospect_queue(str(lead.id)).get("created"):
-                    created += 1
-            continue
-
-        va, vb = _variants_for(exp)
-        if va is None or vb is None:
-            log.warning(
-                "linkedin.discover_prospects: experiment %s missing one of [A,B]; falling through",
-                exp.id,
-            )
-            continue
-
-        split = exp.traffic_split or {"A": 50, "B": 50}
-        quota_a = budget * int(split.get("A", 50)) // 100
-        quota_b = budget - quota_a
-        a_taken = b_taken = 0
-        agent = LinkedInCadenceAgent(account_id=account_id)
-
-        for lead in account_leads:
-            if _has_assignment(str(lead.id)):
-                continue
-            chosen = None
-            # Variant A always tried first when both match (overlap edge case)
-            if a_taken < quota_a and lead_matches_variant(lead, va):
-                chosen = va
-                a_taken += 1
-            elif b_taken < quota_b and lead_matches_variant(lead, vb):
-                chosen = vb
-                b_taken += 1
-            if not chosen:
-                continue
-            if agent._tool_add_to_prospect_queue(str(lead.id)).get("created"):
-                created += 1
-            _create_assignment(experiment_id=exp.id, variant_id=chosen.id, lead_id=str(lead.id))
-
-        try:
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            raise
-
-    log.info("linkedin.discover_prospects: created %d new prospects", created)
-    return {"created": created}
-
-
-def _qualified_leads():
+    """Promote enriched leads into the prospect queue."""
     from src.models.leads import Lead
-    return (
+    from src.agents.linkedin_cadence import LinkedInCadenceAgent
+
+    leads = (
         db.session.query(Lead)
         .filter(
             Lead.linkedin_url.isnot(None),
@@ -223,32 +147,18 @@ def _qualified_leads():
             Lead.outreach_unsubscribed_at.is_(None),
             Lead.deleted.is_(False),
         )
-        .order_by(Lead.fit_score.desc(), Lead.id.asc())
         .all()
     )
 
+    created = 0
+    for lead in leads:
+        agent = LinkedInCadenceAgent(account_id=lead.account_id)
+        result = agent._tool_add_to_prospect_queue(str(lead.id))
+        if result.get("created"):
+            created += 1
 
-def _running_experiment(account_id: int):
-    return ICPExperiment.query.filter_by(account_id=account_id, status="running").first()
-
-
-def _variants_for(experiment):
-    a = ICPVariant.query.filter_by(experiment_id=experiment.id, label="A").first()
-    b = ICPVariant.query.filter_by(experiment_id=experiment.id, label="B").first()
-    return a, b
-
-
-def _has_assignment(lead_id: str) -> bool:
-    return ICPLeadAssignment.query.filter_by(lead_id=lead_id).first() is not None
-
-
-def _create_assignment(*, experiment_id: str, variant_id: str, lead_id: str):
-    db.session.add(ICPLeadAssignment(
-        experiment_id=experiment_id,
-        variant_id=variant_id,
-        lead_id=lead_id,
-        status="discovered",
-    ))
+    log.info("linkedin.discover_prospects: created %d new prospects", created)
+    return {"created": created}
 
 
 @shared_task(name="linkedin.draft_messages")
@@ -403,82 +313,3 @@ def review_mismatched_prospects():
 
     log.info("linkedin.review_mismatched_prospects: flagged %d prospects", flagged)
     return {"flagged": flagged}
-
-
-def _all_assignments_for_refresh():
-    """Return all ICPLeadAssignment rows that should be re-evaluated.
-    Disqualified is manual and never refreshed."""
-    return ICPLeadAssignment.query.filter(ICPLeadAssignment.status != "disqualified").all()
-
-
-def _running_experiments_with_variants():
-    """Yield (experiment, [variant_a, variant_b]) for every running experiment."""
-    out = []
-    for exp in ICPExperiment.query.filter_by(status="running").all():
-        variants = ICPVariant.query.filter_by(experiment_id=exp.id).all()
-        out.append((exp, variants))
-    return out
-
-
-def _count_assignments_by_status(experiment_id: str, variant_id: str) -> dict:
-    """Mutually-exclusive status counts for (experiment, variant)."""
-    from sqlalchemy import func as sqlfunc
-    rows = (
-        db.session.query(ICPLeadAssignment.status, sqlfunc.count(ICPLeadAssignment.id))
-        .filter_by(experiment_id=experiment_id, variant_id=variant_id)
-        .group_by(ICPLeadAssignment.status)
-        .all()
-    )
-    return {status: int(count) for status, count in rows}
-
-
-@shared_task(name="linkedin.refresh_experiment_metrics")
-def refresh_experiment_metrics():
-    """Reconcile ICPLeadAssignment.status against existing tables AND insert
-    one ICPMetric snapshot per (running experiment, variant) per tick.
-
-    Idempotent on the status side. Snapshot side is INSERT-only by design.
-    """
-    # 1. Reconcile statuses (skip manually-disqualified — defence in depth in
-    # case the query helper ever returns a disqualified row by accident).
-    updated = 0
-    for asg in _all_assignments_for_refresh():
-        if asg.status == "disqualified":
-            continue
-        new_status = derive_status(asg.lead_id)
-        if new_status != asg.status:
-            asg.status = new_status
-            updated += 1
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
-
-    # 2. Insert snapshot per (running experiment, variant)
-    snapshots = 0
-    for exp, variants in _running_experiments_with_variants():
-        for variant in variants:
-            counts = _count_assignments_by_status(exp.id, variant.id)
-            discovered = sum(counts.values())
-            connected = counts.get("connected", 0) + counts.get("replied", 0) + counts.get("booked", 0)
-            replied = counts.get("replied", 0) + counts.get("booked", 0)
-            booked = counts.get("booked", 0)
-            conv = (booked / discovered * 100.0) if discovered > 0 else 0.0
-            db.session.add(ICPMetric(
-                experiment_id=exp.id,
-                variant_id=variant.id,
-                discovered=discovered,
-                connected=connected,
-                replied=replied,
-                booked=booked,
-                conversion_pct=conv,
-            ))
-            snapshots += 1
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
-
-    return {"updated": updated, "snapshots": snapshots}

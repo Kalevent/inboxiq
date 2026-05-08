@@ -30,7 +30,7 @@ The framing is **parallel A/B**, not sequential change-and-observe.
 
 ## Data model
 
-Four new tables in `src/models/marketing.py`. All use the codebase convention of `String(64)` UUID primary keys (matching existing `ICPConfig`, `Lead`); FK to `accounts.id` (Integer) — no Account model changes.
+Three new tables in `src/models/marketing.py`. All use the codebase convention of `String(64)` UUID primary keys (matching existing `ICPConfig`, `Lead`); FK to `accounts.id` (Integer) — no Account model changes.
 
 ```python
 class ICPExperiment(db.Model):
@@ -68,41 +68,6 @@ class ICPVariant(db.Model):
         db.UniqueConstraint("experiment_id", "label", name="uq_experiment_variant_label"),
         db.CheckConstraint("label IN ('A', 'B')", name="ck_variant_label_a_or_b"),
     )
-
-
-class ICPMetric(db.Model):
-    """Periodic snapshot of conversion counts per (experiment, variant).
-
-    INSERT-only: each refresh_experiment_metrics tick (every 15 min) writes
-    one row per active (experiment, variant). This gives the live dashboard
-    an O(1) read (latest row) AND a free historical timeline for charts /
-    audit trail. The snapshot is the source of truth for displayed metrics
-    once the first tick has run; before then, GET /experiments/:id falls
-    back to compute_experiment_metrics aggregating ICPLeadAssignment.
-
-    Sized for ~192 rows / experiment / day at the 15-min cadence — tiny."""
-    __tablename__ = "icp_metrics"
-    __table_args__ = (
-        db.Index("idx_icp_metrics_experiment_snapshot", "experiment_id", "snapshot_at"),
-    )
-
-    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
-    experiment_id = db.Column(
-        db.String(64),
-        db.ForeignKey("icp_experiments.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    variant_id = db.Column(
-        db.String(64),
-        db.ForeignKey("icp_variants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    snapshot_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
-    discovered = db.Column(db.Integer, nullable=False, server_default="0")
-    connected = db.Column(db.Integer, nullable=False, server_default="0")
-    replied = db.Column(db.Integer, nullable=False, server_default="0")
-    booked = db.Column(db.Integer, nullable=False, server_default="0")
-    conversion_pct = db.Column(db.Numeric(6, 2), nullable=False, server_default="0")
 
 
 class ICPLeadAssignment(db.Model):
@@ -150,40 +115,19 @@ class ICPLeadAssignment(db.Model):
       - Overlap edge case: a prospect matches both A's and B's filters → A claims it (because A runs first). Acceptable v1 behaviour; documented in code.
    3. **Branch B — no running experiment**: fall back to existing `ICPConfig`-driven discovery, unchanged.
 
-## Status progression / backfill / metric snapshots
+## Status progression / backfill
 
-`ICPLeadAssignment.status` and `ICPMetric` together drive the dashboard. Both updated by a single periodic task `linkedin.refresh_experiment_metrics` running every 15 min via Celery beat. The task does TWO things in order:
-
-1. **Reconcile assignment statuses** from existing tables (Booking, LeadEngagementEvent, LinkedInProspect).
-2. **Insert one ICPMetric snapshot row per running experiment per variant**, capturing the current count at each status level.
-
-Pseudocode:
+`ICPLeadAssignment.status` is the source of truth for the metrics panel. Updated by a new periodic task `linkedin.refresh_experiment_metrics` running every 15 min via Celery beat. Pseudocode:
 
 ```python
 @shared_task(name="linkedin.refresh_experiment_metrics")
 def refresh_experiment_metrics():
-    # 1. Reconcile assignment statuses
     for assignment in ICPLeadAssignment.query.filter(
         ICPLeadAssignment.status != "disqualified"
     ).all():
         new_status = derive_status(assignment.lead_id)
         if new_status != assignment.status:
             assignment.status = new_status
-    db.session.commit()
-
-    # 2. Snapshot per-variant counts for every running experiment
-    for exp in ICPExperiment.query.filter_by(status="running").all():
-        for variant in ICPVariant.query.filter_by(experiment_id=exp.id).all():
-            counts = _count_assignments_by_status(exp.id, variant.id)
-            db.session.add(ICPMetric(
-                experiment_id=exp.id,
-                variant_id=variant.id,
-                discovered=counts["discovered"],
-                connected=counts["connected"],
-                replied=counts["replied"],
-                booked=counts["booked"],
-                conversion_pct=(counts["booked"] / counts["discovered"] * 100) if counts["discovered"] else 0,
-            ))
     db.session.commit()
 
 
@@ -199,11 +143,7 @@ def derive_status(lead_id: str) -> str:
     return "discovered"
 ```
 
-The `_count_assignments_by_status` helper rolls up "progressed" counts in the dashboard sense: `connected = connected+replied+booked`, `replied = replied+booked`, `booked = booked` — same shape `compute_experiment_metrics` returns today.
-
-`compute_experiment_metrics(experiment)` is read-only and is called by the GET `/experiments/:id` endpoint. It returns the **latest ICPMetric snapshot** per variant if one exists; otherwise it falls back to live aggregation over `ICPLeadAssignment`. That gives O(2) reads on the live dashboard once the first tick has run, while still showing correct numbers for a brand-new experiment that hasn't been backfilled yet.
-
-Reasoning: instrumenting every status-changing code path is intrusive and error-prone. A 15-min backfill is fast enough for an A/B dashboard and keeps the diff small. `disqualified` is set manually via PATCH and never overwritten by the backfill. The ICPMetric snapshot table grows by ~192 rows / experiment / day — tiny — and gives a free historical timeline for time-series charts later.
+Reasoning: instrumenting every status-changing code path is intrusive and error-prone. A 15-min backfill is fast enough for an A/B dashboard and keeps the diff small. `disqualified` is set manually via PATCH and never overwritten by the backfill.
 
 ## API surface
 

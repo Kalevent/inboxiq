@@ -423,11 +423,6 @@ def make_celery(app) -> Celery:
                 "schedule": crontab(hour=6, minute=0),
                 "options": {"queue": "inbox"},
             },
-            "linkedin_refresh_experiment_metrics": {
-                "task": "linkedin.refresh_experiment_metrics",
-                "schedule": crontab(minute="*/15"),
-                "options": {"queue": "inbox"},
-            },
             # YouTube cadence — script generation, render polling, publish, digest
             **(
                 {

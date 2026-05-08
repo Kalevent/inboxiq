@@ -7,7 +7,7 @@ from src.app import create_app
 from src.extensions import db as _db
 from src.models.leads import Lead
 from src.models.campaigns import LinkedInProspect
-from src.models.marketing import ICPConfig, ICPExperiment, ICPVariant, ICPLeadAssignment, ICPMetric
+from src.models.marketing import ICPConfig
 
 
 @pytest.fixture
@@ -28,16 +28,8 @@ def app():
         Lead.__table__.create(_db.engine, checkfirst=True)
         LinkedInProspect.__table__.create(_db.engine, checkfirst=True)
         ICPConfig.__table__.create(_db.engine, checkfirst=True)
-        ICPExperiment.__table__.create(_db.engine, checkfirst=True)
-        ICPVariant.__table__.create(_db.engine, checkfirst=True)
-        ICPLeadAssignment.__table__.create(_db.engine, checkfirst=True)
-        ICPMetric.__table__.create(_db.engine, checkfirst=True)
         yield app
         _db.session.remove()
-        ICPMetric.__table__.drop(_db.engine, checkfirst=True)
-        ICPLeadAssignment.__table__.drop(_db.engine, checkfirst=True)
-        ICPVariant.__table__.drop(_db.engine, checkfirst=True)
-        ICPExperiment.__table__.drop(_db.engine, checkfirst=True)
         ICPConfig.__table__.drop(_db.engine, checkfirst=True)
         LinkedInProspect.__table__.drop(_db.engine, checkfirst=True)
         Lead.__table__.drop(_db.engine, checkfirst=True)

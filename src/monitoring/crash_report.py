@@ -127,22 +127,6 @@ class HtmlSMTPHandler(logging.handlers.SMTPHandler):
         )
 
 
-def _crash_reports_enabled() -> bool:
-    """Crash emails fire only in production.
-
-    Detection (either signal is sufficient):
-      - KUBERNETES_SERVICE_HOST: auto-injected into every pod by kube-dns;
-        never set on a developer machine.
-      - CRASH_REPORTS_ENABLED=true: explicit opt-in for non-k8s prod or
-        for testing the email path deliberately.
-    """
-    if os.getenv("CRASH_REPORTS_ENABLED", "").lower() in ("1", "true", "yes"):
-        return True
-    if os.getenv("KUBERNETES_SERVICE_HOST"):
-        return True
-    return False
-
-
 class _RequestFilter(logging.Filter):
     """Attach request path/remote to log records when a Flask request context exists."""
 
@@ -165,15 +149,7 @@ def configure_crash_email(app):
     Requires env:
       SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_USE_TLS (default true), MAIL_FROM (optional)
       CRASH_EMAIL_TO (recipient)
-
-    Production-only: a no-op unless _crash_reports_enabled() (KUBERNETES_SERVICE_HOST
-    auto-injected in pods, or CRASH_REPORTS_ENABLED=true explicit opt-in). Local dev
-    that loads prod.env would otherwise spam security@kalevent.com on every exception.
     """
-    if not _crash_reports_enabled():
-        app.logger.info("Crash email handler disabled (not in production).")
-        return
-
     mailhost = os.getenv("SMTP_HOST")
     port = int(os.getenv("SMTP_PORT", "587"))
     user = os.getenv("SMTP_USER")
@@ -220,17 +196,10 @@ def configure_celery_crash_email(app):
     task_failure into app.logger so any failed Celery task pages
     CRASH_EMAIL_TO the same way an unhandled Flask request exception does.
 
-    Production-only: a no-op unless _crash_reports_enabled(). Same gate as
-    configure_crash_email — local Celery workers running off prod.env would
-    otherwise spam security@kalevent.com on every dev-time task error.
-
     Idempotent — calling twice for the same app does not register a duplicate
     receiver.
     """
     from celery.signals import task_failure
-
-    if not _crash_reports_enabled():
-        return
 
     if id(app) in _celery_handler_app_ids:
         return
