@@ -73,7 +73,10 @@ def test_render_videos_submits_avatar_to_heygen(app):
             mock_video.status = "script_ready"
 
             mock_render = MagicMock()
-            mock_render.script = "You are drowning in support emails."
+            mock_render.script = (
+                "You are drowning in support emails. InboxIQ triages your inbox "
+                "automatically. Start free at inboxiq.com."
+            )
             mock_render.aspect_ratio = "16:9"
             mock_render.illustration_prompts = None
             mock_render.dalle_frame_urls = None
@@ -196,7 +199,12 @@ def test_render_videos_writes_to_video_render(app, db):
     with app.app_context():
         render = VideoRender(
             account_id=2, programme="youtube", video_style="avatar",
-            aspect_ratio="16:9", script="Your inbox is chaos.", status="pending",
+            aspect_ratio="16:9",
+            script=(
+                "Your inbox is chaos. InboxIQ triages it automatically and "
+                "drafts replies in your voice. Start free at inboxiq.com."
+            ),
+            status="pending",
         )
         db.session.add(render)
         db.session.flush()
@@ -282,6 +290,128 @@ def test_publish_videos_uses_render_url_and_sets_delivered(app, db):
 
         call_kwargs = mock_yt.upload_video.call_args
         assert call_kwargs.kwargs["file_url"] == "https://cdn.heygen.com/out.mp4"
+
+
+def test_render_videos_skips_script_missing_product_name(app, db):
+    """Pre-render quality gate: a script that never names InboxIQ must be
+    marked failed BEFORE submitting to HeyGen ($ per render). Production
+    burned 3 renders on a 'chatbot'-only script before this gate existed."""
+    from src.models.campaigns import YouTubeVideo, VideoRender
+    from unittest.mock import patch
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="youtube", video_style="avatar",
+            aspect_ratio="16:9",
+            script="Are you drowning in support emails? Chatbots can help. Start free at inboxiq.com.",
+            status="pending",
+        )
+        db.session.add(render)
+        db.session.flush()
+        video = YouTubeVideo(
+            account_id=2, icp_pain_point_id="pain-gate-1", video_type="long_form",
+            video_style="avatar", video_render_id=render.id,
+            utm_slug="yt-long-gate-no-product", utm_medium="long_form",
+            status="script_ready",
+        )
+        db.session.add(video)
+        db.session.commit()
+        render_id = render.id
+        video_id = video.id
+
+    with patch("src.tasks.youtube.heygen_mcp") as mock_heygen:
+        with app.app_context():
+            from src.tasks.youtube import render_videos
+            result = render_videos.run(account_id=2)
+
+        # HeyGen must NOT be called when script fails the gate.
+        mock_heygen.render_video.assert_not_called()
+        assert result["failed"] >= 1
+
+        with app.app_context():
+            v = db.session.get(YouTubeVideo, video_id)
+            r = db.session.get(VideoRender, render_id)
+            assert v.status == "failed"
+            assert r.status == "failed"
+
+
+def test_render_videos_skips_script_missing_cta(app, db):
+    """Pre-render quality gate: script must include a CTA pointing at the app
+    (inboxiq.com). Otherwise the funnel attribution breaks."""
+    from src.models.campaigns import YouTubeVideo, VideoRender
+    from unittest.mock import patch
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="youtube", video_style="avatar",
+            aspect_ratio="16:9",
+            script="Support emails pile up. InboxIQ clears your inbox in minutes. The end.",
+            status="pending",
+        )
+        db.session.add(render)
+        db.session.flush()
+        video = YouTubeVideo(
+            account_id=2, icp_pain_point_id="pain-gate-2", video_type="long_form",
+            video_style="avatar", video_render_id=render.id,
+            utm_slug="yt-long-gate-no-cta", utm_medium="long_form",
+            status="script_ready",
+        )
+        db.session.add(video)
+        db.session.commit()
+        video_id = video.id
+
+    with patch("src.tasks.youtube.heygen_mcp") as mock_heygen:
+        with app.app_context():
+            from src.tasks.youtube import render_videos
+            render_videos.run(account_id=2)
+
+        mock_heygen.render_video.assert_not_called()
+
+        with app.app_context():
+            v = db.session.get(YouTubeVideo, video_id)
+            assert v.status == "failed"
+
+
+def test_render_videos_passes_gate_when_script_has_product_and_cta(app, db):
+    """Happy path: a valid script (names InboxIQ + CTA inboxiq.com) reaches HeyGen."""
+    from src.models.campaigns import YouTubeVideo, VideoRender
+    from unittest.mock import patch
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="youtube", video_style="avatar",
+            aspect_ratio="16:9",
+            script=(
+                "Support emails pile up unread. Customers churn before Monday. "
+                "InboxIQ triages your inbox automatically and drafts replies in your voice. "
+                "Start free at inboxiq.com."
+            ),
+            status="pending",
+        )
+        db.session.add(render)
+        db.session.flush()
+        video = YouTubeVideo(
+            account_id=2, icp_pain_point_id="pain-gate-3", video_type="long_form",
+            video_style="avatar", video_render_id=render.id,
+            utm_slug="yt-long-gate-happy", utm_medium="long_form",
+            status="script_ready",
+        )
+        db.session.add(video)
+        db.session.commit()
+        video_id = video.id
+
+    with patch("src.tasks.youtube.heygen_mcp") as mock_heygen:
+        mock_heygen.render_video.return_value = {"status": "submitted", "job_id": "job-gate-happy"}
+        with app.app_context():
+            from src.tasks.youtube import render_videos
+            result = render_videos.run(account_id=2)
+
+        mock_heygen.render_video.assert_called_once()
+        assert result["submitted"] == 1
+
+        with app.app_context():
+            v = db.session.get(YouTubeVideo, video_id)
+            assert v.status == "rendering"
 
 
 def test_run_dspy_passes_product_name_to_long_form_predictor(app, mock_blog_post, mock_pain_point):

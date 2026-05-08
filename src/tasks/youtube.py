@@ -308,6 +308,23 @@ def generate_scripts(account_id: int = ACCOUNT_ID, video_style: str = "avatar") 
 
 # ── Task 2: Render Videos ────────────────────────────────────────────────────
 
+def _script_passes_quality_gate(script: str) -> tuple[bool, str]:
+    """Pre-HeyGen validation. Each render costs money, so reject scripts that
+    violate the cadence skill's hard rules before submission.
+
+    Returns (ok, reason). reason is empty when ok=True.
+    """
+    text = (script or "").lower()
+    if "inboxiq.com" not in text:
+        return False, "script CTA must point to inboxiq.com"
+    # Strip CTA URL before checking product mention so a script that ONLY
+    # mentions inboxiq.com (without naming the product) still fails the gate.
+    body = text.replace("inboxiq.com", "")
+    if PRODUCT_NAME.lower() not in body:
+        return False, f"script does not name {PRODUCT_NAME} outside the CTA URL"
+    return True, ""
+
+
 def _generate_dalle_frames(prompts: list, account_id: int) -> list:
     """Generate DALL-E 3 illustration frames and upload to S3 via uploads.py."""
     import openai
@@ -354,6 +371,21 @@ def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
 
     for video, render in rows:
         try:
+            ok, reason = _script_passes_quality_gate(render.script or "")
+            if not ok:
+                logger.warning(
+                    "youtube.render_videos: quality gate rejected video %s: %s",
+                    video.id, reason,
+                )
+                video.status = "failed"
+                render.status = "failed"
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                failed += 1
+                continue
+
             if video.video_style == "illustration" and video.status == "script_ready":
                 prompts = render.illustration_prompts or []
                 if not prompts:
