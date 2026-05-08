@@ -57,10 +57,24 @@ def app_with_variant():
 
 
 @pytest.fixture
+def app_full():
+    """Account + Lead + ICPExperiment + ICPVariant + ICPLeadAssignment."""
+    from src.models.core import Account
+    from src.models.leads import Lead
+    from src.models.marketing import ICPExperiment, ICPVariant, ICPLeadAssignment
+    yield from _build_app(Account, Lead, ICPExperiment, ICPVariant, ICPLeadAssignment)
+
+
+@pytest.fixture
 def db(app):
     return _db
 
 
 @pytest.fixture
 def db_with_variant(app_with_variant):
+    return _db
+
+
+@pytest.fixture
+def db_full(app_full):
     return _db

@@ -244,3 +244,35 @@ class ICPVariant(db.Model):
     company_size_max = db.Column(db.Integer, nullable=True)
     geographies = db.Column(db.JSON, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class ICPLeadAssignment(db.Model):
+    """A Lead's variant tag inside an experiment. lead_id is UNIQUE so the
+    conversion math is unambiguous (no double-counting)."""
+    __tablename__ = "icp_lead_assignments"
+    __table_args__ = (
+        db.Index("idx_icp_assignments_experiment_variant", "experiment_id", "variant_id"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    experiment_id = db.Column(
+        db.String(64),
+        db.ForeignKey("icp_experiments.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    variant_id = db.Column(
+        db.String(64),
+        db.ForeignKey("icp_variants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    lead_id = db.Column(
+        db.String(64),
+        db.ForeignKey("leads.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    status = db.Column(db.String(50), nullable=False, server_default="discovered")
+    # status ∈ {"discovered", "connected", "replied", "booked", "disqualified"}
+    score = db.Column(db.Integer, nullable=False, server_default="0")
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
