@@ -519,6 +519,84 @@ def test_run_dspy_passes_product_name_to_long_form_predictor(app, mock_blog_post
                 "product_value_proposition must be passed to long form predictor"
 
 
+def test_run_dspy_appends_short_cta_when_missing_from_script(app, mock_blog_post, mock_pain_point):
+    """DSPy frequently puts the short CTA in the separate cta_line output and
+    omits it from short_script. HeyGen only renders short_script, so the CTA
+    must end up there. _run_dspy_script_generation must append cta_line when
+    the script doesn't already contain it."""
+    with app.app_context():
+        with patch("src.dspy.config._configure_dspy"), \
+             patch("src.dspy.signatures.build_youtube_signatures") as mock_build, \
+             patch("dspy.Predict") as mock_predict_cls:
+
+            sentinel = MagicMock()
+            mock_build.return_value = {
+                "YouTubeLongFormScript": sentinel,
+                "YouTubeShortScript": sentinel,
+                "YouTubeSEOMetadata": sentinel,
+                "YouTubeIllustrationPrompts": sentinel,
+            }
+            predictor = MagicMock()
+            predictor.script = "Long form ends with Start free at kalevent.com."
+            predictor.hook_line = "Hook."
+            predictor.chapter_markers = "[]"
+            predictor.cta_line = "Start free at kalevent.com."
+            # The short script body lacks the CTA phrase entirely.
+            predictor.short_script = "Booking takes days. InboxIQ fixes it. Don't let prospects go cold."
+            predictor.pattern_interrupt_line = "Pi."
+            predictor.title = "T | InboxIQ"
+            predictor.description = "Desc."
+            predictor.tags = '["t"]'
+            predictor.thumbnail_prompt = "Tp."
+            # dspy.Predict(SigClass)(...) is two calls — make both return predictor itself
+            predictor.return_value = predictor
+            mock_predict_cls.return_value = predictor
+
+            from src.tasks.youtube import _run_dspy_script_generation
+            result = _run_dspy_script_generation(mock_blog_post, mock_pain_point, "avatar")
+
+            for short in result["short_scripts"]:
+                assert "link in description" in short["script"].lower(), \
+                    f"short.script must contain CTA after enrichment, got: {short['script']!r}"
+
+
+def test_run_dspy_does_not_duplicate_cta_when_already_in_short_script(app, mock_blog_post, mock_pain_point):
+    """Don't double-append the CTA if DSPy did include it in the script."""
+    with app.app_context():
+        with patch("src.dspy.config._configure_dspy"), \
+             patch("src.dspy.signatures.build_youtube_signatures") as mock_build, \
+             patch("dspy.Predict") as mock_predict_cls:
+
+            sentinel = MagicMock()
+            mock_build.return_value = {
+                "YouTubeLongFormScript": sentinel,
+                "YouTubeShortScript": sentinel,
+                "YouTubeSEOMetadata": sentinel,
+                "YouTubeIllustrationPrompts": sentinel,
+            }
+            predictor = MagicMock()
+            predictor.script = "Long."
+            predictor.hook_line = "Hook."
+            predictor.chapter_markers = "[]"
+            predictor.cta_line = "Link in description. Free to start."
+            # Script already contains the CTA exactly.
+            predictor.short_script = "Pain. InboxIQ fixes it. Link in description. Free to start."
+            predictor.pattern_interrupt_line = "Pi."
+            predictor.title = "T | InboxIQ"
+            predictor.description = "Desc."
+            predictor.tags = '["t"]'
+            predictor.thumbnail_prompt = "Tp."
+            predictor.return_value = predictor
+            mock_predict_cls.return_value = predictor
+
+            from src.tasks.youtube import _run_dspy_script_generation
+            result = _run_dspy_script_generation(mock_blog_post, mock_pain_point, "avatar")
+
+            for short in result["short_scripts"]:
+                # CTA appears exactly once
+                assert short["script"].lower().count("link in description") == 1
+
+
 def test_run_dspy_passes_distinct_short_focus_per_short(app, mock_blog_post, mock_pain_point):
     """Each short predictor invocation must receive a different short_focus
     input so the two shorts come out distinct. Production has been

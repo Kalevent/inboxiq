@@ -40,6 +40,21 @@ PRODUCT_VALUE_PROPOSITION = (
     "lead reply rates up, and churn signals caught before renewal."
 )
 
+SHORT_CTA = "Link in description. Free to start."
+
+
+def _ensure_short_cta(script: str) -> str:
+    """The cadence skill mandates shorts end with the canonical CTA exactly.
+    DSPy frequently puts this in cta_line and omits it from short_script —
+    HeyGen only renders the script, so without this enforcement the spoken
+    short ends without a CTA and the gate (or the viewer) won't see it.
+    """
+    s = (script or "").strip()
+    if SHORT_CTA.lower() in s.lower():
+        return s
+    sep = " " if s.endswith((".", "!", "?")) else ". "
+    return s + sep + SHORT_CTA
+
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -150,7 +165,7 @@ def _run_dspy_script_generation(
             except (ValueError, TypeError):
                 short_tags = [short_tags]
         short_scripts.append({
-            "script": short_pred.short_script,
+            "script": _ensure_short_cta(short_pred.short_script),
             "pattern_interrupt_line": short_pred.pattern_interrupt_line,
             "cta_line": short_pred.cta_line,
             "title": short_seo_pred.title,
