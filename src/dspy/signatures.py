@@ -685,7 +685,7 @@ def build_youtube_signatures(dspy: Any) -> Dict[str, Any]:
         The RESOLUTION beat must explicitly name {product_name} as the solution (do not say
         'chatbots', 'AI tools', or any generic category — name the product). The PROOF beat must
         cite a concrete outcome from {product_value_proposition}. The CTA must say
-        'Start free at inboxiq.com'."""
+        'Start free at kalevent.com'."""
 
         blog_post_content: str = dspy.InputField(desc="Source blog post content to base the video on.")
         icp_persona: str = dspy.InputField(desc="ICP persona, e.g. 'Head of Support, B2B SaaS, 10-50 employees'.")
@@ -695,23 +695,23 @@ def build_youtube_signatures(dspy: Any) -> Dict[str, Any]:
         product_name: str = dspy.InputField(desc="Product brand name to name in the RESOLUTION beat (e.g. 'InboxIQ').")
         product_value_proposition: str = dspy.InputField(desc="One-paragraph product value prop. Drives the RESOLUTION + PROOF beats so the script doesn't drift to source-blog framing.")
 
-        script: str = dspy.OutputField(desc="Full spoken script. HOOK 0-30s opens with pain, no greeting. RESOLUTION explicitly names {product_name}. CTA: 'Start free at inboxiq.com'.")
+        script: str = dspy.OutputField(desc="Full spoken script. HOOK 0-30s opens with pain, no greeting. RESOLUTION explicitly names {product_name}. CTA: 'Start free at kalevent.com'.")
         hook_line: str = dspy.OutputField(desc="First spoken sentence. Must name the pain. No product name.")
         chapter_markers: str = dspy.OutputField(desc="JSON list of {time, title} chapter markers for YouTube.")
-        cta_line: str = dspy.OutputField(desc="Final spoken sentence. One ask only: 'Start free at inboxiq.com'.")
+        cta_line: str = dspy.OutputField(desc="Final spoken sentence. One ask only: 'Start free at kalevent.com'.")
 
     class YouTubeShortScript(dspy.Signature):
         """Extract a 60-second Short from a long form script. Pattern interrupt -> agitation -> resolution -> CTA.
         First 3 seconds must name the pain with no greeting. The RESOLUTION beat (20-50s) must
         explicitly name {product_name} — do not collapse it into 'AI', 'a tool', or the source
-        blog's terminology. The CTA must point to inboxiq.com."""
+        blog's terminology. The CTA must point to kalevent.com."""
 
         long_form_script: str = dspy.InputField(desc="Full long form script to extract the Short from.")
         pain_point: str = dspy.InputField(desc="ICP pain point this Short addresses.")
         parent_youtube_url: str = dspy.InputField(desc="YouTube URL of the parent long form video.")
         product_name: str = dspy.InputField(desc="Product brand name to name in the RESOLUTION beat (e.g. 'InboxIQ').")
 
-        short_script: str = dspy.OutputField(desc="60-second script. Seconds 0-3: pain. 3-20: agitation. 20-50: {product_name} resolves it. 50-60: CTA pointing to inboxiq.com.")
+        short_script: str = dspy.OutputField(desc="60-second script. Seconds 0-3: pain. 3-20: agitation. 20-50: {product_name} resolves it. 50-60: CTA pointing to kalevent.com.")
         pattern_interrupt_line: str = dspy.OutputField(desc="First sentence (0-3s). Names the pain. No greeting.")
         cta_line: str = dspy.OutputField(desc="Final line. 'Link in description. Free to start.'")
 

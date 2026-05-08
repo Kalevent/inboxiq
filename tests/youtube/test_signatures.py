@@ -57,6 +57,26 @@ def test_seo_metadata_has_product_name_input():
     assert "product_value_proposition" in fields, "YouTubeSEOMetadata must accept product_value_proposition"
 
 
+def test_signatures_use_kalevent_com_not_inboxiq_com():
+    """Production domain is kalevent.com (the /signup page). inboxiq.com is
+    not registered — viewers clicking that link 404. Every signature
+    instruction that names the CTA URL must reference kalevent.com."""
+    import dspy
+    from src.dspy.signatures import build_youtube_signatures
+    sigs = build_youtube_signatures(dspy)
+    for name in ("YouTubeLongFormScript", "YouTubeShortScript", "YouTubeSEOMetadata"):
+        sig = sigs[name]
+        instruction = (sig.__doc__ or "").lower()
+        for fname, field in sig.model_fields.items():
+            instruction += " " + (str(field.description or "")).lower()
+        assert "inboxiq.com" not in instruction, f"{name} still references inboxiq.com"
+        # At least one of the three should mention kalevent.com (the long form
+        # signature is where the CTA URL belongs).
+    long_doc = (sigs["YouTubeLongFormScript"].__doc__ or "").lower()
+    long_fields = " ".join((str(f.description or "")).lower() for f in sigs["YouTubeLongFormScript"].model_fields.values())
+    assert "kalevent.com" in long_doc + long_fields, "Long form signature must instruct CTA to kalevent.com"
+
+
 def test_long_form_signature_instructs_product_in_resolution():
     """Signature instruction must explicitly require the product be named in the
     RESOLUTION beat — otherwise the model defaults to source-blog framing."""

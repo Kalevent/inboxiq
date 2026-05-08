@@ -34,7 +34,7 @@ def test_generate_scripts_creates_long_form_and_shorts(app, mock_blog_post, mock
                 "script": "You're drowning in support emails...",
                 "hook_line": "You're drowning in support emails.",
                 "chapter_markers": "[]",
-                "cta_line": "Start free at inboxiq.com",
+                "cta_line": "Start free at kalevent.com",
                 "illustration_prompts": None,
                 "short_scripts": [
                     {"script": "60s short...", "pattern_interrupt_line": "Inbox chaos?", "cta_line": "Link in description."},
@@ -75,7 +75,7 @@ def test_render_videos_submits_avatar_to_heygen(app):
             mock_render = MagicMock()
             mock_render.script = (
                 "You are drowning in support emails. InboxIQ triages your inbox "
-                "automatically. Start free at inboxiq.com."
+                "automatically. Start free at kalevent.com."
             )
             mock_render.aspect_ratio = "16:9"
             mock_render.illustration_prompts = None
@@ -208,7 +208,7 @@ def test_render_videos_writes_to_video_render(app, db):
             aspect_ratio="16:9",
             script=(
                 "Your inbox is chaos. InboxIQ triages it automatically and "
-                "drafts replies in your voice. Start free at inboxiq.com."
+                "drafts replies in your voice. Start free at kalevent.com."
             ),
             status="pending",
         )
@@ -315,7 +315,7 @@ def test_render_videos_skips_script_missing_product_name(app, db):
         render = VideoRender(
             account_id=2, programme="youtube", video_style="avatar",
             aspect_ratio="16:9",
-            script="Are you drowning in support emails? Chatbots can help. Start free at inboxiq.com.",
+            script="Are you drowning in support emails? Chatbots can help. Start free at kalevent.com.",
             status="pending",
         )
         db.session.add(render)
@@ -349,7 +349,7 @@ def test_render_videos_skips_script_missing_product_name(app, db):
 
 def test_render_videos_skips_script_missing_cta(app, db):
     """Pre-render quality gate: script must include a CTA pointing at the app
-    (inboxiq.com). Otherwise the funnel attribution breaks."""
+    (kalevent.com). Otherwise the funnel attribution breaks."""
     from src.models.campaigns import YouTubeVideo, VideoRender
     from unittest.mock import patch
 
@@ -384,8 +384,60 @@ def test_render_videos_skips_script_missing_cta(app, db):
             assert v.status == "failed"
 
 
+def test_render_videos_passes_gate_for_short_with_link_in_description_cta(app, db):
+    """Shorts CTA is 'Link in description. Free to start.' per the cadence skill;
+    the spoken short script does NOT say kalevent.com. The gate must accept
+    this pattern instead of forcing the domain into the script body."""
+    from src.models.campaigns import YouTubeVideo, VideoRender
+    from unittest.mock import patch
+
+    with app.app_context():
+        render = VideoRender(
+            account_id=2, programme="youtube", video_style="avatar",
+            aspect_ratio="9:16",
+            script=(
+                "Booking a meeting takes days of email. Don't let prospects go "
+                "cold. InboxIQ triages your inbox automatically. Link in "
+                "description. Free to start."
+            ),
+            status="pending",
+        )
+        db.session.add(render)
+        db.session.flush()
+        video = YouTubeVideo(
+            account_id=2, icp_pain_point_id="pain-short-cta", video_type="short",
+            video_style="avatar", video_render_id=render.id,
+            utm_slug="yt-short-cta-test", utm_medium="short",
+            status="script_ready",
+        )
+        db.session.add(video)
+        db.session.commit()
+        video_id = video.id
+
+    with patch("src.tasks.youtube.heygen_mcp") as mock_heygen:
+        mock_heygen.render_video.return_value = {"status": "submitted", "job_id": "job-short-cta"}
+        with app.app_context():
+            from src.tasks.youtube import render_videos
+            render_videos.run(account_id=2)
+
+        mock_heygen.render_video.assert_called_once()
+        with app.app_context():
+            v = db.session.get(YouTubeVideo, video_id)
+            assert v.status == "rendering"
+
+
+def test_publish_videos_base_url_is_kalevent_signup(app):
+    """The CTA URL appended to the YouTube description must point at the live
+    signup page (https://kalevent.com/signup) — inboxiq.com isn't registered."""
+    import src.tasks.youtube as yt_mod
+    import inspect
+    src = inspect.getsource(yt_mod.publish_videos)
+    assert "https://kalevent.com/signup" in src, "publish_videos base_url must be https://kalevent.com/signup"
+    assert "inboxiq.com" not in src, "publish_videos must not reference inboxiq.com"
+
+
 def test_render_videos_passes_gate_when_script_has_product_and_cta(app, db):
-    """Happy path: a valid script (names InboxIQ + CTA inboxiq.com) reaches HeyGen."""
+    """Happy path: a valid script (names InboxIQ + CTA kalevent.com) reaches HeyGen."""
     from src.models.campaigns import YouTubeVideo, VideoRender
     from unittest.mock import patch
 
@@ -396,7 +448,7 @@ def test_render_videos_passes_gate_when_script_has_product_and_cta(app, db):
             script=(
                 "Support emails pile up unread. Customers churn before Monday. "
                 "InboxIQ triages your inbox automatically and drafts replies in your voice. "
-                "Start free at inboxiq.com."
+                "Start free at kalevent.com."
             ),
             status="pending",
         )
@@ -448,7 +500,7 @@ def test_run_dspy_passes_product_name_to_long_form_predictor(app, mock_blog_post
             predictor.script = "Long form script."
             predictor.hook_line = "Pain."
             predictor.chapter_markers = "[]"
-            predictor.cta_line = "Start free at inboxiq.com"
+            predictor.cta_line = "Start free at kalevent.com"
             predictor.short_script = "Short."
             predictor.pattern_interrupt_line = "Hook."
             predictor.title = "Title | InboxIQ"
@@ -487,7 +539,7 @@ def test_run_dspy_generates_seo_for_each_short(app, mock_blog_post, mock_pain_po
             predictor.script = "Long form script."
             predictor.hook_line = "Pain."
             predictor.chapter_markers = "[]"
-            predictor.cta_line = "Start free at inboxiq.com"
+            predictor.cta_line = "Start free at kalevent.com"
             predictor.short_script = "Short script."
             predictor.pattern_interrupt_line = "Hook."
             predictor.title = "Title | InboxIQ"

@@ -312,14 +312,19 @@ def _script_passes_quality_gate(script: str) -> tuple[bool, str]:
     """Pre-HeyGen validation. Each render costs money, so reject scripts that
     violate the cadence skill's hard rules before submission.
 
+    Long form scripts speak the CTA inline ("Start free at kalevent.com").
+    Shorts point at the description ("Link in description. Free to start.")
+    per the cadence skill — the spoken short does NOT name the domain.
+
     Returns (ok, reason). reason is empty when ok=True.
     """
     text = (script or "").lower()
-    if "inboxiq.com" not in text:
-        return False, "script CTA must point to inboxiq.com"
+    has_cta = "kalevent.com" in text or "link in description" in text
+    if not has_cta:
+        return False, "script CTA must reference kalevent.com or 'link in description'"
     # Strip CTA URL before checking product mention so a script that ONLY
-    # mentions inboxiq.com (without naming the product) still fails the gate.
-    body = text.replace("inboxiq.com", "")
+    # references the URL (without naming the product) still fails the gate.
+    body = text.replace("kalevent.com", "")
     if PRODUCT_NAME.lower() not in body:
         return False, f"script does not name {PRODUCT_NAME} outside the CTA URL"
     return True, ""
@@ -479,7 +484,7 @@ def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
 
 @shared_task(name="youtube.publish_videos")
 def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
-    base_url = "https://inboxiq.com/start"
+    base_url = "https://kalevent.com/signup"
     published = 0
     failed = 0
 
