@@ -276,3 +276,35 @@ class ICPLeadAssignment(db.Model):
     score = db.Column(db.Integer, nullable=False, server_default="0")
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class ICPMetric(db.Model):
+    """Periodic snapshot of conversion counts per (experiment, variant).
+
+    INSERT-only: each refresh_experiment_metrics tick (every 15 min) writes
+    one row per active (experiment, variant). Live dashboard reads the
+    latest row; the full set is a free historical timeline for time-series
+    charts and audit later.
+    """
+    __tablename__ = "icp_metrics"
+    __table_args__ = (
+        db.Index("idx_icp_metrics_experiment_snapshot", "experiment_id", "snapshot_at"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    experiment_id = db.Column(
+        db.String(64),
+        db.ForeignKey("icp_experiments.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    variant_id = db.Column(
+        db.String(64),
+        db.ForeignKey("icp_variants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    snapshot_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+    discovered = db.Column(db.Integer, nullable=False, server_default="0")
+    connected = db.Column(db.Integer, nullable=False, server_default="0")
+    replied = db.Column(db.Integer, nullable=False, server_default="0")
+    booked = db.Column(db.Integer, nullable=False, server_default="0")
+    conversion_pct = db.Column(db.Numeric(6, 2), nullable=False, server_default="0")

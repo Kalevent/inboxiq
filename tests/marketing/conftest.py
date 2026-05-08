@@ -66,6 +66,14 @@ def app_full():
 
 
 @pytest.fixture
+def app_metric():
+    """Account + ICPExperiment + ICPVariant + ICPMetric tables (no Lead/Assignment)."""
+    from src.models.core import Account
+    from src.models.marketing import ICPExperiment, ICPVariant, ICPMetric
+    yield from _build_app(Account, ICPExperiment, ICPVariant, ICPMetric)
+
+
+@pytest.fixture
 def db(app):
     return _db
 
@@ -77,4 +85,9 @@ def db_with_variant(app_with_variant):
 
 @pytest.fixture
 def db_full(app_full):
+    return _db
+
+
+@pytest.fixture
+def db_metric(app_metric):
     return _db

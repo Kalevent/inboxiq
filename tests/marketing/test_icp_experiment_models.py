@@ -129,3 +129,69 @@ def test_icp_lead_assignment_cascade_delete_with_experiment(app_full, db_full):
     assert ICPLeadAssignment.query.count() == 1
     db_full.session.delete(e); db_full.session.commit()
     assert ICPLeadAssignment.query.count() == 0
+
+
+def _make_experiment_and_variant(db):
+    from src.models.core import Account
+    from src.models.marketing import ICPExperiment, ICPVariant
+    a = Account(name="t")
+    db.session.add(a); db.session.flush()
+    e = ICPExperiment(account_id=a.id, name="exp")
+    db.session.add(e); db.session.flush()
+    v = ICPVariant(experiment_id=e.id, label="A", titles=["Founder"], industries=["B2B SaaS"], geographies=["UK"])
+    db.session.add(v); db.session.commit()
+    return e, v
+
+
+def test_icp_metric_create_with_defaults(app_metric, db_metric):
+    from src.models.marketing import ICPMetric
+    e, v = _make_experiment_and_variant(db_metric)
+    m = ICPMetric(experiment_id=e.id, variant_id=v.id)
+    db_metric.session.add(m); db_metric.session.commit()
+
+    assert m.id is not None
+    assert m.discovered == 0
+    assert m.connected == 0
+    assert m.replied == 0
+    assert m.booked == 0
+    assert int(m.conversion_pct) == 0
+    assert m.snapshot_at is not None
+
+
+def test_icp_metric_can_store_counts_and_conversion_pct(app_metric, db_metric):
+    from decimal import Decimal
+    from src.models.marketing import ICPMetric
+    e, v = _make_experiment_and_variant(db_metric)
+    m = ICPMetric(
+        experiment_id=e.id, variant_id=v.id,
+        discovered=100, connected=32, replied=14, booked=7,
+        conversion_pct=Decimal("7.00"),
+    )
+    db_metric.session.add(m); db_metric.session.commit()
+    saved = ICPMetric.query.first()
+    assert saved.discovered == 100
+    assert saved.booked == 7
+    assert Decimal(saved.conversion_pct) == Decimal("7.00")
+
+
+def test_icp_metric_cascade_delete_with_experiment(app_metric, db_metric):
+    from src.models.marketing import ICPExperiment, ICPMetric
+    e, v = _make_experiment_and_variant(db_metric)
+    db_metric.session.add(ICPMetric(experiment_id=e.id, variant_id=v.id, discovered=10, booked=1))
+    db_metric.session.commit()
+    assert ICPMetric.query.count() == 1
+    db_metric.session.delete(e); db_metric.session.commit()
+    assert ICPMetric.query.count() == 0
+
+
+def test_icp_metric_multiple_snapshots_per_variant(app_metric, db_metric):
+    """INSERT-only model — multiple rows per (experiment, variant) over time
+    are expected. Gives a free historical timeline."""
+    from src.models.marketing import ICPMetric
+    e, v = _make_experiment_and_variant(db_metric)
+    db_metric.session.add(ICPMetric(experiment_id=e.id, variant_id=v.id, discovered=10))
+    db_metric.session.add(ICPMetric(experiment_id=e.id, variant_id=v.id, discovered=20))
+    db_metric.session.commit()
+    rows = ICPMetric.query.filter_by(experiment_id=e.id, variant_id=v.id).order_by(ICPMetric.snapshot_at.asc()).all()
+    assert len(rows) == 2
+    assert rows[0].discovered == 10 and rows[1].discovered == 20
