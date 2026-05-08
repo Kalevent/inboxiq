@@ -50,6 +50,102 @@
       </div>
     </div>
 
+    <!-- ICP A/B Experiment -->
+    <div id="icp-experiment-block" class="mt-10 border-t border-slate-800 pt-8 hidden">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">ICP Experiment</h3>
+          <p class="text-xs text-slate-500" id="exp-status-line">Loading&#8230;</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="exp-pause-btn" class="hidden px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">Pause</button>
+          <button id="exp-resume-btn" class="hidden px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">Resume</button>
+          <button id="exp-new-btn" class="hidden px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white">Start new experiment</button>
+        </div>
+      </div>
+
+      <div id="exp-variants-pane" class="hidden grid md:grid-cols-2 gap-6 mb-6">
+        <div data-variant="A" class="border border-slate-800 rounded-lg p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-sm font-semibold text-slate-200">ICP A</div>
+            <span class="text-xs text-slate-500">Variant A</span>
+          </div>
+          <div class="space-y-3">
+            <label class="block">
+              <span class="text-xs text-slate-400">Job Titles (comma-separated)</span>
+              <input data-field="titles" type="text" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+            </label>
+            <label class="block">
+              <span class="text-xs text-slate-400">Industries</span>
+              <input data-field="industries" type="text" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+            </label>
+            <div class="flex gap-3">
+              <label class="flex-1"><span class="text-xs text-slate-400">Size min</span><input data-field="company_size_min" type="number" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" /></label>
+              <label class="flex-1"><span class="text-xs text-slate-400">Size max</span><input data-field="company_size_max" type="number" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" /></label>
+            </div>
+            <label class="block">
+              <span class="text-xs text-slate-400">Geographies</span>
+              <input data-field="geographies" type="text" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+            </label>
+          </div>
+        </div>
+        <div data-variant="B" class="border border-slate-800 rounded-lg p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-sm font-semibold text-slate-200">ICP B</div>
+            <span class="text-xs text-slate-500">Variant B</span>
+          </div>
+          <div class="space-y-3">
+            <label class="block">
+              <span class="text-xs text-slate-400">Job Titles (comma-separated)</span>
+              <input data-field="titles" type="text" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+            </label>
+            <label class="block">
+              <span class="text-xs text-slate-400">Industries</span>
+              <input data-field="industries" type="text" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+            </label>
+            <div class="flex gap-3">
+              <label class="flex-1"><span class="text-xs text-slate-400">Size min</span><input data-field="company_size_min" type="number" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" /></label>
+              <label class="flex-1"><span class="text-xs text-slate-400">Size max</span><input data-field="company_size_max" type="number" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" /></label>
+            </div>
+            <label class="block">
+              <span class="text-xs text-slate-400">Geographies</span>
+              <input data-field="geographies" type="text" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div id="exp-controls-pane" class="hidden flex items-center gap-4 mb-6">
+        <label class="text-xs text-slate-400">Traffic split (A%):</label>
+        <input id="exp-split-a" type="number" min="0" max="100" class="w-20 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200" />
+        <span class="text-xs text-slate-500" id="exp-split-display"></span>
+        <button id="exp-save-btn" class="ml-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg">Save Experiment</button>
+        <span id="exp-saved-msg" class="hidden text-green-400 text-sm">Saved</span>
+      </div>
+
+      <div id="exp-metrics-pane" class="hidden border border-slate-800 rounded-lg p-4">
+        <div class="text-sm font-semibold text-slate-200 mb-3">A/B Results <span class="text-xs text-slate-500 font-normal">(refreshes every 60s)</span></div>
+        <table class="w-full text-sm">
+          <thead><tr class="text-xs text-slate-400 text-left">
+            <th class="pb-2"></th><th class="pb-2">Discovered</th><th class="pb-2">Connected</th><th class="pb-2">Replied</th><th class="pb-2">Booked</th><th class="pb-2">Conversion</th>
+          </tr></thead>
+          <tbody>
+            <tr id="metrics-row-A"><td class="py-1 text-slate-300">ICP A</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0%</td></tr>
+            <tr id="metrics-row-B"><td class="py-1 text-slate-300">ICP B</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0%</td></tr>
+          </tbody>
+        </table>
+        <div class="mt-3 flex items-center justify-between">
+          <div class="text-xs text-slate-400">Current leader: <span id="exp-leader" class="text-slate-200 font-medium">&#8212;</span></div>
+          <button id="exp-declare-winner-btn" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-600 hover:bg-amber-500 text-white hidden">Declare winner</button>
+        </div>
+      </div>
+
+      <div id="exp-empty-pane" class="hidden">
+        <button id="exp-start-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg">Start an A/B experiment</button>
+        <p class="text-xs text-slate-500 mt-2">Variant A pre-fills from your current ICP Settings below. Add variant B and you're testing.</p>
+      </div>
+    </div>
+
     <!-- ICP Settings -->
     <div class="mt-10 border-t border-slate-800 pt-8">
       <h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">ICP Settings</h3>
