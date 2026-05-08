@@ -9,15 +9,17 @@ log = logging.getLogger(__name__)
 
 
 # Default ICP shape returned by GET /api/v1/linkedin/icp when an account has
-# no ICPConfig row yet. Imported from src/api/v1/linkedin.py — keep the keys
+# no ICPConfig row yet. New accounts inherit Oliver (ICP 1) per ICP.md at
+# the project root — that doc is the source of truth, update it FIRST and
+# this constant SECOND. Imported from src/api/v1/linkedin.py — keep the keys
 # stable; the Settings UI renders them. Removing this symbol crashes the
 # endpoint with ImportError (production incident 2026-05-08).
 _ICP_DEFAULTS = {
-    "titles": ["Founder", "Head of Support", "Operations Lead", "Customer Success Lead"],
-    "industries": ["B2B SaaS", "Software"],
+    "titles": ["Founder", "Co-founder", "Head of Operations"],
+    "industries": ["B2B SaaS"],
     "company_size_min": 10,
     "company_size_max": 50,
-    "geographies": ["UK", "US", "Nigeria"],
+    "geographies": ["UK", "EU", "US"],
 }
 
 
