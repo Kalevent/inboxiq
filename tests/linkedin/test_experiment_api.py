@@ -142,3 +142,192 @@ def test_get_experiment_returns_404_for_other_account(client, app, db):
 
     resp = client.get("/api/v1/linkedin/experiments/exp-other")
     assert resp.status_code == 404
+
+
+# ── Write endpoints ─────────────────────────────────────────────────────────
+
+def test_post_experiment_creates_with_two_variants(client, app, db):
+    body = {
+        "name": "Founder vs Co-founder",
+        "traffic_split": {"A": 50, "B": 50},
+        "variants": [
+            {
+                "label": "A",
+                "titles": ["Founder"],
+                "industries": ["B2B SaaS"],
+                "geographies": ["UK"],
+                "company_size_min": 10,
+                "company_size_max": 50,
+            },
+            {
+                "label": "B",
+                "titles": ["Co-founder"],
+                "industries": ["B2B SaaS"],
+                "geographies": ["UK"],
+                "company_size_min": 10,
+                "company_size_max": 50,
+            },
+        ],
+    }
+    resp = client.post("/api/v1/linkedin/experiments", json=body)
+    assert resp.status_code == 201, resp.get_data(as_text=True)
+    data = resp.get_json()
+    assert data["name"] == "Founder vs Co-founder"
+    assert data["status"] == "running"
+    assert data["traffic_split"] == {"A": 50, "B": 50}
+    assert len(data["variants"]) == 2
+    labels = sorted(v["label"] for v in data["variants"])
+    assert labels == ["A", "B"]
+    a_variant = next(v for v in data["variants"] if v["label"] == "A")
+    assert a_variant["titles"] == ["Founder"]
+    assert "metrics" in data
+
+
+def test_post_experiment_requires_exactly_two_variants(client, app, db):
+    # 1 variant
+    body_one = {
+        "name": "Only one",
+        "traffic_split": {"A": 50, "B": 50},
+        "variants": [
+            {"label": "A", "titles": ["Founder"], "industries": [], "geographies": []},
+        ],
+    }
+    resp = client.post("/api/v1/linkedin/experiments", json=body_one)
+    assert resp.status_code == 422
+
+    # 3 variants
+    body_three = {
+        "name": "Too many",
+        "traffic_split": {"A": 50, "B": 50},
+        "variants": [
+            {"label": "A", "titles": [], "industries": [], "geographies": []},
+            {"label": "B", "titles": [], "industries": [], "geographies": []},
+            {"label": "C", "titles": [], "industries": [], "geographies": []},
+        ],
+    }
+    resp = client.post("/api/v1/linkedin/experiments", json=body_three)
+    assert resp.status_code == 422
+
+
+def test_post_experiment_returns_409_when_one_already_running(client, app, db):
+    from src.models.marketing import ICPExperiment
+
+    with app.app_context():
+        existing = ICPExperiment(
+            id="exp-running",
+            account_id=2,
+            name="Already running",
+            status="running",
+            traffic_split={"A": 50, "B": 50},
+        )
+        db.session.add(existing)
+        db.session.commit()
+
+    body = {
+        "name": "Second one",
+        "traffic_split": {"A": 50, "B": 50},
+        "variants": [
+            {"label": "A", "titles": [], "industries": [], "geographies": []},
+            {"label": "B", "titles": [], "industries": [], "geographies": []},
+        ],
+    }
+    resp = client.post("/api/v1/linkedin/experiments", json=body)
+    assert resp.status_code == 409
+
+
+def test_patch_experiment_can_pause(client, app, db):
+    from src.models.marketing import ICPExperiment
+
+    with app.app_context():
+        exp = ICPExperiment(
+            id="exp-pause",
+            account_id=2,
+            name="Pause me",
+            status="running",
+            traffic_split={"A": 50, "B": 50},
+        )
+        db.session.add(exp)
+        db.session.commit()
+
+    resp = client.patch("/api/v1/linkedin/experiments/exp-pause", json={"status": "paused"})
+    assert resp.status_code == 200, resp.get_data(as_text=True)
+    data = resp.get_json()
+    assert data["status"] == "paused"
+    assert data["id"] == "exp-pause"
+
+
+def test_patch_winner_variant_only_allowed_when_completed(client, app, db):
+    from src.models.marketing import ICPExperiment
+
+    with app.app_context():
+        exp = ICPExperiment(
+            id="exp-winner",
+            account_id=2,
+            name="Winner test",
+            status="running",
+            traffic_split={"A": 50, "B": 50},
+        )
+        db.session.add(exp)
+        db.session.commit()
+
+    # Setting winner while running → 422
+    resp = client.patch(
+        "/api/v1/linkedin/experiments/exp-winner",
+        json={"winner_variant": "A"},
+    )
+    assert resp.status_code == 422
+
+    # Mark completed first
+    resp = client.patch(
+        "/api/v1/linkedin/experiments/exp-winner",
+        json={"status": "completed"},
+    )
+    assert resp.status_code == 200
+
+    # Now setting winner is allowed
+    resp = client.patch(
+        "/api/v1/linkedin/experiments/exp-winner",
+        json={"winner_variant": "A"},
+    )
+    assert resp.status_code == 200, resp.get_data(as_text=True)
+    data = resp.get_json()
+    assert data["winner_variant"] == "A"
+
+
+def test_delete_experiment_cascades(client, app, db):
+    from src.models.marketing import ICPExperiment, ICPVariant
+
+    with app.app_context():
+        exp = ICPExperiment(
+            id="exp-del",
+            account_id=2,
+            name="Delete me",
+            status="paused",
+            traffic_split={"A": 50, "B": 50},
+        )
+        va = ICPVariant(
+            id="va-del",
+            experiment_id="exp-del",
+            label="A",
+            titles=["Founder"],
+            industries=[],
+            geographies=[],
+        )
+        vb = ICPVariant(
+            id="vb-del",
+            experiment_id="exp-del",
+            label="B",
+            titles=["Co-founder"],
+            industries=[],
+            geographies=[],
+        )
+        db.session.add_all([exp, va, vb])
+        db.session.commit()
+
+    resp = client.delete("/api/v1/linkedin/experiments/exp-del")
+    assert resp.status_code == 204
+    assert resp.get_data() == b""
+
+    # Subsequent GET should 404
+    resp = client.get("/api/v1/linkedin/experiments/exp-del")
+    assert resp.status_code == 404

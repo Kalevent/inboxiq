@@ -273,3 +273,130 @@ def api_get_experiment(exp_id: str):
         "variants": [_serialize_variant(v) for v in variants],
         "metrics": compute_experiment_metrics(exp),
     })
+
+
+@linkedin_api_bp.route("/experiments", methods=["POST"])
+@login_required_settings
+def api_create_experiment():
+    account_id = g.current_account_id
+    body = request.get_json(silent=True) or {}
+    name = (body.get("name") or "").strip()
+    traffic_split = body.get("traffic_split") or {"A": 50, "B": 50}
+    variants = body.get("variants") or []
+
+    if not name:
+        return jsonify({"error": "name is required"}), 422
+    if len(variants) != 2 or {v.get("label") for v in variants} != {"A", "B"}:
+        return jsonify({"error": "must include exactly two variants with labels A and B"}), 422
+    if not isinstance(traffic_split, dict) or set(traffic_split.keys()) != {"A", "B"}:
+        return jsonify({"error": "traffic_split must have keys A and B"}), 422
+    try:
+        sa = int(traffic_split["A"]); sb = int(traffic_split["B"])
+    except (TypeError, ValueError):
+        return jsonify({"error": "traffic_split values must be integers"}), 422
+    if sa < 0 or sb < 0 or sa + sb != 100:
+        return jsonify({"error": "traffic_split values must be non-negative and sum to 100"}), 422
+
+    if ICPExperiment.query.filter_by(account_id=account_id, status="running").first():
+        return jsonify({"error": "another experiment is already running for this account"}), 409
+
+    exp = ICPExperiment(account_id=account_id, name=name, traffic_split=traffic_split, status="running")
+    db.session.add(exp)
+    db.session.flush()
+    for v in variants:
+        db.session.add(ICPVariant(
+            experiment_id=exp.id,
+            label=v["label"],
+            titles=v.get("titles") or [],
+            industries=v.get("industries") or [],
+            geographies=v.get("geographies") or [],
+            company_size_min=v.get("company_size_min"),
+            company_size_max=v.get("company_size_max"),
+        ))
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    fresh_variants = ICPVariant.query.filter_by(experiment_id=exp.id).all()
+    return jsonify({
+        **_serialize_experiment_summary(exp),
+        "variants": [_serialize_variant(v) for v in fresh_variants],
+        "metrics": compute_experiment_metrics(exp),
+    }), 201
+
+
+@linkedin_api_bp.route("/experiments/<exp_id>", methods=["PATCH"])
+@login_required_settings
+def api_patch_experiment(exp_id: str):
+    account_id = g.current_account_id
+    exp = ICPExperiment.query.filter_by(id=exp_id, account_id=account_id).first()
+    if not exp:
+        return jsonify({"error": "not found"}), 404
+
+    body = request.get_json(silent=True) or {}
+    new_status = body.get("status")
+    new_split = body.get("traffic_split")
+    new_winner = body.get("winner_variant")
+
+    if new_status is not None:
+        if new_status not in ("running", "paused", "completed"):
+            return jsonify({"error": "status must be running|paused|completed"}), 422
+        if new_status == "running":
+            other = ICPExperiment.query.filter(
+                ICPExperiment.account_id == account_id,
+                ICPExperiment.status == "running",
+                ICPExperiment.id != exp.id,
+            ).first()
+            if other:
+                return jsonify({"error": "another experiment is already running for this account"}), 409
+        exp.status = new_status
+
+    if new_split is not None:
+        if (not isinstance(new_split, dict)
+                or set(new_split.keys()) != {"A", "B"}):
+            return jsonify({"error": "traffic_split must have keys A and B"}), 422
+        try:
+            sa = int(new_split["A"]); sb = int(new_split["B"])
+        except (TypeError, ValueError):
+            return jsonify({"error": "traffic_split values must be integers"}), 422
+        if sa < 0 or sb < 0 or sa + sb != 100:
+            return jsonify({"error": "traffic_split values must be non-negative and sum to 100"}), 422
+        exp.traffic_split = new_split
+
+    if new_winner is not None:
+        if exp.status != "completed":
+            return jsonify({"error": "winner_variant can only be set when status='completed'"}), 422
+        if new_winner not in ("A", "B"):
+            return jsonify({"error": "winner_variant must be A or B"}), 422
+        exp.winner_variant = new_winner
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    fresh_variants = ICPVariant.query.filter_by(experiment_id=exp.id).all()
+    return jsonify({
+        **_serialize_experiment_summary(exp),
+        "variants": [_serialize_variant(v) for v in fresh_variants],
+        "metrics": compute_experiment_metrics(exp),
+    })
+
+
+@linkedin_api_bp.route("/experiments/<exp_id>", methods=["DELETE"])
+@login_required_settings
+def api_delete_experiment(exp_id: str):
+    account_id = g.current_account_id
+    exp = ICPExperiment.query.filter_by(id=exp_id, account_id=account_id).first()
+    if not exp:
+        return jsonify({"error": "not found"}), 404
+    db.session.delete(exp)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    return ("", 204)
