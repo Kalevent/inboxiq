@@ -519,6 +519,47 @@ def test_run_dspy_passes_product_name_to_long_form_predictor(app, mock_blog_post
                 "product_value_proposition must be passed to long form predictor"
 
 
+def test_run_dspy_passes_distinct_short_focus_per_short(app, mock_blog_post, mock_pain_point):
+    """Each short predictor invocation must receive a different short_focus
+    input so the two shorts come out distinct. Production has been
+    publishing duplicate shorts because the loop calls the predictor twice
+    with identical inputs."""
+    with app.app_context():
+        with patch("src.dspy.config._configure_dspy"), \
+             patch("src.dspy.signatures.build_youtube_signatures") as mock_build, \
+             patch("dspy.Predict") as mock_predict_cls:
+
+            sentinel = MagicMock()
+            mock_build.return_value = {
+                "YouTubeLongFormScript": sentinel,
+                "YouTubeShortScript": sentinel,
+                "YouTubeSEOMetadata": sentinel,
+                "YouTubeIllustrationPrompts": sentinel,
+            }
+            predictor = MagicMock()
+            predictor.script = "Long."
+            predictor.hook_line = "Hook."
+            predictor.chapter_markers = "[]"
+            predictor.cta_line = "CTA."
+            predictor.short_script = "Short script."
+            predictor.pattern_interrupt_line = "Pi."
+            predictor.title = "Title | InboxIQ"
+            predictor.description = "Desc."
+            predictor.tags = '["t"]'
+            predictor.thumbnail_prompt = "Tp."
+            mock_predict_cls.return_value = predictor
+
+            from src.tasks.youtube import _run_dspy_script_generation
+            _run_dspy_script_generation(mock_blog_post, mock_pain_point, "avatar")
+
+            # Find every call where short_focus was passed (i.e. invocations of YouTubeShortScript predictor).
+            short_calls = [c for c in predictor.call_args_list if "short_focus" in c.kwargs]
+            assert len(short_calls) >= 2, "expected at least 2 short script predictor calls with short_focus"
+            focuses = [c.kwargs["short_focus"] for c in short_calls]
+            assert len(set(focuses)) == len(focuses), \
+                f"short_focus values must be distinct per short, got: {focuses}"
+
+
 def test_run_dspy_generates_seo_for_each_short(app, mock_blog_post, mock_pain_point):
     """Each short must get its own SEO metadata. In production today shorts
     publish with empty title/description/tags because SEO is only generated

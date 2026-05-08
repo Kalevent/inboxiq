@@ -45,6 +45,35 @@ def test_short_script_has_product_name_input():
     assert "product_name" in fields, "YouTubeShortScript must accept product_name"
 
 
+def test_short_script_has_short_focus_input():
+    """Each short needs a per-short focus so the two shorts come out distinct.
+    Without a varying input the predictor receives identical prompts twice
+    and (with caching/low temperature) returns identical text — production
+    has been publishing duplicate shorts because of this."""
+    import dspy
+    from src.dspy.signatures import build_youtube_signatures
+    sig = build_youtube_signatures(dspy)["YouTubeShortScript"]
+    fields = sig.model_fields
+    assert "short_focus" in fields, "YouTubeShortScript must accept short_focus to vary outputs"
+
+
+def test_short_script_instruction_uses_link_in_description_cta():
+    """Per the cadence skill, shorts CTA = 'Link in description. Free to start.'
+    The spoken short script must NOT say kalevent.com — that's a long-form
+    pattern. Today DSPy produces 'Start free at kalevent.com' for shorts
+    because the signature's short_script field description says so."""
+    import dspy
+    from src.dspy.signatures import build_youtube_signatures
+    sig = build_youtube_signatures(dspy)["YouTubeShortScript"]
+    # dspy stores field desc under json_schema_extra['desc'], not pydantic .description
+    field = sig.model_fields["short_script"]
+    short_field_desc = ((field.json_schema_extra or {}).get("desc") or "").lower()
+    assert "link in description" in short_field_desc, \
+        "YouTubeShortScript.short_script field must instruct CTA = 'Link in description'"
+    assert "kalevent.com" not in short_field_desc, \
+        "YouTubeShortScript.short_script must not instruct domain CTA — that's long-form only"
+
+
 def test_seo_metadata_has_product_name_input():
     """SEO must take product_name so the title's 'How' segment describes the
     product's capability, not source-blog terminology (e.g. avoid 'Use

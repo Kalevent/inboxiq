@@ -117,13 +117,23 @@ def _run_dspy_script_generation(
         product_value_proposition=PRODUCT_VALUE_PROPOSITION,
     )
 
+    # Distinct focus per short so DSPy produces two different videos rather
+    # than the same prompt twice. Each angle is a different beat from the
+    # long form — the first leans into the pain/cost, the second into the
+    # visible outcome after the product fixes it.
+    short_focuses = [
+        f"the emotional cost of '{pain_point.pain_point}' — make a viewer who feels this pain right now nod hard",
+        f"the visible outcome after {PRODUCT_NAME} resolves '{pain_point.pain_point}' — focus on what changes for the viewer's day",
+    ]
+
     short_scripts = []
-    for _ in range(2):
+    for short_focus in short_focuses:
         short_pred = dspy.Predict(sigs["YouTubeShortScript"])(
             long_form_script=long_pred.script,
             pain_point=pain_point.pain_point,
             parent_youtube_url="",
             product_name=PRODUCT_NAME,
+            short_focus=short_focus,
         )
         short_seo_pred = dspy.Predict(sigs["YouTubeSEOMetadata"])(
             script=short_pred.short_script,

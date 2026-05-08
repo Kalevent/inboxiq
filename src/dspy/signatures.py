@@ -704,16 +704,21 @@ def build_youtube_signatures(dspy: Any) -> Dict[str, Any]:
         """Extract a 60-second Short from a long form script. Pattern interrupt -> agitation -> resolution -> CTA.
         First 3 seconds must name the pain with no greeting. The RESOLUTION beat (20-50s) must
         explicitly name {product_name} — do not collapse it into 'AI', 'a tool', or the source
-        blog's terminology. The CTA must point to kalevent.com."""
+        blog's terminology. The CTA must be exactly: "Link in description. Free to start."
+        Do NOT speak the domain in the short — the URL lives in the YouTube description.
+
+        Each short for a given long form must hit a different angle from {short_focus}. Two shorts
+        with the same focus will publish as duplicates, so {short_focus} is the variation knob."""
 
         long_form_script: str = dspy.InputField(desc="Full long form script to extract the Short from.")
         pain_point: str = dspy.InputField(desc="ICP pain point this Short addresses.")
         parent_youtube_url: str = dspy.InputField(desc="YouTube URL of the parent long form video.")
         product_name: str = dspy.InputField(desc="Product brand name to name in the RESOLUTION beat (e.g. 'InboxIQ').")
+        short_focus: str = dspy.InputField(desc="Which beat from the long form this Short should extract (e.g. 'the emotional cost of the pain' vs 'the visible outcome after {product_name}'). Distinct value per short ensures variety.")
 
-        short_script: str = dspy.OutputField(desc="60-second script. Seconds 0-3: pain. 3-20: agitation. 20-50: {product_name} resolves it. 50-60: CTA pointing to kalevent.com.")
+        short_script: str = dspy.OutputField(desc="60-second script. Seconds 0-3: pain. 3-20: agitation. 20-50: {product_name} resolves it. 50-60: CTA must be exactly 'Link in description. Free to start.' — do NOT speak the domain.")
         pattern_interrupt_line: str = dspy.OutputField(desc="First sentence (0-3s). Names the pain. No greeting.")
-        cta_line: str = dspy.OutputField(desc="Final line. 'Link in description. Free to start.'")
+        cta_line: str = dspy.OutputField(desc="Final line. Must be: 'Link in description. Free to start.'")
 
     class YouTubeSEOMetadata(dspy.Signature):
         """Generate YouTube SEO metadata for a video. Title format: [Pain outcome] — [How {product_name} does it] | {product_name}.
