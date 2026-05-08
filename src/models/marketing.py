@@ -221,3 +221,26 @@ class ICPExperiment(db.Model):
     winner_variant = db.Column(db.String(1), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class ICPVariant(db.Model):
+    """One arm of an ICPExperiment. Per the spec, label is 'A' or 'B' only."""
+    __tablename__ = "icp_variants"
+    __table_args__ = (
+        db.UniqueConstraint("experiment_id", "label", name="uq_experiment_variant_label"),
+        db.CheckConstraint("label IN ('A', 'B')", name="ck_variant_label_a_or_b"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    experiment_id = db.Column(
+        db.String(64),
+        db.ForeignKey("icp_experiments.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    label = db.Column(db.String(1), nullable=False)
+    titles = db.Column(db.JSON, nullable=False)
+    industries = db.Column(db.JSON, nullable=False)
+    company_size_min = db.Column(db.Integer, nullable=True)
+    company_size_max = db.Column(db.Integer, nullable=True)
+    geographies = db.Column(db.JSON, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
