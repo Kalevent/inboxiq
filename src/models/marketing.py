@@ -198,3 +198,26 @@ class ICPConfig(db.Model):
     geographies = db.Column(db.JSON, nullable=False, default=lambda: ["UK", "US", "Nigeria"])
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+
+
+# ── ICP A/B Experiments ─────────────────────────────────────────────────────
+# See docs/superpowers/specs/2026-05-08-icp-ab-parallel-testing-design.md.
+# Three models cooperate: ICPExperiment owns two ICPVariants; each lead
+# discovered while an experiment is running gets one ICPLeadAssignment.
+
+class ICPExperiment(db.Model):
+    """One A/B test of two ICP variants. At most one running per account at a time."""
+    __tablename__ = "icp_experiments"
+    __table_args__ = (
+        db.Index("idx_icp_experiments_account_status", "account_id", "status"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    status = db.Column(db.String(30), nullable=False, server_default="running")
+    # status ∈ {"running", "paused", "completed"}
+    traffic_split = db.Column(db.JSON, nullable=False, default=lambda: {"A": 50, "B": 50})
+    winner_variant = db.Column(db.String(1), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
