@@ -20,6 +20,7 @@ class Lead(db.Model):
         db.Index("idx_leads_last_engagement", "last_engagement_at"),
         db.Index("idx_leads_fit_intent", "fit_score", "intent_score"),
         db.Index("idx_leads_account_id", "account_id"),
+        db.Index("idx_leads_country", "country"),
     )
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
@@ -29,6 +30,8 @@ class Lead(db.Model):
     phone = db.Column(db.String(50), nullable=True)
     company_name = db.Column(db.String(255), nullable=True)
     industry = db.Column(db.String(100), nullable=True)
+    job_title = db.Column(db.String(120), nullable=True)
+    country = db.Column(db.String(64), nullable=True)
     source = db.Column(db.String(100), nullable=False)
     utm_source = db.Column(db.String(100), nullable=True)
     utm_medium = db.Column(db.String(100), nullable=True)
