@@ -1,10 +1,13 @@
 """LinkedIn outreach cadence tasks."""
 import logging
+import os
 
 from celery import shared_task
 
+from src.agents.linkedin_cadence import LinkedInCadenceAgent
 from src.extensions import db
 from src.marketing.experiment_metrics import derive_status
+from src.marketing.icp_match import lead_matches_variant
 from src.models.marketing import ICPMetric, ICPExperiment, ICPVariant, ICPLeadAssignment
 
 log = logging.getLogger(__name__)
@@ -137,11 +140,82 @@ def enrich_linkedin_urls():
 
 @shared_task(name="linkedin.discover_prospects")
 def discover_prospects():
-    """Promote enriched leads into the prospect queue."""
-    from src.models.leads import Lead
-    from src.agents.linkedin_cadence import LinkedInCadenceAgent
+    """Promote enriched leads into the prospect queue.
 
-    leads = (
+    For accounts with a running ICPExperiment, qualified leads are routed into
+    variant A or B per quotas computed from the experiment's traffic_split, and
+    each promoted lead gets one ICPLeadAssignment row. Leads already assigned
+    to ANY experiment are skipped (lead_id UNIQUE).
+
+    For accounts WITHOUT a running experiment, the legacy single-ICP path runs
+    unchanged.
+    """
+    leads = _qualified_leads()
+    if not leads:
+        return {"created": 0}
+
+    # Group leads by account so we look up the experiment once per account
+    by_account = {}
+    for lead in leads:
+        by_account.setdefault(lead.account_id, []).append(lead)
+
+    budget = int(os.getenv("LEAD_DISCOVERY_MAX_LEADS", "50"))
+    created = 0
+
+    for account_id, account_leads in by_account.items():
+        exp = _running_experiment(account_id)
+        if exp is None:
+            # Legacy path — unchanged behaviour
+            for lead in account_leads:
+                agent = LinkedInCadenceAgent(account_id=account_id)
+                if agent._tool_add_to_prospect_queue(str(lead.id)).get("created"):
+                    created += 1
+            continue
+
+        va, vb = _variants_for(exp)
+        if va is None or vb is None:
+            log.warning(
+                "linkedin.discover_prospects: experiment %s missing one of [A,B]; falling through",
+                exp.id,
+            )
+            continue
+
+        split = exp.traffic_split or {"A": 50, "B": 50}
+        quota_a = budget * int(split.get("A", 50)) // 100
+        quota_b = budget - quota_a
+        a_taken = b_taken = 0
+        agent = LinkedInCadenceAgent(account_id=account_id)
+
+        for lead in account_leads:
+            if _has_assignment(str(lead.id)):
+                continue
+            chosen = None
+            # Variant A always tried first when both match (overlap edge case)
+            if a_taken < quota_a and lead_matches_variant(lead, va):
+                chosen = va
+                a_taken += 1
+            elif b_taken < quota_b and lead_matches_variant(lead, vb):
+                chosen = vb
+                b_taken += 1
+            if not chosen:
+                continue
+            if agent._tool_add_to_prospect_queue(str(lead.id)).get("created"):
+                created += 1
+            _create_assignment(experiment_id=exp.id, variant_id=chosen.id, lead_id=str(lead.id))
+
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
+
+    log.info("linkedin.discover_prospects: created %d new prospects", created)
+    return {"created": created}
+
+
+def _qualified_leads():
+    from src.models.leads import Lead
+    return (
         db.session.query(Lead)
         .filter(
             Lead.linkedin_url.isnot(None),
@@ -149,18 +223,32 @@ def discover_prospects():
             Lead.outreach_unsubscribed_at.is_(None),
             Lead.deleted.is_(False),
         )
+        .order_by(Lead.fit_score.desc(), Lead.id.asc())
         .all()
     )
 
-    created = 0
-    for lead in leads:
-        agent = LinkedInCadenceAgent(account_id=lead.account_id)
-        result = agent._tool_add_to_prospect_queue(str(lead.id))
-        if result.get("created"):
-            created += 1
 
-    log.info("linkedin.discover_prospects: created %d new prospects", created)
-    return {"created": created}
+def _running_experiment(account_id: int):
+    return ICPExperiment.query.filter_by(account_id=account_id, status="running").first()
+
+
+def _variants_for(experiment):
+    a = ICPVariant.query.filter_by(experiment_id=experiment.id, label="A").first()
+    b = ICPVariant.query.filter_by(experiment_id=experiment.id, label="B").first()
+    return a, b
+
+
+def _has_assignment(lead_id: str) -> bool:
+    return ICPLeadAssignment.query.filter_by(lead_id=lead_id).first() is not None
+
+
+def _create_assignment(*, experiment_id: str, variant_id: str, lead_id: str):
+    db.session.add(ICPLeadAssignment(
+        experiment_id=experiment_id,
+        variant_id=variant_id,
+        lead_id=lead_id,
+        status="discovered",
+    ))
 
 
 @shared_task(name="linkedin.draft_messages")
