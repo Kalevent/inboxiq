@@ -31,6 +31,7 @@ certs/
 gsc-service-account.json
 *-service-account.json
 google-*.json
+client_secrets.json
 
 # Local planning/implementation docs
 IMPLEMENTATION_PLAN.md
