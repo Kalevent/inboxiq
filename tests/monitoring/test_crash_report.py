@@ -12,6 +12,90 @@ from unittest.mock import MagicMock, patch
 from celery.signals import task_failure
 
 
+def test_configure_crash_email_skipped_when_not_in_production():
+    """Crash emails must only fire from production. Local dev runs with the
+    same SMTP creds (loaded from prod.env) and would otherwise spam
+    security@kalevent.com on every local exception."""
+    import os
+    from src.monitoring.crash_report import configure_crash_email
+
+    app = MagicMock()
+    app.logger = MagicMock()
+    app.logger.handlers = []
+
+    with patch.dict(os.environ, {
+        "SMTP_HOST": "smtp.example.com", "SMTP_USER": "u", "SMTP_PASSWORD": "p",
+        "CRASH_EMAIL_TO": "security@kalevent.com",
+    }, clear=False):
+        # Ensure neither prod signal is set
+        for k in ("KUBERNETES_SERVICE_HOST", "CRASH_REPORTS_ENABLED"):
+            os.environ.pop(k, None)
+        configure_crash_email(app)
+
+    app.logger.addHandler.assert_not_called()
+
+
+def test_configure_crash_email_runs_when_kubernetes_service_host_set():
+    """Inside a k8s pod, KUBERNETES_SERVICE_HOST is auto-injected — that's
+    our 'we're in production' signal."""
+    import os
+    from src.monitoring.crash_report import configure_crash_email
+
+    app = MagicMock()
+    app.logger = MagicMock()
+    app.logger.handlers = []
+
+    with patch.dict(os.environ, {
+        "SMTP_HOST": "smtp.example.com", "SMTP_USER": "u", "SMTP_PASSWORD": "p",
+        "CRASH_EMAIL_TO": "security@kalevent.com",
+        "KUBERNETES_SERVICE_HOST": "10.96.0.1",
+    }, clear=False):
+        os.environ.pop("CRASH_REPORTS_ENABLED", None)
+        configure_crash_email(app)
+
+    app.logger.addHandler.assert_called_once()
+
+
+def test_configure_crash_email_runs_when_crash_reports_enabled_true():
+    """Explicit opt-in for non-k8s production environments (or testing
+    the email path locally)."""
+    import os
+    from src.monitoring.crash_report import configure_crash_email
+
+    app = MagicMock()
+    app.logger = MagicMock()
+    app.logger.handlers = []
+
+    with patch.dict(os.environ, {
+        "SMTP_HOST": "smtp.example.com", "SMTP_USER": "u", "SMTP_PASSWORD": "p",
+        "CRASH_EMAIL_TO": "security@kalevent.com",
+        "CRASH_REPORTS_ENABLED": "true",
+    }, clear=False):
+        os.environ.pop("KUBERNETES_SERVICE_HOST", None)
+        configure_crash_email(app)
+
+    app.logger.addHandler.assert_called_once()
+
+
+def test_configure_celery_crash_email_skipped_when_not_in_production():
+    """Same gate must apply to the Celery task_failure handler."""
+    import os
+    from src.monitoring.crash_report import configure_celery_crash_email
+
+    app = MagicMock()
+    app.logger = MagicMock()
+    receivers_before = list(task_failure.receivers)
+
+    with patch.dict(os.environ, {}, clear=False):
+        for k in ("KUBERNETES_SERVICE_HOST", "CRASH_REPORTS_ENABLED"):
+            os.environ.pop(k, None)
+        configure_celery_crash_email(app)
+
+    receivers_after = list(task_failure.receivers)
+    assert len(receivers_after) == len(receivers_before), \
+        "no celery task_failure receiver should be registered outside production"
+
+
 def _make_record_with_traceback(msg="boom"):
     """Build a real LogRecord that includes exc_info, mimicking what
     app.logger.error(..., exc_info=...) produces for the SMTPHandler."""
@@ -139,12 +223,13 @@ def test_html_body_contains_traceback_in_pre_block(monkeypatch):
     assert "ValueError" in html
 
 
-def test_configure_celery_crash_email_registers_handler_for_task_failure():
+def test_configure_celery_crash_email_registers_handler_for_task_failure(monkeypatch):
     """After calling configure_celery_crash_email(app), the celery task_failure
     signal must have a receiver hooked up. Otherwise nothing fires when a task
     crashes."""
     from src.monitoring.crash_report import configure_celery_crash_email
 
+    monkeypatch.setenv("CRASH_REPORTS_ENABLED", "true")
     app = MagicMock()
     app.logger = MagicMock()
 
@@ -156,12 +241,13 @@ def test_configure_celery_crash_email_registers_handler_for_task_failure():
         "configure_celery_crash_email must register a task_failure receiver"
 
 
-def test_celery_task_failure_signal_emits_app_logger_error_with_task_name_and_traceback():
+def test_celery_task_failure_signal_emits_app_logger_error_with_task_name_and_traceback(monkeypatch):
     """When task_failure fires, app.logger.error must be called with the task
     name and traceback so the SMTPHandler attached to app.logger sends an
     email to CRASH_EMAIL_TO."""
     from src.monitoring.crash_report import configure_celery_crash_email
 
+    monkeypatch.setenv("CRASH_REPORTS_ENABLED", "true")
     app = MagicMock()
     app.logger = MagicMock()
     configure_celery_crash_email(app)
@@ -187,12 +273,13 @@ def test_celery_task_failure_signal_emits_app_logger_error_with_task_name_and_tr
     assert "ValueError: boom" in rendered or "boom" in rendered, "exception/traceback must appear in the logged error"
 
 
-def test_configure_celery_crash_email_is_idempotent():
+def test_configure_celery_crash_email_is_idempotent(monkeypatch):
     """Calling configure_celery_crash_email twice must not register duplicate
     handlers — otherwise re-running celery_inboxiq.py at import time could
     fan out one failure into N emails."""
     from src.monitoring.crash_report import configure_celery_crash_email
 
+    monkeypatch.setenv("CRASH_REPORTS_ENABLED", "true")
     app = MagicMock()
     app.logger = MagicMock()
 
