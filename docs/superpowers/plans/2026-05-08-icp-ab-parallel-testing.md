@@ -16,7 +16,7 @@
 
 | File | Action | Responsibility |
 |---|---|---|
-| `src/models/marketing.py` | Modify (append) | Add `ICPExperiment`, `ICPVariant`, `ICPLeadAssignment` models below existing `ICPConfig` |
+| `src/models/marketing.py` | Modify (append) | Add `ICPExperiment`, `ICPVariant`, `ICPLeadAssignment`, `ICPMetric` models below existing `ICPConfig` |
 | `src/migrations/versions/<auto>_icp_ab_experiments.py` | User-generated | Alembic migration; user runs `flask db migrate` after Task 3 |
 | `src/marketing/icp_match.py` | Create | `lead_matches_variant(lead, variant) -> bool` — used by discovery branch and tests |
 | `src/marketing/experiment_metrics.py` | Create | `compute_experiment_metrics(experiment)` — aggregates assignment statuses; `derive_status(lead_id)` — single-lead status derivation |
@@ -474,6 +474,181 @@ git commit -m "feat(marketing): add ICPLeadAssignment model with lead_id unique"
 
 ---
 
+## Task 3.5: ICPMetric snapshot model
+
+**Why this exists:** Conversion metrics (discovered/connected/replied/booked counts and conversion %) need a periodic snapshot table so the live dashboard reads in O(1) instead of aggregating every request, and so we have a free historical timeline (one row per variant per 15-min tick) for charts and audit trail later. INSERT-only — never updated.
+
+**Files:**
+- Modify: `tests/marketing/test_icp_experiment_models.py` (append tests + fixture)
+- Modify: `src/models/marketing.py` (append model)
+
+- [ ] **Step 1: Write failing tests**
+
+Append to `tests/marketing/test_icp_experiment_models.py`:
+
+```python
+@pytest.fixture
+def app_metric():
+    """Account + ICPExperiment + ICPVariant + ICPMetric tables (no Lead/Assignment)."""
+    from sqlalchemy.pool import StaticPool
+    from src.models.core import Account
+    from src.models.marketing import ICPExperiment, ICPVariant, ICPMetric
+
+    app = create_app()
+    app.config["TESTING"] = True
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "connect_args": {"check_same_thread": False},
+        "poolclass": StaticPool,
+    }
+    app.config["SECRET_KEY"] = "test-secret"
+    with app.app_context():
+        Account.__table__.create(_db.engine, checkfirst=True)
+        ICPExperiment.__table__.create(_db.engine, checkfirst=True)
+        ICPVariant.__table__.create(_db.engine, checkfirst=True)
+        ICPMetric.__table__.create(_db.engine, checkfirst=True)
+        _db.engine.connect().execute(__import__('sqlalchemy').text("PRAGMA foreign_keys = ON"))
+        yield app
+        _db.session.remove()
+        ICPMetric.__table__.drop(_db.engine, checkfirst=True)
+        ICPVariant.__table__.drop(_db.engine, checkfirst=True)
+        ICPExperiment.__table__.drop(_db.engine, checkfirst=True)
+        Account.__table__.drop(_db.engine, checkfirst=True)
+
+
+@pytest.fixture
+def db_metric(app_metric):
+    return _db
+
+
+def _make_experiment_and_variant(db):
+    from src.models.core import Account
+    from src.models.marketing import ICPExperiment, ICPVariant
+    a = Account(name="t")
+    db.session.add(a); db.session.flush()
+    e = ICPExperiment(account_id=a.id, name="exp")
+    db.session.add(e); db.session.flush()
+    v = ICPVariant(experiment_id=e.id, label="A", titles=["Founder"], industries=["B2B SaaS"], geographies=["UK"])
+    db.session.add(v); db.session.commit()
+    return e, v
+
+
+def test_icp_metric_create_with_defaults(app_metric, db_metric):
+    from src.models.marketing import ICPMetric
+    e, v = _make_experiment_and_variant(db_metric)
+    m = ICPMetric(experiment_id=e.id, variant_id=v.id)
+    db_metric.session.add(m); db_metric.session.commit()
+
+    assert m.id is not None
+    assert m.discovered == 0
+    assert m.connected == 0
+    assert m.replied == 0
+    assert m.booked == 0
+    assert int(m.conversion_pct) == 0
+    assert m.snapshot_at is not None
+
+
+def test_icp_metric_can_store_counts_and_conversion_pct(app_metric, db_metric):
+    from decimal import Decimal
+    from src.models.marketing import ICPMetric
+    e, v = _make_experiment_and_variant(db_metric)
+    m = ICPMetric(
+        experiment_id=e.id, variant_id=v.id,
+        discovered=100, connected=32, replied=14, booked=7,
+        conversion_pct=Decimal("7.00"),
+    )
+    db_metric.session.add(m); db_metric.session.commit()
+    saved = ICPMetric.query.first()
+    assert saved.discovered == 100
+    assert saved.booked == 7
+    assert Decimal(saved.conversion_pct) == Decimal("7.00")
+
+
+def test_icp_metric_cascade_delete_with_experiment(app_metric, db_metric):
+    from src.models.marketing import ICPExperiment, ICPMetric
+    e, v = _make_experiment_and_variant(db_metric)
+    db_metric.session.add(ICPMetric(experiment_id=e.id, variant_id=v.id, discovered=10, booked=1))
+    db_metric.session.commit()
+    assert ICPMetric.query.count() == 1
+    db_metric.session.delete(e); db_metric.session.commit()
+    assert ICPMetric.query.count() == 0
+
+
+def test_icp_metric_multiple_snapshots_per_variant(app_metric, db_metric):
+    """The model is INSERT-only — multiple rows per (experiment, variant) over time
+    are expected and gives a free historical timeline."""
+    from src.models.marketing import ICPMetric
+    e, v = _make_experiment_and_variant(db_metric)
+    db_metric.session.add(ICPMetric(experiment_id=e.id, variant_id=v.id, discovered=10))
+    db_metric.session.add(ICPMetric(experiment_id=e.id, variant_id=v.id, discovered=20))
+    db_metric.session.commit()
+    rows = ICPMetric.query.filter_by(experiment_id=e.id, variant_id=v.id).order_by(ICPMetric.snapshot_at.asc()).all()
+    assert len(rows) == 2
+    assert rows[0].discovered == 10 and rows[1].discovered == 20
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+```bash
+.venv/bin/python -m pytest tests/marketing/test_icp_experiment_models.py -v
+```
+
+Expected: 4 new FAILs with `ImportError: cannot import name 'ICPMetric'`.
+
+- [ ] **Step 3: Add the ICPMetric model**
+
+Append to `src/models/marketing.py` (after `ICPLeadAssignment`):
+
+```python
+class ICPMetric(db.Model):
+    """Periodic snapshot of conversion counts per (experiment, variant).
+
+    INSERT-only: each refresh_experiment_metrics tick (every 15 min) writes
+    one row per active (experiment, variant). Live dashboard reads the
+    latest row; the full set is a free historical timeline for time-series
+    charts and audit later.
+    """
+    __tablename__ = "icp_metrics"
+    __table_args__ = (
+        db.Index("idx_icp_metrics_experiment_snapshot", "experiment_id", "snapshot_at"),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    experiment_id = db.Column(
+        db.String(64),
+        db.ForeignKey("icp_experiments.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    variant_id = db.Column(
+        db.String(64),
+        db.ForeignKey("icp_variants.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    snapshot_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+    discovered = db.Column(db.Integer, nullable=False, server_default="0")
+    connected = db.Column(db.Integer, nullable=False, server_default="0")
+    replied = db.Column(db.Integer, nullable=False, server_default="0")
+    booked = db.Column(db.Integer, nullable=False, server_default="0")
+    conversion_pct = db.Column(db.Numeric(6, 2), nullable=False, server_default="0")
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+```bash
+.venv/bin/python -m pytest tests/marketing/test_icp_experiment_models.py -v
+```
+
+Expected: All tests PASS (the 8 from Tasks 1–3 plus the 4 new = 12 total).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add tests/marketing/test_icp_experiment_models.py src/models/marketing.py
+git commit -m "feat(marketing): add ICPMetric snapshot model"
+```
+
+---
+
 ## Task 4: User generates and applies migration
 
 **This is a manual step for the user, not for the implementing agent.** The agent should stop here and prompt the user.
@@ -806,6 +981,8 @@ git commit -m "feat(marketing): add derive_status helper for experiment metrics"
 - Modify: `src/marketing/experiment_metrics.py` (append `compute_experiment_metrics`)
 - Modify: `tests/marketing/test_experiment_metrics.py` (append tests)
 
+**ICPMetric integration:** `compute_experiment_metrics` MUST first check for the latest `ICPMetric` snapshot per variant for the experiment. If a snapshot exists, read counts directly from it (O(2) — one row per variant). If no snapshot exists yet (brand-new experiment, refresh task hasn't run), fall back to live aggregation over `ICPLeadAssignment` so the dashboard isn't blank in that window. Add a test that asserts the read-path uses `ICPMetric` when present and falls back when absent.
+
 - [ ] **Step 1: Write failing tests**
 
 Append to `tests/marketing/test_experiment_metrics.py`:
@@ -953,6 +1130,8 @@ git commit -m "feat(marketing): add compute_experiment_metrics aggregator"
 - Modify: `src/tasks/linkedin.py` (add task at bottom)
 - Modify: `src/celery_inboxiq.py` (add beat entry)
 - Create: `tests/linkedin/test_experiment_metrics_backfill.py`
+
+**ICPMetric integration:** After the status-reconciliation loop, the same task must run a second loop that, for every running ICPExperiment, inserts ONE `ICPMetric` row per variant capturing the current (discovered, connected, replied, booked, conversion_pct) counts. Counts are rolled up the same way `compute_experiment_metrics` rolls them up: `connected = connected+replied+booked`, `replied = replied+booked`, `booked = booked`. INSERT-only — never updates an existing row. Add a test asserting that running the task twice with the same data inserts two rows (i.e. snapshot history accumulates).
 
 - [ ] **Step 1: Write failing test**
 
