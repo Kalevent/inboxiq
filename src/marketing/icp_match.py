@@ -1,15 +1,6 @@
 """Applies an ICPVariant's filters to a Lead. Used by the experiment
 branch of linkedin.discover_prospects to decide which (if any) variant
-gets to claim a given lead.
-
-Known gaps (v1 — permissive on these filters):
-  - variant.titles: Lead has no job_title column. Titles live in
-    lead.buying_committee_json; filtering will be added once we decide
-    whether to match committee titles or move the filter to the
-    LinkedInProspect layer.
-  - variant.geographies: Lead has no country column. Will be added once
-    Lead grows geographic data.
-"""
+gets to claim a given lead."""
 from __future__ import annotations
 
 
@@ -18,21 +9,29 @@ def _norm_list(values):
 
 
 def lead_matches_variant(lead, variant) -> bool:
-    """Return True if the Lead satisfies all of the variant's enforceable filters.
+    """Return True if the Lead satisfies all of the variant's non-empty filters.
 
-    Enforced (v1):
+    All filters are permissive when empty; non-empty filters require a match:
+      - titles: lead.job_title must match one entry (case-insensitive)
       - industries: lead.industry must match one entry (case-insensitive)
+      - geographies: lead.country must match one entry (case-insensitive)
       - company_size_min / company_size_max: lead.num_employees must be
-        within range (None on either bound disables that side; None on
-        lead.num_employees with any size bound set => no match)
-
-    Permissive (v1):
-      - titles: Lead has no job_title; always passes
-      - geographies: Lead has no country; always passes
+        within range. None on either bound disables that side; None on
+        lead.num_employees with any size bound set => no match.
     """
+    titles = _norm_list(variant.titles)
+    if titles:
+        if not lead.job_title or str(lead.job_title).strip().lower() not in titles:
+            return False
+
     industries = _norm_list(variant.industries)
     if industries:
         if not lead.industry or str(lead.industry).strip().lower() not in industries:
+            return False
+
+    geographies = _norm_list(variant.geographies)
+    if geographies:
+        if not lead.country or str(lead.country).strip().lower() not in geographies:
             return False
 
     size = lead.num_employees
