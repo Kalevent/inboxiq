@@ -344,6 +344,199 @@ async function submitAddProspect(e) {
 
 // Load on section activation
 document.addEventListener('sectionChange', (e) => {
-  if (e.detail === 'linkedin') { loadLinkedInQueue(); loadICP(); }
+  if (e.detail === 'linkedin') { loadLinkedInQueue(); loadICP(); loadExperiment(); }
+});
+
+// -- ICP Experiment state machine (Task 13) -------------------------------
+
+function getCSRFToken() {
+  // Reuse the existing _liCsrfToken helper defined at the top of this script.
+  if (typeof _liCsrfToken === 'function') return _liCsrfToken() || '';
+  const m = document.cookie.match(/csrf_access_token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+async function loadExperiment() {
+  const block = document.getElementById('icp-experiment-block');
+  if (!block) return;
+  block.classList.remove('hidden');
+
+  let resp;
+  try {
+    resp = await fetch('/api/v1/linkedin/experiments', {credentials: 'same-origin'});
+  } catch (_e) {
+    block.classList.add('hidden');
+    return;
+  }
+  if (!resp.ok) {
+    block.classList.add('hidden');
+    return;
+  }
+  const data = await resp.json();
+  if (!data.experiments || data.experiments.length === 0) {
+    showEmptyState();
+    return;
+  }
+  loadExperimentDetail(data.experiments[0].id);
+}
+
+function _expHide(ids) {
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+}
+
+function showEmptyState() {
+  _expHide(['exp-variants-pane', 'exp-controls-pane', 'exp-metrics-pane',
+          'exp-pause-btn', 'exp-resume-btn', 'exp-new-btn']);
+  const empty = document.getElementById('exp-empty-pane');
+  if (empty) empty.classList.remove('hidden');
+  const status = document.getElementById('exp-status-line');
+  if (status) status.textContent = 'No experiment running. Variant A is pre-filled from your ICP Settings below.';
+}
+
+async function loadExperimentDetail(expId) {
+  let resp;
+  try {
+    resp = await fetch(`/api/v1/linkedin/experiments/${expId}`, {credentials: 'same-origin'});
+  } catch (_e) {
+    return;
+  }
+  if (!resp.ok) return;
+  const exp = await resp.json();
+
+  document.body.dataset.experimentId = expId;
+
+  const status = document.getElementById('exp-status-line');
+  if (status) {
+    status.textContent =
+      `${exp.name} - status: ${exp.status} - split A:${exp.traffic_split.A}% / B:${exp.traffic_split.B}%`;
+  }
+
+  _expHide(['exp-empty-pane']);
+  const v = document.getElementById('exp-variants-pane');
+  const c = document.getElementById('exp-controls-pane');
+  const m = document.getElementById('exp-metrics-pane');
+  if (v) v.classList.remove('hidden');
+  if (c) c.classList.remove('hidden');
+  if (m) m.classList.remove('hidden');
+
+  for (const variant of exp.variants) {
+    const pane = document.querySelector(`[data-variant="${variant.label}"]`);
+    if (!pane) continue;
+    pane.querySelector('[data-field="titles"]').value = (variant.titles || []).join(', ');
+    pane.querySelector('[data-field="industries"]').value = (variant.industries || []).join(', ');
+    pane.querySelector('[data-field="company_size_min"]').value = variant.company_size_min ?? '';
+    pane.querySelector('[data-field="company_size_max"]').value = variant.company_size_max ?? '';
+    pane.querySelector('[data-field="geographies"]').value = (variant.geographies || []).join(', ');
+  }
+
+  const splitA = document.getElementById('exp-split-a');
+  if (splitA) splitA.value = exp.traffic_split.A;
+  const splitDisp = document.getElementById('exp-split-display');
+  if (splitDisp) splitDisp.textContent = `(B: ${100 - exp.traffic_split.A}%)`;
+
+  const pauseBtn = document.getElementById('exp-pause-btn');
+  const resumeBtn = document.getElementById('exp-resume-btn');
+  const newBtn = document.getElementById('exp-new-btn');
+  if (pauseBtn) pauseBtn.classList.toggle('hidden', exp.status !== 'running');
+  if (resumeBtn) resumeBtn.classList.toggle('hidden', exp.status !== 'paused');
+  if (newBtn) newBtn.classList.toggle('hidden', exp.status !== 'completed');
+
+  const saveBtn = document.getElementById('exp-save-btn');
+  if (saveBtn) saveBtn.onclick = () => saveExperimentSplit(expId);
+  if (pauseBtn) pauseBtn.onclick = () => patchExperimentStatus(expId, 'paused');
+  if (resumeBtn) resumeBtn.onclick = () => patchExperimentStatus(expId, 'running');
+
+  // Render initial metrics from this fetch (Task 14 will add polling on top)
+  if (typeof renderMetrics === 'function') renderMetrics(exp.metrics);
+}
+
+async function saveExperimentSplit(expId) {
+  const splitA = parseInt(document.getElementById('exp-split-a').value, 10);
+  if (isNaN(splitA) || splitA < 0 || splitA > 100) {
+    alert('Traffic split must be between 0 and 100');
+    return;
+  }
+  const resp = await fetch(`/api/v1/linkedin/experiments/${expId}`, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCSRFToken()},
+    credentials: 'same-origin',
+    body: JSON.stringify({traffic_split: {A: splitA, B: 100 - splitA}}),
+  });
+  const msg = document.getElementById('exp-saved-msg');
+  if (resp.ok) {
+    if (msg) {
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 1500);
+    }
+    loadExperimentDetail(expId);
+  } else {
+    alert('Save failed: ' + resp.status);
+  }
+}
+
+async function patchExperimentStatus(expId, newStatus) {
+  const resp = await fetch(`/api/v1/linkedin/experiments/${expId}`, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCSRFToken()},
+    credentials: 'same-origin',
+    body: JSON.stringify({status: newStatus}),
+  });
+  if (resp.ok) {
+    loadExperimentDetail(expId);
+  } else {
+    alert('Status change failed: ' + resp.status);
+  }
+}
+
+async function startExperimentFlow() {
+  const name = prompt('Experiment name (e.g. "Founder vs Co-founder Q2"):');
+  if (!name) return;
+
+  const _csv = id => (document.getElementById(id)?.value || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+  const _int = id => {
+    const raw = document.getElementById(id)?.value;
+    return raw === '' || raw == null ? null : (parseInt(raw, 10) || null);
+  };
+
+  const icpTitles = _csv('icp-titles');
+  const icpIndustries = _csv('icp-industries');
+  const icpGeos = _csv('icp-geos');
+  const icpSizeMin = _int('icp-size-min');
+  const icpSizeMax = _int('icp-size-max');
+
+  const body = {
+    name,
+    traffic_split: {A: 50, B: 50},
+    variants: [
+      {label: 'A', titles: icpTitles, industries: icpIndustries,
+       company_size_min: icpSizeMin, company_size_max: icpSizeMax, geographies: icpGeos},
+      {label: 'B', titles: [], industries: [],
+       company_size_min: icpSizeMin, company_size_max: icpSizeMax, geographies: icpGeos},
+    ],
+  };
+  const resp = await fetch('/api/v1/linkedin/experiments', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCSRFToken()},
+    credentials: 'same-origin',
+    body: JSON.stringify(body),
+  });
+  if (resp.ok) {
+    loadExperiment();
+  } else {
+    let err = {};
+    try { err = await resp.json(); } catch (_e) {}
+    alert('Could not start experiment: ' + (err.error || resp.status));
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const startBtn = document.getElementById('exp-start-btn');
+  if (startBtn) startBtn.onclick = startExperimentFlow;
+  const newBtn = document.getElementById('exp-new-btn');
+  if (newBtn) newBtn.onclick = startExperimentFlow;
 });
 </script>
