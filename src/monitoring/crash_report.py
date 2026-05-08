@@ -65,3 +65,39 @@ def configure_crash_email(app):
     # Avoid duplicate handlers if create_app is called multiple times.
     if not any(isinstance(h, logging.handlers.SMTPHandler) for h in app.logger.handlers):
         app.logger.addHandler(handler)
+
+
+# Track registration so configure_celery_crash_email is idempotent across
+# repeated imports of celery_inboxiq.py.
+_celery_handler_app_ids: set = set()
+
+
+def configure_celery_crash_email(app):
+    """Forward Celery task_failure signals to app.logger.error.
+
+    The SMTPHandler registered by configure_crash_email is attached to
+    app.logger only. Celery tasks use logging.getLogger(__name__), so their
+    crashes don't reach that handler. This bridges the gap by wiring
+    task_failure into app.logger so any failed Celery task pages
+    CRASH_EMAIL_TO the same way an unhandled Flask request exception does.
+
+    Idempotent — calling twice for the same app does not register a duplicate
+    receiver.
+    """
+    from celery.signals import task_failure
+
+    if id(app) in _celery_handler_app_ids:
+        return
+    _celery_handler_app_ids.add(id(app))
+
+    def _on_task_failure(sender=None, task_id=None, exception=None,
+                         args=None, kwargs=None, traceback=None,
+                         einfo=None, **_extra):
+        task_name = getattr(sender, "name", None) or str(sender or "unknown")
+        tb = getattr(einfo, "traceback", "") or (str(exception) if exception else "")
+        app.logger.error(
+            "Celery task failed: %s [task_id=%s]\nargs=%s\nkwargs=%s\n\n%s",
+            task_name, task_id, args, kwargs, tb,
+        )
+
+    task_failure.connect(_on_task_failure, weak=False)

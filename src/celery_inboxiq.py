@@ -501,6 +501,12 @@ app = create_app()
 celery = make_celery(app)
 celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox", "src.booking", "src.tasks.linkedin", "src.tasks.onboarding_video", "src.tasks.youtube", "src.tasks.outreach_video"])
 
+# Wire Celery task_failure into app.logger so the SMTPHandler attached by
+# configure_crash_email also pages on failed background tasks (otherwise
+# only Flask request-handler exceptions would email).
+from src.monitoring.crash_report import configure_celery_crash_email
+configure_celery_crash_email(app)
+
 # Initialize OpenTelemetry for Celery workers
 from src.monitoring.observability import init_otel, get_tracer
 from src.monitoring.sanitizer import safe_span_attribute
