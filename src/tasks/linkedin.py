@@ -4,6 +4,8 @@ import logging
 from celery import shared_task
 
 from src.extensions import db
+from src.marketing.experiment_metrics import derive_status
+from src.models.marketing import ICPMetric, ICPExperiment, ICPVariant, ICPLeadAssignment
 
 log = logging.getLogger(__name__)
 
@@ -313,3 +315,82 @@ def review_mismatched_prospects():
 
     log.info("linkedin.review_mismatched_prospects: flagged %d prospects", flagged)
     return {"flagged": flagged}
+
+
+def _all_assignments_for_refresh():
+    """Return all ICPLeadAssignment rows that should be re-evaluated.
+    Disqualified is manual and never refreshed."""
+    return ICPLeadAssignment.query.filter(ICPLeadAssignment.status != "disqualified").all()
+
+
+def _running_experiments_with_variants():
+    """Yield (experiment, [variant_a, variant_b]) for every running experiment."""
+    out = []
+    for exp in ICPExperiment.query.filter_by(status="running").all():
+        variants = ICPVariant.query.filter_by(experiment_id=exp.id).all()
+        out.append((exp, variants))
+    return out
+
+
+def _count_assignments_by_status(experiment_id: str, variant_id: str) -> dict:
+    """Mutually-exclusive status counts for (experiment, variant)."""
+    from sqlalchemy import func as sqlfunc
+    rows = (
+        db.session.query(ICPLeadAssignment.status, sqlfunc.count(ICPLeadAssignment.id))
+        .filter_by(experiment_id=experiment_id, variant_id=variant_id)
+        .group_by(ICPLeadAssignment.status)
+        .all()
+    )
+    return {status: int(count) for status, count in rows}
+
+
+@shared_task(name="linkedin.refresh_experiment_metrics")
+def refresh_experiment_metrics():
+    """Reconcile ICPLeadAssignment.status against existing tables AND insert
+    one ICPMetric snapshot per (running experiment, variant) per tick.
+
+    Idempotent on the status side. Snapshot side is INSERT-only by design.
+    """
+    # 1. Reconcile statuses (skip manually-disqualified — defence in depth in
+    # case the query helper ever returns a disqualified row by accident).
+    updated = 0
+    for asg in _all_assignments_for_refresh():
+        if asg.status == "disqualified":
+            continue
+        new_status = derive_status(asg.lead_id)
+        if new_status != asg.status:
+            asg.status = new_status
+            updated += 1
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    # 2. Insert snapshot per (running experiment, variant)
+    snapshots = 0
+    for exp, variants in _running_experiments_with_variants():
+        for variant in variants:
+            counts = _count_assignments_by_status(exp.id, variant.id)
+            discovered = sum(counts.values())
+            connected = counts.get("connected", 0) + counts.get("replied", 0) + counts.get("booked", 0)
+            replied = counts.get("replied", 0) + counts.get("booked", 0)
+            booked = counts.get("booked", 0)
+            conv = (booked / discovered * 100.0) if discovered > 0 else 0.0
+            db.session.add(ICPMetric(
+                experiment_id=exp.id,
+                variant_id=variant.id,
+                discovered=discovered,
+                connected=connected,
+                replied=replied,
+                booked=booked,
+                conversion_pct=conv,
+            ))
+            snapshots += 1
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    return {"updated": updated, "snapshots": snapshots}
