@@ -31,6 +31,15 @@ logger = logging.getLogger(__name__)
 
 ACCOUNT_ID = 2
 
+PRODUCT_NAME = "InboxIQ"
+PRODUCT_VALUE_PROPOSITION = (
+    "InboxIQ is AI-driven email triage and auto-reply for B2B SaaS support and sales teams. "
+    "It clears inboxes 10x faster, drafts replies in your voice, recovers warm leads from missed "
+    "replies, surfaces SLA breaches before customers complain publicly, and never sleeps. "
+    "Concrete outcomes customers see: hours of agent time saved per week, inbox-zero by Monday, "
+    "lead reply rates up, and churn signals caught before renewal."
+)
+
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -95,6 +104,8 @@ def _run_dspy_script_generation(
         pain_point=pain_point.pain_point,
         consequence=pain_point.consequence,
         video_style=video_style,
+        product_name=PRODUCT_NAME,
+        product_value_proposition=PRODUCT_VALUE_PROPOSITION,
     )
 
     seo_pred = dspy.Predict(sigs["YouTubeSEOMetadata"])(
@@ -102,6 +113,8 @@ def _run_dspy_script_generation(
         pain_point=pain_point.pain_point,
         blog_post_primary_keyword=blog_post.primary_keyword or "",
         video_type="long_form",
+        product_name=PRODUCT_NAME,
+        product_value_proposition=PRODUCT_VALUE_PROPOSITION,
     )
 
     short_scripts = []
@@ -110,11 +123,30 @@ def _run_dspy_script_generation(
             long_form_script=long_pred.script,
             pain_point=pain_point.pain_point,
             parent_youtube_url="",
+            product_name=PRODUCT_NAME,
         )
+        short_seo_pred = dspy.Predict(sigs["YouTubeSEOMetadata"])(
+            script=short_pred.short_script,
+            pain_point=pain_point.pain_point,
+            blog_post_primary_keyword=blog_post.primary_keyword or "",
+            video_type="short",
+            product_name=PRODUCT_NAME,
+            product_value_proposition=PRODUCT_VALUE_PROPOSITION,
+        )
+        short_tags = short_seo_pred.tags
+        if isinstance(short_tags, str):
+            try:
+                short_tags = json.loads(short_tags)
+            except (ValueError, TypeError):
+                short_tags = [short_tags]
         short_scripts.append({
             "script": short_pred.short_script,
             "pattern_interrupt_line": short_pred.pattern_interrupt_line,
             "cta_line": short_pred.cta_line,
+            "title": short_seo_pred.title,
+            "description": short_seo_pred.description,
+            "tags": short_tags,
+            "thumbnail_prompt": short_seo_pred.thumbnail_prompt,
         })
 
     illustration_prompts = None
@@ -253,6 +285,10 @@ def generate_scripts(account_id: int = ACCOUNT_ID, video_style: str = "avatar") 
             video_style=video_style,
             video_render_id=short_render.id,
             script=short_data["script"],
+            title=short_data.get("title"),
+            description=short_data.get("description"),
+            tags=short_data.get("tags"),
+            thumbnail_prompt=short_data.get("thumbnail_prompt"),
             utm_slug=short_slug,
             utm_medium="short",
             utm_campaign=short_slug.replace("yt-short-", ""),

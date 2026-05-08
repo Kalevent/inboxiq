@@ -284,6 +284,160 @@ def test_publish_videos_uses_render_url_and_sets_delivered(app, db):
         assert call_kwargs.kwargs["file_url"] == "https://cdn.heygen.com/out.mp4"
 
 
+def test_run_dspy_passes_product_name_to_long_form_predictor(app, mock_blog_post, mock_pain_point):
+    """`_run_dspy_script_generation` must pass product_name='InboxIQ' and a
+    product_value_proposition to the long form predictor. Without this the
+    rendered script never mentions the product (root cause of generic 'chatbot'
+    content seen in production)."""
+    with app.app_context():
+        with patch("src.dspy.config._configure_dspy"), \
+             patch("src.dspy.signatures.build_youtube_signatures") as mock_build, \
+             patch("dspy.Predict") as mock_predict_cls:
+
+            sentinel = MagicMock()
+            sentinel.__name__ = "sig"
+            mock_build.return_value = {
+                "YouTubeLongFormScript": sentinel,
+                "YouTubeShortScript": sentinel,
+                "YouTubeSEOMetadata": sentinel,
+                "YouTubeIllustrationPrompts": sentinel,
+            }
+            predictor = MagicMock()
+            predictor.script = "Long form script."
+            predictor.hook_line = "Pain."
+            predictor.chapter_markers = "[]"
+            predictor.cta_line = "Start free at inboxiq.com"
+            predictor.short_script = "Short."
+            predictor.pattern_interrupt_line = "Hook."
+            predictor.title = "Title | InboxIQ"
+            predictor.description = "Pain.\nResolution.\n{{UTM_LINK}}"
+            predictor.tags = '["tag"]'
+            predictor.thumbnail_prompt = "Prompt."
+            mock_predict_cls.return_value = predictor
+
+            from src.tasks.youtube import _run_dspy_script_generation
+            _run_dspy_script_generation(mock_blog_post, mock_pain_point, "avatar")
+
+            # Find the long form predictor invocation (first call) and assert product context was passed.
+            long_call = predictor.call_args_list[0]
+            assert long_call.kwargs.get("product_name") == "InboxIQ"
+            assert long_call.kwargs.get("product_value_proposition"), \
+                "product_value_proposition must be passed to long form predictor"
+
+
+def test_run_dspy_generates_seo_for_each_short(app, mock_blog_post, mock_pain_point):
+    """Each short must get its own SEO metadata. In production today shorts
+    publish with empty title/description/tags because SEO is only generated
+    for the long form."""
+    with app.app_context():
+        with patch("src.dspy.config._configure_dspy"), \
+             patch("src.dspy.signatures.build_youtube_signatures") as mock_build, \
+             patch("dspy.Predict") as mock_predict_cls:
+
+            sentinel = MagicMock()
+            mock_build.return_value = {
+                "YouTubeLongFormScript": sentinel,
+                "YouTubeShortScript": sentinel,
+                "YouTubeSEOMetadata": sentinel,
+                "YouTubeIllustrationPrompts": sentinel,
+            }
+            predictor = MagicMock()
+            predictor.script = "Long form script."
+            predictor.hook_line = "Pain."
+            predictor.chapter_markers = "[]"
+            predictor.cta_line = "Start free at inboxiq.com"
+            predictor.short_script = "Short script."
+            predictor.pattern_interrupt_line = "Hook."
+            predictor.title = "Title | InboxIQ"
+            predictor.description = "Pain.\nResolution.\n{{UTM_LINK}}"
+            predictor.tags = '["tag"]'
+            predictor.thumbnail_prompt = "Prompt."
+            mock_predict_cls.return_value = predictor
+
+            from src.tasks.youtube import _run_dspy_script_generation
+            result = _run_dspy_script_generation(mock_blog_post, mock_pain_point, "avatar")
+
+            assert len(result["short_scripts"]) == 2
+            for short in result["short_scripts"]:
+                assert short.get("title"), "Each short must have a non-empty title"
+                assert short.get("description"), "Each short must have a description"
+                assert short.get("tags") is not None, "Each short must have tags"
+                assert short.get("thumbnail_prompt"), "Each short must have a thumbnail_prompt"
+
+
+def test_generate_scripts_persists_short_seo_to_db(app, db):
+    """End-to-end: shorts saved to YouTubeVideo must have non-empty title."""
+    from src.models.campaigns import YouTubeVideo
+    from unittest.mock import patch, MagicMock
+
+    mock_post = MagicMock()
+    mock_post.id = "post-shorts-seo"
+    mock_post.title = "Inbox chaos"
+    mock_post.content_html = "<p>chaos</p>"
+    mock_post.primary_keyword = "inbox"
+
+    mock_pp = MagicMock()
+    mock_pp.id = "pain-shorts-seo"
+    mock_pp.pain_point = "Emails pile up"
+    mock_pp.consequence = "Customers churn"
+
+    counter = {"n": 0}
+    def _slug(vtype, title):
+        counter["n"] += 1
+        return f"slug-{vtype}-{counter['n']}"
+
+    with patch("src.tasks.youtube._get_latest_blog_post", return_value=mock_post), \
+         patch("src.tasks.youtube._get_top_pain_point", return_value=mock_pp), \
+         patch("src.tasks.youtube._run_dspy_script_generation") as mock_dspy, \
+         patch("src.tasks.youtube._build_utm_slug", side_effect=_slug):
+
+        mock_dspy.return_value = {
+            "script": "Long.",
+            "hook_line": "Hook.",
+            "chapter_markers": "[]",
+            "cta_line": "CTA.",
+            "illustration_prompts": None,
+            "short_scripts": [
+                {
+                    "script": "Short 1.",
+                    "pattern_interrupt_line": "Hook 1.",
+                    "cta_line": "Link 1.",
+                    "title": "Short 1 title | InboxIQ",
+                    "description": "Pain.\nResolution.\n{{UTM_LINK}}",
+                    "tags": ["inbox"],
+                    "thumbnail_prompt": "Prompt 1.",
+                },
+                {
+                    "script": "Short 2.",
+                    "pattern_interrupt_line": "Hook 2.",
+                    "cta_line": "Link 2.",
+                    "title": "Short 2 title | InboxIQ",
+                    "description": "Pain.\nResolution.\n{{UTM_LINK}}",
+                    "tags": ["inbox"],
+                    "thumbnail_prompt": "Prompt 2.",
+                },
+            ],
+            "seo": {
+                "title": "Long title | InboxIQ",
+                "description": "Pain.\n{{UTM_LINK}}",
+                "tags": '["inbox"]',
+                "thumbnail_prompt": "Long prompt.",
+            },
+        }
+
+        from src.tasks.youtube import generate_scripts
+        result = generate_scripts.run(account_id=2, video_style="avatar")
+        assert result["status"] == "ok"
+        assert result["shorts_created"] == 2
+
+    shorts = db.session.query(YouTubeVideo).filter_by(account_id=2, video_type="short").all()
+    assert len(shorts) == 2
+    for s in shorts:
+        assert s.title, f"Short {s.id} has empty title"
+        assert s.description, f"Short {s.id} has empty description"
+        assert s.tags, f"Short {s.id} has empty tags"
+
+
 def test_send_digest_calls_email_function(app):
     with app.app_context():
         with patch("src.tasks.youtube.send_youtube_digest_email") as mock_email, \

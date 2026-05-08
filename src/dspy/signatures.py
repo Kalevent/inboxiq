@@ -680,43 +680,56 @@ def build_youtube_signatures(dspy: Any) -> Dict[str, Any]:
 
     class YouTubeLongFormScript(dspy.Signature):
         """Generate a pain-point-first YouTube long form script (8-12 min) for a specific ICP persona.
-        The script must open with the named ICP pain point. The product name InboxIQ must not appear
-        in the first 5 seconds. Structure: HOOK (pain) -> PROBLEM -> RESOLUTION -> PROOF -> CTA."""
+        The script must open with the named ICP pain point. {product_name} must not appear in the
+        first 5 seconds (HOOK). Structure: HOOK (pain) -> PROBLEM -> RESOLUTION -> PROOF -> CTA.
+        The RESOLUTION beat must explicitly name {product_name} as the solution (do not say
+        'chatbots', 'AI tools', or any generic category — name the product). The PROOF beat must
+        cite a concrete outcome from {product_value_proposition}. The CTA must say
+        'Start free at inboxiq.com'."""
 
         blog_post_content: str = dspy.InputField(desc="Source blog post content to base the video on.")
         icp_persona: str = dspy.InputField(desc="ICP persona, e.g. 'Head of Support, B2B SaaS, 10-50 employees'.")
         pain_point: str = dspy.InputField(desc="Specific ICP pain point from ICPPainPoint table. Do not invent.")
         consequence: str = dspy.InputField(desc="What happens if this pain point is not resolved.")
         video_style: str = dspy.InputField(desc="'avatar' (Caroline presenter) or 'illustration' (editorial art).")
+        product_name: str = dspy.InputField(desc="Product brand name to name in the RESOLUTION beat (e.g. 'InboxIQ').")
+        product_value_proposition: str = dspy.InputField(desc="One-paragraph product value prop. Drives the RESOLUTION + PROOF beats so the script doesn't drift to source-blog framing.")
 
-        script: str = dspy.OutputField(desc="Full spoken script. HOOK 0-30s opens with pain, no greeting.")
+        script: str = dspy.OutputField(desc="Full spoken script. HOOK 0-30s opens with pain, no greeting. RESOLUTION explicitly names {product_name}. CTA: 'Start free at inboxiq.com'.")
         hook_line: str = dspy.OutputField(desc="First spoken sentence. Must name the pain. No product name.")
         chapter_markers: str = dspy.OutputField(desc="JSON list of {time, title} chapter markers for YouTube.")
         cta_line: str = dspy.OutputField(desc="Final spoken sentence. One ask only: 'Start free at inboxiq.com'.")
 
     class YouTubeShortScript(dspy.Signature):
         """Extract a 60-second Short from a long form script. Pattern interrupt -> agitation -> resolution -> CTA.
-        First 3 seconds must name the pain with no greeting."""
+        First 3 seconds must name the pain with no greeting. The RESOLUTION beat (20-50s) must
+        explicitly name {product_name} — do not collapse it into 'AI', 'a tool', or the source
+        blog's terminology. The CTA must point to inboxiq.com."""
 
         long_form_script: str = dspy.InputField(desc="Full long form script to extract the Short from.")
         pain_point: str = dspy.InputField(desc="ICP pain point this Short addresses.")
         parent_youtube_url: str = dspy.InputField(desc="YouTube URL of the parent long form video.")
+        product_name: str = dspy.InputField(desc="Product brand name to name in the RESOLUTION beat (e.g. 'InboxIQ').")
 
-        short_script: str = dspy.OutputField(desc="60-second script. Seconds 0-3: pain. 3-20: agitation. 20-50: resolution. 50-60: CTA.")
+        short_script: str = dspy.OutputField(desc="60-second script. Seconds 0-3: pain. 3-20: agitation. 20-50: {product_name} resolves it. 50-60: CTA pointing to inboxiq.com.")
         pattern_interrupt_line: str = dspy.OutputField(desc="First sentence (0-3s). Names the pain. No greeting.")
         cta_line: str = dspy.OutputField(desc="Final line. 'Link in description. Free to start.'")
 
     class YouTubeSEOMetadata(dspy.Signature):
-        """Generate YouTube SEO metadata for a video. Title must follow [Pain outcome] — [How] | InboxIQ format.
-        Product name must not appear in the title. Description must state pain and resolution in first 2 lines."""
+        """Generate YouTube SEO metadata for a video. Title format: [Pain outcome] — [How {product_name} does it] | {product_name}.
+        The 'How' segment must describe a {product_name} capability (e.g. 'AI Triage', 'Auto-Reply')
+        — never source-blog terminology like 'Use Chatbots' or 'With AI'. Description must state
+        pain and {product_name}'s resolution in first 2 lines."""
 
         script: str = dspy.InputField(desc="Video script.")
         pain_point: str = dspy.InputField(desc="ICP pain point this video addresses.")
         blog_post_primary_keyword: str = dspy.InputField(desc="Primary SEO keyword from the source BlogPost.")
         video_type: str = dspy.InputField(desc="'long_form' or 'short'.")
+        product_name: str = dspy.InputField(desc="Product brand name (e.g. 'InboxIQ'). Anchors the title's 'How' segment + suffix.")
+        product_value_proposition: str = dspy.InputField(desc="One-paragraph product value prop — drives the description's 'resolution' line.")
 
-        title: str = dspy.OutputField(desc="YouTube title <=60 chars. Format: [Pain outcome] — [How] | InboxIQ. No product name first.")
-        description: str = dspy.OutputField(desc="YouTube description. Line 1: pain. Line 2: resolution. Line 3: UTM link placeholder {{UTM_LINK}}.")
+        title: str = dspy.OutputField(desc="YouTube title <=60 chars. Format: [Pain outcome] — [How {product_name} does it] | {product_name}. The 'How' must reflect a {product_name} capability, not source-blog terminology.")
+        description: str = dspy.OutputField(desc="YouTube description. Line 1: pain. Line 2: how {product_name} resolves it. Line 3: UTM link placeholder {{UTM_LINK}}.")
         tags: str = dspy.OutputField(desc="JSON list of 10 tags: 3 broad (inbox management, customer support, B2B SaaS) + 7 specific.")
         thumbnail_prompt: str = dspy.OutputField(desc="DALL-E prompt for thumbnail. Must show before/after state or visible problem. No logo only.")
 
