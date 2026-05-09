@@ -615,13 +615,15 @@ def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
                 from src.marketing.social_distribution import enqueue_youtube_video
                 pain_point_text = ""
                 if video.icp_pain_point_id:
-                    from src.models.leads import ICPPainPoint
                     pp = db.session.get(ICPPainPoint, video.icp_pain_point_id)
                     if pp:
                         pain_point_text = pp.pain_point or ""
                 enqueue_youtube_video(video, pain_point_text=pain_point_text)
             except Exception:
-                logger.exception("youtube.publish_videos: enqueue social distribution failed for %s", video.id)
+                logger.exception(
+                    "youtube.publish_videos: enqueue social distribution failed video=%s account=%s",
+                    video.id, video.account_id,
+                )
 
         except Exception:
             db.session.rollback()
