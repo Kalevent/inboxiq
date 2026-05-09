@@ -456,48 +456,29 @@ def _get_social_token(provider: str, account_id: int) -> Optional[str]:
     return decrypt_value(enc) if enc else None
 
 
-def _post_to_linkedin(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Post to LinkedIn company page via UGC Posts API.
-    Token is read from the linkedin_social InboxConnection (set via Settings → Integrations).
-    LINKEDIN_ORG_ID env var must be set to the numeric company page ID.
-    """
-    if not content:
-        return {"status": "skipped", "reason": "no_content"}
-
-    import os
+def _post_to_linkedin(item) -> Dict[str, Any]:
+    """Post a queue item to LinkedIn company page via UGC Posts API."""
     import requests as http
 
-    token = _get_social_token("linkedin_social", account_id=2)  # TEMPORARY: hardcoded for migration; replaced in Task 4
+    token = _get_social_token("linkedin_social", account_id=item.account_id)
     if not token:
-        logger.warning("LinkedIn not connected — go to Settings → Integrations to connect")
         return {"status": "skipped", "reason": "not_connected"}
 
-    org_id = os.getenv("LINKEDIN_ORG_ID", "")
+    org_id = _get_linkedin_org_id(item.account_id)
     if not org_id:
-        logger.warning("LINKEDIN_ORG_ID not set")
         return {"status": "skipped", "reason": "not_configured"}
-
-    text = content.get("text", "")
-    hashtags = content.get("hashtags", "")
-    post_url = content.get("url", "")
-    full_text = f"{text}\n\n{hashtags}".strip() if hashtags else text
 
     body = {
         "author": f"urn:li:organization:{org_id}",
         "lifecycleState": "PUBLISHED",
         "specificContent": {
             "com.linkedin.ugc.ShareContent": {
-                "shareCommentary": {"text": full_text},
+                "shareCommentary": {"text": item.caption},
                 "shareMediaCategory": "ARTICLE",
-                "media": [
-                    {
-                        "status": "READY",
-                        "originalUrl": post_url,
-                        "title": {"text": post.title or ""},
-                        "description": {"text": (post.excerpt or post.summary or "")[:200]},
-                    }
-                ],
+                "media": [{
+                    "status": "READY",
+                    "originalUrl": item.target_url,
+                }],
             }
         },
         "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"},
@@ -515,110 +496,78 @@ def _post_to_linkedin(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict
             timeout=15,
         )
         resp.raise_for_status()
-        post_id = resp.json().get("id", "")
-        logger.info(f"LinkedIn post created: {post_id}")
-        return {"status": "ok", "platform": "linkedin", "post_id": post_id}
+        post_urn = resp.json().get("id", "")
+        return {
+            "status": "ok",
+            "platform": "linkedin",
+            "post_url": f"https://www.linkedin.com/feed/update/{post_urn}",
+        }
     except Exception as exc:
-        logger.error(f"LinkedIn API error: {exc}")
         return {"status": "error", "platform": "linkedin", "error": str(exc)}
 
 
-def _post_to_twitter(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Post a tweet (or thread) via Twitter API v2.
-    Token is read from the twitter_social InboxConnection (set via Settings → Integrations).
-    """
-    if not content:
-        return {"status": "skipped", "reason": "no_content"}
-
-    import requests as http
-
-    token = _get_social_token("twitter_social", account_id=2)  # TEMPORARY: hardcoded for migration; replaced in Task 4
-    if not token:
-        logger.warning("Twitter not connected — go to Settings → Integrations to connect")
-        return {"status": "skipped", "reason": "not_connected"}
-
-    thread = content.get("thread", [])
-    if not thread:
-        return {"status": "skipped", "reason": "no_thread"}
-
-    tweet_ids = []
-    reply_to = None
-
-    for tweet_text in thread:
-        body: Dict[str, Any] = {"text": tweet_text[:280]}
-        if reply_to:
-            body["reply"] = {"in_reply_to_tweet_id": reply_to}
-        try:
-            resp = http.post(
-                "https://api.twitter.com/2/tweets",
-                json=body,
-                headers={"Authorization": f"Bearer {token}"},
-                timeout=15,
-            )
-            resp.raise_for_status()
-            tweet_id = resp.json().get("data", {}).get("id")
-            tweet_ids.append(tweet_id)
-            reply_to = tweet_id
-        except Exception as exc:
-            logger.error(f"Twitter API error on tweet {len(tweet_ids)+1}: {exc}")
-            break
-
-    if tweet_ids:
-        logger.info(f"Twitter thread posted: {len(tweet_ids)} tweet(s), first={tweet_ids[0]}")
-        return {"status": "ok", "platform": "twitter", "tweet_ids": tweet_ids}
-    return {"status": "error", "platform": "twitter", "error": "no tweets posted"}
-
-
-def _post_to_facebook(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    Post to a Facebook Page via Graph API.
-    Token is read from the facebook_social InboxConnection (set via Settings → Integrations).
-    Posts to the first connected page unless FACEBOOK_PAGE_ID env var overrides.
-    """
-    if not content:
-        return {"status": "skipped", "reason": "no_content"}
-
-    import os
-    import requests as http
-    from src.crypto import decrypt_value
-
+def _get_linkedin_org_id(account_id: int) -> Optional[str]:
+    """Resolve the LinkedIn company URN ID for an account from its InboxConnection metadata."""
     conn = InboxConnection.query.filter_by(
-        provider="facebook_social", account_id=2, status="connected"
-    ).first()  # TEMPORARY: hardcoded for migration; replaced in Task 4
+        provider="linkedin_social", account_id=account_id, status="connected"
+    ).first()
     if not conn or not conn.metadata_json:
-        logger.warning("Facebook not connected — go to Settings → Integrations to connect")
+        return None
+    return conn.metadata_json.get("org_id")
+
+
+def _post_to_twitter(item) -> Dict[str, Any]:
+    """Post a queue item as a single tweet via Twitter API v2."""
+    import requests as http
+
+    token = _get_social_token("twitter_social", account_id=item.account_id)
+    if not token:
         return {"status": "skipped", "reason": "not_connected"}
 
-    # Pick page: env override first, then first page in stored list
-    override_page_id = os.getenv("FACEBOOK_PAGE_ID")
-    page_token = None
-    page_id = None
+    # Append target_url if not already present in the caption
+    text = item.caption
+    if item.target_url and item.target_url not in text:
+        text = f"{text}\n\n{item.target_url}"
 
-    pages = conn.metadata_json.get("pages", [])
-    if override_page_id:
-        for p in pages:
-            if p.get("id") == override_page_id:
-                page_id = p["id"]
-                enc = p.get("access_token_enc")
-                page_token = decrypt_value(enc) if enc else None
-                break
-    elif pages:
-        p = pages[0]
-        page_id = p.get("id")
-        enc = p.get("access_token_enc")
-        page_token = decrypt_value(enc) if enc else None
+    body: Dict[str, Any] = {"text": text[:280]}
 
-    if not page_id or not page_token:
-        logger.warning("Facebook: no page token found — reconnect in Settings → Integrations")
+    try:
+        resp = http.post(
+            "https://api.twitter.com/2/tweets",
+            json=body,
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        tweet_id = resp.json().get("data", {}).get("id", "")
+        return {
+            "status": "ok",
+            "platform": "twitter",
+            "post_url": f"https://twitter.com/i/web/status/{tweet_id}",
+        }
+    except Exception as exc:
+        return {"status": "error", "platform": "twitter", "error": str(exc)}
+
+
+def _post_to_facebook(item) -> Dict[str, Any]:
+    """Post a queue item to a Facebook Page via Graph API.
+
+    Page ID and page-level access token are resolved from the facebook_social
+    InboxConnection for the account.  metadata_json must contain a ``pages``
+    list where each entry has ``id`` and ``access_token_enc`` (encrypted with
+    src.crypto.encrypt_value).  The first page in the list is used.
+    """
+    import requests as http
+
+    page_id, page_token = _get_facebook_page_id(item.account_id)
+    if not page_id:
+        return {"status": "skipped", "reason": "not_connected"}
+    if not page_token:
         return {"status": "skipped", "reason": "no_page_token"}
 
-    text = content.get("text", "")
-    post_url = content.get("url", "")
-
-    body: Dict[str, Any] = {"message": text, "access_token": page_token}
-    if post_url:
-        body["link"] = post_url
+    body: Dict[str, Any] = {"message": item.caption, "access_token": page_token}
+    if item.target_url:
+        body["link"] = item.target_url
 
     try:
         resp = http.post(
@@ -628,11 +577,43 @@ def _post_to_facebook(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict
         )
         resp.raise_for_status()
         fb_post_id = resp.json().get("id", "")
-        logger.info(f"Facebook post created: {fb_post_id}")
-        return {"status": "ok", "platform": "facebook", "post_id": fb_post_id}
+        return {
+            "status": "ok",
+            "platform": "facebook",
+            "post_url": f"https://www.facebook.com/{fb_post_id}",
+        }
     except Exception as exc:
-        logger.error(f"Facebook API error: {exc}")
         return {"status": "error", "platform": "facebook", "error": str(exc)}
+
+
+def _get_facebook_page_id(account_id: int):
+    """Resolve the Facebook page ID and decrypted page token for an account.
+
+    Reads the facebook_social InboxConnection for the account and returns the
+    first page entry from ``metadata_json["pages"]``.  Page tokens are stored
+    as encrypted values under ``access_token_enc`` (per-page).
+
+    Returns:
+        Tuple[Optional[str], Optional[str]]: (page_id, page_access_token).
+        Both are None if no connected Facebook connection exists.
+    """
+    from src.crypto import decrypt_value
+
+    conn = InboxConnection.query.filter_by(
+        provider="facebook_social", account_id=account_id, status="connected"
+    ).first()
+    if not conn or not conn.metadata_json:
+        return None, None
+
+    pages = conn.metadata_json.get("pages", [])
+    if not pages:
+        return None, None
+
+    p = pages[0]
+    page_id = p.get("id")
+    enc = p.get("access_token_enc")
+    page_token = decrypt_value(enc) if enc else None
+    return page_id, page_token
 
 
 def _generate_newsletter_html(post: BlogPost, unsubscribe_url: str = "") -> str:
