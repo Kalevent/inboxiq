@@ -583,7 +583,9 @@ def _post_to_facebook(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict
     import requests as http
     from src.crypto import decrypt_value
 
-    conn = InboxConnection.query.filter_by(provider="facebook_social", status="connected").first()
+    conn = InboxConnection.query.filter_by(
+        provider="facebook_social", account_id=2, status="connected"
+    ).first()  # TEMPORARY: hardcoded for migration; replaced in Task 4
     if not conn or not conn.metadata_json:
         logger.warning("Facebook not connected — go to Settings → Integrations to connect")
         return {"status": "skipped", "reason": "not_connected"}
