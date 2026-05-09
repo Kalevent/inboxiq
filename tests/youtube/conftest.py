@@ -7,7 +7,7 @@ from src.app import create_app
 from src.extensions import db as _db
 from src.models.leads import ICPPainPoint, Lead, LeadAttribution
 from src.models.marketing import ICPConfig
-from src.models.campaigns import YouTubeVideo, VideoRender
+from src.models.campaigns import YouTubeVideo, VideoRender, SocialDistributionQueueItem
 
 
 @pytest.fixture
@@ -28,12 +28,14 @@ def app():
         ICPPainPoint.__table__.create(_db.engine, checkfirst=True)
         VideoRender.__table__.create(_db.engine, checkfirst=True)
         YouTubeVideo.__table__.create(_db.engine, checkfirst=True)
+        SocialDistributionQueueItem.__table__.create(_db.engine, checkfirst=True)
         Lead.__table__.create(_db.engine, checkfirst=True)
         LeadAttribution.__table__.create(_db.engine, checkfirst=True)
         yield app
         _db.session.remove()
         LeadAttribution.__table__.drop(_db.engine, checkfirst=True)
         Lead.__table__.drop(_db.engine, checkfirst=True)
+        SocialDistributionQueueItem.__table__.drop(_db.engine, checkfirst=True)
         YouTubeVideo.__table__.drop(_db.engine, checkfirst=True)
         VideoRender.__table__.drop(_db.engine, checkfirst=True)
         ICPPainPoint.__table__.drop(_db.engine, checkfirst=True)
