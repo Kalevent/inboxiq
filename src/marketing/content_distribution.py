@@ -70,6 +70,11 @@ def publish_blog_post(blog_post_id: str) -> Dict[str, Any]:
         from src.marketing.social_distribution import enqueue_blog_post
         try:
             enqueue_blog_post(post)
+            post.distributed_at = datetime.now(timezone.utc)
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
         except Exception as exc:
             logger.exception("Failed to enqueue blog post %s for social distribution", post.id)
 
