@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
+from typing import List
 
 from sqlalchemy.exc import IntegrityError
 
@@ -10,7 +12,12 @@ from src.models.campaigns import (
     SocialDistributionQueueItem, YouTubeVideo,
 )
 from src.models.content import BlogPost
-from src.marketing.content_distribution import generate_social_content
+from src.marketing.content_distribution import (
+    generate_social_content,
+    _post_to_linkedin,
+    _post_to_twitter,
+    _post_to_facebook,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -128,3 +135,105 @@ def enqueue_youtube_video(video: YouTubeVideo, pain_point_text: str = "") -> int
         except IntegrityError:
             db.session.rollback()
     return inserted
+
+
+# ---------------------------------------------------------------------------
+# Daily picker Celery task
+# ---------------------------------------------------------------------------
+
+from src.celery_inboxiq import celery  # noqa: E402
+from src.models.core import InboxConnection  # noqa: E402
+
+import sys as _sys
+
+_POSTER_NAMES = {
+    "linkedin": "_post_to_linkedin",
+    "twitter": "_post_to_twitter",
+    "facebook": "_post_to_facebook",
+}
+
+
+def _get_poster(platform: str):
+    """Look up the poster function by name at call time so patches take effect."""
+    module = _sys.modules[__name__]
+    return getattr(module, _POSTER_NAMES[platform])
+
+PROVIDER_FOR = {
+    "linkedin": "linkedin_social",
+    "twitter": "twitter_social",
+    "facebook": "facebook_social",
+}
+
+MAX_ATTEMPTS = 3
+
+
+def _accounts_with_social_connections() -> List[int]:
+    rows = (
+        db.session.query(InboxConnection.account_id)
+        .filter(
+            InboxConnection.provider.in_(tuple(PROVIDER_FOR.values())),
+            InboxConnection.status == "connected",
+        )
+        .distinct()
+        .all()
+    )
+    return [r[0] for r in rows]
+
+
+def _account_has_provider(account_id: int, platform: str) -> bool:
+    return InboxConnection.query.filter_by(
+        account_id=account_id,
+        provider=PROVIDER_FOR[platform],
+        status="connected",
+    ).first() is not None
+
+
+@celery.task(name="marketing.run_social_distribution_queue")
+def run_social_distribution_queue() -> dict:
+    """Daily picker: post one pending item per (account, platform)."""
+    accounts = _accounts_with_social_connections()
+    posted = 0
+    failed = 0
+    for account_id in accounts:
+        for platform in PLATFORMS:
+            if not _account_has_provider(account_id, platform):
+                continue
+            item = (
+                SocialDistributionQueueItem.query
+                .filter_by(account_id=account_id, platform=platform, status="pending")
+                .order_by(SocialDistributionQueueItem.created_at.asc())
+                .first()
+            )
+            if not item:
+                continue
+
+            poster = _get_poster(platform)
+            try:
+                result = poster(item)
+            except Exception as exc:
+                logger.exception("social poster crashed for %s/%s", account_id, platform)
+                result = {"status": "error", "error": str(exc)}
+
+            item.attempts = (item.attempts or 0) + 1
+            if result.get("status") == "ok":
+                item.status = "posted"
+                item.posted_url = result.get("post_url")
+                item.posted_at = datetime.now(timezone.utc)
+                posted += 1
+            elif result.get("status") == "skipped":
+                item.status = "skipped"
+                item.error = result.get("reason", "")[:1024]
+            else:
+                err = (result.get("error") or "")[:1024]
+                item.error = err
+                if item.attempts >= MAX_ATTEMPTS:
+                    item.status = "failed"
+                    failed += 1
+
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                raise
+
+    return {"status": "ok", "posted": posted, "failed": failed, "accounts": len(accounts)}
