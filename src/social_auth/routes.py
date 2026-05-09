@@ -45,7 +45,7 @@ _TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
 # r_organization_admin will fail. Once approved + added below, existing
 # linkedin_social connections must disconnect/reconnect to populate
 # metadata_json["org_id"] via _fetch_admin_organization_id.
-_SCOPE = "openid profile email w_member_social w_organization_social"
+_SCOPE = "openid profile email w_member_social"
 _PROVIDER = "linkedin_social"
 
 _TW_AUTH_URL = "https://twitter.com/i/oauth2/authorize"
