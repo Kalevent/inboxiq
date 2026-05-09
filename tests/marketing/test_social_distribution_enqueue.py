@@ -17,7 +17,7 @@ def test_enqueue_blog_creates_three_rows(app, db, kalevent_account):
         "twitter": {"text": "TW body", "hashtags": "#a"},
         "facebook": {"text": "FB body", "hashtags": ""},
     }
-    with patch("src.marketing.social_distribution._generate_social_content", return_value=fake_content):
+    with patch("src.marketing.social_distribution.generate_social_content", return_value=fake_content):
         from src.marketing.social_distribution import enqueue_blog_post
         n = enqueue_blog_post(post)
     assert n == 3
@@ -42,7 +42,7 @@ def test_enqueue_blog_idempotent(app, db, kalevent_account):
     db.session.commit()
 
     fake_content = {p: {"text": "x", "hashtags": ""} for p in ("linkedin","twitter","facebook")}
-    with patch("src.marketing.social_distribution._generate_social_content", return_value=fake_content):
+    with patch("src.marketing.social_distribution.generate_social_content", return_value=fake_content):
         from src.marketing.social_distribution import enqueue_blog_post
         enqueue_blog_post(post)
         enqueue_blog_post(post)  # second call should not duplicate
@@ -89,7 +89,7 @@ def test_enqueue_video_creates_three_rows(app, db, kalevent_account):
 
     with patch("src.marketing.social_distribution._generate_video_caption", side_effect=fake_caption):
         from src.marketing.social_distribution import enqueue_youtube_video
-        n = enqueue_youtube_video(video, render, pain_point_text="x")
+        n = enqueue_youtube_video(video, pain_point_text="x")
     assert n == 3
 
     rows = db.session.query(SocialDistributionQueueItem).all()
@@ -138,8 +138,8 @@ def test_enqueue_video_idempotent(app, db, kalevent_account):
 
     with patch("src.marketing.social_distribution._generate_video_caption", side_effect=fake_caption):
         from src.marketing.social_distribution import enqueue_youtube_video
-        enqueue_youtube_video(video, render)
-        enqueue_youtube_video(video, render)  # second call should not duplicate
+        enqueue_youtube_video(video)
+        enqueue_youtube_video(video)  # second call should not duplicate
 
     assert db.session.query(SocialDistributionQueueItem).count() == 3
 

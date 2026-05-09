@@ -7,10 +7,10 @@ from sqlalchemy.exc import IntegrityError
 
 from src.extensions import db
 from src.models.campaigns import (
-    SocialDistributionQueueItem, YouTubeVideo, VideoRender,
+    SocialDistributionQueueItem, YouTubeVideo,
 )
 from src.models.content import BlogPost
-from src.marketing.content_distribution import _generate_social_content
+from src.marketing.content_distribution import generate_social_content
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def enqueue_blog_post(post: BlogPost) -> int:
         )
         return 0
 
-    content = _generate_social_content(post)
+    content = generate_social_content(post)
     inserted = 0
     for platform in PLATFORMS:
         per = content.get(platform) or {}
@@ -83,14 +83,17 @@ def _generate_video_caption(*, title: str, video_type: str, pain_point_text: str
     )
 
 
-def enqueue_youtube_video(video: YouTubeVideo, render: VideoRender,
-                          pain_point_text: str = "") -> int:
+def enqueue_youtube_video(video: YouTubeVideo, pain_point_text: str = "") -> int:
     """Create one pending queue item per platform for a published YouTube video.
 
     Idempotent. Returns count of NEW rows inserted.
     """
     if not video.youtube_url:
         logger.warning("enqueue_youtube_video: video %s has no youtube_url", video.id)
+        return 0
+
+    if not video.account_id:
+        logger.warning("enqueue_youtube_video: video %s has no account_id, skipping", video.id)
         return 0
 
     inserted = 0

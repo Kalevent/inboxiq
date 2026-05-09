@@ -136,7 +136,7 @@ def distribute_to_social(blog_post_id: str) -> Dict[str, Any]:
     results = {}
 
     # Generate social media posts using DSPy
-    social_content = _generate_social_content(post)
+    social_content = generate_social_content(post)
 
     # Distribute to LinkedIn
     try:
@@ -288,7 +288,7 @@ def submit_to_search_engines(blog_post_id: str) -> Dict[str, Any]:
 
 # Helper functions
 
-def _generate_social_content(post: BlogPost) -> Dict[str, Any]:
+def generate_social_content(post: BlogPost) -> Dict[str, Any]:
     """
     Generate social media posts from blog content using DSPy intelligence.
 
