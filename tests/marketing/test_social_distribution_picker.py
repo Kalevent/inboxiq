@@ -96,3 +96,20 @@ def test_picker_one_per_platform_per_run(app, db, kalevent_account):
     assert len(posted) == 2  # one linkedin, one twitter
     assert ("linkedin", "blog-1") in posted  # oldest first
     assert ("twitter", "blog-1") in posted
+
+
+def test_picker_skipped_does_not_consume_attempts(app, db, kalevent_account):
+    """A poster returning 'skipped' (config not ready) should set status=skipped without using an attempt."""
+    _seed_connection(db, 2, "linkedin_social")
+    item = _seed_pending(db, 2, "linkedin", "post-skip")
+    assert item.attempts == 0
+
+    with patch("src.marketing.social_distribution._post_to_linkedin",
+               return_value={"status": "skipped", "reason": "not_configured"}):
+        from src.marketing.social_distribution import run_social_distribution_queue
+        run_social_distribution_queue.run()
+
+    db.session.refresh(item)
+    assert item.status == "skipped"
+    assert item.attempts == 0  # NOT consumed
+    assert item.error == "not_configured"

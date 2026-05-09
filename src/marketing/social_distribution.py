@@ -2,16 +2,19 @@
 from __future__ import annotations
 
 import logging
+import sys
 from datetime import datetime, timezone
 from typing import List
 
 from sqlalchemy.exc import IntegrityError
 
+from src.celery_inboxiq import celery
 from src.extensions import db
 from src.models.campaigns import (
     SocialDistributionQueueItem, YouTubeVideo,
 )
 from src.models.content import BlogPost
+from src.models.core import InboxConnection
 from src.marketing.content_distribution import (
     generate_social_content,
     _post_to_linkedin,
@@ -141,11 +144,6 @@ def enqueue_youtube_video(video: YouTubeVideo, pain_point_text: str = "") -> int
 # Daily picker Celery task
 # ---------------------------------------------------------------------------
 
-from src.celery_inboxiq import celery  # noqa: E402
-from src.models.core import InboxConnection  # noqa: E402
-
-import sys as _sys
-
 _POSTER_NAMES = {
     "linkedin": "_post_to_linkedin",
     "twitter": "_post_to_twitter",
@@ -155,7 +153,7 @@ _POSTER_NAMES = {
 
 def _get_poster(platform: str):
     """Look up the poster function by name at call time so patches take effect."""
-    module = _sys.modules[__name__]
+    module = sys.modules[__name__]
     return getattr(module, _POSTER_NAMES[platform])
 
 PROVIDER_FOR = {
@@ -214,16 +212,18 @@ def run_social_distribution_queue() -> dict:
                 logger.exception("social poster crashed for %s/%s", account_id, platform)
                 result = {"status": "error", "error": str(exc)}
 
-            item.attempts = (item.attempts or 0) + 1
             if result.get("status") == "ok":
+                item.attempts = (item.attempts or 0) + 1
                 item.status = "posted"
                 item.posted_url = result.get("post_url")
                 item.posted_at = datetime.now(timezone.utc)
                 posted += 1
             elif result.get("status") == "skipped":
                 item.status = "skipped"
-                item.error = result.get("reason", "")[:1024]
+                item.error = (result.get("reason") or "")[:1024]
+                # do NOT increment attempts — skip is a config-not-ready signal, not a failed try
             else:
+                item.attempts = (item.attempts or 0) + 1
                 err = (result.get("error") or "")[:1024]
                 item.error = err
                 if item.attempts >= MAX_ATTEMPTS:
