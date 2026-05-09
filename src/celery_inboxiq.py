@@ -142,16 +142,14 @@ def make_celery(app) -> Celery:
     trial_onboarding_hour = int(os.getenv("TRIAL_ONBOARDING_HOUR", "8"))  # 8am daily
     trial_onboarding_max_emails = int(os.getenv("TRIAL_ONBOARDING_MAX_EMAILS", "100"))
 
-    # Content distribution configuration
-    content_distribution_enabled = _parse_bool(os.getenv("CONTENT_DISTRIBUTION_ENABLED"), True)
-    content_distribution_hour = int(os.getenv("CONTENT_DISTRIBUTION_HOUR", "10"))  # 10am daily
-    content_distribution_max_posts = int(os.getenv("CONTENT_DISTRIBUTION_MAX_POSTS", "5"))
-
     # Nurture campaigns configuration
     nurture_campaigns_enabled = _parse_bool(os.getenv("NURTURE_CAMPAIGNS_ENABLED"), True)
     nurture_discovery_hour = int(os.getenv("NURTURE_DISCOVERY_HOUR", "9"))  # 9am daily
     nurture_consideration_hour = int(os.getenv("NURTURE_CONSIDERATION_HOUR", "11"))  # 11am daily
     nurture_max_sends = int(os.getenv("NURTURE_MAX_SENDS", "50"))
+
+    # Social distribution queue — daily picker
+    social_distribution_hour = int(os.getenv("SOCIAL_DISTRIBUTION_HOUR", "11"))  # 11am UTC daily
 
     celery_app.conf.update(
         task_serializer="json",
@@ -293,18 +291,6 @@ def make_celery(app) -> Celery:
             ),
             **(
                 {
-                    "auto_publish_blog_posts_daily": {
-                        "task": "marketing.auto_publish_ready_posts",
-                        "schedule": crontab(hour=content_distribution_hour, minute=0),  # 10am daily
-                        "args": [content_distribution_max_posts],
-                        "options": {"queue": "leads"},
-                    }
-                }
-                if content_distribution_enabled
-                else {}
-            ),
-            **(
-                {
                     "send_discovery_nurture_daily": {
                         "task": "marketing.send_discovery_nurture",
                         "schedule": crontab(hour=nurture_discovery_hour, minute=0),  # 9am daily
@@ -375,6 +361,11 @@ def make_celery(app) -> Celery:
                 if nurture_campaigns_enabled
                 else {}
             ),
+            # Social distribution queue — daily picker, 11am UTC default
+            "social_distribution_daily": {
+                "task": "marketing.run_social_distribution_queue",
+                "schedule": crontab(hour=social_distribution_hour, minute=0),
+            },
             # Outreach: initial sends daily, follow-ups every 4 hours, reply scan every 4 hours
             **(
                 {

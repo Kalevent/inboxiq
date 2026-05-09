@@ -17,6 +17,7 @@ class BlogPost(db.Model):
     )
 
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=True, index=True)
     title = db.Column(db.String(255), nullable=False)
     slug = db.Column(db.String(255), nullable=False, index=True)
     status = db.Column(db.String(32), nullable=False, default="draft")  # draft|queued|generating|ready|failed|published
@@ -51,6 +52,7 @@ class BlogPost(db.Model):
     def to_dict(self) -> dict:
         return {
             "id": self.id,
+            "account_id": self.account_id,
             "title": self.title,
             "slug": self.slug,
             "status": self.status,

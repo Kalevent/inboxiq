@@ -230,8 +230,9 @@ def generate_from_pitched_topic(topic_id):
 def distribute_pitched_topic(topic_id):
     """Manually trigger distribution for a published blog post from a pitched topic."""
     from src.models.content import BlogPost
+    from src.marketing.social_distribution import enqueue_blog_post_async
     from src.marketing.content_distribution import (
-        distribute_to_social, send_blog_newsletter, submit_to_search_engines,
+        send_blog_newsletter, submit_to_search_engines,
     )
     from datetime import datetime, timezone
 
@@ -250,7 +251,7 @@ def distribute_pitched_topic(topic_id):
         return redirect(url_for("admin.pitched_topics"))
 
     try:
-        distribute_to_social.delay(post.id)
+        enqueue_blog_post_async.delay(post.id)
         send_blog_newsletter.delay(post.id)
         submit_to_search_engines.delay(post.id)
         post.distributed_at = datetime.now(timezone.utc)

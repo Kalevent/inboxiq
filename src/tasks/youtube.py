@@ -610,6 +610,21 @@ def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
                 raise
             published += 1
 
+            # After successful YouTube upload, enqueue 1 row per social platform.
+            try:
+                from src.marketing.social_distribution import enqueue_youtube_video
+                pain_point_text = ""
+                if video.icp_pain_point_id:
+                    pp = db.session.get(ICPPainPoint, video.icp_pain_point_id)
+                    if pp:
+                        pain_point_text = pp.pain_point or ""
+                enqueue_youtube_video(video, pain_point_text=pain_point_text)
+            except Exception:
+                logger.exception(
+                    "youtube.publish_videos: enqueue social distribution failed video=%s account=%s",
+                    video.id, video.account_id,
+                )
+
         except Exception:
             db.session.rollback()
             logger.exception("youtube.publish_videos: error on video %s", video.id)
