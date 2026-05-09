@@ -895,3 +895,32 @@ def build_linkedin_message_draft(dspy: Any) -> Any:
             return self.draft(**kwargs)
 
     return LinkedInMessageDraftModule()
+
+
+def build_youtube_video_social_caption(dspy: Any) -> Dict[str, Any]:
+    """Return the YouTubeVideoSocialCaption DSPy signature."""
+
+    class YouTubeVideoSocialCaption(dspy.Signature):
+        """Generate a social media caption promoting a YouTube video.
+
+        Length limits per platform:
+          linkedin: <= 3000 chars; professional tone; encourage click-through.
+          twitter:  <= 280 chars; punchy; one hashtag max.
+          facebook: <= 5000 chars; conversational; emoji ok.
+        Always include the youtube_url at the end. Never use 'InboxIQ' in the first sentence.
+        """
+
+        title = dspy.InputField(desc="YouTube video title")
+        video_type = dspy.InputField(desc="'long_form' or 'short'")
+        pain_point_text = dspy.InputField(desc="The viewer pain the video addresses")
+        youtube_url = dspy.InputField(desc="YouTube watch URL of the video")
+        platform = dspy.InputField(desc="'linkedin' | 'twitter' | 'facebook'")
+        caption_text = dspy.OutputField(desc="Caption body, length-appropriate for platform")
+        hashtags = dspy.OutputField(desc="2-4 space-separated hashtags, no leading text")
+
+    return {"YouTubeVideoSocialCaption": YouTubeVideoSocialCaption}
+
+
+class YouTubeVideoSocialCaption:
+    """Placeholder — use build_youtube_video_social_caption(dspy) for the real DSPy signature."""
+    pass
