@@ -33,22 +33,28 @@ def test_get_social_token_returns_none_when_unconnected(app, db, kalevent_accoun
 def test_post_to_facebook_skips_when_account_has_no_facebook_connection(app, db, kalevent_account):
     """_post_to_facebook should not pick up a different account's connection (sibling of Task 3 fix)."""
     from src.models.core import InboxConnection, User
-
-    # Create a different account (id=99) with a Facebook connection
+    from src.models.campaigns import SocialDistributionQueueItem
+    from src.crypto import encrypt_value
     db.session.add(User(id=2, email="other@example.com", account_id=99))
     db.session.commit()
     db.session.add(InboxConnection(
         id="c-other", account_id=99, user_id=2, provider="facebook_social", status="connected",
-        metadata_json={"pages": [{"id": "p1", "access_token": "x"}]},
+        metadata_json={"access_token_enc": encrypt_value("fb-token"), "page_id": "999"},
     ))
     db.session.commit()
 
-    # Query using the scoped filter from _post_to_facebook (account_id=2)
-    # This should return None because account_id=2 has no Facebook connection
-    conn = InboxConnection.query.filter_by(
-        provider="facebook_social", account_id=2, status="connected"
-    ).first()
-    assert conn is None  # Should not find the other account's connection
+    item = SocialDistributionQueueItem(
+        account_id=2, content_type="blog", content_id="post-1",
+        platform="facebook", caption="x",
+        target_url="https://example.com",
+    )
+    db.session.add(item)
+    db.session.commit()
+
+    from src.marketing.content_distribution import _post_to_facebook
+    result = _post_to_facebook(item)
+    assert result["status"] == "skipped"
+    assert result["reason"] == "not_connected"
 
 
 # ---------------------------------------------------------------------------
@@ -235,3 +241,50 @@ def test_post_to_facebook_skips_when_not_connected(app, db, kalevent_account):
     result = _post_to_facebook(item)
     assert result["status"] == "skipped"
     assert result["reason"] == "not_connected"
+
+
+def test_post_to_linkedin_skips_when_org_id_missing(app, db, kalevent_account):
+    from src.models.core import InboxConnection
+    from src.models.campaigns import SocialDistributionQueueItem
+    from src.crypto import encrypt_value
+
+    db.session.add(InboxConnection(
+        id="c1-li-norg", account_id=2, user_id=1, provider="linkedin_social", status="connected",
+        metadata_json={"access_token_enc": encrypt_value("li-token")},  # no org_id
+    ))
+    item = SocialDistributionQueueItem(
+        account_id=2, content_type="blog", content_id="post-1",
+        platform="linkedin", caption="x",
+        target_url="https://kalevent.com/blog/post-1",
+    )
+    db.session.add(item)
+    db.session.commit()
+
+    from src.marketing.content_distribution import _post_to_linkedin
+    result = _post_to_linkedin(item)
+    assert result["status"] == "skipped"
+    assert result["reason"] == "not_configured"
+
+
+def test_post_to_facebook_skips_when_page_token_missing(app, db, kalevent_account):
+    """_post_to_facebook returns no_page_token when pages list has an entry without access_token_enc."""
+    from src.models.core import InboxConnection
+    from src.models.campaigns import SocialDistributionQueueItem
+
+    db.session.add(InboxConnection(
+        id="cfb-nopt", account_id=2, user_id=1, provider="facebook_social", status="connected",
+        # pages list present but no access_token_enc on the page entry
+        metadata_json={"pages": [{"id": "fb-page-99"}]},
+    ))
+    item = SocialDistributionQueueItem(
+        account_id=2, content_type="blog", content_id="post-1",
+        platform="facebook", caption="x",
+        target_url="https://kalevent.com/blog/post-1",
+    )
+    db.session.add(item)
+    db.session.commit()
+
+    from src.marketing.content_distribution import _post_to_facebook
+    result = _post_to_facebook(item)
+    assert result["status"] == "skipped"
+    assert result["reason"] == "no_page_token"
