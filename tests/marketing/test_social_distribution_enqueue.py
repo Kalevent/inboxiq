@@ -98,3 +98,23 @@ def test_enqueue_video_creates_three_rows(app, db, kalevent_account):
         assert r.content_type == "video"
         assert r.content_id == "vid-1"
         assert r.target_url == "https://www.youtube.com/watch?v=YN1JHIARDvs"
+
+
+def test_enqueue_blog_skips_when_account_id_missing(app, db, kalevent_account):
+    """Pre-existing blog posts (from before account_id was added) have NULL account_id.
+
+    The enqueue helper must not crash on those — it logs a warning and returns 0.
+    Task 8 backfill is responsible for populating account_id on legacy rows.
+    """
+    post = BlogPost(
+        id="legacy-post", account_id=None, title="legacy", slug="legacy",
+        canonical_url="https://kalevent.com/blog/legacy", status="published",
+    )
+    db.session.add(post)
+    db.session.commit()
+
+    from src.marketing.social_distribution import enqueue_blog_post
+    n = enqueue_blog_post(post)
+    assert n == 0
+    from src.models.campaigns import SocialDistributionQueueItem
+    assert db.session.query(SocialDistributionQueueItem).count() == 0

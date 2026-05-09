@@ -41,6 +41,13 @@ def enqueue_blog_post(post: BlogPost) -> int:
         logger.warning("enqueue_blog_post: post %s has no canonical_url, skipping", post.id)
         return 0
 
+    if not post.account_id:
+        logger.warning(
+            "enqueue_blog_post: post %s has no account_id, skipping (existing rows need backfill)",
+            post.id,
+        )
+        return 0
+
     content = _generate_social_content(post)
     inserted = 0
     for platform in PLATFORMS:
