@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 from src.celery_inboxiq import celery
 from src.extensions import db
@@ -586,7 +586,7 @@ def _post_to_facebook(item) -> Dict[str, Any]:
         return {"status": "error", "platform": "facebook", "error": str(exc)}
 
 
-def _get_facebook_page_id(account_id: int):
+def _get_facebook_page_id(account_id: int) -> Tuple[Optional[str], Optional[str]]:
     """Resolve the Facebook page ID and decrypted page token for an account.
 
     Reads the facebook_social InboxConnection for the account and returns the
