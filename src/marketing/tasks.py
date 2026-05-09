@@ -11,9 +11,7 @@ from src.marketing.nurture_campaigns import (
     send_consideration_nurture,
 )
 from src.marketing.content_distribution import (
-    auto_publish_ready_posts,
     publish_blog_post,
-    distribute_to_social,
     send_blog_newsletter,
     submit_to_search_engines,
 )

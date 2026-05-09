@@ -142,11 +142,6 @@ def make_celery(app) -> Celery:
     trial_onboarding_hour = int(os.getenv("TRIAL_ONBOARDING_HOUR", "8"))  # 8am daily
     trial_onboarding_max_emails = int(os.getenv("TRIAL_ONBOARDING_MAX_EMAILS", "100"))
 
-    # Content distribution configuration
-    content_distribution_enabled = _parse_bool(os.getenv("CONTENT_DISTRIBUTION_ENABLED"), True)
-    content_distribution_hour = int(os.getenv("CONTENT_DISTRIBUTION_HOUR", "10"))  # 10am daily
-    content_distribution_max_posts = int(os.getenv("CONTENT_DISTRIBUTION_MAX_POSTS", "5"))
-
     # Nurture campaigns configuration
     nurture_campaigns_enabled = _parse_bool(os.getenv("NURTURE_CAMPAIGNS_ENABLED"), True)
     nurture_discovery_hour = int(os.getenv("NURTURE_DISCOVERY_HOUR", "9"))  # 9am daily
@@ -289,18 +284,6 @@ def make_celery(app) -> Celery:
                     },
                 }
                 if trial_onboarding_enabled
-                else {}
-            ),
-            **(
-                {
-                    "auto_publish_blog_posts_daily": {
-                        "task": "marketing.auto_publish_ready_posts",
-                        "schedule": crontab(hour=content_distribution_hour, minute=0),  # 10am daily
-                        "args": [content_distribution_max_posts],
-                        "options": {"queue": "leads"},
-                    }
-                }
-                if content_distribution_enabled
                 else {}
             ),
             **(
