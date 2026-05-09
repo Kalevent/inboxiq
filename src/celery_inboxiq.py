@@ -148,6 +148,9 @@ def make_celery(app) -> Celery:
     nurture_consideration_hour = int(os.getenv("NURTURE_CONSIDERATION_HOUR", "11"))  # 11am daily
     nurture_max_sends = int(os.getenv("NURTURE_MAX_SENDS", "50"))
 
+    # Social distribution queue — daily picker
+    social_distribution_hour = int(os.getenv("SOCIAL_DISTRIBUTION_HOUR", "11"))  # 11am UTC daily
+
     celery_app.conf.update(
         task_serializer="json",
         accept_content=["json"],
@@ -358,6 +361,11 @@ def make_celery(app) -> Celery:
                 if nurture_campaigns_enabled
                 else {}
             ),
+            # Social distribution queue — daily picker, 11am UTC default
+            "social_distribution_daily": {
+                "task": "marketing.run_social_distribution_queue",
+                "schedule": crontab(hour=social_distribution_hour, minute=0),
+            },
             # Outreach: initial sends daily, follow-ups every 4 hours, reply scan every 4 hours
             **(
                 {
