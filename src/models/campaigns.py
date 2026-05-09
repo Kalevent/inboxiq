@@ -382,3 +382,32 @@ class OutreachVideo(db.Model):
     delivered_email_at = db.Column(db.DateTime(timezone=True), nullable=True)
     delivered_linkedin_at = db.Column(db.DateTime(timezone=True), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class SocialDistributionQueueItem(db.Model):
+    """One row per (content × platform) for paced social distribution."""
+    __tablename__ = "social_distribution_queue"
+    __table_args__ = (
+        db.Index(
+            "idx_sdq_account_platform_status_created",
+            "account_id", "platform", "status", "created_at",
+        ),
+        db.UniqueConstraint(
+            "content_type", "content_id", "platform",
+            name="uq_sdq_content_platform",
+        ),
+    )
+
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    content_type = db.Column(db.String(16), nullable=False)  # 'blog' | 'video'
+    content_id = db.Column(db.String(64), nullable=False)
+    platform = db.Column(db.String(16), nullable=False)  # 'linkedin' | 'twitter' | 'facebook'
+    status = db.Column(db.String(16), nullable=False, server_default="pending")
+    caption = db.Column(db.Text, nullable=False)
+    target_url = db.Column(db.Text, nullable=False)
+    posted_url = db.Column(db.Text, nullable=True)
+    error = db.Column(db.Text, nullable=True)
+    attempts = db.Column(db.SmallInteger, nullable=False, server_default="0")
+    posted_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=func.now())
