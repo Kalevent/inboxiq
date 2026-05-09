@@ -100,6 +100,50 @@ def test_enqueue_video_creates_three_rows(app, db, kalevent_account):
         assert r.target_url == "https://www.youtube.com/watch?v=YN1JHIARDvs"
 
 
+def test_enqueue_video_idempotent(app, db, kalevent_account):
+    """Calling enqueue_youtube_video twice should not duplicate queue rows."""
+    from src.models.campaigns import VideoRender, YouTubeVideo
+    from src.models.marketing import ICPConfig
+    from src.models.leads import ICPPainPoint
+
+    icp_config = ICPConfig(id="icp-cfg-2", account_id=2)
+    db.session.add(icp_config)
+    db.session.commit()
+
+    pain_point = ICPPainPoint(
+        id="pain-2", account_id=2, icp_config_id="icp-cfg-2",
+        pain_point="x", consequence="y",
+    )
+    db.session.add(pain_point)
+    db.session.commit()
+
+    render = VideoRender(
+        id="render-2", account_id=2, programme="youtube",
+        video_style="avatar", aspect_ratio="9:16", status="delivered",
+    )
+    db.session.add(render)
+    db.session.commit()
+    video = YouTubeVideo(
+        id="vid-2", account_id=2, video_render_id="render-2",
+        icp_pain_point_id="pain-2",
+        video_type="short", title="t",
+        status="published", youtube_url="https://www.youtube.com/watch?v=abc",
+        utm_medium="short", utm_campaign="c",
+    )
+    db.session.add(video)
+    db.session.commit()
+
+    def fake_caption(**kwargs):
+        return type("R", (), {"caption_text": "c", "hashtags": ""})()
+
+    with patch("src.marketing.social_distribution._generate_video_caption", side_effect=fake_caption):
+        from src.marketing.social_distribution import enqueue_youtube_video
+        enqueue_youtube_video(video, render)
+        enqueue_youtube_video(video, render)  # second call should not duplicate
+
+    assert db.session.query(SocialDistributionQueueItem).count() == 3
+
+
 def test_enqueue_blog_skips_when_account_id_missing(app, db, kalevent_account):
     """Pre-existing blog posts (from before account_id was added) have NULL account_id.
 

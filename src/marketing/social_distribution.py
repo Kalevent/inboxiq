@@ -2,23 +2,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional, List
 
 from sqlalchemy.exc import IntegrityError
 
-from src.celery_inboxiq import celery
 from src.extensions import db
 from src.models.campaigns import (
     SocialDistributionQueueItem, YouTubeVideo, VideoRender,
 )
 from src.models.content import BlogPost
-from src.models.core import InboxConnection
-from src.marketing.content_distribution import (
-    _generate_social_content,
-    _post_to_linkedin,
-    _post_to_twitter,
-    _post_to_facebook,
-)
+from src.marketing.content_distribution import _generate_social_content
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +106,7 @@ def enqueue_youtube_video(video: YouTubeVideo, render: VideoRender,
             caption = _compose_caption(pred.caption_text, pred.hashtags)
         except Exception:
             logger.exception("video caption generation failed for %s/%s", video.id, platform)
-            caption = f"{video.title}\n\n{video.youtube_url}"
+            caption = f"{video.title or ''}\n\n{video.youtube_url}"
 
         if not caption:
             continue
