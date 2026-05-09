@@ -444,10 +444,12 @@ def _split_into_twitter_thread(text: str, url: str, max_length: int = 280) -> Li
     return thread if thread else [text[:max_length]]
 
 
-def _get_social_token(provider: str) -> Optional[str]:
-    """Decrypt and return the stored OAuth access token for a social provider."""
+def _get_social_token(provider: str, account_id: int) -> Optional[str]:
+    """Decrypt and return the OAuth access token for a social provider scoped to account_id."""
     from src.crypto import decrypt_value
-    conn = InboxConnection.query.filter_by(provider=provider, status="connected").first()
+    conn = InboxConnection.query.filter_by(
+        provider=provider, account_id=account_id, status="connected"
+    ).first()
     if not conn or not conn.metadata_json:
         return None
     enc = conn.metadata_json.get("access_token_enc")
@@ -466,7 +468,7 @@ def _post_to_linkedin(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict
     import os
     import requests as http
 
-    token = _get_social_token("linkedin_social")
+    token = _get_social_token("linkedin_social", account_id=2)  # TEMPORARY: hardcoded for migration; replaced in Task 4
     if not token:
         logger.warning("LinkedIn not connected — go to Settings → Integrations to connect")
         return {"status": "skipped", "reason": "not_connected"}
@@ -531,7 +533,7 @@ def _post_to_twitter(post: BlogPost, content: Optional[Dict[str, Any]]) -> Dict[
 
     import requests as http
 
-    token = _get_social_token("twitter_social")
+    token = _get_social_token("twitter_social", account_id=2)  # TEMPORARY: hardcoded for migration; replaced in Task 4
     if not token:
         logger.warning("Twitter not connected — go to Settings → Integrations to connect")
         return {"status": "skipped", "reason": "not_connected"}
