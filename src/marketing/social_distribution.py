@@ -74,6 +74,16 @@ def enqueue_blog_post(post: BlogPost) -> int:
     return inserted
 
 
+@celery.task(name="marketing.enqueue_blog_post_async")
+def enqueue_blog_post_async(blog_post_id: str) -> int:
+    """Async Celery wrapper around enqueue_blog_post for HTTP-handler use."""
+    post = db.session.get(BlogPost, blog_post_id)
+    if not post:
+        logger.warning("enqueue_blog_post_async: blog post %s not found", blog_post_id)
+        return 0
+    return enqueue_blog_post(post)
+
+
 def _generate_video_caption(*, title: str, video_type: str, pain_point_text: str,
                              youtube_url: str, platform: str):
     """DSPy-backed video caption generator. Returns a Prediction with caption_text + hashtags."""

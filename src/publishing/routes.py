@@ -299,12 +299,12 @@ def blog_publish(post_id: str):
 
     # Trigger distribution pipeline (social queue, newsletter, search engines)
     try:
-        from src.marketing.social_distribution import enqueue_blog_post
+        from src.marketing.social_distribution import enqueue_blog_post_async
         from src.marketing.content_distribution import (
             send_blog_newsletter, submit_to_search_engines,
         )
         from datetime import datetime, timezone
-        enqueue_blog_post(post)
+        enqueue_blog_post_async.delay(post.id)
         send_blog_newsletter.delay(post.id)
         submit_to_search_engines.delay(post.id)
         post.distributed_at = datetime.now(timezone.utc)
@@ -337,11 +337,11 @@ def blog_distribute(post_id: str):
         return jsonify({"error": "Post is not published"}), 400
 
     try:
-        from src.marketing.social_distribution import enqueue_blog_post
+        from src.marketing.social_distribution import enqueue_blog_post_async
         from src.marketing.content_distribution import (
             send_blog_newsletter, submit_to_search_engines,
         )
-        enqueue_blog_post(post)
+        enqueue_blog_post_async.delay(post.id)
         send_blog_newsletter.delay(post.id)
         submit_to_search_engines.delay(post.id)
         post.distributed_at = datetime.now(timezone.utc)

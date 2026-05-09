@@ -186,3 +186,25 @@ def test_publish_blog_post_enqueues_via_queue(app, db, kalevent_account):
     db.session.refresh(post)
     assert post.status == "published"
     assert db.session.query(SocialDistributionQueueItem).count() == 3
+
+
+def test_enqueue_blog_post_async_loads_and_calls_sync_helper(app, db, kalevent_account):
+    post = BlogPost(
+        id="async-post", account_id=2, title="t", slug="t",
+        canonical_url="https://kalevent.com/blog/t", status="published",
+    )
+    db.session.add(post)
+    db.session.commit()
+
+    fake_content = {p: {"text": "x", "hashtags": ""} for p in ("linkedin","twitter","facebook")}
+    with patch("src.marketing.social_distribution.generate_social_content", return_value=fake_content):
+        from src.marketing.social_distribution import enqueue_blog_post_async
+        n = enqueue_blog_post_async.run("async-post")
+    assert n == 3
+    assert db.session.query(SocialDistributionQueueItem).count() == 3
+
+
+def test_enqueue_blog_post_async_returns_zero_for_missing_post(app, db, kalevent_account):
+    from src.marketing.social_distribution import enqueue_blog_post_async
+    n = enqueue_blog_post_async.run("does-not-exist")
+    assert n == 0
