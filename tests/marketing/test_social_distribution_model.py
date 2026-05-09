@@ -1,3 +1,6 @@
+import pytest
+from sqlalchemy.exc import IntegrityError
+
 from src.models.campaigns import SocialDistributionQueueItem
 
 
@@ -33,8 +36,6 @@ def test_queue_item_unique_per_content_platform(app, db, kalevent_account):
         platform="linkedin", caption="y", target_url="u",
     )
     db.session.add(item2)
-    import pytest
-    from sqlalchemy.exc import IntegrityError
     with pytest.raises(IntegrityError):
         db.session.commit()
     db.session.rollback()
