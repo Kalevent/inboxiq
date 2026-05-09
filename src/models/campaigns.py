@@ -343,7 +343,7 @@ class VideoRender(db.Model):
     illustration_prompts = db.Column(db.JSON, nullable=True)
     dalle_frame_urls = db.Column(db.JSON, nullable=True)
     heygen_job_id = db.Column(db.String(128), nullable=True, unique=True)
-    heygen_render_url = db.Column(db.String(512), nullable=True)
+    heygen_render_url = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(32), nullable=False, server_default="pending")
     render_submitted_at = db.Column(db.DateTime(timezone=True), nullable=True)
     render_completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
