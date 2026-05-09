@@ -237,3 +237,46 @@ def run_social_distribution_queue() -> dict:
                 raise
 
     return {"status": "ok", "posted": posted, "failed": failed, "accounts": len(accounts)}
+
+
+# ---------------------------------------------------------------------------
+# One-shot backfill Celery task
+# ---------------------------------------------------------------------------
+
+@celery.task(name="marketing.backfill_social_distribution")
+def backfill_social_distribution() -> dict:
+    """One-shot: enqueue every published blog post and YouTube video into the queue.
+
+    Idempotent — relies on the unique (content_type, content_id, platform) constraint.
+    """
+    blogs_enqueued = 0
+    videos_enqueued = 0
+
+    blogs = (
+        BlogPost.query
+        .filter(BlogPost.status == "published")
+        .order_by(BlogPost.published_at.asc())
+        .all()
+    )
+    for post in blogs:
+        if enqueue_blog_post(post) > 0:
+            blogs_enqueued += 1
+
+    videos = (
+        db.session.query(YouTubeVideo)
+        .filter(
+            YouTubeVideo.status == "published",
+            YouTubeVideo.youtube_url.isnot(None),
+        )
+        .order_by(YouTubeVideo.published_at.asc())
+        .all()
+    )
+    for video in videos:
+        if enqueue_youtube_video(video) > 0:
+            videos_enqueued += 1
+
+    return {
+        "status": "ok",
+        "blogs_enqueued": blogs_enqueued,
+        "videos_enqueued": videos_enqueued,
+    }
