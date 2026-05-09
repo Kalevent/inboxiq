@@ -25,6 +25,7 @@ import os
 import secrets
 import time
 import urllib.parse
+from typing import Optional
 from uuid import uuid4
 
 import requests
@@ -164,6 +165,39 @@ def _save_connection(account_id: int, provider: str, metadata: dict):
     db.session.commit()
 
 
+# ── LinkedIn helpers ──────────────────────────────────────────────────────────
+
+def _fetch_admin_organization_id(access_token: str) -> Optional[str]:
+    """Return the numeric ID of the first LinkedIn org the user can administer, or None.
+
+    Calls /v2/organizationAcls to discover which organisations the authenticated user
+    has ADMINISTRATOR role on.  Requires the ``r_organization_admin`` scope — if the
+    OAuth flow does not request that scope the endpoint returns an empty elements list
+    and this function returns None.  In that case posting will skip with
+    ``not_configured`` until the user reconnects with the full scope set.
+
+    NOTE: Existing ``linkedin_social`` connections were created before ``org_id`` was
+    captured.  Account holders must disconnect + reconnect once to populate
+    ``metadata_json['org_id']``.  Until then, ``_post_to_linkedin`` returns
+    ``{"status": "skipped", "reason": "not_configured"}``.
+    """
+    try:
+        resp = requests.get(
+            "https://api.linkedin.com/v2/organizationAcls",
+            params={"q": "roleAssignee", "role": "ADMINISTRATOR", "state": "APPROVED"},
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        elements = (resp.json() or {}).get("elements") or []
+        if not elements:
+            return None
+        urn = elements[0].get("organizationalTarget", "")  # 'urn:li:organization:999'
+        return urn.rsplit(":", 1)[-1] or None
+    except Exception:
+        return None
+
+
 # ── LinkedIn start ────────────────────────────────────────────────────────────
 
 @bp.route("/linkedin")
@@ -248,19 +282,31 @@ def linkedin_callback():
         current_app.logger.error("LinkedIn: no access_token in response")
         return _page(False, "Connection failed. Please try again.")
 
-    # Persist encrypted token
+    # Fetch admin org_id (best-effort — requires r_organization_admin scope)
+    org_id = _fetch_admin_organization_id(access_token)
+    if not org_id:
+        current_app.logger.warning(
+            f"LinkedIn: could not fetch admin org_id for account={account_id} "
+            "(missing r_organization_admin scope or no admin org found)"
+        )
+
+    # Persist encrypted token + org_id
+    metadata: dict = {
+        "access_token_enc": encrypt_value(access_token),
+        "expires_in": token_data.get("expires_in"),
+        "scope": _SCOPE,
+    }
+    if org_id:
+        metadata["org_id"] = org_id
+
     try:
-        _save_connection(account_id, _PROVIDER, {
-            "access_token_enc": encrypt_value(access_token),
-            "expires_in": token_data.get("expires_in"),
-            "scope": _SCOPE,
-        })
+        _save_connection(account_id, _PROVIDER, metadata)
     except Exception as exc:
         db.session.rollback()
         current_app.logger.exception(f"LinkedIn save failed for account={account_id}: {exc}")
         return _page(False, "Connection failed. Please try again.")
 
-    current_app.logger.info(f"LinkedIn connected: account={account_id}")
+    current_app.logger.info(f"LinkedIn connected: account={account_id}, org_id={org_id!r}")
     return _page(True, "LinkedIn connected successfully.", "LinkedIn")
 
 
