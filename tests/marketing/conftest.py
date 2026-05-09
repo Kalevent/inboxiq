@@ -10,6 +10,8 @@ from src.extensions import db as _db
 from src.models.core import Account, User, InboxConnection
 from src.models.content import BlogPost
 from src.models.campaigns import YouTubeVideo, VideoRender, SocialDistributionQueueItem
+from src.models.marketing import ICPConfig
+from src.models.leads import ICPPainPoint
 
 
 @pytest.fixture
@@ -29,6 +31,8 @@ def app():
         User.__table__.create(_db.engine, checkfirst=True)
         InboxConnection.__table__.create(_db.engine, checkfirst=True)
         BlogPost.__table__.create(_db.engine, checkfirst=True)
+        ICPConfig.__table__.create(_db.engine, checkfirst=True)
+        ICPPainPoint.__table__.create(_db.engine, checkfirst=True)
         VideoRender.__table__.create(_db.engine, checkfirst=True)
         YouTubeVideo.__table__.create(_db.engine, checkfirst=True)
         SocialDistributionQueueItem.__table__.create(_db.engine, checkfirst=True)
@@ -37,6 +41,8 @@ def app():
         SocialDistributionQueueItem.__table__.drop(_db.engine, checkfirst=True)
         YouTubeVideo.__table__.drop(_db.engine, checkfirst=True)
         VideoRender.__table__.drop(_db.engine, checkfirst=True)
+        ICPPainPoint.__table__.drop(_db.engine, checkfirst=True)
+        ICPConfig.__table__.drop(_db.engine, checkfirst=True)
         BlogPost.__table__.drop(_db.engine, checkfirst=True)
         InboxConnection.__table__.drop(_db.engine, checkfirst=True)
         User.__table__.drop(_db.engine, checkfirst=True)
