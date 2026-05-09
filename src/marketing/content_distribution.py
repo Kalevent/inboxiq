@@ -66,19 +66,15 @@ def publish_blog_post(blog_post_id: str) -> Dict[str, Any]:
 
         logger.info(f"Published blog post: {post.title} ({post.id})")
 
-        # Trigger distribution channels asynchronously
+        # Distribution: enqueue per-platform rows (replaces fire-on-publish).
+        from src.marketing.social_distribution import enqueue_blog_post
+        try:
+            enqueue_blog_post(post)
+        except Exception as exc:
+            logger.exception("Failed to enqueue blog post %s for social distribution", post.id)
+
+        # Newsletter + search-engine submission stay event-driven.
         distribution_results = {}
-
-        # 1. Distribute to social media
-        if post.funnel_stage in ["VISITS", "DISCOVERY"]:  # Only distribute awareness/discovery content
-            try:
-                social_result = distribute_to_social.delay(blog_post_id)
-                distribution_results["social"] = {"task_id": social_result.id, "status": "queued"}
-            except Exception as e:
-                logger.error(f"Failed to queue social distribution: {e}")
-                distribution_results["social"] = {"status": "error", "error": str(e)}
-
-        # 2. Send email newsletter
         try:
             newsletter_result = send_blog_newsletter.delay(blog_post_id)
             distribution_results["newsletter"] = {"task_id": newsletter_result.id, "status": "queued"}
@@ -86,20 +82,12 @@ def publish_blog_post(blog_post_id: str) -> Dict[str, Any]:
             logger.error(f"Failed to queue newsletter: {e}")
             distribution_results["newsletter"] = {"status": "error", "error": str(e)}
 
-        # 3. Submit to search engines (if enabled)
         try:
             seo_result = submit_to_search_engines.delay(blog_post_id)
             distribution_results["seo"] = {"task_id": seo_result.id, "status": "queued"}
         except Exception as e:
             logger.error(f"Failed to queue search engine submission: {e}")
             distribution_results["seo"] = {"status": "error", "error": str(e)}
-
-        # Mark distribution as initiated
-        try:
-            post.distributed_at = datetime.now(timezone.utc)
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
 
         return {
             "status": "published",

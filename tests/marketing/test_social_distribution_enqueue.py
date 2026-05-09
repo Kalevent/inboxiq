@@ -162,3 +162,27 @@ def test_enqueue_blog_skips_when_account_id_missing(app, db, kalevent_account):
     assert n == 0
     from src.models.campaigns import SocialDistributionQueueItem
     assert db.session.query(SocialDistributionQueueItem).count() == 0
+
+
+def test_publish_blog_post_enqueues_via_queue(app, db, kalevent_account):
+    from src.models.content import BlogPost
+    from src.models.campaigns import SocialDistributionQueueItem
+
+    post = BlogPost(
+        id="post-pub", account_id=2, title="t", slug="t",
+        canonical_url="https://kalevent.com/blog/t",
+        status="ready", rendered_html="<p>hi</p>",
+    )
+    db.session.add(post)
+    db.session.commit()
+
+    fake_content = {p: {"text": "x", "hashtags": ""} for p in ("linkedin","twitter","facebook")}
+    with patch("src.marketing.social_distribution.generate_social_content", return_value=fake_content), \
+         patch("src.marketing.content_distribution.send_blog_newsletter.delay"), \
+         patch("src.marketing.content_distribution.submit_to_search_engines.delay"):
+        from src.marketing.content_distribution import publish_blog_post
+        publish_blog_post.run("post-pub")
+
+    db.session.refresh(post)
+    assert post.status == "published"
+    assert db.session.query(SocialDistributionQueueItem).count() == 3
