@@ -39,6 +39,12 @@ from src.social_auth import bp
 
 _AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization"
 _TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken"
+# NOTE: LinkedIn org-page posting requires the r_organization_admin scope.
+# Before adding it here, request "Marketing Developer Platform" access in the
+# LinkedIn Developer Portal for this app — without it, OAuth requests with
+# r_organization_admin will fail. Once approved + added below, existing
+# linkedin_social connections must disconnect/reconnect to populate
+# metadata_json["org_id"] via _fetch_admin_organization_id.
 _SCOPE = "openid profile email w_member_social w_organization_social"
 _PROVIDER = "linkedin_social"
 

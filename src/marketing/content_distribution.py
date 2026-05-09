@@ -39,9 +39,9 @@ def publish_blog_post(blog_post_id: str) -> Dict[str, Any]:
         logger.error(f"Blog post {blog_post_id} not found")
         return {"status": "error", "reason": "post_not_found"}
 
-    # Validate post is ready to publish
-    if post.status != "ready":
-        logger.warning(f"Blog post {blog_post_id} status is {post.status}, expected 'ready'")
+    # Skip only if post is in a state where distribution shouldn't fire.
+    if post.status in ("failed",):
+        logger.warning(f"Blog post {blog_post_id} status is {post.status}, skipping")
         return {"status": "skipped", "reason": f"status_is_{post.status}"}
 
     if not post.rendered_html and not post.content_html:

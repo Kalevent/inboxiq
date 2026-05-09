@@ -113,3 +113,37 @@ def test_picker_skipped_does_not_consume_attempts(app, db, kalevent_account):
     assert item.status == "skipped"
     assert item.attempts == 0  # NOT consumed
     assert item.error == "not_configured"
+
+
+def test_picker_processes_multiple_accounts(app, db, kalevent_account):
+    """Picker should serve every account that has a connected social provider, no hardcoded scoping."""
+    from src.models.core import Account, User
+    db.session.add(Account(id=99, name="OtherAccount"))
+    db.session.commit()
+    db.session.add(User(id=2, email="other@example.com", account_id=99))
+    db.session.commit()
+
+    _seed_connection(db, 2, "linkedin_social")
+    db.session.add(InboxConnection(
+        id="c-99-li", account_id=99, user_id=2,
+        provider="linkedin_social", status="connected", metadata_json={},
+    ))
+    db.session.commit()
+
+    _seed_pending(db, 2, "linkedin", "kalevent-blog")
+    _seed_pending(db, 99, "linkedin", "other-blog")
+
+    posted = []
+    def ok(item):
+        posted.append((item.account_id, item.platform, item.content_id))
+        return {"status": "ok", "post_url": "https://x"}
+
+    with patch("src.marketing.social_distribution._post_to_linkedin", side_effect=ok):
+        from src.marketing.social_distribution import run_social_distribution_queue
+        result = run_social_distribution_queue.run()
+
+    # Both accounts get one post each — no hardcoded scoping.
+    assert (2, "linkedin", "kalevent-blog") in posted
+    assert (99, "linkedin", "other-blog") in posted
+    assert result["accounts"] == 2
+    assert result["posted"] == 2

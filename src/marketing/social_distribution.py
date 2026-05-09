@@ -70,7 +70,14 @@ def enqueue_blog_post(post: BlogPost) -> int:
             db.session.commit()
             inserted += 1
         except IntegrityError:
-            db.session.rollback()  # already enqueued
+            db.session.rollback()  # already enqueued (idempotent)
+        except Exception:
+            db.session.rollback()
+            logger.exception(
+                "enqueue: per-platform commit failed for %s/%s/%s",
+                item.content_type, item.content_id, item.platform,
+            )
+            # continue — don't kill the whole batch
     return inserted
 
 
@@ -146,7 +153,14 @@ def enqueue_youtube_video(video: YouTubeVideo, pain_point_text: str = "") -> int
             db.session.commit()
             inserted += 1
         except IntegrityError:
+            db.session.rollback()  # already enqueued (idempotent)
+        except Exception:
             db.session.rollback()
+            logger.exception(
+                "enqueue: per-platform commit failed for %s/%s/%s",
+                item.content_type, item.content_id, item.platform,
+            )
+            # continue — don't kill the whole batch
     return inserted
 
 
