@@ -167,6 +167,24 @@ def _save_connection(account_id: int, provider: str, metadata: dict):
 
 # ── LinkedIn helpers ──────────────────────────────────────────────────────────
 
+def _resolve_org_id(account_id: int, fresh_org_id: Optional[str]) -> Optional[str]:
+    """Return the org_id to persist, preferring fresh_org_id when present.
+
+    If fresh_org_id is None (e.g. transient network error or missing scope),
+    fall back to the previously-persisted org_id from an existing
+    ``linkedin_social`` connection so that a re-OAuth cannot silently wipe
+    a valid org_id.
+    """
+    if fresh_org_id:
+        return fresh_org_id
+    existing = InboxConnection.query.filter_by(
+        account_id=account_id, provider=_PROVIDER
+    ).first()
+    if existing:
+        return (existing.metadata_json or {}).get("org_id") or None
+    return None
+
+
 def _fetch_admin_organization_id(access_token: str) -> Optional[str]:
     """Return the numeric ID of the first LinkedIn org the user can administer, or None.
 
@@ -283,12 +301,16 @@ def linkedin_callback():
         return _page(False, "Connection failed. Please try again.")
 
     # Fetch admin org_id (best-effort — requires r_organization_admin scope)
-    org_id = _fetch_admin_organization_id(access_token)
-    if not org_id:
+    fresh_org_id = _fetch_admin_organization_id(access_token)
+    if not fresh_org_id:
         current_app.logger.warning(
             f"LinkedIn: could not fetch admin org_id for account={account_id} "
             "(missing r_organization_admin scope or no admin org found)"
         )
+
+    # Resolve: use fresh value when available, otherwise preserve any existing
+    # org_id so that a re-OAuth with a failing fetch cannot silently wipe it.
+    org_id = _resolve_org_id(account_id, fresh_org_id)
 
     # Persist encrypted token + org_id
     metadata: dict = {
