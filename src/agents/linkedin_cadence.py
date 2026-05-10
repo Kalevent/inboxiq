@@ -125,14 +125,23 @@ class LinkedInCadenceAgent(BaseAgent):
             for lead in leads
         ]
 
-    def _tool_enrich_lead_linkedin_url(self, lead_id: str, linkedin_url: str, name: str = "") -> Dict[str, Any]:
+    def _tool_enrich_lead_linkedin_url(
+        self,
+        lead_id: str,
+        linkedin_url: str,
+        name: str = "",
+        job_title: str = "",
+    ) -> Dict[str, Any]:
         """
-        Save a verified LinkedIn URL (and optionally name) to a Lead.
+        Save a verified LinkedIn URL, name, and job_title to a Lead.
         Call after find_decision_makers + browser_snapshot confirm the URL.
         """
         from src.models.leads import Lead
         clean_url = linkedin_url.split("?")[0]
-        self.tool_calls.append({"tool": "enrich_lead_linkedin_url", "input": {"lead_id": lead_id, "linkedin_url": clean_url}})
+        self.tool_calls.append({
+            "tool": "enrich_lead_linkedin_url",
+            "input": {"lead_id": lead_id, "linkedin_url": clean_url, "job_title": job_title},
+        })
         lead = db.session.query(Lead).filter_by(id=lead_id, account_id=self.account_id).first()
         if not lead:
             return {"saved": False, "error": "lead not found"}
@@ -150,6 +159,8 @@ class LinkedInCadenceAgent(BaseAgent):
         lead.linkedin_url = clean_url
         if name and (not lead.name or lead.name == lead.company_name):
             lead.name = name
+        if job_title:
+            lead.job_title = job_title.strip()[:255]
         try:
             db.session.commit()
             return {"saved": True}
