@@ -137,17 +137,8 @@ class FunnelDiscoveryAgent(BaseAgent):
                 email = ""
 
         # Reject results that are clearly article titles or job postings, not companies
-        _ARTICLE_PREFIXES = (
-            "the ultimate guide", "how to", "how do", "why ", "what is",
-            "top ", "best ", "r/", "hiring ", "guide to", "guide:",
-        )
-        _ARTICLE_KEYWORDS = {"guide", "tutorial", "article", "blog", "post", " vs ", "hiring ", " job ", " jobs"}
-        name_lower = company_name.lower()
-        if (
-            len(company_name) > 70
-            or any(name_lower.startswith(p) for p in _ARTICLE_PREFIXES)
-            or any(kw in name_lower for kw in _ARTICLE_KEYWORDS)
-        ):
+        from src.mcp.lead_discovery_mcp import looks_like_real_company
+        if not looks_like_real_company(company_name):
             return {"created": False, "reason": "not_a_company"}
 
         existing = db.session.query(Lead).filter_by(
