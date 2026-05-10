@@ -505,9 +505,12 @@ celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.fu
 # autodiscover_tasks is lazy: workers occasionally start without finalizing
 # the discovery, leaving @shared_task-decorated tasks unregistered. Explicit
 # imports guarantee the registry is populated at module-load time. Verified
-# via `funnel.qualify_visitor` not being in `celery.tasks` on inbox-worker
-# until manual import (2026-05-10 incident — 1237 leads stuck unscored).
+# via several tasks not being in `celery.tasks` on inbox-worker until manual
+# import (2026-05-10 incident — qualify_visitor stuck 1237 leads unscored,
+# linkedin.discover_prospects / enrich_linkedin_urls / draft_messages also
+# silently unregistered).
 from src.funnel import tasks as _funnel_tasks  # noqa: F401
+from src.tasks import linkedin as _linkedin_tasks  # noqa: F401
 
 # Wire Celery task_failure into app.logger so the SMTPHandler attached by
 # configure_crash_email also pages on failed background tasks (otherwise
