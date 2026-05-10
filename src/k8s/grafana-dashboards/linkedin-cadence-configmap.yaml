@@ -1,0 +1,240 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-linkedin-cadence-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  linkedin-cadence.json: |
+    {
+      "title": "LinkedIn Cadence",
+      "uid": "linkedin-cadence-data-quality",
+      "tags": [
+        "inboxiq",
+        "linkedin",
+        "cadence",
+        "data-quality"
+      ],
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "refresh": "1m",
+      "time": {
+        "from": "now-24h",
+        "to": "now"
+      },
+      "templating": {
+        "list": []
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Acceptance Ratio (7d rolling) by Account",
+          "description": "inboxiq_linkedin_acceptance_ratio gauge, refreshed every 30 min by the cadence task. Healthy is >= 0.30; below 0.15 fires LinkedInAcceptanceRatioLow.",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "decimals": 2,
+              "min": 0,
+              "max": 1,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": 0
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 0.15
+                  },
+                  {
+                    "color": "green",
+                    "value": 0.30
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "inboxiq_linkedin_acceptance_ratio",
+              "legendFormat": "account {{ account_id }}"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Prospect Status Transitions (rate, last 1h)",
+          "description": "sum by (to_status) of inboxiq_linkedin_prospect_status_transitions_total — tracks where prospects are moving in the funnel.",
+          "type": "barchart",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 8,
+            "w": 12,
+            "h": 8
+          },
+          "options": {
+            "orientation": "vertical",
+            "stacking": "normal",
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 3
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum by (to_status) (rate(inboxiq_linkedin_prospect_status_transitions_total[1h]))",
+              "legendFormat": "{{ to_status }}"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "linkedin_cadence Agent Outcomes (rate, last 1h)",
+          "description": "sum by (status) of inboxiq_agent_status_total{agent_name=\"linkedin_cadence\"} — success vs max_iters vs llm_give_up vs error.",
+          "type": "piechart",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 8,
+            "w": 12,
+            "h": 8
+          },
+          "options": {
+            "pieType": "donut",
+            "legend": {
+              "displayMode": "list",
+              "placement": "right",
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "reduceOptions": {
+              "calcs": [
+                "sum"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 3
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum by (status) (rate(inboxiq_agent_status_total{agent_name=\"linkedin_cadence\"}[1h]))",
+              "legendFormat": "{{ status }}"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "ReAct max_iters Hits (rate, 6h window)",
+          "description": "rate(inboxiq_agent_react_max_iters_hit_total{agent_name=\"linkedin_cadence\"}[6h]) — the ReAct loop exhausting its 25-iteration budget.",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 16,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 4,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 0.0005
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.002
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "rate(inboxiq_agent_react_max_iters_hit_total{agent_name=\"linkedin_cadence\"}[6h])",
+              "legendFormat": "max_iters/sec"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "MCP Tool Call Latency p50 / p95",
+          "description": "histogram_quantile over inboxiq_mcp_tool_call_duration_seconds_bucket — by server_label.",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 16,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "decimals": 3
+            }
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.5, sum by (le, server_label) (rate(inboxiq_mcp_tool_call_duration_seconds_bucket[5m])))",
+              "legendFormat": "p50 {{ server_label }}"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, server_label) (rate(inboxiq_mcp_tool_call_duration_seconds_bucket[5m])))",
+              "legendFormat": "p95 {{ server_label }}"
+            }
+          ]
+        }
+      ]
+    }
