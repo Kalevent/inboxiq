@@ -282,6 +282,26 @@ def expire_pending_connections():
     return {"disqualified": count}
 
 
+@shared_task(name="linkedin.update_acceptance_ratio_gauge")
+def update_acceptance_ratio_gauge():
+    """Refresh the inboxiq_linkedin_acceptance_ratio gauge per account (7d rolling)."""
+    from datetime import datetime, timezone, timedelta
+    from src.models.campaigns import LinkedInProspect
+    from src.monitoring.metrics import linkedin_acceptance_ratio
+    cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+    for account_id in _all_account_ids():
+        sent = db.session.query(LinkedInProspect).filter(
+            LinkedInProspect.account_id == account_id,
+            LinkedInProspect.connection_sent_at >= cutoff,
+        ).count()
+        accepted = db.session.query(LinkedInProspect).filter(
+            LinkedInProspect.account_id == account_id,
+            LinkedInProspect.connected_at >= cutoff,
+        ).count()
+        ratio = (accepted / sent) if sent > 0 else 0.0
+        linkedin_acceptance_ratio.labels(account_id=str(account_id)).set(ratio)
+
+
 @shared_task(name="linkedin.review_mismatched_prospects")
 def review_mismatched_prospects():
     """Flip prospect rows whose name and URL slug share no meaningful tokens.

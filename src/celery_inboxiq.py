@@ -414,6 +414,11 @@ def make_celery(app) -> Celery:
                 "schedule": crontab(hour=6, minute=0),
                 "options": {"queue": "inbox"},
             },
+            "linkedin_update_acceptance_ratio_gauge": {
+                "task": "linkedin.update_acceptance_ratio_gauge",
+                "schedule": crontab(minute="*/30"),
+                "options": {"queue": "inbox"},
+            },
             # YouTube cadence — script generation, render polling, publish, digest
             **(
                 {

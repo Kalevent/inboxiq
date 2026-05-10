@@ -178,6 +178,23 @@ class BaseAgent(ABC):
     ) -> None:
         from src.models.ai import AgentEvent
 
+        # Emit Prometheus metrics
+        try:
+            from src.monitoring.metrics import agent_status, agent_react_max_iters_hit
+            if success:
+                status_label = "success"
+            elif error_msg and "max_iters" in error_msg:
+                status_label = "max_iters"
+            elif error_msg and "llm_admitted_failure" in error_msg:
+                status_label = "llm_give_up"
+            else:
+                status_label = "error"
+            agent_status.labels(agent_name=self.agent_name, status=status_label).inc()
+            if status_label == "max_iters":
+                agent_react_max_iters_hit.labels(agent_name=self.agent_name).inc()
+        except Exception:
+            log.warning("[%s] failed to emit prometheus metric", self.agent_name)
+
         event = AgentEvent(
             id=str(uuid4()),
             agent_name=self.agent_name,

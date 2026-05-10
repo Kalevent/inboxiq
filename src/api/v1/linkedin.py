@@ -28,6 +28,7 @@ def _advance_prospect(prospect: LinkedInProspect) -> bool:
     transition = _STATUS_TRANSITIONS.get(prospect.status)
     if not transition:
         return False
+    from_status = prospect.status   # capture before mutation
     new_status, timestamp_field = transition
     now = datetime.now(timezone.utc)
     prospect.status = new_status
@@ -39,6 +40,15 @@ def _advance_prospect(prospect: LinkedInProspect) -> bool:
         prospect.message_3_due_at = now + timedelta(days=5)
     if new_status in ("replied", "qualified") and prospect.lead_id:
         _advance_lead_stage(prospect.lead_id, new_status)
+    try:
+        from src.monitoring.metrics import linkedin_status_transitions
+        linkedin_status_transitions.labels(
+            from_status=from_status,
+            to_status=new_status,
+            account_id=str(prospect.account_id),
+        ).inc()
+    except Exception:
+        log.warning("failed to emit linkedin_status_transitions metric")
     return True
 
 

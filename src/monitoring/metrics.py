@@ -104,3 +104,44 @@ def track_task(task_name: str, account_id):
     finally:
         elapsed = time.perf_counter() - start
         record_task_cost(task_name, account_id=account_id, duration_seconds=elapsed, status=status)
+
+
+# ---------------------------------------------------------------------------
+# Domain metrics for LinkedIn cadence, agents, and MCP tool calls.
+#
+# Unlike the cost-tracking metrics above (lazy-init, gated by
+# PROMETHEUS_METRICS_ENABLED), these are registered eagerly at import time so
+# they are always exposed via the /metrics endpoint and visible in Prometheus.
+# ---------------------------------------------------------------------------
+from prometheus_client import Counter, Gauge, Histogram  # noqa: E402
+
+linkedin_status_transitions = Counter(
+    "inboxiq_linkedin_prospect_status_transitions",
+    "LinkedInProspect status transitions",
+    ["from_status", "to_status", "account_id"],
+)
+
+agent_react_max_iters_hit = Counter(
+    "inboxiq_agent_react_max_iters_hit",
+    "DSPy ReAct loops that hit max_iters without finishing",
+    ["agent_name"],
+)
+
+agent_status = Counter(
+    "inboxiq_agent_status",
+    "Agent invocation outcome (success vs error vs llm_give_up)",
+    ["agent_name", "status"],
+)
+
+mcp_tool_call_duration = Histogram(
+    "inboxiq_mcp_tool_call_duration_seconds",
+    "Duration of MCP tool calls from agents",
+    ["server_label", "tool"],
+    buckets=(0.1, 0.5, 1, 2, 5, 10, 30, 60),
+)
+
+linkedin_acceptance_ratio = Gauge(
+    "inboxiq_linkedin_acceptance_ratio",
+    "Rolling 7d connection-accepted / connection-sent ratio",
+    ["account_id"],
+)
