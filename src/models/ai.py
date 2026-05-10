@@ -76,6 +76,7 @@ class AgentEvent(db.Model):
     latency_ms = db.Column(db.Integer, nullable=True)
     error_message = db.Column(db.String(512), nullable=True)
     traceback = db.Column(db.Text, nullable=True)
+    trace_id = db.Column(db.String(32), nullable=True, index=True, comment="OpenTelemetry trace_id (32-hex) for Phoenix correlation")
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def to_dict(self) -> dict:
@@ -90,6 +91,7 @@ class AgentEvent(db.Model):
             "latency_ms": self.latency_ms,
             "error_message": self.error_message,
             "traceback": self.traceback,
+            "trace_id": self.trace_id,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

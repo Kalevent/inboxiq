@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 import dspy  # type: ignore  # noqa: F401 — must be module-level for test patching via src.agents.base.dspy
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 from uuid import uuid4
+
+from opentelemetry import trace  # module-level for test patching via src.agents.base.trace
 
 from src.extensions import db
 from src.dspy.config import _configure_dspy
@@ -185,6 +188,18 @@ class BaseAgent(ABC):
     ) -> None:
         from src.models.ai import AgentEvent
 
+        # Capture the current OpenTelemetry trace_id so AgentEvent rows can be
+        # correlated with Phoenix traces. Returns None if OTel is disabled or
+        # there is no active span (e.g. running outside Celery/Flask).
+        trace_id_hex: str | None = None
+        try:
+            span = trace.get_current_span()
+            ctx = span.get_span_context()
+            if ctx.is_valid:
+                trace_id_hex = format(ctx.trace_id, "032x")
+        except Exception:
+            trace_id_hex = None
+
         # Emit Prometheus metrics
         try:
             from src.monitoring.metrics import agent_status, agent_react_max_iters_hit
@@ -210,13 +225,20 @@ class BaseAgent(ABC):
             now = datetime.now(timezone.utc)
             last = BaseAgent._last_error_email_sent.get(self.agent_name)
             if last is None or (now - last) >= BaseAgent._ERROR_EMAIL_COOLDOWN:
+                phoenix_base = os.getenv("PHOENIX_URL", "https://phoenix.kalevent.com")
+                phoenix_link = (
+                    f"{phoenix_base}/projects/default/traces/{trace_id_hex}"
+                    if trace_id_hex
+                    else "(no trace_id — OTel may be disabled)"
+                )
                 log.error(
-                    "agent %s failed: %s | goal=%r | tool_calls=%d | latency_ms=%d",
+                    "agent %s failed: %s | goal=%r | tool_calls=%d | latency_ms=%d | trace=%s",
                     self.agent_name,
                     error_msg,
                     self.goal[:200],
                     len(self.tool_calls),
                     latency_ms,
+                    phoenix_link,
                 )
                 BaseAgent._last_error_email_sent[self.agent_name] = now
 
@@ -233,6 +255,7 @@ class BaseAgent(ABC):
             },
             latency_ms=latency_ms,
             error_message=error_msg[:512] if error_msg else None,
+            trace_id=trace_id_hex,
             created_at=datetime.now(timezone.utc),
         )
         try:
