@@ -192,6 +192,7 @@ class LinkedInCadenceAgent(BaseAgent):
             name=lead.name,
             company_name=lead.company_name,
             industry=lead.industry,
+            job_title=lead.job_title,
             linkedin_url=lead.linkedin_url,
             source="auto",
             status="pending",
