@@ -121,6 +121,25 @@ def _all_account_ids() -> list:
     return [row.id for row in db.session.query(Account.id).all()]
 
 
+def _linkedin_connected_account_ids() -> list:
+    """Return account IDs that have at least one linkedin_social InboxConnection.
+
+    Used by metric-emitting tasks (e.g. update_acceptance_ratio_gauge) to keep
+    Prometheus label cardinality bounded to accounts that actually run the
+    LinkedIn cadence — never iterate every account in the DB for per-account
+    labelled metrics (memory rule: "derive scoping from data").
+    """
+    from src.models.core import InboxConnection
+    rows = (
+        db.session.query(InboxConnection.account_id)
+        .filter(InboxConnection.provider == "linkedin_social")
+        .filter(InboxConnection.account_id.isnot(None))
+        .distinct()
+        .all()
+    )
+    return [r.account_id for r in rows]
+
+
 @shared_task(name="linkedin.enrich_linkedin_urls")
 def enrich_linkedin_urls():
     """Enrich qualifying leads with LinkedIn URLs via SearXNG + Playwright."""
@@ -289,7 +308,7 @@ def update_acceptance_ratio_gauge():
     from src.models.campaigns import LinkedInProspect
     from src.monitoring.metrics import linkedin_acceptance_ratio
     cutoff = datetime.now(timezone.utc) - timedelta(days=7)
-    for account_id in _all_account_ids():
+    for account_id in _linkedin_connected_account_ids():
         sent = db.session.query(LinkedInProspect).filter(
             LinkedInProspect.account_id == account_id,
             LinkedInProspect.connection_sent_at >= cutoff,
