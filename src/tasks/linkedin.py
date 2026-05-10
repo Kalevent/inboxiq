@@ -128,8 +128,16 @@ def enrich_linkedin_urls():
     for account_id in _all_account_ids():
         LinkedInCadenceAgent(account_id=account_id).execute(
             "Enrich qualifying leads with LinkedIn URLs. "
-            "For each lead from get_qualifying_leads: call find_decision_makers via MCP, "
-            "verify with browser_navigate and browser_snapshot, then call enrich_lead_linkedin_url."
+            "For EACH lead from get_qualifying_leads:\n"
+            "  1. Call find_decision_makers with the lead's company domain.\n"
+            "  2. From the candidates, pick at most ONE profile where BOTH the name "
+            "matches the lead AND the current employer matches the lead's company. "
+            "If no candidate satisfies both, SKIP this lead — do not call enrich_lead_linkedin_url.\n"
+            "  3. Verify the chosen profile by browser_navigate + browser_snapshot. "
+            "If the snapshot shows a different person or different employer, SKIP.\n"
+            "  4. Call enrich_lead_linkedin_url with the verified URL, name, and job_title from the profile.\n"
+            "Stop after processing 10 leads or when no qualifying leads remain. "
+            "It is BETTER to skip a lead than to attach a wrong URL."
         )
 
 
