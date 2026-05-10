@@ -502,6 +502,13 @@ app = create_app()
 celery = make_celery(app)
 celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.funnel", "src.content", "src.trial", "src.marketing", "src.outreach", "src.inbox", "src.booking", "src.tasks.linkedin", "src.tasks.onboarding_video", "src.tasks.youtube", "src.tasks.outreach_video", "src.tasks.smoke"])
 
+# autodiscover_tasks is lazy: workers occasionally start without finalizing
+# the discovery, leaving @shared_task-decorated tasks unregistered. Explicit
+# imports guarantee the registry is populated at module-load time. Verified
+# via `funnel.qualify_visitor` not being in `celery.tasks` on inbox-worker
+# until manual import (2026-05-10 incident — 1237 leads stuck unscored).
+from src.funnel import tasks as _funnel_tasks  # noqa: F401
+
 # Wire Celery task_failure into app.logger so the SMTPHandler attached by
 # configure_crash_email also pages on failed background tasks (otherwise
 # only Flask request-handler exceptions would email).
