@@ -512,6 +512,20 @@ celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.fu
 from src.funnel import tasks as _funnel_tasks  # noqa: F401
 from src.tasks import linkedin as _linkedin_tasks  # noqa: F401
 
+# Route tasks to queues that have consumers. Default queue is "celery" but
+# no worker pod listens on it — every worker (inbox-worker, content-worker,
+# billing-worker) is queue-scoped via the celery `-Q` flag. Tasks without
+# routing pile up on "celery" forever (2026-05-10 incident: 65,176
+# funnel.qualify_visitor messages backlogged, never consumed).
+celery.conf.task_routes = {
+    "funnel.*": {"queue": "inbox"},
+    "linkedin.*": {"queue": "inbox"},
+    "automation.*": {"queue": "inbox"},
+    "marketing.*": {"queue": "inbox"},
+    "outreach.*": {"queue": "inbox"},
+    "onboarding.*": {"queue": "inbox"},
+}
+
 # Wire Celery task_failure into app.logger so the SMTPHandler attached by
 # configure_crash_email also pages on failed background tasks (otherwise
 # only Flask request-handler exceptions would email).
