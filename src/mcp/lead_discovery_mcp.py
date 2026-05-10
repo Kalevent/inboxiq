@@ -53,13 +53,49 @@ def extract_domain(url: str) -> str:
         return url
 
 
+_GARBAGE_PATTERNS = re.compile(
+    r"^(\$|\d|Series\s+[A-E]\b|Top\s+\d|Best\s+\d|List\s+of|"
+    r"Understanding|Apply\s+With|How\s+[Tt]o|How\s+do|Why\s|What\s+is|"
+    r"Exclusive$|Fundraising$|The\s+\d+|Guide\s+to)",
+    re.IGNORECASE,
+)
+_FUNDING_KEYWORDS = re.compile(
+    r"(raises\s+\$|\d+(\.\d+)?\s*[Mm]illion|pre-?seed|pre-?series|"
+    r"Series\s+[A-E]\s+(Funding|Round)|valuation)",
+    re.IGNORECASE,
+)
+_MIN_COMPANY_LEN = 4
+_MAX_COMPANY_LEN = 70
+
+
+def looks_like_real_company(candidate: str) -> bool:
+    """Reject junk strings that aren't actually company names."""
+    if not candidate:
+        return False
+    s = candidate.strip()
+    if len(s) < _MIN_COMPANY_LEN or len(s) > _MAX_COMPANY_LEN:
+        return False
+    if _GARBAGE_PATTERNS.search(s):
+        return False
+    if _FUNDING_KEYWORDS.search(s):
+        return False
+    if not re.search(r"[A-Za-z]{3,}", s):
+        return False
+    return True
+
+
 def extract_company_name(title: str) -> str:
-    """Extract company name from search result title."""
-    # Common patterns: "Company Name - About", "Company Name | Services", etc.
-    name = re.split(r'[\-\|–:]', title)[0].strip()
-    # Remove common suffixes
-    name = re.sub(r'\s+(Inc|LLC|Ltd|Corporation|Corp|Company|Co)\.?$', '', name, flags=re.IGNORECASE)
-    return name.strip()
+    """Extract company name from search result title. Returns "" if not parseable."""
+    if not title:
+        return ""
+    name = re.split(r"[\-\|–:]", title)[0].strip()
+    name = re.sub(
+        r"\s+(Inc|LLC|Ltd|Corporation|Corp|Company|Co)\.?$",
+        "",
+        name,
+        flags=re.IGNORECASE,
+    ).strip()
+    return name
 
 
 def _search_web(query: str, max_results: int = 25) -> List[Dict[str, Any]]:
@@ -137,6 +173,8 @@ async def discover_companies(
                 continue
 
             company_name = extract_company_name(result.get("title", ""))
+            if not looks_like_real_company(company_name):
+                continue
             snippet = result.get("snippet", "")
 
             companies.append(
@@ -338,6 +376,8 @@ async def find_buying_signals(
             # Extract company name from job posting or article
             title = result.get("title", "")
             company_name = extract_company_name(title)
+            if not looks_like_real_company(company_name):
+                continue
 
             signals.append(
                 {
