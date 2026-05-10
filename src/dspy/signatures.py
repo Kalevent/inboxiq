@@ -6,6 +6,9 @@ Defines DSPy signatures for triage and decision workflows.
 from __future__ import annotations
 
 from typing import Any, Dict
+
+import dspy
+
 from src.dspy.formatting import label_desc
 
 
@@ -924,3 +927,31 @@ def build_youtube_video_social_caption(dspy: Any) -> Dict[str, Any]:
 class YouTubeVideoSocialCaption:
     """Placeholder — use build_youtube_video_social_caption(dspy) for the real DSPy signature."""
     pass
+
+
+class LinkedInUrlSelection(dspy.Signature):
+    """
+    Pick the LinkedIn profile URL that belongs to the named lead at the named company.
+
+    Strict rules:
+      - Return skip_reason and empty selected_url if there is NO clear match.
+      - "Clear match" = the candidate name matches lead_name AND the candidate's
+        current employer matches lead_company.
+      - NEVER pick a profile just because the person was mentioned in an article
+        or news headline. Funding announcements, listicles, and blog posts are
+        never valid sources for company affiliation.
+      - The selected_job_title must come from the candidate's LinkedIn profile,
+        not from a search result snippet.
+    """
+    lead_name = dspy.InputField(desc="The lead's full name")
+    lead_company = dspy.InputField(desc="The lead's company")
+    lead_industry = dspy.InputField(desc="Expected industry for ICP fit")
+    candidate_profiles = dspy.InputField(
+        desc="JSON list of {name, job_title, company, linkedin_url, snippet} from MCP search"
+    )
+    selected_url = dspy.OutputField(desc="The chosen linkedin.com/in/... URL, or empty if no match")
+    selected_name = dspy.OutputField(desc="The name on the selected profile")
+    selected_job_title = dspy.OutputField(desc="The role from the selected profile")
+    skip_reason = dspy.OutputField(
+        desc="If no clear match, explain why in one short phrase. Empty if a URL was selected."
+    )
