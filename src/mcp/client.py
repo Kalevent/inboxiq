@@ -18,7 +18,7 @@ class PersistentMCPClient:
     Not thread-safe across processes; guarded with a lock for reentrancy.
     """
 
-    def __init__(self, command: List[str], timeout: float = 30.0, line_protocol: bool | None = None):
+    def __init__(self, command: List[str], timeout: float = 30.0, line_protocol: bool | None = None, server_label: str | None = None):
         self.command = command
         self.timeout = timeout
         self.proc: subprocess.Popen[str] | None = None
@@ -31,6 +31,18 @@ class PersistentMCPClient:
             self.line_protocol = "compat" in joined
         else:
             self.line_protocol = line_protocol
+        # Optional label used for prometheus metrics; falls back to last command segment.
+        if server_label:
+            self.server_label = server_label
+        else:
+            try:
+                last = command[-1] if command else "unknown"
+                # Strip path + extension to keep label cardinality low (e.g., "lead_discovery_mcp")
+                import os as _os
+                base = _os.path.basename(last)
+                self.server_label = base.rsplit(".", 1)[0] or base or "unknown"
+            except Exception:
+                self.server_label = "unknown"
 
     def __enter__(self):
         self.start()
@@ -73,6 +85,24 @@ class PersistentMCPClient:
             self.proc = None
 
     def invoke(self, tool: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        # Time every invocation against the prometheus histogram. Import locally
+        # so that test environments without prometheus_client don't crash; failures
+        # to record metrics are silent (telemetry must not break the call path).
+        try:
+            from src.monitoring.metrics import mcp_tool_call_duration
+            timer_cm = mcp_tool_call_duration.labels(
+                server_label=getattr(self, "server_label", "unknown"),
+                tool=tool,
+            ).time()
+        except Exception:
+            timer_cm = None
+
+        if timer_cm is None:
+            return self._invoke_inner(tool, arguments)
+        with timer_cm:
+            return self._invoke_inner(tool, arguments)
+
+    def _invoke_inner(self, tool: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         if self.proc is None:
             self.start()
         if self.proc is None or self.proc.stdin is None or self.proc.stdout is None:

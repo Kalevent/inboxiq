@@ -131,7 +131,7 @@ class BaseAgent(ABC):
             command = catalog.command
             if isinstance(command, str):
                 command = command.split()
-            client = PersistentMCPClient(command)
+            client = PersistentMCPClient(command, server_label=label)
             client.start()
             self._mcp[label] = client
 
