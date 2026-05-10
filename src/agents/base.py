@@ -5,7 +5,7 @@ import logging
 import time
 import dspy  # type: ignore  # noqa: F401 — must be module-level for test patching via src.agents.base.dspy
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 from uuid import uuid4
 
@@ -40,6 +40,13 @@ class BaseAgent(ABC):
     agent_name: str = "base_agent"
     mcp_server_labels: List[str] = []
     max_iters: int = 25
+
+    # Class-level throttle for SMTPHandler-routed agent failure emails. The
+    # crash_report SMTPHandler fires on log.error(...) — without throttling,
+    # a stuck agent could send hundreds of emails per hour. Keyed by agent_name
+    # so unrelated agents do not silence each other.
+    _last_error_email_sent: Dict[str, datetime] = {}
+    _ERROR_EMAIL_COOLDOWN: timedelta = timedelta(minutes=60)
 
     def __init__(self, account_id: int):
         self.account_id = account_id
@@ -194,6 +201,24 @@ class BaseAgent(ABC):
                 agent_react_max_iters_hit.labels(agent_name=self.agent_name).inc()
         except Exception:
             log.warning("[%s] failed to emit prometheus metric", self.agent_name)
+
+        # Route agent failures into the SMTPHandler-backed crash_report logger.
+        # log.error(...) propagates to the root SMTPHandler attached in
+        # src/monitoring/crash_report.py, which emails kofuafor@gmail.com.
+        # Throttled per agent_name with a 60-min cooldown to prevent flooding.
+        if not success:
+            now = datetime.now(timezone.utc)
+            last = BaseAgent._last_error_email_sent.get(self.agent_name)
+            if last is None or (now - last) >= BaseAgent._ERROR_EMAIL_COOLDOWN:
+                log.error(
+                    "agent %s failed: %s | goal=%r | tool_calls=%d | latency_ms=%d",
+                    self.agent_name,
+                    error_msg,
+                    self.goal[:200],
+                    len(self.tool_calls),
+                    latency_ms,
+                )
+                BaseAgent._last_error_email_sent[self.agent_name] = now
 
         event = AgentEvent(
             id=str(uuid4()),
