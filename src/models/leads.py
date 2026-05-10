@@ -29,6 +29,7 @@ class Lead(db.Model):
     phone = db.Column(db.String(50), nullable=True)
     company_name = db.Column(db.String(255), nullable=True)
     industry = db.Column(db.String(100), nullable=True)
+    job_title = db.Column(db.String(255), nullable=True, comment="Decision maker role e.g. 'Director of Customer Support'")
     source = db.Column(db.String(100), nullable=False)
     utm_source = db.Column(db.String(100), nullable=True)
     utm_medium = db.Column(db.String(100), nullable=True)
@@ -87,6 +88,7 @@ class Lead(db.Model):
             "phone": self.phone,
             "company_name": self.company_name,
             "industry": self.industry,
+            "job_title": self.job_title,
             "source": self.source,
             "utm_source": self.utm_source,
             "utm_medium": self.utm_medium,
