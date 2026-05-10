@@ -1,0 +1,48 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: linkedin-cadence-alerts
+  namespace: kaley
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: linkedin-cadence
+      interval: 60s
+      rules:
+        - alert: LinkedInAcceptanceRatioLow
+          expr: inboxiq_linkedin_acceptance_ratio < 0.15
+          for: 6h
+          labels:
+            severity: warning
+          annotations:
+            summary: "LinkedIn acceptance ratio below 15% for 6h on account {{ $labels.account_id }}"
+            description: "Cadence is producing connection requests but they're not being accepted. Most likely cause: data quality (junk company_name) or LinkedIn throttling. Pause outreach and audit recent prospects."
+            runbook: "https://github.com/Kalevent/inboxiq/blob/main/docs/runbooks/linkedin-acceptance-low.md"
+
+        - alert: LinkedInAgentLLMGiveUp
+          expr: increase(inboxiq_agent_status_total{agent_name="linkedin_cadence",status="llm_give_up"}[1h]) > 3
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "linkedin_cadence agent LLM giving up >3x/hr"
+            description: "The DSPy ReAct loop is returning failure phrases like 'I was unable to retrieve...'. Check Phoenix traces for the agent goal and tool call sequence."
+
+        - alert: LinkedInAgentMaxItersHit
+          expr: increase(inboxiq_agent_react_max_iters_hit_total{agent_name="linkedin_cadence"}[1h]) > 5
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "linkedin_cadence agent hitting max_iters >5x/hr"
+            description: "The ReAct loop is exhausting its 25-iteration budget without producing a result. Likely cause: an MCP tool returning empty results in a loop, or the goal is unreachable. Inspect Phoenix traces."
+
+        - alert: LinkedInCadenceNoSendsForADay
+          expr: rate(inboxiq_linkedin_prospect_status_transitions_total{to_status="connection_sent"}[24h]) == 0
+          for: 24h
+          labels:
+            severity: info
+          annotations:
+            summary: "No LinkedIn connection requests sent in 24h"
+            description: "Either the operator paused outreach intentionally, or the cadence pipeline isn't producing any actionable prospects. Check the daily digest email + AgentEvent table."
