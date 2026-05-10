@@ -72,8 +72,10 @@ class BaseAgent(ABC):
             react_agent = dspy.ReAct(self._get_signature(dspy), tools=tools, max_iters=self.max_iters)
             prediction = react_agent(goal=goal)
             result_text = prediction.result or ""
-            success = True
-            self.log(f"Completed: {result_text[:200]}")
+            success, failure_reason = self._evaluate_success(result_text)
+            if not success:
+                error_msg = failure_reason
+            self.log(f"Completed (success={success}): {result_text[:200]}")
 
         except Exception as exc:
             error_msg = str(exc)
@@ -140,6 +142,28 @@ class BaseAgent(ABC):
             except Exception:
                 log.debug("[%s] MCP close error for %s", self.agent_name, label)
         self._mcp.clear()
+
+    # -------------------------------------------------------------------------
+    # Success evaluation
+    # -------------------------------------------------------------------------
+
+    _FAILURE_PHRASES = (
+        "unable to retrieve",
+        "could not retrieve",
+        "despite persistent efforts",
+        "i was unable",
+        "no qualifying leads found",
+    )
+
+    def _evaluate_success(self, result_text: str) -> tuple[bool, str | None]:
+        """Return (success, failure_reason). Conservative: any failure phrase => False."""
+        lowered = (result_text or "").lower()
+        for phrase in self._FAILURE_PHRASES:
+            if phrase in lowered:
+                return False, f"llm_admitted_failure: {phrase}"
+        if len(self.tool_calls) >= self.max_iters:
+            return False, f"max_iters_hit ({self.max_iters})"
+        return True, None
 
     # -------------------------------------------------------------------------
     # Telemetry
