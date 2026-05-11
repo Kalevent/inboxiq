@@ -36,6 +36,15 @@ class Config:
         or "postgresql://postgres:postgres@localhost:5432/inboxiq"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # pool_pre_ping: validate connection with a cheap SELECT 1 before handing it out;
+    #   kills the "server closed the connection unexpectedly" errors caused by stale
+    #   pooled connections (RDS idle timeout, network blips, server restarts).
+    # pool_recycle: proactively close connections older than 1h so they're refreshed
+    #   before any upstream idle timeout can kill them.
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 3600,
+    }
     # Flask-Migrate directory (kept separate from legacy migrations)
     MIGRATION_DIR = os.getenv("MIGRATION_DIR", "src/migrations")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
