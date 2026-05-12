@@ -1100,21 +1100,6 @@ def send_inbox_invite():
     })
 
 
-def _fetch_messages_stub(conn: InboxConnection, limit: int = 5):
-    """
-    Placeholder fetcher: uses sample messages until real provider pollers are wired.
-    """
-    msgs = sample_messages()[:limit]
-    # stamp provider and unique ids to avoid collisions
-    out = []
-    for idx, m in enumerate(msgs):
-        mcopy = dict(m)
-        mcopy["provider"] = conn.provider or "demo"
-        mcopy["message_id"] = f"{conn.provider}-stub-{mcopy.get('message_id') or idx}"
-        out.append(mcopy)
-    return out
-
-
 def _detect_label_correction(ticket, raw_email: dict, account_id: int | None) -> None:
     """
     Phase 2 — passive feedback loop (Gmail + Outlook).
@@ -1484,8 +1469,13 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
                 current_app.logger.warning("outlook delta correction sweep failed: %s", _out_hist_exc)
 
         else:
-            messages = _fetch_messages_stub(conn)
+            current_app.logger.warning(
+                "inbox poll skipped: unrecognized provider or missing token conn=%s provider=%s",
+                conn.id, conn.provider,
+            )
+            messages = []
     except Exception as exc:
+        import requests as _req
         msg = str(exc)
         # Detect auth failures and avoid silently falling back
         if "401" in msg or "403" in msg or "Invalid Credentials" in msg or "service has been disabled" in msg:
@@ -1509,11 +1499,22 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
             else:
                 current_app.logger.warning(log_payload)
             messages = []
+        elif isinstance(exc, (_req.exceptions.Timeout, _req.exceptions.ConnectionError)):
+            # Transient network error — skip this poll cycle, next one will catch up.
+            # Log at WARNING only: no crash email, no fake demo messages injected.
+            current_app.logger.warning(
+                "inbox poll network timeout; skipping cycle conn=%s provider=%s: %s",
+                conn.id, conn.provider, msg,
+            )
+            messages = []
+            fetch_status = "timeout"
+            fetch_error = msg
         else:
-            # Log at error level so crash email/alerts fire when a poll fails.
-            current_app.logger.exception("inbox poll failed; falling back to stub", exc_info=exc)
-            messages = _fetch_messages_stub(conn)
-            fetch_status = "fallback_stub"
+            # Unexpected error — log at ERROR so crash email fires, but still
+            # return empty rather than injecting fake demo messages.
+            current_app.logger.exception("inbox poll failed", exc_info=exc)
+            messages = []
+            fetch_status = "error"
             fetch_error = msg
     created = 0
     duplicates = 0
