@@ -212,6 +212,11 @@
   color: #e2e8f0;
   min-height: 100vh;
 }
+.marketing-body-light {
+  background: #F1ECFF;
+  color: #0A0A14;
+  min-height: 100vh;
+}
 .marketing-shell {
   width: 100%;
   max-width: 1200px;

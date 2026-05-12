@@ -35,7 +35,7 @@
   </script>
   <!-- End Google Analytics -->
 </head>
-<body class="marketing-body antialiased">
+<body class="{% block body_class %}marketing-body{% endblock %} antialiased">
   <div class="min-h-screen flex flex-col">
     <header class="marketing-header sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800/20 dark:bg-slate-950/80">
       <div class="marketing-shell flex items-center justify-between py-4">
@@ -158,8 +158,8 @@
         </div>
 
         <div class="border-t border-slate-800/40 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <a href="/" class="flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white">
-            <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500 text-white text-xs">KI</span>
+          <a href="/" class="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-slate-900">
+            <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white text-sm font-semibold">KI</span>
             <span>Kalevent</span>
           </a>
           <span class="text-xs text-slate-500">&copy; 2025 Kalevent. All rights reserved.</span>

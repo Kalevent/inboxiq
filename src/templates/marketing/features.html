@@ -5,526 +5,423 @@
 InboxIQ triage, labels, drafts, and automation run inside Gmail and Outlook — no migration, no new tool to learn. See every feature built for B2B SaaS teams handling 50–300 emails a week.
 {% endblock %}
 {% block canonical %}{{ url_for('features_page', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
+<div class="space-y-24 pb-8">
 
   {# ── Hero ──────────────────────────────────────────────────── #}
-  <header class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-    <div class="space-y-6 lg:pt-4">
-      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
-        InboxIQ &bull; Full Feature Overview
-      </div>
-      <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
-        AI email intelligence that lives<br class="hidden sm:block"> inside your inbox
+  <header class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center pt-8">
+    <div class="space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Feature overview</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        AI email intelligence<br class="hidden sm:block"> that lives inside your inbox
       </h1>
-      <p class="text-lg text-slate-200 leading-relaxed">
-        InboxIQ adds a five-layer intelligence pipeline to your existing Gmail or Outlook inbox.
-        No migration. No new support tool. Every feature is designed for the founder or ops lead
-        drowning in 50–300 repetitive emails a week.
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-lg">
+        A five-layer pipeline running inside Gmail and Outlook. No migration. No new tool to learn.
       </p>
-      <div class="flex flex-wrap gap-3">
-        <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
+      <div class="flex flex-wrap items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
           Connect your inbox free
         </a>
-        <a href="{{ url_for('pricing_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
-          See pricing
+        <a href="{{ url_for('pricing_page') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          See pricing →
         </a>
       </div>
-      <p class="text-slate-400 text-sm">Works with Gmail and Outlook &bull; No credit card required to start</p>
+      <p class="text-sm text-brand-ink-soft/60">Works with Gmail and Outlook &bull; No credit card required</p>
     </div>
-    <div class="relative">
-      <div class="rounded-2xl overflow-hidden border border-slate-200 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.12)]">
+    <div>
+      <div class="rounded-2xl overflow-hidden shadow-[0_2px_40px_rgba(91,91,214,0.14)] border border-brand-accent/10">
         <img src="{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}"
              alt="InboxIQ dashboard — triage, drafts and automation running inside your inbox"
-             class="w-full block"
-             loading="eager" width="1280" height="800">
+             class="w-full block" loading="eager" width="1280" height="800">
       </div>
-      <div class="mt-4 flex items-center justify-center gap-4 text-xs text-slate-400">
+      <div class="mt-5 flex items-center justify-center gap-6 text-xs text-brand-ink-soft/60">
         <span>544 emails processed</span>
-        <span class="text-slate-600">&bull;</span>
+        <span class="text-brand-ink-soft/20">&bull;</span>
         <span>27h saved</span>
-        <span class="text-slate-600">&bull;</span>
-        <span class="text-emerald-400 font-medium">100% auto-handled</span>
+        <span class="text-brand-ink-soft/20">&bull;</span>
+        <span class="text-brand-success font-medium">100% auto-handled</span>
       </div>
     </div>
   </header>
 
-  {# ── How it works ──────────────────────────────────────────── #}
-  <section class="space-y-6 marketing-section">
-    <div class="space-y-2">
-      <h2 class="text-2xl font-semibold text-white">Turn inbox chaos into clear next actions automatically.</h2>
-      <p class="text-slate-300 leading-relaxed max-w-2xl">
+  {# ── Pipeline overview ─────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How it works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Five layers. One inbox.</h2>
+      <p class="text-brand-ink-soft leading-[1.38] max-w-2xl">
         Each layer builds on the one before. Start with triage, add drafts when you're ready,
-        turn on automation once your rules are dialled in.
+        activate automation once your rules are dialled in.
       </p>
     </div>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-px bg-brand-accent/10 rounded-2xl overflow-hidden border border-brand-accent/10">
       {% set layers = [
-        ("01", "Triage", "Classify every email by intent, detect urgency, assign ownership — automatically."),
-        ("02", "Draft replies", "KB-grounded reply drafts ready for your review — including available meeting slots for scheduling requests. You send. InboxIQ never sends."),
-        ("03", "Automation", "Rule-based actions triggered by triage output: archive, label, forward, notify."),
-        ("04", "Multi-inbox", "Invite your whole team with one link. Each inbox is independent, per-inbox pricing."),
-        ("05", "Analytics", "Top topics, response times, team activity. Know what's eating your time."),
+        ("01", "Triage", "Every email classified, prioritised, and assigned before you open it."),
+        ("02", "Draft replies", "KB-grounded reply drafts ready for review. You send."),
+        ("03", "Automation", "Rules built on AI decisions — not keywords."),
+        ("04", "Multi-inbox", "Your whole team connected. Each inbox independent."),
+        ("05", "Analytics", "Top topics, response times, team activity."),
       ] %}
       {% for num, name, desc in layers %}
-      <div class="marketing-card space-y-2 flex flex-col">
-        <span class="text-indigo-400 font-mono text-xs font-semibold">{{ num }}</span>
-        <h3 class="font-semibold text-white">{{ name }}</h3>
-        <p class="text-slate-300 text-sm leading-relaxed flex-1">{{ desc }}</p>
+      <div class="bg-brand-lavender p-6 space-y-3">
+        <span class="text-xs font-semibold font-mono text-brand-accent">{{ num }}</span>
+        <h3 class="font-semibold text-brand-ink">{{ name }}</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">{{ desc }}</p>
       </div>
       {% endfor %}
     </div>
   </section>
 
   {# ── Layer 1: Triage ───────────────────────────────────────── #}
-  <section id="triage" class="space-y-6 marketing-section">
-    <div class="space-y-2">
-      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-300 px-3 py-1 text-xs font-semibold">
-        Layer 1 &bull; AI Triage
-      </div>
-      <h2 class="text-2xl font-semibold text-white">The decision engine that runs before you open your inbox</h2>
-    </div>
-    <div class="grid lg:grid-cols-2 gap-8">
-    <div class="space-y-4">
-      <p class="text-slate-200 leading-relaxed">
-        Every email that lands in a connected inbox is processed by InboxIQ's triage pipeline before you see it.
-        No rules to write. No keywords to configure. The model learns your patterns and gets more accurate over time
-        as you correct its decisions.
-      </p>
-      <ul class="space-y-2 text-slate-200 text-sm leading-relaxed">
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Intent classification</strong> — support, billing, sales, spam, transactional, and custom categories</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Urgency detection</strong> — surface escalations before they become fires</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Sentiment analysis</strong> — flag frustrated customers automatically</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Ownership assignment</strong> — route to the right person based on intent</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Ticket suppression</strong> — transactional and promo emails handled silently, no noise</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Human override</strong> — one click to correct a decision; model learns immediately</span></li>
-      </ul>
-      <p class="text-slate-400 text-sm">
-        Triage runs on every inbox independently. No shared data between accounts.
-      </p>
-    </div>
-    <div class="marketing-card space-y-4">
-      <h3 class="font-semibold text-white">What triage replaces</h3>
-      <p class="text-slate-300 text-sm leading-relaxed">For a team handling 200 emails/week, triage eliminates roughly:</p>
+  <section id="triage" class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+    <div class="space-y-6">
       <div class="space-y-3">
-        {% set replaced = [
-          ("40–60 min/day", "Manually reading and sorting email before doing real work"),
-          ("15–20 min/day", "Re-routing emails to the right teammate"),
-          ("10 min/day", "Chasing escalations that sat unnoticed in a shared inbox"),
-          ("20 min/day", "Deciding which emails need a reply vs which can be ignored"),
-        ] %}
-        {% for time, task in replaced %}
-        <div class="flex gap-3">
-          <span class="text-indigo-300 font-semibold text-sm whitespace-nowrap">{{ time }}</span>
-          <span class="text-slate-300 text-sm leading-relaxed">{{ task }}</span>
-        </div>
-        {% endfor %}
+        <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Layer 1 &bull; AI Triage</span>
+        <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">The decision engine that runs before you open your inbox</h2>
       </div>
-      <div class="pt-2 border-t border-slate-700">
-        <p class="text-slate-300 text-sm"><strong class="text-white">Total:</strong> 1.5–2 hours of focused work recovered per person, per day.</p>
-      </div>
+      <p class="text-brand-ink-soft leading-[1.38]">
+        Every email is processed before you see it — classified by intent, urgency detected,
+        ownership assigned. No rules to write. The model learns your patterns and improves as you correct it.
+      </p>
+      <ul class="space-y-3 text-brand-ink-soft text-sm leading-relaxed">
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">Intent classification</strong> — support, billing, sales, spam, transactional, and custom categories</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">Urgency detection</strong> — surface escalations before they become fires</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">Sentiment analysis</strong> — flag frustrated customers automatically</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">Human override</strong> — one click to correct; model learns immediately</span></li>
+      </ul>
+      <p class="text-brand-ink-soft/60 text-sm">Triage runs on every inbox independently. No shared data between accounts.</p>
     </div>
+    <div class="space-y-4">
+      <div class="rounded-2xl overflow-hidden shadow-[0_2px_24px_rgba(91,91,214,0.10)] border border-brand-accent/10">
+        <img src="{{ url_for('static', filename='img/brand/features-triage-sorted.png') }}"
+             alt="Sorted envelopes and letters — representing organised email triage"
+             class="w-full block">
+      </div>
+      <p class="text-center text-sm text-brand-ink-soft/60">1.5–2 hours recovered per person, per day.</p>
     </div>
   </section>
 
   {# ── Layer 2: Draft replies ─────────────────────────────────── #}
-  <section id="drafts" class="space-y-6 marketing-section">
-    <div class="space-y-2">
-      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-300 px-3 py-1 text-xs font-semibold">
-        Layer 2 &bull; Draft Replies
+  <section id="drafts" class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+    <div class="bg-white rounded-2xl border border-brand-accent/10 p-8 space-y-5 order-2 lg:order-1">
+      <h3 class="font-semibold text-brand-ink">How KB-grounded drafts work</h3>
+      <ol class="space-y-3 text-brand-ink-soft text-sm leading-relaxed">
+        <li class="flex gap-3"><span class="text-brand-accent font-semibold shrink-0">1.</span><span>InboxIQ reads the email and detects the question or request.</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent font-semibold shrink-0">2.</span><span>It searches your connected knowledge base for relevant articles.</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent font-semibold shrink-0">3.</span><span>A draft reply is generated, grounded in your actual documentation.</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent font-semibold shrink-0">4.</span><span>The draft appears in your dashboard — review, edit, or discard.</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent font-semibold shrink-0">5.</span><span>You send from your own inbox. InboxIQ never sends on your behalf.</span></li>
+      </ol>
+      <div class="pt-4 border-t border-brand-accent/10 text-sm text-brand-ink-soft/60">
+        Supported: Notion, Confluence, HelpScout Docs, Intercom Articles, plain-text upload.
       </div>
-      <h2 class="text-2xl font-semibold text-white">Drafts grounded in your knowledge base. You stay in control.</h2>
     </div>
-    <div class="grid lg:grid-cols-2 gap-8">
-      <div class="marketing-card space-y-4">
-        <h3 class="font-semibold text-white">How KB-grounded drafts work</h3>
-        <ol class="space-y-3 text-slate-300 text-sm leading-relaxed">
-          <li class="flex gap-3"><span class="text-indigo-400 font-semibold">1.</span><span>InboxIQ reads the email and detects the question or request.</span></li>
-          <li class="flex gap-3"><span class="text-indigo-400 font-semibold">2.</span><span>It searches your connected knowledge base for relevant articles.</span></li>
-          <li class="flex gap-3"><span class="text-indigo-400 font-semibold">3.</span><span>A draft reply is generated, grounded in your actual documentation.</span></li>
-          <li class="flex gap-3"><span class="text-indigo-400 font-semibold">4.</span><span>The draft appears in your dashboard — review, edit, or discard.</span></li>
-          <li class="flex gap-3"><span class="text-indigo-400 font-semibold">5.</span><span>You send from your own inbox. InboxIQ never sends on your behalf.</span></li>
-        </ol>
-        <div class="pt-2 border-t border-slate-700 text-sm text-slate-400">
-          Supported KB sources: Notion, Confluence, HelpScout Docs, Intercom Articles, plain-text upload.
-        </div>
+    <div class="space-y-6 order-1 lg:order-2">
+      <div class="space-y-3">
+        <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Layer 2 &bull; Draft Replies</span>
+        <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Drafts grounded in your knowledge base. You stay in control.</h2>
       </div>
-      <div class="space-y-4">
-        <p class="text-slate-200 leading-relaxed">
-          InboxIQ never sends email on your behalf. It prepares a reply grounded in your actual documentation
-          so you spend 30 seconds reviewing instead of 5 minutes writing from scratch.
-          Every draft cites the KB article it drew from so you can spot gaps.
-        </p>
-        <ul class="space-y-2 text-slate-200 text-sm leading-relaxed">
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span>Drafts appear in the InboxIQ dashboard — never sent without review</span></li>
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span>Grounded retrieval — answers come from <em>your</em> docs, not hallucinated</span></li>
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span>KB gap detection — repeated questions with no article trigger a notification</span></li>
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span>Feedback loop — accept/reject trains the model on your tone</span></li>
-          <li class="flex gap-2"><span class="text-emerald-400 mt-0.5">&#10003;</span><span><strong class="text-white">AI meeting scheduling</strong> — detects scheduling requests and includes available slots from your Google or Outlook Calendar inline in the draft. No Calendly required.</span></li>
-        </ul>
-      </div>
+      <p class="text-brand-ink-soft leading-[1.38]">
+        InboxIQ never sends email on your behalf. It prepares a reply grounded in your actual documentation
+        so you spend 30 seconds reviewing instead of 5 minutes writing from scratch.
+      </p>
+      <ul class="space-y-3 text-brand-ink-soft text-sm leading-relaxed">
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span>Drafts appear in the dashboard — never sent without your review</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">KB gap detection</strong> — repeated questions with no article trigger a notification</span></li>
+        <li class="flex gap-3"><span class="text-brand-success mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">AI meeting scheduling</strong> — detects scheduling requests and includes available calendar slots in the draft. No Calendly required.</span></li>
+      </ul>
     </div>
   </section>
 
-  {# ── Booking / Scheduling ─────────────────────────────────── #}
-  <section id="scheduling" class="space-y-6 marketing-section">
-    <div class="space-y-2">
-      <div class="inline-flex items-center gap-2 rounded-full bg-amber-500/10 text-amber-300 px-3 py-1 text-xs font-semibold">
-        AI Scheduling &bull; New
+  {# ── Scheduling ────────────────────────────────────────────── #}
+  <section id="scheduling" class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+    <div class="space-y-6">
+      <div class="space-y-3">
+        <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">AI Scheduling &bull; New</span>
+        <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Meeting requested? A booking link is already in the draft.</h2>
       </div>
-      <h2 class="text-2xl font-semibold text-white">Meeting requested? A booking link is already in the draft.</h2>
-    </div>
-    <div class="grid lg:grid-cols-2 gap-8 items-center">
-    <div class="space-y-5">
-      <p class="text-slate-300 leading-relaxed">
-        When InboxIQ detects a meeting request, it generates a personal scheduling link and embeds it in the draft reply automatically. No Calendly. No back-and-forth. Rachel clicks, picks a slot, and the calendar event is created — all while you were in another tab.
+      <p class="text-brand-ink-soft leading-[1.38]">
+        When InboxIQ detects a meeting request, it generates a scheduling link and embeds it
+        in the draft reply automatically. No Calendly. No back-and-forth.
       </p>
-      <ol class="space-y-3 text-slate-300 text-sm leading-relaxed">
-        <li class="flex gap-3"><span class="text-amber-400 font-semibold mt-0.5">1.</span><span>AI detects "can we find a time?" in the incoming email.</span></li>
-        <li class="flex gap-3"><span class="text-amber-400 font-semibold mt-0.5">2.</span><span>A signed booking link is embedded in the draft reply — one click for the visitor.</span></li>
-        <li class="flex gap-3"><span class="text-amber-400 font-semibold mt-0.5">3.</span><span>Visitor picks a slot. Calendar event created instantly. Google Meet or Teams link sent to both parties.</span></li>
+      <ol class="space-y-3 text-brand-ink-soft text-sm leading-relaxed">
+        <li class="flex gap-3"><span class="text-brand-accent font-semibold shrink-0">1.</span><span>AI detects "can we find a time?" in the incoming email.</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent font-semibold shrink-0">2.</span><span>A signed booking link is embedded in the draft reply — one click for the visitor.</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent font-semibold shrink-0">3.</span><span>Visitor picks a slot. Calendar event and Meet/Teams link sent to both parties.</span></li>
       </ol>
-      <ul class="space-y-2 text-slate-300 text-sm">
-        <li class="flex gap-2"><span class="text-emerald-400">&#10003;</span><span>Works with Google Calendar and Outlook Calendar</span></li>
-        <li class="flex gap-2"><span class="text-emerald-400">&#10003;</span><span>Ticket status updated to "meeting scheduled" — no manual follow-up</span></li>
-        <li class="flex gap-2"><span class="text-emerald-400">&#10003;</span><span>Auto-reply fired on the thread with the meeting link and time</span></li>
-        <li class="flex gap-2"><span class="text-emerald-400">&#10003;</span><span>No third-party scheduling tool required</span></li>
+      <ul class="space-y-2 text-brand-ink-soft text-sm">
+        <li class="flex gap-3"><span class="text-brand-success font-bold shrink-0">&#10003;</span><span>Works with Google Calendar and Outlook Calendar</span></li>
+        <li class="flex gap-3"><span class="text-brand-success font-bold shrink-0">&#10003;</span><span>No third-party scheduling tool required</span></li>
       </ul>
     </div>
     <div class="flex justify-center lg:justify-end">
-      <!-- Booking page mockup — mirrors the real /book/<token> contextual layout -->
-      <div style="max-width:340px;width:100%;background:#fff;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,.4);overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
-        <!-- Browser chrome -->
-        <div style="background:#1e2130;padding:8px 12px;display:flex;align-items:center;gap:6px;">
-          <span style="width:10px;height:10px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
-          <span style="width:10px;height:10px;border-radius:50%;background:#febc2e;display:inline-block;"></span>
-          <span style="width:10px;height:10px;border-radius:50%;background:#28c840;display:inline-block;"></span>
-          <span style="flex:1;background:#2d3148;border-radius:4px;height:18px;margin-left:6px;display:flex;align-items:center;padding:0 8px;">
-            <span style="font-size:10px;color:#9ca3af;">kalevent.com/book/...</span>
+      {# Booking page mockup — brand tokens throughout, no amber #}
+      <div style="max-width:320px;width:100%;background:#fff;border-radius:16px;box-shadow:0 4px 32px rgba(91,91,214,0.14);overflow:hidden;border:1px solid rgba(91,91,214,0.12);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;">
+        <div style="background:#0A0A14;padding:8px 12px;display:flex;align-items:center;gap:6px;">
+          <span style="width:9px;height:9px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+          <span style="width:9px;height:9px;border-radius:50%;background:#febc2e;display:inline-block;"></span>
+          <span style="width:9px;height:9px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+          <span style="flex:1;background:#1a1a2e;border-radius:4px;height:16px;margin-left:6px;display:flex;align-items:center;padding:0 8px;">
+            <span style="font-size:9px;color:#8B82F0;">kalevent.com/book/...</span>
           </span>
         </div>
-        <!-- Page content -->
-        <div style="background:#f5f5f5;padding:20px;">
-          <!-- Logo -->
+        <div style="background:#F1ECFF;padding:20px;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-            <div style="width:28px;height:28px;background:#4F46E5;border-radius:6px;flex-shrink:0;"></div>
-            <span style="font-size:13px;font-weight:600;color:#111;">InboxIQ</span>
+            <div style="width:26px;height:26px;background:#5B5BD6;border-radius:6px;flex-shrink:0;"></div>
+            <span style="font-size:12px;font-weight:600;color:#0A0A14;">InboxIQ</span>
           </div>
-          <!-- Context banner -->
-          <div style="background:#fef3c7;border-left:3px solid #f59e0b;padding:9px 10px;border-radius:4px;margin-bottom:14px;">
-            <div style="font-size:11px;font-weight:600;color:#92400e;">Re: Demo request — InboxIQ pricing</div>
-            <div style="font-size:10px;color:#78350f;margin-top:2px;">from rachel@acmecorp.com</div>
+          <div style="background:rgba(91,91,214,0.08);border-left:3px solid #5B5BD6;padding:9px 10px;border-radius:4px;margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:600;color:#0A0A14;">Re: Demo request — InboxIQ pricing</div>
+            <div style="font-size:10px;color:#3F3D5C;margin-top:2px;">from rachel@acmecorp.com</div>
           </div>
-          <!-- Heading -->
-          <div style="font-size:13px;font-weight:600;color:#111;margin-bottom:2px;">Book a meeting with Kofi</div>
-          <div style="font-size:11px;color:#666;margin-bottom:12px;">30-minute call &middot; Video link sent on confirmation</div>
-          <!-- Slot grid -->
+          <div style="font-size:13px;font-weight:600;color:#0A0A14;margin-bottom:2px;">Book a meeting with Oliver</div>
+          <div style="font-size:11px;color:#3F3D5C;margin-bottom:12px;">30-minute call &middot; Video link sent on confirmation</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;">
-            <div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:6px;padding:8px 10px;font-size:10px;color:#374151;text-align:center;">
-              <div style="font-size:9px;color:#9ca3af;">Mon 21 Apr</div>
-              <strong>10:00 AM</strong>
+            <div style="background:#fff;border:1.5px solid rgba(91,91,214,0.15);border-radius:8px;padding:8px 10px;font-size:10px;color:#3F3D5C;text-align:center;">
+              <div style="font-size:9px;color:#8B82F0;">Mon 21 Apr</div>
+              <strong style="color:#0A0A14;">10:00 AM</strong>
             </div>
-            <div style="background:#eef2ff;border:2px solid #4F46E5;border-radius:6px;padding:8px 10px;font-size:10px;color:#4F46E5;text-align:center;font-weight:600;">
-              <div style="font-size:9px;color:#6366f1;">Mon 21 Apr</div>
-              <strong>2:00 PM &#10003;</strong>
+            <div style="background:rgba(91,91,214,0.08);border:2px solid #5B5BD6;border-radius:8px;padding:8px 10px;font-size:10px;text-align:center;font-weight:600;">
+              <div style="font-size:9px;color:#8B82F0;">Mon 21 Apr</div>
+              <strong style="color:#5B5BD6;">2:00 PM &#10003;</strong>
             </div>
-            <div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:6px;padding:8px 10px;font-size:10px;color:#374151;text-align:center;">
-              <div style="font-size:9px;color:#9ca3af;">Tue 22 Apr</div>
-              <strong>11:00 AM</strong>
+            <div style="background:#fff;border:1.5px solid rgba(91,91,214,0.15);border-radius:8px;padding:8px 10px;font-size:10px;color:#3F3D5C;text-align:center;">
+              <div style="font-size:9px;color:#8B82F0;">Tue 22 Apr</div>
+              <strong style="color:#0A0A14;">11:00 AM</strong>
             </div>
-            <div style="background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:6px;padding:8px 10px;font-size:10px;color:#374151;text-align:center;">
-              <div style="font-size:9px;color:#9ca3af;">Tue 22 Apr</div>
-              <strong>3:00 PM</strong>
+            <div style="background:#fff;border:1.5px solid rgba(91,91,214,0.15);border-radius:8px;padding:8px 10px;font-size:10px;color:#3F3D5C;text-align:center;">
+              <div style="font-size:9px;color:#8B82F0;">Tue 22 Apr</div>
+              <strong style="color:#0A0A14;">3:00 PM</strong>
             </div>
           </div>
-          <!-- Name field (pre-filled) -->
-          <div style="font-size:10px;color:#374151;font-weight:500;margin-bottom:3px;">Your name</div>
-          <div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:5px;padding:6px 9px;font-size:11px;color:#374151;margin-bottom:8px;">Rachel Adams</div>
-          <!-- Email field (pre-filled) -->
-          <div style="font-size:10px;color:#374151;font-weight:500;margin-bottom:3px;">Your email</div>
-          <div style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:5px;padding:6px 9px;font-size:11px;color:#374151;margin-bottom:12px;">rachel@acmecorp.com</div>
-          <!-- Confirm button -->
-          <div style="background:#4F46E5;border-radius:7px;padding:10px;text-align:center;">
+          <div style="background:#fff;border:1px solid rgba(91,91,214,0.2);border-radius:8px;padding:7px 10px;font-size:11px;color:#3F3D5C;margin-bottom:8px;">Rachel Adams</div>
+          <div style="background:#fff;border:1px solid rgba(91,91,214,0.2);border-radius:8px;padding:7px 10px;font-size:11px;color:#3F3D5C;margin-bottom:12px;">rachel@acmecorp.com</div>
+          <div style="background:#5B5BD6;border-radius:8px;padding:10px;text-align:center;">
             <span style="font-size:12px;color:#fff;font-weight:600;">Confirm booking</span>
           </div>
         </div>
       </div>
     </div>
-    </div>
   </section>
 
   {# ── Layer 3: Automation Studio ─────────────────────────────── #}
-  <section id="automation" class="marketing-card space-y-6 marketing-section">
-    <div class="space-y-2">
-      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-300 px-3 py-1 text-xs font-semibold">
-        Layer 3 &bull; Automation Studio
-      </div>
-      <h2 class="text-2xl font-semibold text-white">Rules that fire on what the AI decided — not just keywords</h2>
-    </div>
-    <div class="grid lg:grid-cols-2 gap-8">
+  <section id="automation" class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+    <div class="space-y-6">
       <div class="space-y-3">
-        <h3 class="font-semibold text-white">Example rules teams use on day one</h3>
-        {% set rules = [
-          ("If billing and any urgency", "Forward to billing@, label Billing"),
-          ("If support and urgent", "Label Urgent, notify #support on Slack"),
-          ("If sales inquiry", "Assign to sales@, create CRM task"),
-          ("If transactional (receipt, invoice)", "Archive immediately — zero inbox noise"),
-          ("If spam or promotional", "Archive, never show in queue"),
-          ("If sentiment is frustrated", "Flag for founder review before any reply"),
-        ] %}
-        {% for condition, action in rules %}
-        <div class="flex gap-3 bg-slate-800/60 rounded-lg p-3">
-          <div class="flex-1">
-            <p class="text-slate-300 text-xs font-mono"><span class="text-indigo-400">WHEN</span> {{ condition }}</p>
-            <p class="text-slate-300 text-xs font-mono mt-1"><span class="text-green-400">THEN</span> {{ action }}</p>
-          </div>
-        </div>
-        {% endfor %}
+        <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Layer 3 &bull; Automation Studio</span>
+        <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Rules that fire on what the AI decided — not just keywords</h2>
       </div>
-      <div class="space-y-4">
-        <p class="text-slate-200 leading-relaxed">
-          Traditional email rules match on sender or subject line. InboxIQ rules trigger on triage output:
-          intent, urgency, sentiment, and category. Write rules in plain English — the model converts them.
-        </p>
-        <ul class="space-y-2 text-slate-200 text-sm leading-relaxed">
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Natural-language rule builder</strong> — "If support and urgent, notify Slack #oncall"</span></li>
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Trigger on triage output</strong> — intent, urgency, category, sentiment</span></li>
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Actions</strong> — label, archive, forward, assign, webhook, draft, reply with template</span></li>
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Audit trail</strong> — every execution logged with the AI decision that triggered it</span></li>
-        </ul>
+      <p class="text-brand-ink-soft leading-[1.38]">
+        Traditional email rules match on sender or subject line. InboxIQ rules trigger on triage output:
+        intent, urgency, sentiment, and category. Write rules in plain English.
+      </p>
+      <ul class="space-y-3 text-brand-ink-soft text-sm leading-relaxed">
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">Natural-language rule builder</strong> — "If support and urgent, notify Slack #oncall"</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">Actions</strong> — label, archive, forward, assign, webhook, draft, reply with template</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">Audit trail</strong> — every execution logged with the AI decision that triggered it</span></li>
+      </ul>
+    </div>
+    <div class="space-y-4">
+      <div class="rounded-2xl overflow-hidden shadow-[0_2px_24px_rgba(91,91,214,0.10)] border border-brand-accent/10">
+        <img src="{{ url_for('static', filename='img/brand/features-automation-rules.png') }}"
+             alt="Open notebook with hand-drawn flowchart — representing automation rule design"
+             class="w-full block">
+      </div>
+      <div class="bg-brand-lavender rounded-xl p-4 space-y-2">
+        <p class="text-brand-ink-soft text-xs font-mono"><span class="text-brand-accent font-semibold">WHEN</span> support and urgent &nbsp;<span class="text-brand-success font-semibold">THEN</span> notify Slack #oncall</p>
+        <p class="text-brand-ink-soft text-xs font-mono"><span class="text-brand-accent font-semibold">WHEN</span> sentiment is frustrated &nbsp;<span class="text-brand-success font-semibold">THEN</span> flag for founder review</p>
+        <p class="text-brand-ink-soft text-xs font-mono"><span class="text-brand-accent font-semibold">WHEN</span> transactional &nbsp;<span class="text-brand-success font-semibold">THEN</span> archive silently</p>
       </div>
     </div>
   </section>
 
   {# ── Layer 4: Multi-inbox ──────────────────────────────────── #}
-  <section id="multi-inbox" class="space-y-6 marketing-section">
-    <div class="space-y-2">
-      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-300 px-3 py-1 text-xs font-semibold">
-        Layer 4 &bull; Multi-Inbox &amp; Teams
+  <section id="multi-inbox" class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+    <div class="bg-white rounded-2xl border border-brand-accent/10 p-8 space-y-5 order-2 lg:order-1">
+      <h3 class="font-semibold text-brand-ink">Why per-inbox beats per-seat</h3>
+      <p class="text-brand-ink-soft text-sm leading-relaxed">
+        A 10-person team where only 4 people get meaningful email volume pays for 4 inboxes, not 10 seats.
+      </p>
+      <div>
+        <div class="flex justify-between text-sm py-3 border-b border-brand-accent/10">
+          <span class="text-brand-ink-soft">Competing tool (10 seats &times; &pound;15)</span>
+          <span class="text-brand-ink font-semibold">&pound;150/mo</span>
+        </div>
+        <div class="flex justify-between text-sm py-3">
+          <span class="text-brand-ink-soft">InboxIQ Business (4 active inboxes)</span>
+          <span class="text-brand-accent font-semibold">&pound;149/mo</span>
+        </div>
       </div>
-      <h2 class="text-2xl font-semibold text-white">One invite link. Every inbox connected.</h2>
+      <p class="text-brand-ink-soft/60 text-xs">InboxIQ includes AI triage, draft replies, and automation. The competing tool does not.</p>
     </div>
-    <div class="grid lg:grid-cols-2 gap-8">
-    <div class="space-y-4">
-      <p class="text-slate-200 leading-relaxed">
-        InboxIQ isn't a shared inbox — it augments each person's <em>own</em> inbox.
+    <div class="space-y-6 order-1 lg:order-2">
+      <div class="space-y-3">
+        <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Layer 4 &bull; Multi-Inbox &amp; Teams</span>
+        <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">One invite link. Every inbox connected.</h2>
+      </div>
+      <p class="text-brand-ink-soft leading-[1.38]">
+        InboxIQ augments each person's own inbox — not a shared inbox.
         Share a single invite link and every teammate connects their Gmail or Outlook in under two minutes.
-        Each inbox is independently billed, independently configured, and privately processed.
       </p>
-      <ul class="space-y-2 text-slate-200 text-sm leading-relaxed">
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Multi-inbox invite link</strong> — one URL, unlimited teammates, each connects their own inbox</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Per-inbox pricing</strong> — pay only for active inboxes, not per seat or per user</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Cross-inbox visibility</strong> — see activity across all connected inboxes from one dashboard</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Independent configs</strong> — each inbox can have different automation rules and KB sources</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">No migration, ever</strong> — inboxes stay in Gmail/Outlook where your team already works</span></li>
+      <ul class="space-y-3 text-brand-ink-soft text-sm leading-relaxed">
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">Multi-inbox invite link</strong> — one URL, each teammate connects their own inbox</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">Per-inbox pricing</strong> — pay only for active inboxes, not per seat</span></li>
+        <li class="flex gap-3"><span class="text-brand-accent mt-0.5 font-bold shrink-0">&#10003;</span><span><strong class="text-brand-ink">No migration, ever</strong> — inboxes stay in Gmail/Outlook where your team already works</span></li>
       </ul>
-    </div>
-    <div class="marketing-card space-y-4">
-      <h3 class="font-semibold text-white">Why per-inbox beats per-seat</h3>
-      <p class="text-slate-300 text-sm leading-relaxed">
-        Most tools charge per seat regardless of activity. InboxIQ charges per active inbox —
-        so a 10-person team where only 4 people get meaningful email volume pays for 4 inboxes,
-        not 10 seats.
-      </p>
-      <div class="space-y-2">
-        <div class="flex justify-between text-sm py-2 border-b border-slate-700">
-          <span class="text-slate-400">Competing tool (10 seats × £15/seat)</span>
-          <span class="text-slate-300 font-semibold">£150/mo</span>
-        </div>
-        <div class="flex justify-between text-sm py-2 border-b border-slate-700">
-          <span class="text-slate-400">InboxIQ Business (4 active inboxes)</span>
-          <span class="text-indigo-300 font-semibold">£149/mo</span>
-        </div>
-        <p class="text-slate-400 text-xs pt-1">Same cost — but InboxIQ includes AI triage, draft replies, and automation. The competing tool does not.</p>
-      </div>
-    </div>
     </div>
   </section>
 
   {# ── Layer 5: Analytics ────────────────────────────────────── #}
-  <section id="analytics" class="space-y-6 marketing-section">
-    <div class="space-y-2">
-      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-300 px-3 py-1 text-xs font-semibold">
-        Layer 5 &bull; Analytics
-      </div>
-      <h2 class="text-2xl font-semibold text-white">Know exactly what your inbox is costing you</h2>
-    </div>
-    <div class="grid lg:grid-cols-2 gap-8">
-      <div class="marketing-card space-y-4">
-        <h3 class="font-semibold text-white">Dashboard metrics at a glance</h3>
-        <ul class="space-y-2 text-slate-300 text-sm leading-relaxed">
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Top topics this week (clustered from real email subjects)</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Action required vs auto-handled breakdown</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Urgent email count and average response time</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Triage accuracy (based on your feedback corrections)</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Automation rule execution history</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> KB article usage in drafts (spot documentation gaps)</li>
-        </ul>
-      </div>
-      <div class="space-y-4">
-        <p class="text-slate-200 leading-relaxed">
-          The dashboard shows you what your team is actually spending time on —
-          broken down by topic, intent, and urgency. Use it to prioritise hiring,
-          update your KB, or decide which automation rules to build next.
-        </p>
-        <p class="text-slate-300 leading-relaxed text-sm">
-          Top Topics clusters email subjects by semantic similarity — so "payment failed", "billing issue",
-          and "can't charge my card" surface as one topic, not three.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  {# ── Learning / Feedback loop ──────────────────────────────── #}
-  <section class="marketing-card space-y-6 marketing-section border border-indigo-500/20">
-    <div class="space-y-2">
-      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-300 px-3 py-1 text-xs font-semibold">
-        InboxIQ &bull; Gets Smarter Over Time
-      </div>
-      <h2 class="text-2xl font-semibold text-white">Correct a label once. It never makes that mistake again.</h2>
-    </div>
-    <div class="grid lg:grid-cols-2 gap-8 items-center">
-      <div class="space-y-4">
-        <p class="text-slate-200 leading-relaxed">
-          Every time you correct a triage decision — changing a label, adjusting a priority, rejecting a draft —
-          InboxIQ learns from it immediately. The model updates and applies the correction
-          to similar emails from that moment forward.
-        </p>
-        <ul class="space-y-2 text-slate-200 text-sm leading-relaxed">
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">One-click corrections</strong> — fix any label, urgency, or category from your inbox or dashboard</span></li>
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Immediate effect</strong> — the correction applies on the next similar email, not after a training cycle</span></li>
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Learns your patterns</strong> — adapts to your specific senders, tone, and business context over time</span></li>
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Draft feedback loop</strong> — accept or reject a draft reply; both signals improve future drafts</span></li>
-          <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span><strong class="text-white">Per-account learning</strong> — your corrections only improve your model, never shared with other accounts</span></li>
-        </ul>
-      </div>
+  <section id="analytics" class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+    <div class="space-y-6">
       <div class="space-y-3">
-        <h3 class="font-semibold text-white text-sm">How a correction flows back into the model</h3>
-        {% set loop_steps = [
-          ("InboxIQ labels an email InboxIQ/Promotions", "AI decision"),
-          ("You correct it to InboxIQ/Support — one click", "Your correction"),
-          ("Sender pattern, subject, and intent signal are recorded", "Learning captured"),
-          ("Next similar email from that sender is labelled correctly", "Applied automatically"),
-          ("Triage accuracy score rises in your dashboard", "Measurable improvement"),
-        ] %}
-        {% for step, label in loop_steps %}
-        <div class="flex gap-3 items-start">
-          <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-indigo-500/20 text-indigo-300 whitespace-nowrap mt-0.5">{{ label }}</span>
-          <p class="text-slate-300 text-sm leading-relaxed">{{ step }}</p>
-        </div>
-        {% endfor %}
+        <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Layer 5 &bull; Analytics</span>
+        <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Know exactly what your inbox is costing you</h2>
       </div>
-    </div>
-  </section>
-
-  {# ── Differentiator table ──────────────────────────────────── #}
-  <section class="space-y-6 marketing-section">
-    <div class="space-y-2">
-      <h2 class="text-2xl font-semibold text-white">How InboxIQ compares</h2>
-      <p class="text-slate-300 leading-relaxed">
-        Most alternatives require you to move email into a new tool. InboxIQ stays inside your existing inbox.
+      <p class="text-brand-ink-soft leading-[1.38]">
+        The dashboard shows what your team actually spends time on — broken down by topic, intent,
+        and urgency. Use it to prioritise hiring, update your KB, or decide which automation rules to build next.
+      </p>
+      <p class="text-brand-ink-soft text-sm leading-relaxed">
+        Top Topics clusters email subjects by semantic similarity — so "payment failed", "billing issue",
+        and "can't charge my card" surface as one topic, not three.
       </p>
     </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-slate-700">
-            <th class="text-left py-3 pr-4 text-slate-400 font-medium w-48">Feature</th>
-            <th class="text-center py-3 px-3 text-indigo-300 font-semibold">InboxIQ</th>
-            <th class="text-center py-3 px-3 text-slate-400 font-medium">Superhuman</th>
-            <th class="text-center py-3 px-3 text-slate-400 font-medium">Help Scout AI</th>
-            <th class="text-center py-3 px-3 text-slate-400 font-medium">Front AI</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-800">
-          {% set comparisons = [
-            ("Works inside Gmail / Outlook", True, True, False, False),
-            ("No inbox migration required", True, True, False, False),
-            ("AI triage + urgency detection", True, False, True, True),
-            ("KB-grounded draft replies", True, False, True, True),
-            ("Post-triage automation rules", True, False, True, True),
-            ("Multi-inbox invite link", True, False, False, False),
-            ("Per-inbox pricing (not per-seat)", True, False, False, False),
-            ("Audit trail of AI decisions", True, False, True, False),
-            ("AI meeting scheduling from email", True, False, False, False),
-            ("Human always sends (no auto-send)", True, True, False, "Optional"),
-          ] %}
-          {% for row in comparisons %}
-          <tr>
-            <td class="py-3 pr-4 text-slate-300">{{ row[0] }}</td>
-            {% for val in row[1:] %}
-            <td class="py-3 px-3 text-center">
-              {% if val == True %}
-                <span class="text-green-400 font-semibold">&#10003;</span>
-              {% elif val == False %}
-                <span class="text-slate-600">&mdash;</span>
-              {% else %}
-                <span class="text-slate-400 text-xs">{{ val }}</span>
-              {% endif %}
-            </td>
-            {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="bg-white rounded-2xl border border-brand-accent/10 p-8 space-y-3">
+      <h3 class="font-semibold text-brand-ink mb-5">Dashboard metrics at a glance</h3>
+      {% set metrics = [
+        "Top topics this week (clustered from real email subjects)",
+        "Action required vs auto-handled breakdown",
+        "Urgent email count and average response time",
+        "Triage accuracy based on your feedback corrections",
+        "KB article usage in drafts — spot documentation gaps",
+      ] %}
+      {% for m in metrics %}
+      <div class="flex gap-3 items-baseline">
+        <span class="text-brand-accent font-bold shrink-0">&rsaquo;</span>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">{{ m }}</p>
+      </div>
+      {% endfor %}
     </div>
-    <p class="text-slate-500 text-xs">Based on public documentation as of 2025. Features may vary by plan.</p>
+  </section>
+
+  {# ── Comparison table ──────────────────────────────────────── #}
+  <section class="space-y-8">
+    <div class="space-y-3">
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">How InboxIQ compares</h2>
+      <p class="text-brand-ink-soft leading-[1.38]">Most alternatives require you to move email into a new tool. InboxIQ stays inside your existing inbox.</p>
+    </div>
+    <div class="bg-white rounded-2xl border border-brand-accent/10 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-brand-accent/10">
+              <th class="text-left py-4 px-6 text-brand-ink-soft font-medium w-48">Feature</th>
+              <th class="text-center py-4 px-4 text-brand-accent font-semibold">InboxIQ</th>
+              <th class="text-center py-4 px-4 text-brand-ink-soft font-medium">Superhuman</th>
+              <th class="text-center py-4 px-4 text-brand-ink-soft font-medium">Help Scout AI</th>
+              <th class="text-center py-4 px-4 text-brand-ink-soft font-medium">Front AI</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set comparisons = [
+              ("Works inside Gmail / Outlook", True, True, False, False),
+              ("No inbox migration required", True, True, False, False),
+              ("AI triage + urgency detection", True, False, True, True),
+              ("KB-grounded draft replies", True, False, True, True),
+              ("Post-triage automation rules", True, False, True, True),
+              ("Multi-inbox invite link", True, False, False, False),
+              ("Per-inbox pricing (not per-seat)", True, False, False, False),
+              ("AI meeting scheduling from email", True, False, False, False),
+              ("Human always sends (no auto-send)", True, True, False, "Optional"),
+            ] %}
+            {% for row in comparisons %}
+            <tr class="border-b border-brand-accent/5 last:border-0">
+              <td class="py-3.5 px-6 text-brand-ink-soft">{{ row[0] }}</td>
+              {% for val in row[1:] %}
+              <td class="py-3.5 px-4 text-center">
+                {% if val == True %}
+                  <span class="text-brand-success font-semibold">&#10003;</span>
+                {% elif val == False %}
+                  <span class="text-brand-ink-soft/25">&mdash;</span>
+                {% else %}
+                  <span class="text-brand-ink-soft/70 text-xs">{{ val }}</span>
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="text-brand-ink-soft/40 text-xs">Based on public documentation as of 2025. Features may vary by plan.</p>
   </section>
 
   {# ── Who it's for ─────────────────────────────────────────── #}
-  <section class="marketing-card space-y-6 marketing-section">
-    <h2 class="text-2xl font-semibold text-white">Built for founders and ops leads at growing B2B SaaS companies</h2>
-    <div class="grid sm:grid-cols-3 gap-6">
-      <div class="space-y-2">
-        <h3 class="font-semibold text-white">You're the right fit if&hellip;</h3>
-        <ul class="space-y-1 text-slate-300 text-sm leading-relaxed">
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> You handle 50–300 emails per week</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> 40%+ are repetitive (support, billing, onboarding)</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> You've rejected Zendesk and Intercom as too heavy</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Your team lives in Gmail or Outlook already</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> You want AI to assist, not take over</li>
+  <section class="bg-white rounded-2xl border border-brand-accent/10 p-8 lg:p-12 space-y-8">
+    <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Built for founders and ops leads at growing B2B SaaS companies</h2>
+    <div class="grid sm:grid-cols-3 gap-8">
+      <div class="space-y-3">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-accent">You're the right fit if&hellip;</p>
+        <ul class="space-y-2 text-brand-ink-soft text-sm leading-relaxed">
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> You handle 50–300 emails per week</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> 40%+ are repetitive (support, billing, onboarding)</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> You've rejected Zendesk/Intercom as too heavy</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> Your team lives in Gmail or Outlook already</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> You want AI to assist, not take over</li>
         </ul>
       </div>
-      <div class="space-y-2">
-        <h3 class="font-semibold text-white">Common titles</h3>
-        <ul class="space-y-1 text-slate-300 text-sm leading-relaxed">
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Founder / Co-founder</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Head of Operations</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Customer Success Lead</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Support Manager (small team)</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Technical founder wearing ops hat</li>
+      <div class="space-y-3">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Common titles</p>
+        <ul class="space-y-2 text-brand-ink-soft text-sm leading-relaxed">
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> Founder / Co-founder</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> Head of Operations</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> Customer Success Lead</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> Support Manager (small team)</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> Technical founder wearing ops hat</li>
         </ul>
       </div>
-      <div class="space-y-2">
-        <h3 class="font-semibold text-white">Typical team size</h3>
-        <ul class="space-y-1 text-slate-300 text-sm leading-relaxed">
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> 5–50 people</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> $500K–$5M ARR</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> No dedicated support team yet</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> 1–3 inboxes handling customer email</li>
-          <li class="flex gap-2"><span class="text-indigo-400">&#8250;</span> Post product-market fit, scaling ops</li>
+      <div class="space-y-3">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Typical team size</p>
+        <ul class="space-y-2 text-brand-ink-soft text-sm leading-relaxed">
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> 5–50 people</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> $500K–$5M ARR</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> No dedicated support team yet</li>
+          <li class="flex gap-2"><span class="text-brand-accent shrink-0">&rsaquo;</span> 1–3 inboxes handling customer email</li>
         </ul>
       </div>
     </div>
   </section>
 
-  {# ── CTA ──────────────────────────────────────────────────── #}
-  <section class="bg-indigo-600 text-white rounded-2xl p-8 space-y-4 marketing-section">
-    <h2 class="text-2xl font-semibold">Stop spending your mornings sorting email</h2>
-    <p class="text-indigo-100 leading-relaxed max-w-xl">
-      Connect your Gmail or Outlook in under two minutes. InboxIQ starts triaging immediately
-      — no training data required, no configuration needed to get started.
-    </p>
-    <div class="flex flex-wrap gap-3">
-      <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition">
-        Connect your inbox free
-      </a>
-      <a href="{{ url_for('pricing_page') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-indigo-300 text-white font-semibold hover:bg-indigo-500 transition">
-        View pricing
-      </a>
+  {# ── CTA with brand image background ──────────────────────── #}
+  <section class="relative overflow-hidden rounded-3xl">
+    <img src="{{ url_for('static', filename='img/brand/features-calm-inbox.png') }}"
+         alt="" aria-hidden="true"
+         class="absolute inset-0 w-full h-full object-cover object-center">
+    <div class="absolute inset-0 bg-brand-ink/65"></div>
+    <div class="relative py-20 px-8 sm:px-16 text-center text-white space-y-6">
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight leading-[1.04]">Stop spending your mornings sorting email</h2>
+      <p class="text-white/70 leading-[1.38] max-w-xl mx-auto">
+        Connect your Gmail or Outlook in under two minutes. InboxIQ starts triaging immediately —
+        no training data required, no configuration needed to get started.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-white text-brand-accent font-semibold hover:bg-brand-lavender transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-ink">
+          Connect your inbox free
+        </a>
+        <a href="{{ url_for('pricing_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl border border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">
+          View pricing
+        </a>
+      </div>
+      <p class="text-white/40 text-sm">No credit card required &bull; Works with Gmail and Outlook &bull; Cancel any time</p>
     </div>
-    <p class="text-indigo-200 text-sm">No credit card required &bull; Works with Gmail and Outlook &bull; Cancel any time</p>
   </section>
 
 </div>
