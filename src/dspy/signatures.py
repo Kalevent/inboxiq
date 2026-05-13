@@ -929,6 +929,63 @@ class YouTubeVideoSocialCaption:
     pass
 
 
+class ReelStoryboard(dspy.Signature):
+    """
+    Write a 5-scene storyboard for a voice-free product Reel.
+
+    Two scene types:
+    - "asset": AI-generated scene image + punchy copy. For emotional/narrative moments.
+    - "clip": trimmed segment from a real product demo video. For proof moments.
+
+    Story arc (exactly 5 scenes):
+    1. HOOK    (asset) — ≤5 words naming the exact pain. Viewer thinks "that's me."
+    2. AGITATE (asset) — the real human cost. Specific and felt. No product mention.
+    3. PROOF   (clip)  — the product doing the thing. Show don't tell.
+    4. PROOF   (clip)  — another product moment. The outcome becoming clear.
+    5. CTA     (asset) — exactly this text: "Try free at kalevent.com"
+
+    Copy rules (text_overlay for asset scenes):
+    - 3–6 words. Sentence case. Question marks ok. No other punctuation.
+    - Human, not marketer. Write like a friend describing the pain.
+    - Bad: "Streamline your scheduling workflow"
+    - Good: "5 emails. Still no meeting."
+
+    Image concept rules (image_concept for asset scenes):
+    - Describe what the VIEWER SHOULD FEEL, not what should be on screen.
+    - Scene 1 (HOOK): show the frustration — a person overwhelmed by email chains
+    - Scene 2 (AGITATE): show the cost — a missed opportunity, a wasted afternoon
+    - Scene 5 (CTA): show the relief — a clean inbox, a calm moment, a done feeling
+    - Style: editorial photography aesthetic, natural light, real human, single focal point
+    - No UI screenshots, no device mockups, no floating app windows
+
+    Clip rules:
+    - start_s / end_s: pick moments where the key action is clearly visible (5–10s each)
+    - text_overlay: what the viewer is seeing, ≤6 words, no hype
+    """
+    pain_point: str = dspy.InputField(desc="ICP pain point being solved")
+    platform: str = dspy.InputField(desc="instagram | tiktok | linkedin | facebook")
+    target_duration_s: int = dspy.InputField(desc="Target total duration in seconds (15–90)")
+    available_assets: str = dspy.InputField(
+        desc="Comma-separated list of fallback brand image filenames (without extension)"
+    )
+    available_demo_videos: str = dspy.InputField(
+        desc=(
+            "JSON list of {filename, description, segments} where segments is a list of "
+            "{start_s, end_s, label}. You MUST only pick start_s/end_s values from within "
+            "these declared segments — do not invent timestamps outside them."
+        )
+    )
+    scenes: list = dspy.OutputField(
+        desc=(
+            "JSON list of exactly 5 scene dicts. "
+            "Asset scene: {type:'asset', image_concept:str, text_overlay:str, duration_s:int}. "
+            "image_concept is a vivid 1-2 sentence description for an AI image generator — "
+            "describe the emotional scene, NOT a brand asset filename. "
+            "Clip scene: {type:'clip', video_file:str, start_s:int, end_s:int, text_overlay:str}."
+        )
+    )
+
+
 class LinkedInUrlSelection(dspy.Signature):
     """
     Pick the LinkedIn profile URL that belongs to the named lead at the named company.

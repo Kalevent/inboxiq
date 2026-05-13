@@ -190,6 +190,7 @@ def _safe_json(val: Any) -> Dict[str, Any]:
         return {}
 
 
+
 def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> TriageDecision:
     normalized = normalize_email_payload(email)
     account_id = account_id or email.get("account_id")
@@ -310,8 +311,6 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
     except Exception as exc:
         logging.getLogger(__name__).warning("dspy triage failed: %s", exc)
         raise RuntimeError("DSPy triage failed.") from exc
-
-    raise RuntimeError("DSPy triage required and did not complete.")
 
 
 def sample_messages() -> List[Dict[str, str]]:

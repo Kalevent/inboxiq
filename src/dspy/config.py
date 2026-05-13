@@ -78,10 +78,42 @@ def get_current_model_id() -> Optional[str]:
     return f"{prefix}/{model}"
 
 
+def get_provider_chain() -> list[str]:
+    """
+    Returns [primary, ...fallbacks] of provider names to try in order.
+    Fallbacks are set via DSPY_FALLBACK_PROVIDERS=anthropic,gemini
+    Only includes providers that have their required API key present.
+    """
+    primary = os.getenv("DSPY_PROVIDER", "").strip().lower()
+    if not primary:
+        for p in ("openai", "anthropic", "gemini", "ollama"):
+            cfg = SUPPORTED_PROVIDERS[p]
+            key = cfg.get("api_key")
+            if (key and os.getenv(key)) or (p == "ollama" and os.getenv("OLLAMA_BASE_URL")):
+                primary = p
+                break
+
+    fallback_str = os.getenv("DSPY_FALLBACK_PROVIDERS", "").strip()
+    fallbacks = [p.strip().lower() for p in fallback_str.split(",") if p.strip()] if fallback_str else []
+
+    chain = [primary] + [p for p in fallbacks if p != primary]
+    # Filter to providers that are actually configured
+    def _has_credentials(p: str) -> bool:
+        cfg = SUPPORTED_PROVIDERS.get(p, {})
+        key = cfg.get("api_key")
+        if p == "ollama":
+            return bool(os.getenv("OLLAMA_BASE_URL"))
+        return bool(key and os.getenv(key))
+
+    return [p for p in chain if p and p in SUPPORTED_PROVIDERS and _has_credentials(p)]
+
+
 def configure_dspy(
     byol_config: Optional[Dict[str, Any]] = None,
     max_tokens: int = 300,
     temperature: float = 0.2,
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
 ) -> tuple[str, str, Any]:
     """
     Configure DSPy with the appropriate LLM provider.
@@ -116,7 +148,8 @@ def configure_dspy(
     if byol_config:
         return _configure_dspy_byol(dspy, byol_config)
 
-    provider = os.getenv("DSPY_PROVIDER", "").strip().lower()
+    if provider is None:
+        provider = os.getenv("DSPY_PROVIDER", "").strip().lower()
 
     # Auto-detect provider from legacy env vars or API keys if not explicitly set
     if not provider:
@@ -142,7 +175,8 @@ def configure_dspy(
         )
 
     # Get model (use provider default if not specified)
-    model = os.getenv("DSPY_MODEL") or DEFAULT_MODELS.get(provider, "gpt-4o-mini")
+    if model is None:
+        model = os.getenv("DSPY_MODEL") or DEFAULT_MODELS.get(provider, "gpt-4o-mini")
     provider_config = SUPPORTED_PROVIDERS[provider]
     prefix = provider_config["prefix"]
 

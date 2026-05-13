@@ -15,7 +15,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, Tuple
 
-from src.dspy.config import configure_dspy
+from src.dspy.config import configure_dspy, get_provider_chain
 from src.dspy.cache import _load_compiled_module
 from src.dspy.email_detection import detect_email_type, NON_ACTIONABLE_EMAIL_TYPES
 from src.dspy.formatting import format_payload, decision_outcome
@@ -52,6 +52,34 @@ _COST_PER_1M: Dict[str, Tuple[float, float]] = {
     "gemini-1.5-pro": (1.25, 5.00),
     "gemini-2.0-flash": (0.10, 0.40),
 }
+
+
+def _is_quota_error(exc: Exception) -> bool:
+    s = f"{type(exc).__name__} {exc}".lower()
+    return any(k in s for k in ("ratelimit", "insufficient_quota", "quota_exceeded", "429"))
+
+
+def _try_with_provider_failover(call_fn):
+    """
+    Call call_fn(). On quota/rate-limit error, reconfigure DSPy with the next
+    provider in the chain and retry. Raises if all providers are exhausted.
+    """
+    chain = get_provider_chain()
+    last_exc: Exception | None = None
+
+    for idx, provider in enumerate(chain):
+        if idx > 0:
+            logger.warning("DSPy provider %s unavailable, retrying with %s", chain[idx - 1], provider)
+            configure_dspy(provider=provider)
+        try:
+            return call_fn()
+        except Exception as exc:
+            if _is_quota_error(exc) and idx < len(chain) - 1:
+                last_exc = exc
+                continue
+            raise
+
+    raise RuntimeError(f"All DSPy providers exhausted: {chain}") from last_exc
 
 
 def _compute_cost_usd(model_id: str, tokens_in: int, tokens_out: int) -> float:
@@ -213,13 +241,15 @@ def _run_dspy_triage_impl(
 
     # Run DSPy decision program
     try:
-        result = module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json, sender_hint=sender_hint, thread_history=thread_history_json)
+        result = _try_with_provider_failover(
+            lambda: module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json, sender_hint=sender_hint, thread_history=thread_history_json)
+        )
     except Exception as exc:
         logger.warning("DSPy decision program failed, falling back to compiled triage: %s", exc)
-        # Use compiled TriageModule if available (takes content= not case_json=),
-        # otherwise build a fresh one.
         fallback_module = compiled_module or build_triage_module(dspy, label_config)
-        triage_pred = fallback_module(content=prompt_payload)
+        triage_pred = _try_with_provider_failover(
+            lambda: fallback_module(content=prompt_payload)
+        )
         # Synthesize DecisionProgram-format JSON blobs from the flat TriageModule
         # fields so the rest of the pipeline parses them correctly.
         ar = str(getattr(triage_pred, "action_required", "optional")).lower().strip()
