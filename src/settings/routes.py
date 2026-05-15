@@ -1992,66 +1992,18 @@ def developer_post():
 
   action = (request.form.get("action") or "").strip()
 
-  # ── Submit access request ──────────────────────────────────────────────────
-  if action == "request_access":
-    full_name = (request.form.get("full_name") or "").strip()
-    company = (request.form.get("company") or "").strip()
-    use_case = (request.form.get("use_case") or "").strip()
-    callback_url = (request.form.get("callback_url") or "").strip()
-    agreed_tos = request.form.get("agreed_tos") == "1"
-    raw_scopes = request.form.getlist("scopes")
-    scopes = [s for s in raw_scopes if s in ALLOWED_SCOPES]
-
-    if not full_name or not company or not use_case or not scopes or not agreed_tos:
+  # ── Register new app ───────────────────────────────────────────────────────
+  if action == "register_app":
+    app_name = (request.form.get("app_name") or "").strip()
+    if not app_name:
+      registered_apps = RegisteredApp.query.filter_by(account_id=account_id).order_by(RegisteredApp.created_at.desc()).all()
       return _developer_page(
         account_id=account_id,
         account=account,
         developer_access_request=None,
-        registered_apps=[],
-        error="Please fill in all required fields and agree to the API Terms of Service.",
-        new_app=None,
-      )
-
-    existing = DeveloperAccessRequest.query.filter_by(account_id=account_id).first()
-    if existing:
-      return redirect(url_for("settings.settings_page", tab="developer"))
-
-    # Auto-approve when only low-risk scopes are requested
-    low_risk = {"intake:write"}
-    status = "approved" if set(scopes).issubset(low_risk) else "pending"
-
-    req = DeveloperAccessRequest(
-      account_id=account_id,
-      full_name=full_name,
-      company=company,
-      use_case=use_case,
-      scopes=scopes,
-      callback_url=callback_url or None,
-      agreed_tos=True,
-      status=status,
-    )
-    db.session.add(req)
-    db.session.commit()
-    current_app.logger.info(
-      f"DeveloperAccessRequest created account={account_id} status={status}"
-    )
-    return redirect(url_for("settings.settings_page", tab="developer"))
-
-  # ── Register new app ───────────────────────────────────────────────────────
-  if action == "register_app":
-    access_req = DeveloperAccessRequest.query.filter_by(
-      account_id=account_id, status="approved"
-    ).first()
-    if not access_req:
-      return redirect(url_for("settings.settings_page", tab="developer"))
-
-    app_name = (request.form.get("app_name") or "").strip()
-    if not app_name:
-      return _developer_page(
-        account_id=account_id,
-        account=account,
-        developer_access_request=access_req,
-        registered_apps=RegisteredApp.query.filter_by(account_id=account_id).order_by(RegisteredApp.created_at.desc()).all(),
+        registered_apps=registered_apps,
+        selected_app=registered_apps[0] if registered_apps else None,
+        product_accesses={},
         error="App name is required.",
         new_app=None,
       )
@@ -2059,15 +2011,19 @@ def developer_post():
     client_id = "iq_" + secrets.token_hex(16)
     client_secret_plain = secrets.token_hex(32)
 
-    app = RegisteredApp(
+    new_registered_app = RegisteredApp(
       account_id=account_id,
       name=app_name,
       client_id=client_id,
       client_secret_enc=encrypt_value(client_secret_plain),
-      scopes=access_req.scopes,
+      scopes=[],
     )
-    db.session.add(app)
-    db.session.commit()
+    try:
+      db.session.add(new_registered_app)
+      db.session.commit()
+    except Exception:
+      db.session.rollback()
+      raise
     current_app.logger.info(
       f"RegisteredApp created account={account_id} client_id={client_id}"
     )
@@ -2076,8 +2032,10 @@ def developer_post():
     return _developer_page(
       account_id=account_id,
       account=account,
-      developer_access_request=access_req,
+      developer_access_request=None,
       registered_apps=registered_apps,
+      selected_app=new_registered_app,
+      product_accesses={},
       error=None,
       new_app={"name": app_name, "client_id": client_id, "client_secret": client_secret_plain},
     )
@@ -2089,15 +2047,86 @@ def developer_post():
       app = RegisteredApp.query.filter_by(id=app_id, account_id=account_id).first()
       if app:
         app.status = "suspended"
-        db.session.commit()
+        try:
+          db.session.commit()
+        except Exception:
+          db.session.rollback()
+          raise
         current_app.logger.info(
           f"RegisteredApp revoked account={account_id} client_id={app.client_id}"
         )
 
+  # ── Request product access ─────────────────────────────────────────────────
+  if action == "request_product":
+    app_id = (request.form.get("app_id") or "").strip()
+    product_slug = (request.form.get("product_slug") or "").strip()
+    use_case = (request.form.get("use_case") or "").strip()
+
+    app = RegisteredApp.query.filter_by(id=app_id, account_id=account_id).first()
+    if not app or not product_slug:
+      return redirect(url_for("settings.settings_page", tab="developer"))
+
+    # Block duplicate requests
+    existing = AppProductAccess.query.filter_by(app_id=app_id, product_slug=product_slug).first()
+    if existing:
+      return redirect(url_for("settings.settings_page", tab="developer", app_id=app_id))
+
+    from src.developer.products import get_product_by_slug
+    product = get_product_by_slug(product_slug)
+    status = "approved" if (product and product.get("approval") == "auto") else "pending"
+
+    access = AppProductAccess(
+      app_id=app_id,
+      account_id=account_id,
+      product_slug=product_slug,
+      status=status,
+      use_case=use_case or None,
+    )
+    try:
+      db.session.add(access)
+      db.session.commit()
+    except Exception:
+      db.session.rollback()
+      raise
+    current_app.logger.info(
+      f"AppProductAccess created account={account_id} app={app_id} product={product_slug} status={status}"
+    )
+    return redirect(url_for("settings.settings_page", tab="developer", app_id=app_id))
+
+  # ── Update product webhook ─────────────────────────────────────────────────
+  if action == "update_webhook":
+    app_id = (request.form.get("app_id") or "").strip()
+    product_slug = (request.form.get("product_slug") or "").strip()
+    webhook_url = (request.form.get("webhook_url") or "").strip() or None
+
+    app = RegisteredApp.query.filter_by(id=app_id, account_id=account_id).first()
+    if not app:
+      return redirect(url_for("settings.settings_page", tab="developer"))
+
+    access = AppProductAccess.query.filter_by(app_id=app_id, product_slug=product_slug).first()
+    if not access or access.status != "approved":
+      return redirect(url_for("settings.settings_page", tab="developer", app_id=app_id))
+
+    # Basic URL validation
+    if webhook_url and not webhook_url.startswith(("https://", "http://")):
+      return redirect(url_for("settings.settings_page", tab="developer", app_id=app_id))
+
+    access.webhook_url = webhook_url
+    try:
+      db.session.commit()
+    except Exception:
+      db.session.rollback()
+      raise
+    current_app.logger.info(
+      f"AppProductAccess webhook updated account={account_id} app={app_id} product={product_slug}"
+    )
+    return redirect(url_for("settings.settings_page", tab="developer", app_id=app_id))
+
   return redirect(url_for("settings.settings_page", tab="developer"))
 
 
-def _developer_page(*, account_id, account, developer_access_request, registered_apps, error, new_app):
+def _developer_page(*, account_id, account, developer_access_request, registered_apps,
+                    selected_app=None, product_accesses=None, error, new_app):
   """Render the developer settings tab directly (used after form submission)."""
   from src.models.ai import MCPServerCatalog
   mcp_servers = MCPServerCatalog.query.filter_by(enabled=True).order_by(MCPServerCatalog.label.asc()).all()
@@ -2108,6 +2137,9 @@ def _developer_page(*, account_id, account, developer_access_request, registered
     account=account,
     developer_access_request=developer_access_request,
     registered_apps=registered_apps,
+    selected_app=selected_app,
+    product_accesses=product_accesses or {},
+    product_catalog=PRODUCT_CATALOG,
     mcp_servers=mcp_servers,
     developer_error=error,
     new_app=new_app,
