@@ -1,5 +1,6 @@
 import os
 import secrets
+import requests as requests_lib
 from datetime import datetime, timedelta
 from uuid import uuid4
 
@@ -2231,3 +2232,102 @@ def _developer_page(*, account_id, account, developer_access_request, registered
     gcal_connection=None,
     outlook_cal_connection=None,
   )
+
+
+_WEBHOOK_TEST_PAYLOADS = {
+  "chat": {
+    "event": "chat.message",
+    "data": {
+      "message": "Hello, this is a test message from a visitor.",
+      "session_id": "test_session_001",
+    },
+  },
+  "forms": {
+    "event": "form.submitted",
+    "data": {
+      "form_id": "contact_form",
+      "fields": {
+        "name": "Test User",
+        "email": "test@example.com",
+        "message": "This is a test form submission.",
+      },
+    },
+  },
+  "intake_api": {
+    "event": "intake.ticket",
+    "data": {
+      "ticket_id": "test_ticket_001",
+      "subject": "Test webhook delivery",
+      "body": "This is a test event from InboxIQ. Your webhook is working correctly.",
+      "priority": "normal",
+    },
+  },
+}
+
+
+@bp.route("/settings/developer/test-webhook", methods=["POST"])
+@login_required_settings
+def developer_test_webhook():
+  """Return JSON result of firing a synthetic event at the product webhook URL."""
+  import time
+  from datetime import timezone
+
+  account_id = getattr(g, "current_account_id", None)
+  if not account_id:
+    return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+  body = request.get_json(silent=True) or {}
+  app_id = (body.get("app_id") or "").strip()
+  product_slug = (body.get("product_slug") or "").strip()
+
+  if not app_id or not product_slug:
+    return jsonify({"ok": False, "error": "app_id and product_slug required"}), 400
+
+  app = RegisteredApp.query.filter_by(id=app_id, account_id=account_id).first()
+  if not app:
+    return jsonify({"ok": False, "error": "app not found"}), 404
+
+  access = AppProductAccess.query.filter_by(
+    app_id=app_id, product_slug=product_slug, status="approved"
+  ).first()
+  if not access:
+    return jsonify({"ok": False, "error": "product not approved"}), 400
+
+  if not access.webhook_url:
+    return jsonify({"ok": False, "error": "no webhook URL configured"}), 400
+
+  template = _WEBHOOK_TEST_PAYLOADS.get(product_slug, {
+    "event": f"{product_slug}.test",
+    "data": {},
+  })
+  payload = {
+    **template,
+    "app_id": app.client_id,
+    "account_id": account_id,
+    "timestamp": datetime.now(timezone.utc).isoformat(),
+    "test": True,
+  }
+
+  start = time.monotonic()
+  try:
+    resp = requests_lib.post(
+      access.webhook_url,
+      json=payload,
+      timeout=5,
+      allow_redirects=False,
+      headers={"User-Agent": "InboxIQ-Webhook/1.0"},
+    )
+    latency_ms = int((time.monotonic() - start) * 1000)
+    return jsonify({
+      "ok": True,
+      "status_code": resp.status_code,
+      "body": resp.text[:500],
+      "latency_ms": latency_ms,
+    })
+  except requests_lib.exceptions.Timeout:
+    return jsonify({"ok": False, "error": "timeout", "latency_ms": 5000})
+  except requests_lib.exceptions.ConnectionError as e:
+    return jsonify({"ok": False, "error": f"connection_error: {str(e)[:120]}"})
+  except Exception as e:
+    current_app.logger.error(f"test_webhook error account={account_id} app={app_id}: {e}")
+    return jsonify({"ok": False, "error": "internal_error"}), 500

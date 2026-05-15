@@ -400,3 +400,80 @@ def test_update_origins_rejects_http_origins(client):
 
     # http:// origin must be silently dropped
     assert mock_app.allowed_origins == []
+
+
+def test_test_webhook_returns_json_with_status(client):
+    mock_account = _mock_account()
+    mock_app = MagicMock()
+    mock_app.id = "app-1"
+    mock_app.account_id = 1
+    mock_app.client_id = "iq_abc"
+
+    mock_access = MagicMock()
+    mock_access.status = "approved"
+    mock_access.webhook_url = "https://example.com/hook"
+
+    mock_user = MagicMock()
+    mock_user.id = 1
+    mock_user.email = "test@example.com"
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.text = '{"ok": true}'
+
+    with patch("src.settings.verify_jwt_in_request"), \
+         patch("src.settings.get_jwt", return_value={"account_id": "1"}), \
+         patch("src.settings.get_jwt_identity", return_value="1"), \
+         patch("src.settings.db") as mock_settings_db, \
+         patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.Account") as MockAccount, \
+         patch("src.settings.routes.RegisteredApp") as MockApp, \
+         patch("src.settings.routes.AppProductAccess") as MockAccess, \
+         patch("src.settings.routes.requests_lib") as mock_requests:
+        mock_settings_db.session.get.return_value = mock_user
+        MockAccount.query.get.return_value = mock_account
+        MockApp.query.filter_by.return_value.first.return_value = mock_app
+        MockAccess.query.filter_by.return_value.first.return_value = mock_access
+        mock_requests.post.return_value = mock_response
+
+        resp = client.post("/settings/developer/test-webhook",
+                           json={"app_id": "app-1", "product_slug": "chat"})
+
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["ok"] is True
+    assert data["status_code"] == 200
+
+
+def test_test_webhook_returns_error_when_no_webhook_url(client):
+    mock_account = _mock_account()
+    mock_app = MagicMock()
+    mock_app.id = "app-1"
+    mock_app.account_id = 1
+
+    mock_access = MagicMock()
+    mock_access.status = "approved"
+    mock_access.webhook_url = None
+
+    mock_user = MagicMock()
+    mock_user.id = 1
+    mock_user.email = "test@example.com"
+
+    with patch("src.settings.verify_jwt_in_request"), \
+         patch("src.settings.get_jwt", return_value={"account_id": "1"}), \
+         patch("src.settings.get_jwt_identity", return_value="1"), \
+         patch("src.settings.db") as mock_settings_db, \
+         patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.Account") as MockAccount, \
+         patch("src.settings.routes.RegisteredApp") as MockApp, \
+         patch("src.settings.routes.AppProductAccess") as MockAccess:
+        mock_settings_db.session.get.return_value = mock_user
+        MockAccount.query.get.return_value = mock_account
+        MockApp.query.filter_by.return_value.first.return_value = mock_app
+        MockAccess.query.filter_by.return_value.first.return_value = mock_access
+
+        resp = client.post("/settings/developer/test-webhook",
+                           json={"app_id": "app-1", "product_slug": "chat"})
+
+    assert resp.status_code == 400
+    assert resp.get_json()["ok"] is False
