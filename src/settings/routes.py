@@ -10,7 +10,8 @@ from src.extensions import db, limiter
 from src.models.auth import Passkey, TOTPDevice
 from src.models.automation import WebhookProvider
 from src.models.core import User, Account, InboxConnection, AccountLLMConfig, ALLOWED_LLM_PROVIDERS
-from src.models.developer import RegisteredApp, DeveloperAccessRequest
+from src.models.developer import RegisteredApp, DeveloperAccessRequest, AppProductAccess
+from src.developer.products import PRODUCT_CATALOG
 from src.models.tickets import Ticket
 from src.crypto import encrypt_value, decrypt_value
 from src.api.v1.access_control import account_allows_api
@@ -247,6 +248,8 @@ def settings_page(tab):
   # Developer tab — only accessible if account has developer_access
   developer_access_request = None
   registered_apps = []
+  selected_app = None
+  product_accesses = {}
   if tab == "developer" and account_id:
     if not (account and account.developer_access):
       tab = "team"  # silently redirect if not enabled
@@ -254,10 +257,19 @@ def settings_page(tab):
       developer_access_request = DeveloperAccessRequest.query.filter_by(
         account_id=account_id
       ).order_by(DeveloperAccessRequest.created_at.desc()).first()
-      if developer_access_request and developer_access_request.status == "approved":
-        registered_apps = RegisteredApp.query.filter_by(
-          account_id=account_id
-        ).order_by(RegisteredApp.created_at.desc()).all()
+      registered_apps = RegisteredApp.query.filter_by(
+        account_id=account_id
+      ).order_by(RegisteredApp.created_at.desc()).all()
+      # Select app from query param or fall back to first
+      app_id_param = request.args.get("app_id", "").strip()
+      if app_id_param:
+        selected_app = next((a for a in registered_apps if a.id == app_id_param), None)
+      if selected_app is None and registered_apps:
+        selected_app = registered_apps[0]
+      # Load product accesses for the selected app
+      if selected_app:
+        accesses = AppProductAccess.query.filter_by(app_id=selected_app.id).all()
+        product_accesses = {a.product_slug: a for a in accesses}
 
   mcp_servers = []
   if tab == "developer":
@@ -292,6 +304,9 @@ def settings_page(tab):
     inbox_connections=inbox_connections,
     developer_access_request=developer_access_request,
     registered_apps=registered_apps,
+    selected_app=selected_app,
+    product_accesses=product_accesses,
+    product_catalog=PRODUCT_CATALOG,
     mcp_servers=mcp_servers,
     developer_error=None,
     new_app=None,
