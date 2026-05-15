@@ -1096,13 +1096,15 @@ def poll_connections_task(self):
     polled = 0
     errors = 0
     for conn in conns:
+        conn_id = conn.id  # snapshot before try — avoids lazy-load on expired obj after failed tx
         try:
-            with app.test_request_context(f"/api/v1/inboxiq/poll/{conn.id}", method="POST"):
-                poll_inbox_service(conn.id)
+            with app.test_request_context(f"/api/v1/inboxiq/poll/{conn_id}", method="POST"):
+                poll_inbox_service(conn_id)
             polled += 1
         except Exception as exc:
             errors += 1
-            logging.getLogger(__name__).warning("poll failed for connection %s: %s", conn.id, exc)
+            db.session.rollback()  # clear failed tx before any further ORM access
+            logging.getLogger(__name__).warning("poll failed for connection %s: %s", conn_id, exc)
     return {"polled": polled, "errors": errors}
 
 
