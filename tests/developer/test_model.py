@@ -24,3 +24,30 @@ def test_app_product_access_default_status_is_pending():
     from src.models.developer import AppProductAccess
     status_col = AppProductAccess.__table__.columns["status"]
     assert status_col.default.arg == "pending"
+
+
+def test_product_catalog_has_chat_forms_intake():
+    from src.developer.products import PRODUCT_CATALOG
+    slugs = {p["slug"] for p in PRODUCT_CATALOG}
+    assert "chat" in slugs
+    assert "forms" in slugs
+    assert "intake_api" in slugs
+
+
+def test_get_product_by_slug_returns_correct_product():
+    from src.developer.products import get_product_by_slug
+    p = get_product_by_slug("chat")
+    assert p is not None
+    assert p["name"] == "Chat / Aria Widget"
+    assert p["approval"] == "reviewed"
+
+
+def test_get_product_by_slug_returns_none_for_unknown():
+    from src.developer.products import get_product_by_slug
+    assert get_product_by_slug("nonexistent") is None
+
+
+def test_intake_api_is_auto_approved():
+    from src.developer.products import get_product_by_slug
+    p = get_product_by_slug("intake_api")
+    assert p["approval"] == "auto"
