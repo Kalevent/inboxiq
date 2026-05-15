@@ -39,7 +39,14 @@ def _require_intake_token():
     return result  # None = success, tuple = error response
 
 
+def _intake_rate_key():
+    """Rate limit per registered app (client_id), falling back to IP."""
+    auth = request.authorization
+    return auth.username if (auth and auth.username) else (request.remote_addr or "unknown")
+
+
 @v1.route("/intake", methods=["POST"])
+@limiter.limit("60 per minute", key_func=_intake_rate_key)
 @jwt_required(optional=True)
 def intake():
     """

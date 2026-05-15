@@ -67,6 +67,14 @@ def _require_registered_app(required_scope: str):
         if remote_ip not in app.allowed_ips:
             return jsonify({"error": "forbidden", "message": "ip_not_allowed"}), 403
 
+    # Origin allowlist — enforced for browser-based requests (forms, widgets).
+    # Server-to-server calls carry no Origin header and are not restricted here.
+    origin = request.headers.get("Origin", "").rstrip("/")
+    if origin and app.allowed_origins:
+        allowed = [o.rstrip("/") for o in (app.allowed_origins or [])]
+        if origin not in allowed:
+            return jsonify({"error": "forbidden", "message": "origin_not_allowed"}), 403
+
     # Plan check
     if not account_allows_api(app.account_id):
         return jsonify({
