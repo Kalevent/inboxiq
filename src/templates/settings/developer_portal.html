@@ -1,0 +1,304 @@
+{# Developer portal — included by settings/index.html when active_tab == 'developer' #}
+
+{# ── Credential modal (shown once after app creation) ──────────────────────── #}
+{% if new_app %}
+<div id="credentialModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm">
+  <div class="relative w-full max-w-lg mx-4 rounded-2xl border border-amber-500/50 bg-slate-900 shadow-2xl p-6">
+    <div class="flex items-start gap-3 mb-4">
+      <div class="flex-shrink-0 w-9 h-9 rounded-full bg-amber-500/20 flex items-center justify-center">
+        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="text-base font-semibold text-amber-300">Copy your credentials now</div>
+        <p class="text-xs text-slate-400 mt-1">The client secret is shown <strong class="text-slate-200">once only</strong> and cannot be retrieved after you dismiss this.</p>
+      </div>
+    </div>
+    <div class="space-y-3 mb-5">
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">App</label>
+        <code class="block rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 font-mono">{{ new_app.name }}</code>
+      </div>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Client ID</label>
+        <div class="flex items-center gap-2">
+          <code id="modalClientId" class="flex-1 rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 font-mono select-all break-all">{{ new_app.client_id }}</code>
+          <button type="button" onclick="copyModal('modalClientId',this)" class="flex-shrink-0 rounded-lg border border-slate-700 px-2 py-2 text-xs text-slate-400 hover:text-white hover:border-slate-500 transition-colors">Copy</button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs text-amber-400 mb-1 font-medium">Client Secret — copy this now</label>
+        <div class="flex items-center gap-2">
+          <code id="modalClientSecret" class="flex-1 rounded-lg bg-slate-950 border border-amber-500/50 px-3 py-2 text-sm text-amber-100 font-mono select-all break-all">{{ new_app.client_secret }}</code>
+          <button type="button" onclick="copyModal('modalClientSecret',this)" class="flex-shrink-0 rounded-lg border border-amber-500/40 px-2 py-2 text-xs text-amber-300 hover:bg-amber-500/10 transition-colors">Copy</button>
+        </div>
+      </div>
+    </div>
+    <label class="flex items-start gap-2 cursor-pointer mb-4">
+      <input type="checkbox" id="copiedConfirm" onchange="document.getElementById('dismissCredentials').disabled=!this.checked"
+             class="mt-0.5 rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500" />
+      <span class="text-sm text-slate-300">I have copied and stored both the Client ID and Client Secret securely.</span>
+    </label>
+    <button id="dismissCredentials" disabled onclick="document.getElementById('credentialModal').remove()"
+            class="w-full rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+      I've saved my credentials — close
+    </button>
+  </div>
+</div>
+<script>
+function copyModal(id, btn) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent.trim()).then(() => {
+    const orig = btn.textContent; btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+</script>
+{% endif %}
+
+{# ── Page header ─────────────────────────────────────────────────────────── #}
+<div class="space-y-2">
+  <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-100">Developer</h2>
+  <p class="text-sm text-gray-600 dark:text-slate-300">Register apps and request access to InboxIQ products. Each product gets its own credentials and webhook URL.</p>
+</div>
+
+{% if developer_error %}
+<div class="mt-4 rounded-xl border border-red-400/40 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-200">
+  {{ developer_error | e }}
+</div>
+{% endif %}
+
+{# ── Two-panel layout ─────────────────────────────────────────────────────── #}
+<div class="mt-6 lg:grid lg:grid-cols-[220px_1fr] lg:rounded-2xl lg:border lg:border-gray-200 lg:dark:border-slate-800 lg:overflow-hidden">
+
+  {# ── Sidebar ──────────────────────────────────────────────────────────── #}
+  <div class="lg:border-r lg:border-gray-200 lg:dark:border-slate-800 lg:bg-gray-50 lg:dark:bg-slate-900/50">
+
+    {# Mobile: select dropdown #}
+    {% if registered_apps %}
+    <div class="lg:hidden px-4 py-3">
+      <select onchange="location.href='{{ url_for('settings.settings_page', tab='developer') }}&app_id='+this.value"
+              class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500">
+        {% for app in registered_apps %}
+          <option value="{{ app.id }}"{% if selected_app and selected_app.id == app.id %} selected{% endif %}>{{ app.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    {# Desktop: app list #}
+    <div class="hidden lg:flex lg:flex-col p-3 gap-0.5 min-h-[200px]">
+      <div class="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1">My Apps</div>
+
+      {% for app in registered_apps %}
+      <a href="{{ url_for('settings.settings_page', tab='developer', app_id=app.id) }}"
+         class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm transition-colors
+                {% if selected_app and selected_app.id == app.id %}bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-medium border border-indigo-200 dark:border-indigo-400/30{% else %}text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800/60 border border-transparent{% endif %}">
+        <span class="flex-shrink-0 w-5 h-5 rounded bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 flex items-center justify-center text-xs font-bold">{{ app.name[0].upper() }}</span>
+        <span class="truncate">{{ app.name }}</span>
+      </a>
+      {% endfor %}
+
+      {# New app inline form #}
+      <div class="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+        <form method="POST" action="{{ url_for('settings.developer_post') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <input type="hidden" name="action" value="register_app" />
+          <div class="flex items-center gap-1">
+            <input type="text" name="app_name" placeholder="New app name" maxlength="255"
+                   class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-xs text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+            <button type="submit" title="Register app"
+                    class="flex-shrink-0 w-7 h-7 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-500 transition-colors flex items-center justify-center">+</button>
+          </div>
+          <p class="text-xs text-gray-400 dark:text-slate-600 mt-1">Secret shown once at creation.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# ── Main panel ───────────────────────────────────────────────────────── #}
+  <div class="mt-4 lg:mt-0 lg:p-6 p-0">
+
+    {% if not registered_apps %}
+    {# Empty state #}
+    <div class="flex flex-col items-center justify-center py-16 text-center px-4">
+      <div class="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center mb-4">
+        <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+        </svg>
+      </div>
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-1">No apps yet</h3>
+      <p class="text-sm text-gray-500 dark:text-slate-400 max-w-xs">Use the form on the left to register your first app and get credentials.</p>
+    </div>
+
+    {% elif selected_app %}
+
+    {# App header #}
+    <div class="flex items-center gap-3 mb-5">
+      <div class="flex-shrink-0 w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+        {{ selected_app.name[0].upper() }}
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="text-base font-semibold text-gray-900 dark:text-slate-100">{{ selected_app.name }}</div>
+        <div class="flex items-center gap-2 mt-0.5">
+          <code class="text-xs text-gray-500 dark:text-slate-400 font-mono" id="clientIdVal">{{ selected_app.client_id }}</code>
+          <button type="button" onclick="copyClientId()" id="copyClientIdBtn"
+                  class="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors">Copy</button>
+        </div>
+      </div>
+      {% if selected_app.status == 'active' %}
+        <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-emerald-500/15 text-green-700 dark:text-emerald-300 font-medium">Active</span>
+      {% else %}
+        <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 font-medium">Suspended</span>
+      {% endif %}
+    </div>
+
+    {# Secret note + revoke — data-app-name avoids XSS via inline JS #}
+    <div class="mb-5 rounded-lg bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 px-3.5 py-2.5 flex items-center justify-between gap-3">
+      <p class="text-xs text-gray-500 dark:text-slate-400">Client secret was shown once at creation and cannot be retrieved. If lost, revoke and re-register.</p>
+      {% if selected_app.status == 'active' %}
+      <form method="POST" action="{{ url_for('settings.developer_post') }}" class="flex-shrink-0"
+            data-app-name="{{ selected_app.name | e }}" onsubmit="return confirmRevoke(this)">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="revoke_app" />
+        <input type="hidden" name="app_id" value="{{ selected_app.id }}" />
+        <button type="submit" class="text-xs text-red-600 dark:text-red-400 hover:underline whitespace-nowrap">Revoke</button>
+      </form>
+      {% endif %}
+    </div>
+
+    {# Products #}
+    <div class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-3">Products</div>
+    <div class="space-y-3">
+
+      {% for product in product_catalog %}
+        {% set access = product_accesses.get(product.slug) %}
+
+        {% if access and access.status == 'approved' %}
+        {# ── Approved ─────────────────────────────────────────────── #}
+        <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900/70 p-4">
+          <div class="flex items-start gap-3">
+            <span class="text-base leading-none mt-0.5">{{ product.icon }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-sm font-semibold text-gray-900 dark:text-slate-100">{{ product.name }}</span>
+                <span class="text-xs px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-emerald-500/15 text-green-700 dark:text-emerald-300 font-medium">Approved</span>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{{ product.description }}</p>
+            </div>
+          </div>
+          <form method="POST" action="{{ url_for('settings.developer_post') }}" class="mt-3 flex items-center gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="action" value="update_webhook" />
+            <input type="hidden" name="app_id" value="{{ selected_app.id }}" />
+            <input type="hidden" name="product_slug" value="{{ product.slug }}" />
+            <span class="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0">Webhook</span>
+            <input type="url" name="webhook_url" value="{{ access.webhook_url or '' }}"
+                   placeholder="https://yourapp.com/webhooks/inboxiq"
+                   class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 px-2.5 py-1.5 text-xs text-gray-900 dark:text-slate-200 font-mono placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-indigo-500" />
+            <button type="submit"
+                    class="flex-shrink-0 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-transparent px-2.5 py-1.5 text-xs text-gray-600 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors">Save</button>
+          </form>
+        </div>
+
+        {% elif access and access.status == 'pending' %}
+        {# ── Under review ─────────────────────────────────────────── #}
+        <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900/70 p-4">
+          <div class="flex items-start gap-3">
+            <span class="text-base leading-none mt-0.5">{{ product.icon }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-sm font-semibold text-gray-900 dark:text-slate-100">{{ product.name }}</span>
+                <span class="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 font-medium">Under review</span>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{{ product.description }}</p>
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-gray-400 dark:text-slate-500 italic">Webhook URL can be configured once access is approved.</p>
+        </div>
+
+        {% elif access and access.status == 'rejected' %}
+        {# ── Rejected ─────────────────────────────────────────────── #}
+        <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900/70 p-4 opacity-75">
+          <div class="flex items-start gap-3">
+            <span class="text-base leading-none mt-0.5">{{ product.icon }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-sm font-semibold text-gray-500 dark:text-slate-400">{{ product.name }}</span>
+                <span class="text-xs px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 font-medium">Not approved</span>
+              </div>
+              <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{{ product.description }}</p>
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-gray-400 dark:text-slate-500">
+            Contact <a href="mailto:support@kalevent.com" class="text-indigo-500 dark:text-indigo-400 hover:underline">support</a> if you believe this is a mistake.
+          </p>
+        </div>
+
+        {% else %}
+        {# ── Not yet requested ────────────────────────────────────── #}
+        <div class="rounded-xl border border-dashed border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-transparent p-4" id="pcard-{{ product.slug }}">
+          <div class="flex items-start gap-3">
+            <span class="text-base leading-none mt-0.5">{{ product.icon }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold text-gray-500 dark:text-slate-400">{{ product.name }}</div>
+              <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{{ product.description }}</p>
+            </div>
+            <button type="button" onclick="showProductReq('{{ product.slug }}')"
+                    class="flex-shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors">
+              Request Access
+            </button>
+          </div>
+          <form method="POST" action="{{ url_for('settings.developer_post') }}"
+                id="preqform-{{ product.slug }}" class="hidden mt-3 space-y-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="action" value="request_product" />
+            <input type="hidden" name="app_id" value="{{ selected_app.id }}" />
+            <input type="hidden" name="product_slug" value="{{ product.slug }}" />
+            <textarea name="use_case" rows="2" required maxlength="4000"
+                      placeholder="Briefly describe how you'll use {{ product.name }}…"
+                      class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+            <div class="flex items-center gap-2">
+              <button type="submit"
+                      class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors">
+                Submit Request
+              </button>
+              <button type="button" onclick="hideProductReq('{{ product.slug }}')"
+                      class="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+        {% endif %}
+
+      {% endfor %}
+    </div>
+
+    {% endif %}{# selected_app #}
+  </div>{# main panel #}
+</div>{# two-panel grid #}
+
+<script>
+function copyClientId() {
+  const text = document.getElementById('clientIdVal').textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyClientIdBtn');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+function showProductReq(slug) {
+  document.getElementById('pcard-' + slug).querySelector('button[onclick]').classList.add('hidden');
+  document.getElementById('preqform-' + slug).classList.remove('hidden');
+}
+function hideProductReq(slug) {
+  document.getElementById('preqform-' + slug).classList.add('hidden');
+  document.getElementById('pcard-' + slug).querySelector('button[onclick]').classList.remove('hidden');
+}
+function confirmRevoke(form) {
+  const name = form.dataset.appName;
+  return confirm('Revoke ' + name + '? Integrations using these credentials will stop working immediately.');
+}
+</script>
