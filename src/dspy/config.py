@@ -78,11 +78,14 @@ def get_current_model_id() -> Optional[str]:
     return f"{prefix}/{model}"
 
 
-def get_provider_chain() -> list[str]:
+def get_provider_chain() -> list[tuple[str, Optional[str]]]:
     """
-    Returns [primary, ...fallbacks] of provider names to try in order.
-    Fallbacks are set via DSPY_FALLBACK_PROVIDERS=anthropic,gemini
-    Only includes providers that have their required API key present.
+    Returns [(provider, model_or_None), ...] to try in order.
+
+    Primary comes from DSPY_PROVIDER + DSPY_MODEL.
+    Fallbacks from DSPY_FALLBACK_PROVIDERS — supports explicit model pinning:
+      DSPY_FALLBACK_PROVIDERS=anthropic:claude-haiku-4-5-20251001,gemini
+    Only includes providers whose API key is present.
     """
     primary = os.getenv("DSPY_PROVIDER", "").strip().lower()
     if not primary:
@@ -92,12 +95,18 @@ def get_provider_chain() -> list[str]:
             if (key and os.getenv(key)) or (p == "ollama" and os.getenv("OLLAMA_BASE_URL")):
                 primary = p
                 break
+    primary_model = os.getenv("DSPY_MODEL", "").strip() or None
 
     fallback_str = os.getenv("DSPY_FALLBACK_PROVIDERS", "").strip()
-    fallbacks = [p.strip().lower() for p in fallback_str.split(",") if p.strip()] if fallback_str else []
+    fallbacks: list[tuple[str, Optional[str]]] = []
+    for entry in (fallback_str.split(",") if fallback_str else []):
+        entry = entry.strip()
+        if ":" in entry:
+            p, m = entry.split(":", 1)
+            fallbacks.append((p.strip().lower(), m.strip() or None))
+        else:
+            fallbacks.append((entry.lower(), None))
 
-    chain = [primary] + [p for p in fallbacks if p != primary]
-    # Filter to providers that are actually configured
     def _has_credentials(p: str) -> bool:
         cfg = SUPPORTED_PROVIDERS.get(p, {})
         key = cfg.get("api_key")
@@ -105,7 +114,8 @@ def get_provider_chain() -> list[str]:
             return bool(os.getenv("OLLAMA_BASE_URL"))
         return bool(key and os.getenv(key))
 
-    return [p for p in chain if p and p in SUPPORTED_PROVIDERS and _has_credentials(p)]
+    chain = [(primary, primary_model)] + [(p, m) for p, m in fallbacks if p != primary]
+    return [(p, m) for p, m in chain if p and p in SUPPORTED_PROVIDERS and _has_credentials(p)]
 
 
 def configure_dspy(

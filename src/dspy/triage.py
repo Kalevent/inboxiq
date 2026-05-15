@@ -67,10 +67,12 @@ def _try_with_provider_failover(call_fn):
     chain = get_provider_chain()
     last_exc: Exception | None = None
 
-    for idx, provider in enumerate(chain):
+    for idx, (provider, model) in enumerate(chain):
         if idx > 0:
-            logger.warning("DSPy provider %s unavailable, retrying with %s", chain[idx - 1], provider)
-            configure_dspy(provider=provider)
+            prev_provider = chain[idx - 1][0]
+            logger.warning("DSPy provider %s unavailable, retrying with %s%s",
+                           prev_provider, provider, f"/{model}" if model else "")
+            configure_dspy(provider=provider, model=model)
         try:
             return call_fn()
         except Exception as exc:
@@ -79,7 +81,7 @@ def _try_with_provider_failover(call_fn):
                 continue
             raise
 
-    raise RuntimeError(f"All DSPy providers exhausted: {chain}") from last_exc
+    raise RuntimeError(f"All DSPy providers exhausted: {[p for p, _ in chain]}") from last_exc
 
 
 def _compute_cost_usd(model_id: str, tokens_in: int, tokens_out: int) -> float:
@@ -319,7 +321,6 @@ def _run_dspy_triage_impl(
 
     entities = _safe_parse(entities_json)
     route = _safe_parse(route_json)
-    workflow = _safe_parse(workflow_json)
     escalation = _safe_parse(escalation_json)
 
     # Sanitize and enrich reply if present
