@@ -51,3 +51,19 @@ def test_intake_api_is_auto_approved():
     from src.developer.products import get_product_by_slug
     p = get_product_by_slug("intake_api")
     assert p["approval"] == "auto"
+
+
+def test_registered_app_has_allowed_origins_column():
+    from src.models.developer import RegisteredApp
+    app = RegisteredApp(
+        account_id=1,
+        name="Test",
+        client_id="iq_test",
+        client_secret_enc="enc",
+        scopes=[],
+        allowed_ips=[],
+        allowed_origins=[],
+    )
+    assert app.allowed_origins == []
+    app.allowed_origins = ["https://example.com"]
+    assert app.allowed_origins == ["https://example.com"]

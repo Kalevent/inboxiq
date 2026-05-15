@@ -41,6 +41,7 @@ class RegisteredApp(db.Model):
     webhook_secret_enc = db.Column(db.String(512), nullable=True)       # HMAC key for outbound events
     scopes             = db.Column(db.JSON, nullable=False, default=list)
     allowed_ips        = db.Column(db.JSON, nullable=False, default=list)
+    allowed_origins    = db.Column(db.JSON, nullable=False, default=list)
     status             = db.Column(db.String(32), nullable=False, default="active")  # active | suspended
     created_at         = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_used_at       = db.Column(db.DateTime(timezone=True), nullable=True)
