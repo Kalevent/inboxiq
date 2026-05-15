@@ -52,7 +52,9 @@
         <div class="mb-4 flex flex-wrap gap-3">
           <select id="actionFilter" onchange="loadLogs(1)" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2">
             <option value="">All actions</option>
-            <option value="auth.login_success">Sign in</option>
+            <option value="auth.login_success">Sign in (password)</option>
+            <option value="auth.passkey_login">Sign in (passkey)</option>
+            <option value="auth.social_login">Sign in (social)</option>
             <option value="auth.logout">Sign out</option>
             <option value="auth.totp_enabled">2FA enabled</option>
             <option value="auth.totp_disabled">2FA disabled</option>
@@ -111,6 +113,8 @@
 
     const ACTION_LABELS = {
       "auth.login_success": "Signed in",
+      "auth.passkey_login": "Signed in (passkey)",
+      "auth.social_login": "Signed in (social)",
       "auth.logout": "Signed out",
       "auth.totp_enabled": "2FA enabled",
       "auth.totp_disabled": "2FA disabled",

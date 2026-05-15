@@ -297,7 +297,8 @@ def totp_verify():
     device.verified_at = datetime.now(timezone.utc)
     db.session.add(device)
     db.session.commit()
-    log_audit("auth.totp_enabled", resource_type="totp_device", resource_id=str(device.id))
+    log_audit("auth.totp_enabled", resource_type="totp_device", resource_id=str(device.id),
+              account_id=account_id, user_id=user.id)
     return jsonify({"status": "verified"}), 200
 
 
@@ -310,7 +311,8 @@ def totp_disable():
         return jsonify({"error": "unauthorized"}), 401
     TOTPDevice.query.filter_by(user_id=user.id).delete()
     db.session.commit()
-    log_audit("auth.totp_disabled", resource_type="user", resource_id=str(user.id))
+    log_audit("auth.totp_disabled", resource_type="user", resource_id=str(user.id),
+              account_id=account_id, user_id=user.id)
     return jsonify({"status": "disabled"}), 200
 
 
@@ -484,7 +486,8 @@ def passkey_registration_verify():
     db.session.add(passkey)
     db.session.commit()
     cache.delete(f"passkey:reg:{user.id}")
-    log_audit("auth.passkey_registered", resource_type="passkey", resource_id=str(passkey.id))
+    log_audit("auth.passkey_registered", resource_type="passkey", resource_id=str(passkey.id),
+              account_id=account_id, user_id=user.id)
     return jsonify({"status": "registered", "passkey": passkey.to_dict()}), 200
 
 
@@ -513,7 +516,8 @@ def passkey_delete():
         return jsonify({"error": "not found"}), 404
     db.session.delete(passkey)
     db.session.commit()
-    log_audit("auth.passkey_deleted", resource_type="passkey", resource_id=str(passkey_id))
+    log_audit("auth.passkey_deleted", resource_type="passkey", resource_id=str(passkey_id),
+              account_id=account_id, user_id=user.id)
     return jsonify({"status": "deleted"}), 200
 
 
@@ -680,7 +684,8 @@ def logout():
     """Revoke the current token (access or refresh) and clear cookies."""
     jwt_payload = get_jwt()
     _revoke_token(jwt_payload, reason="logout")
-    log_audit("auth.logout")
+    user, account_id = _current_user()
+    log_audit("auth.logout", account_id=account_id, user_id=user.id if user else None)
 
     response = jsonify({"status": "logged out"})
     unset_jwt_cookies(response)
