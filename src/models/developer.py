@@ -46,3 +46,21 @@ class RegisteredApp(db.Model):
     last_used_at       = db.Column(db.DateTime(timezone=True), nullable=True)
 
 
+class AppProductAccess(db.Model):
+    """Per-product access request for a registered app."""
+    __tablename__ = "app_product_access"
+    __table_args__ = (
+        db.UniqueConstraint("app_id", "product_slug", name="uq_app_product"),
+    )
+
+    id           = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    app_id       = db.Column(db.String(64), db.ForeignKey("registered_apps.id", ondelete="CASCADE"), nullable=False)
+    account_id   = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
+    product_slug = db.Column(db.String(64), nullable=False)
+    status       = db.Column(db.String(32), nullable=False, default="pending")  # pending | approved | rejected
+    use_case     = db.Column(db.Text, nullable=True)
+    webhook_url  = db.Column(db.String(2048), nullable=True)
+    requested_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    approved_at  = db.Column(db.DateTime(timezone=True), nullable=True)
+    reviewed_by  = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+

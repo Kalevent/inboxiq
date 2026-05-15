@@ -14,7 +14,7 @@ from src.models.campaigns import CampaignSender, HunterDomainCache, EmailCampaig
 from src.models.automation import AutomationStudioWaitlist, AutomationRule, AutomationRuleExecution, WebhookProvider, AutomationSuggestion, ApprovalPolicy
 from src.models.marketing import Referral, InAppMessage, InAppMessageDismissal, LandingPage, MarketingSpend, EnterpriseInquiry, ICPConfig
 from src.models.misc import Testimonial, Feedback, Booking
-from src.models.developer import DeveloperAccessRequest, RegisteredApp
+from src.models.developer import DeveloperAccessRequest, RegisteredApp, AppProductAccess
 from src.models.billing import (
     PaymentProviderAccount, CustomerBillingProfile, PaymentMethod,
     Plan, Subscription, Invoice, ChargeAttempt, AccountUsageCounter,
@@ -45,7 +45,7 @@ __all__ = [
     # misc
     "Testimonial", "Feedback", "Booking",
     # developer
-    "DeveloperAccessRequest", "RegisteredApp",
+    "DeveloperAccessRequest", "RegisteredApp", "AppProductAccess",
     # billing
     "PaymentProviderAccount", "CustomerBillingProfile", "PaymentMethod",
     "Plan", "Subscription", "Invoice", "ChargeAttempt", "AccountUsageCounter",
