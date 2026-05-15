@@ -40,7 +40,8 @@
             </p>
             <h1 class="text-2xl md:text-3xl font-semibold tracking-tight mt-2">Activity Log</h1>
             <p class="text-sm text-slate-300 mt-2 max-w-2xl">
-              A record of all security-relevant actions taken in your workspace. You can export this log as CSV for compliance or audit purposes.
+              Every authenticated page visit, API call, and security action in your workspace — with user and IP address.
+              Export CSV to archive before records are purged after 14 days.
             </p>
           </div>
           <button onclick="exportCsv()" class="self-start px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-medium text-white">
@@ -48,25 +49,40 @@
           </button>
         </div>
 
+        <!-- Retention notice -->
+        <div class="mb-4 flex items-center gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-400/20 rounded-xl px-4 py-2.5">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Records are retained for 14 days and then automatically purged. Export CSV regularly to preserve older activity.
+        </div>
+
         <!-- Filters -->
         <div class="mb-4 flex flex-wrap gap-3">
           <select id="actionFilter" onchange="loadLogs(1)" class="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-3 py-2">
             <option value="">All actions</option>
-            <option value="auth.login_success">Sign in (password)</option>
-            <option value="auth.passkey_login">Sign in (passkey)</option>
-            <option value="auth.social_login">Sign in (social)</option>
-            <option value="auth.logout">Sign out</option>
-            <option value="auth.totp_enabled">2FA enabled</option>
-            <option value="auth.totp_disabled">2FA disabled</option>
-            <option value="auth.passkey_registered">Passkey added</option>
-            <option value="auth.passkey_deleted">Passkey removed</option>
-            <option value="auth.password_reset_completed">Password changed</option>
-            <option value="inbox.connected">Inbox connected</option>
-            <option value="inbox.disconnected">Inbox disconnected</option>
-            <option value="user.role_changed">Role changed</option>
-            <option value="ai_provider.configured">AI provider configured</option>
-            <option value="ai_provider.removed">AI provider removed</option>
-            <option value="account.deleted">Account deleted</option>
+            <optgroup label="Pages &amp; API">
+              <option value="page.visited">Page visited</option>
+              <option value="api.read">Data accessed (GET)</option>
+              <option value="api.write">Data written (POST/PUT/DELETE)</option>
+            </optgroup>
+            <optgroup label="Authentication">
+              <option value="auth.login_success">Sign in (password)</option>
+              <option value="auth.passkey_login">Sign in (passkey)</option>
+              <option value="auth.social_login">Sign in (social)</option>
+              <option value="auth.logout">Sign out</option>
+              <option value="auth.totp_enabled">2FA enabled</option>
+              <option value="auth.totp_disabled">2FA disabled</option>
+              <option value="auth.passkey_registered">Passkey added</option>
+              <option value="auth.passkey_deleted">Passkey removed</option>
+              <option value="auth.password_reset_completed">Password changed</option>
+            </optgroup>
+            <optgroup label="Workspace">
+              <option value="inbox.connected">Inbox connected</option>
+              <option value="inbox.disconnected">Inbox disconnected</option>
+              <option value="user.role_changed">Role changed</option>
+              <option value="ai_provider.configured">AI provider configured</option>
+              <option value="ai_provider.removed">AI provider removed</option>
+              <option value="account.deleted">Account deleted</option>
+            </optgroup>
           </select>
         </div>
 
@@ -79,7 +95,7 @@
                   <th class="px-5 py-3 text-left">Date &amp; Time</th>
                   <th class="px-5 py-3 text-left">Event</th>
                   <th class="px-5 py-3 text-left">User</th>
-                  <th class="px-5 py-3 text-left">Resource</th>
+                  <th class="px-5 py-3 text-left">Path / Resource</th>
                   <th class="px-5 py-3 text-left">IP Address</th>
                 </tr>
               </thead>
@@ -112,6 +128,9 @@
     const csrfToken = "{{ csrf_token_value }}";
 
     const ACTION_LABELS = {
+      "page.visited":   "Page visited",
+      "api.read":       "Data accessed",
+      "api.write":      "Data written",
       "auth.login_success": "Signed in",
       "auth.passkey_login": "Signed in (passkey)",
       "auth.social_login": "Signed in (social)",
@@ -128,6 +147,14 @@
       "ai_provider.configured": "AI provider configured",
       "ai_provider.removed": "AI provider removed",
       "account.deleted": "Account deleted",
+    };
+
+    const ACTION_BADGE = {
+      "page.visited": "bg-slate-500/20 text-slate-300 border-slate-500/30",
+      "api.read":     "bg-blue-500/10 text-blue-300 border-blue-400/20",
+      "api.write":    "bg-orange-500/10 text-orange-300 border-orange-400/20",
+      "auth.logout":  "bg-red-500/10 text-red-300 border-red-400/20",
+      "account.deleted": "bg-red-500/20 text-red-300 border-red-400/30",
     };
 
     function fmt(iso) {
@@ -170,19 +197,23 @@
         tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-slate-400">No activity found.</td></tr>';
         return;
       }
-      tbody.innerHTML = items.map(row => `
+      tbody.innerHTML = items.map(row => {
+        const badgeClass = ACTION_BADGE[row.action] || "bg-indigo-500/10 text-indigo-200 border-indigo-400/20";
+        const resource = row.resource_id || row.resource_type || "—";
+        const isPath = resource.startsWith("/");
+        return `
         <tr class="border-b border-slate-800/60 hover:bg-slate-800/30">
           <td class="px-5 py-3 text-slate-300 whitespace-nowrap">${fmt(row.created_at)}</td>
           <td class="px-5 py-3">
-            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-indigo-500/10 text-indigo-200 border border-indigo-400/20">
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${badgeClass}">
               ${ACTION_LABELS[row.action] || row.action}
             </span>
           </td>
-          <td class="px-5 py-3 text-slate-300">${row.user_email || (row.user_id ? `User #${row.user_id}` : 'System')}</td>
-          <td class="px-5 py-3 text-slate-400 font-mono text-xs">${row.resource_type ? `${row.resource_type}` : '—'}</td>
+          <td class="px-5 py-3 text-slate-300 text-sm">${row.user_email || (row.user_id ? `User #${row.user_id}` : 'System')}</td>
+          <td class="px-5 py-3 font-mono text-xs ${isPath ? 'text-slate-300' : 'text-slate-400'}">${resource}</td>
           <td class="px-5 py-3 text-slate-400 font-mono text-xs">${row.ip_address || '—'}</td>
-        </tr>
-      `).join("");
+        </tr>`;
+      }).join("");
     }
 
     function exportCsv() {

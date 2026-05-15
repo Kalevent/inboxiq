@@ -26,8 +26,8 @@ audit_bp = Blueprint("audit", __name__, url_prefix="/api/v1")
 
 ACTION_LABELS = {
     "auth.login_success": "Signed in",
-    "auth.passkey_login": "Signed in with passkey",
-    "auth.social_login": "Signed in with social",
+    "auth.passkey_login": "Signed in (passkey)",
+    "auth.social_login": "Signed in (social)",
     "auth.logout": "Signed out",
     "auth.totp_enabled": "Two-factor authentication enabled",
     "auth.totp_disabled": "Two-factor authentication disabled",
@@ -41,6 +41,9 @@ ACTION_LABELS = {
     "ai_provider.configured": "AI provider configured",
     "ai_provider.removed": "AI provider removed",
     "account.deleted": "Account deleted",
+    "page.visited": "Page visited",
+    "api.read": "Data accessed",
+    "api.write": "Data written",
 }
 
 

@@ -483,6 +483,12 @@ def make_celery(app) -> Celery:
                 if os.getenv("OUTREACH_VIDEO_ENABLED", "false").lower() == "true"
                 else {}
             ),
+            # Audit log retention — purge entries older than 14 days daily at 2:30am
+            "audit_log_purge": {
+                "task": "inboxiq.purge_old_audit_logs",
+                "schedule": crontab(hour=2, minute=30),
+                "options": {"queue": "inbox"},
+            },
         },
     )
 
@@ -512,6 +518,7 @@ celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.fu
 from src.funnel import tasks as _funnel_tasks  # noqa: F401
 from src.tasks import linkedin as _linkedin_tasks  # noqa: F401
 from src.tasks import developer_webhooks as _developer_webhook_tasks  # noqa: F401
+from src.tasks import audit_log as _audit_log_tasks  # noqa: F401
 
 # Route tasks to queues that have consumers. Default queue is "celery" but
 # no worker pod listens on it — every worker (inbox-worker, content-worker,

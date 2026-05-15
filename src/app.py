@@ -161,6 +161,64 @@ def create_app() -> Flask:
     response.headers.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
     return response
 
+  # Paths where audit logging is skipped (auth events logged explicitly, or not user actions)
+  _AUDIT_SKIP_PREFIXES = (
+    "/static/", "/favicon", "/robots.txt", "/sitemap",
+    "/metrics", "/_health", "/auth/",
+  )
+  _AUDIT_SKIP_EXACT = frozenset({
+    "/api/v1/audit-logs",          # don't recursively log audit-log reads
+    "/api/v1/inboxiq/check-polls", # internal poll-check
+  })
+
+  @app.after_request
+  def _audit_activity(response):
+    """Fire async audit log entry for every authenticated request."""
+    try:
+      if request.method == "OPTIONS":
+        return response
+      path = request.path
+      if any(path.startswith(p) for p in _AUDIT_SKIP_PREFIXES):
+        return response
+      if path in _AUDIT_SKIP_EXACT:
+        return response
+
+      # get_jwt() raises RuntimeError when no JWT was verified in this request
+      from flask_jwt_extended import get_jwt, get_jwt_identity
+      try:
+        claims = get_jwt()
+      except RuntimeError:
+        return response  # unauthenticated request
+
+      account_id_raw = claims.get("account_id")
+      if not account_id_raw:
+        return response
+      account_id = int(account_id_raw)
+      user_id_raw = get_jwt_identity()
+      user_id = int(user_id_raw) if user_id_raw else None
+
+      method = request.method
+      action = (
+        ("api.write" if method in ("POST", "PUT", "PATCH", "DELETE") else "api.read")
+        if path.startswith("/api/")
+        else "page.visited"
+      )
+
+      from src.tasks.audit_log import write_audit_entry
+      write_audit_entry.delay(
+        account_id=account_id,
+        user_id=user_id,
+        action=action,
+        resource_id=path,
+        ip_address=request.remote_addr,
+        user_agent=(request.headers.get("User-Agent") or "")[:300],
+        method=method,
+        status_code=response.status_code,
+      )
+    except Exception:
+      pass
+    return response
+
   @app.context_processor
   def inject_user_meta():
     user = getattr(g, "current_user", None)
