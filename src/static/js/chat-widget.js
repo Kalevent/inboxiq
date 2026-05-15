@@ -2,6 +2,7 @@
   'use strict';
 
   const account = window.InboxIQ?.account || '2';
+  const clientId = window.InboxIQ?.clientId || null;
   const primaryColor = window.InboxIQ?.config?.primaryColor || '#6366f1';
   const signupUrl = '/signup';
   const AVATAR_URL = '/static/img/aria-avatar.jpg';
@@ -140,7 +141,8 @@
       body: text,
       message_id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       context: {
-        account_id: account, name: state.name, email: state.email,
+        account_id: account, client_id: clientId,
+        name: state.name, email: state.email,
         branch: branch, page_url: window.location.href,
         history: state.messages.slice(-10),
       },
