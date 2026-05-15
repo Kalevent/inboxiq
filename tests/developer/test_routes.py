@@ -331,3 +331,72 @@ def test_update_webhook_blocked_when_not_approved(client):
     assert resp.status_code == 302
     # webhook_url must NOT have been set
     assert mock_access.webhook_url != "https://example.com/hooks/chat"
+
+
+def test_update_origins_saves_valid_origins(client):
+    mock_account = _mock_account()
+    mock_app = MagicMock()
+    mock_app.id = "app-1"
+    mock_app.name = "My App"
+    mock_app.client_id = "iq_abc"
+    mock_app.status = "active"
+    mock_app.allowed_origins = []
+
+    mock_user = MagicMock()
+    mock_user.id = 1
+    mock_user.email = "test@example.com"
+
+    with patch("src.settings.verify_jwt_in_request"), \
+         patch("src.settings.get_jwt", return_value={"account_id": "1"}), \
+         patch("src.settings.get_jwt_identity", return_value="1"), \
+         patch("src.settings.db") as mock_settings_db, \
+         patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.Account") as MockAccount, \
+         patch("src.settings.routes.RegisteredApp") as MockApp:
+        mock_settings_db.session.get.return_value = mock_user
+        mock_settings_db.session.commit.return_value = None
+        MockAccount.query.get.return_value = mock_account
+        MockApp.query.filter_by.return_value.first.return_value = mock_app
+
+        resp = client.post("/settings/developer", data={
+            "action": "update_origins",
+            "app_id": "app-1",
+            "origins": "https://mysite.com\nhttps://staging.mysite.com",
+            "csrf_token": "dummy",
+        }, follow_redirects=False)
+
+    assert resp.status_code in (302, 200)
+    assert mock_app.allowed_origins == ["https://mysite.com", "https://staging.mysite.com"]
+
+
+def test_update_origins_rejects_http_origins(client):
+    mock_account = _mock_account()
+    mock_app = MagicMock()
+    mock_app.id = "app-1"
+    mock_app.allowed_origins = []
+
+    mock_user = MagicMock()
+    mock_user.id = 1
+    mock_user.email = "test@example.com"
+
+    with patch("src.settings.verify_jwt_in_request"), \
+         patch("src.settings.get_jwt", return_value={"account_id": "1"}), \
+         patch("src.settings.get_jwt_identity", return_value="1"), \
+         patch("src.settings.db") as mock_settings_db, \
+         patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.Account") as MockAccount, \
+         patch("src.settings.routes.RegisteredApp") as MockApp:
+        mock_settings_db.session.get.return_value = mock_user
+        mock_settings_db.session.commit.return_value = None
+        MockAccount.query.get.return_value = mock_account
+        MockApp.query.filter_by.return_value.first.return_value = mock_app
+
+        client.post("/settings/developer", data={
+            "action": "update_origins",
+            "app_id": "app-1",
+            "origins": "http://insecure.com",
+            "csrf_token": "dummy",
+        })
+
+    # http:// origin must be silently dropped
+    assert mock_app.allowed_origins == []

@@ -2169,6 +2169,28 @@ def developer_post():
     )
     return redirect(url_for("settings.settings_page", tab="developer", app_id=app_id))
 
+  if action == "update_origins":
+    app_id = (request.form.get("app_id") or "").strip()
+    raw_origins = (request.form.get("origins") or "")
+
+    app = RegisteredApp.query.filter_by(id=app_id, account_id=account_id).first()
+    if app:
+      origins = []
+      for line in raw_origins.splitlines():
+        origin = line.strip().rstrip("/")[:255]
+        if origin.startswith("https://") and len(origin) > 8:
+          origins.append(origin)
+      app.allowed_origins = origins[:20]
+      try:
+        db.session.commit()
+      except Exception:
+        db.session.rollback()
+        raise
+      current_app.logger.info(
+        f"RegisteredApp allowed_origins updated account={account_id} app={app_id} count={len(app.allowed_origins)}"
+      )
+    return redirect(url_for("settings.settings_page", tab="developer", app_id=app_id))
+
   return redirect(url_for("settings.settings_page", tab="developer"))
 
 
