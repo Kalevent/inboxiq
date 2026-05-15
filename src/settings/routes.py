@@ -1994,7 +1994,7 @@ def developer_post():
 
   # ── Register new app ───────────────────────────────────────────────────────
   if action == "register_app":
-    app_name = (request.form.get("app_name") or "").strip()
+    app_name = (request.form.get("app_name") or "").strip()[:255]
     if not app_name:
       registered_apps = RegisteredApp.query.filter_by(account_id=account_id).order_by(RegisteredApp.created_at.desc()).all()
       return _developer_page(
@@ -2060,7 +2060,7 @@ def developer_post():
   if action == "request_product":
     app_id = (request.form.get("app_id") or "").strip()
     product_slug = (request.form.get("product_slug") or "").strip()
-    use_case = (request.form.get("use_case") or "").strip()
+    use_case = (request.form.get("use_case") or "").strip()[:4000]
 
     app = RegisteredApp.query.filter_by(id=app_id, account_id=account_id).first()
     if not app or not product_slug:
@@ -2073,7 +2073,9 @@ def developer_post():
 
     from src.developer.products import get_product_by_slug
     product = get_product_by_slug(product_slug)
-    status = "approved" if (product and product.get("approval") == "auto") else "pending"
+    if not product:
+      return redirect(url_for("settings.settings_page", tab="developer", app_id=app_id))
+    status = "approved" if product.get("approval") == "auto" else "pending"
 
     access = AppProductAccess(
       app_id=app_id,

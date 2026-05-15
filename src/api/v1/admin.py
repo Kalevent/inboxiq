@@ -702,7 +702,11 @@ def admin_developer_enable():
         return jsonify({"error": "account not found"}), 404
 
     account.developer_access = True
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     current_app.logger.info(f"admin: developer_access enabled for account={account_id} by {admin.email}")
     return jsonify({"ok": True, "account_id": account_id})
 
@@ -760,7 +764,11 @@ def admin_developer_review(request_id):
     req.status = status
     req.reviewed_by = admin.id
     req.reviewed_at = datetime.now(timezone.utc)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     current_app.logger.info(
         f"admin: developer request {request_id} {status} by {admin.email}"
     )
@@ -780,8 +788,8 @@ def admin_developer_product_requests():
     ).all()
     result = []
     for req in requests_all:
-        app = RegisteredApp.query.get(req.app_id)
-        account = Account.query.get(req.account_id)
+        app = db.session.get(RegisteredApp, req.app_id)
+        account = db.session.get(Account, req.account_id)
         result.append({
             "id": req.id,
             "product_slug": req.product_slug,
@@ -810,9 +818,12 @@ def admin_developer_product_request_review(request_id):
     if status not in ("approved", "rejected"):
         return jsonify({"error": "status must be 'approved' or 'rejected'"}), 400
 
-    req = AppProductAccess.query.get(request_id)
+    req = db.session.get(AppProductAccess, request_id)
     if not req:
         return jsonify({"error": "not found"}), 404
+
+    if req.status != "pending":
+        return jsonify({"error": "request already reviewed"}), 409
 
     req.status = status
     req.reviewed_by = admin.id
