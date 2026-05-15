@@ -486,8 +486,10 @@ def passkey_registration_verify():
     db.session.add(passkey)
     db.session.commit()
     cache.delete(f"passkey:reg:{user.id}")
-    log_audit("auth.passkey_registered", resource_type="passkey", resource_id=str(passkey.id),
-              account_id=account_id, user_id=user.id)
+    log_audit("auth.passkey_registered", resource_type="passkey",
+              resource_id=passkey.label or "Passkey",
+              account_id=account_id, user_id=user.id,
+              metadata={"passkey_id": str(passkey.id)})
     return jsonify({"status": "registered", "passkey": passkey.to_dict()}), 200
 
 
@@ -516,8 +518,10 @@ def passkey_delete():
         return jsonify({"error": "not found"}), 404
     db.session.delete(passkey)
     db.session.commit()
-    log_audit("auth.passkey_deleted", resource_type="passkey", resource_id=str(passkey_id),
-              account_id=account_id, user_id=user.id)
+    log_audit("auth.passkey_deleted", resource_type="passkey",
+              resource_id=passkey.label or "Passkey",
+              account_id=account_id, user_id=user.id,
+              metadata={"passkey_id": str(passkey_id)})
     return jsonify({"status": "deleted"}), 200
 
 
@@ -618,8 +622,10 @@ def passkey_authenticate_verify():
     access_token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
     refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
     _whitelist_refresh(jwt_token=refresh_token)
-    log_audit("auth.passkey_login", resource_type="passkey", resource_id=str(passkey.id),
-              account_id=user.account_id, user_id=user.id)
+    log_audit("auth.passkey_login", resource_type="passkey",
+              resource_id=passkey.label or "Passkey",
+              account_id=user.account_id, user_id=user.id,
+              metadata={"passkey_id": str(passkey.id)})
 
     response = jsonify({
         "access_token": access_token,
