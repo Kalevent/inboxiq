@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 from src.api.v1.inboxiq import _get_account_id
 from src.api.v1.access_control import account_allows_api
 from src.api.v1.app_auth import _require_registered_app, _NO_BASIC_AUTH
+from src.models.developer import RegisteredApp, AppProductAccess
 
 
 @lru_cache(maxsize=1)
@@ -326,6 +327,28 @@ def chat_submit():
             return jsonify({"error": "validation_error", "message": "Invalid account"}), 400
     except (ValueError, TypeError):
         return jsonify({"error": "validation_error", "message": "Invalid account"}), 400
+
+    # ── Registered app origin check ────────────────────────────────────────
+    req_client_id = str(context.get("client_id", "") or "").strip()[:64]
+    if req_client_id:
+        reg_app = RegisteredApp.query.filter_by(
+            client_id=req_client_id, status="active"
+        ).first()
+        if not reg_app:
+            return jsonify({"error": "forbidden", "message": "invalid client_id"}), 403
+        # Require approved chat product access
+        chat_access = AppProductAccess.query.filter_by(
+            app_id=reg_app.id, product_slug="chat", status="approved"
+        ).first()
+        if not chat_access:
+            return jsonify({"error": "forbidden", "message": "chat access not approved"}), 403
+        # Enforce allowed_origins when the list is non-empty
+        if reg_app.allowed_origins:
+            request_origin = (request.headers.get("Origin") or "").rstrip("/")
+            if request_origin not in [o.rstrip("/") for o in reg_app.allowed_origins]:
+                return jsonify({"error": "forbidden", "message": "origin_not_allowed"}), 403
+        # Use account_id from the app record (more trustworthy than caller-supplied value)
+        account_id_int = reg_app.account_id
 
     # Feature gate + usage counter
     try:
