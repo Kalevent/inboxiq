@@ -8,6 +8,7 @@ Welcome to the InboxIQ docs. Useful guides:
 - [Publishing brief templates](/docs/publishing_brief_templates)
 - [Channel intake guide](/docs/channel_intake_guide)
 - [Developer guide](/docs/developer_guide)
+- [External Forms](/docs/external_forms)
 - [Intake API reference](/docs/intake_api)
 
 # InboxIQ User Guide

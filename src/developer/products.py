@@ -8,6 +8,7 @@ PRODUCT_CATALOG: list[dict] = [
         "icon": "💬",
         "description": "Embed an AI-powered chat widget on your site or app.",
         "approval": "reviewed",
+        "docs_url": None,
     },
     {
         "slug": "forms",
@@ -15,6 +16,7 @@ PRODUCT_CATALOG: list[dict] = [
         "icon": "📋",
         "description": "Route external form submissions into InboxIQ triage.",
         "approval": "reviewed",
+        "docs_url": "/docs/external_forms",
     },
     {
         "slug": "intake_api",
@@ -22,6 +24,7 @@ PRODUCT_CATALOG: list[dict] = [
         "icon": "📥",
         "description": "Submit tickets and messages directly into InboxIQ.",
         "approval": "auto",
+        "docs_url": "/docs/intake_api",
     },
 ]
 
