@@ -243,18 +243,27 @@ function copyModal(id, btn) {
       {% endif %}
     </div>
 
-    {# Secret note + revoke — data-app-name avoids XSS via inline JS #}
+    {# Secret note + revoke/delete — data-app-name avoids XSS via inline JS #}
     <div class="mb-5 rounded-lg bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 px-3.5 py-2.5 flex items-center justify-between gap-3">
       <p class="text-xs text-gray-500 dark:text-slate-400">Client secret was shown once at creation and cannot be retrieved. If lost, revoke and re-register.</p>
-      {% if selected_app.status == 'active' %}
-      <form method="POST" action="{{ url_for('settings.developer_post') }}" class="flex-shrink-0"
-            data-app-name="{{ selected_app.name | e }}" onsubmit="return confirmRevoke(this)">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <input type="hidden" name="action" value="revoke_app" />
-        <input type="hidden" name="app_id" value="{{ selected_app.id }}" />
-        <button type="submit" class="text-xs text-red-600 dark:text-red-400 hover:underline whitespace-nowrap">Revoke</button>
-      </form>
-      {% endif %}
+      <div class="flex items-center gap-3 flex-shrink-0">
+        {% if selected_app.status == 'active' %}
+        <form method="POST" action="{{ url_for('settings.developer_post') }}"
+              data-app-name="{{ selected_app.name | e }}" onsubmit="return confirmRevoke(this)">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <input type="hidden" name="action" value="revoke_app" />
+          <input type="hidden" name="app_id" value="{{ selected_app.id }}" />
+          <button type="submit" class="text-xs text-amber-600 dark:text-amber-400 hover:underline">Revoke</button>
+        </form>
+        {% endif %}
+        <form method="POST" action="{{ url_for('settings.developer_post') }}"
+              data-app-name="{{ selected_app.name | e }}" onsubmit="return confirmDelete(this)">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <input type="hidden" name="action" value="delete_app" />
+          <input type="hidden" name="app_id" value="{{ selected_app.id }}" />
+          <button type="submit" class="text-xs text-red-600 dark:text-red-400 hover:underline">Delete app</button>
+        </form>
+      </div>
     </div>
 
     {# Products #}
@@ -390,6 +399,10 @@ function hideProductReq(slug) {
 function confirmRevoke(form) {
   const name = form.dataset.appName;
   return confirm('Revoke ' + name + '? Integrations using these credentials will stop working immediately.');
+}
+function confirmDelete(form) {
+  const name = form.dataset.appName;
+  return confirm('Permanently delete ' + name + '? This removes the app and all product access records and cannot be undone.');
 }
 </script>
 

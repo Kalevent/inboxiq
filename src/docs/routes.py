@@ -154,6 +154,7 @@ def docs_index(lc=None):
             url_endpoints={},
             doc_name="index",
             current_page="introduction",
+            is_authenticated=True,
         )
 
     except Exception as e:
@@ -218,6 +219,7 @@ def docs_page(doc_name, lc=None):
             doc_name=doc_name.replace(".md", ""),
             current_page=doc_name.replace(".md", ""),
             related_docs=related,
+            is_authenticated=True,
         )
 
     except Exception as e:
@@ -244,6 +246,7 @@ def docs_search(lc=None):
             results=results,
             lc=lc,
             url_endpoints={},
+            is_authenticated=True,
         )
 
     except Exception as e:

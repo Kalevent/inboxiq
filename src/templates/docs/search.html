@@ -54,7 +54,11 @@
         </form>
         <div class="docs-header-right">
           <a class="docs-header-link" href="{{ url_for('root') }}">App Home</a>
+          {% if is_authenticated %}
+          <a class="docs-header-link docs-sign-in" href="{{ url_for('settings.settings_page', tab='developer') }}">Developer Portal</a>
+          {% else %}
           <a class="docs-header-link docs-sign-in" href="{{ url_for('login_page') }}">Log in</a>
+          {% endif %}
         </div>
       </header>
 

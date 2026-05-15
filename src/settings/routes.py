@@ -2084,6 +2084,23 @@ def developer_post():
           f"RegisteredApp revoked account={account_id} client_id={app.client_id}"
         )
 
+  if action == "delete_app":
+    app_id = (request.form.get("app_id") or "").strip()
+    if app_id:
+      app = RegisteredApp.query.filter_by(id=app_id, account_id=account_id).first()
+      if app:
+        client_id = app.client_id
+        try:
+          db.session.delete(app)
+          db.session.commit()
+        except Exception:
+          db.session.rollback()
+          raise
+        current_app.logger.info(
+          f"RegisteredApp deleted account={account_id} client_id={client_id}"
+        )
+    return redirect(url_for("settings.settings_page", tab="developer"))
+
   # ── Request product access ─────────────────────────────────────────────────
   if action == "request_product":
     app_id = (request.form.get("app_id") or "").strip()
