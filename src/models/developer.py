@@ -65,3 +65,19 @@ class AppProductAccess(db.Model):
     approved_at  = db.Column(db.DateTime(timezone=True), nullable=True)
     reviewed_by  = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
 
+
+class AppWebhookDelivery(db.Model):
+    """Log of outbound webhook delivery attempts for a registered app product."""
+    __tablename__ = "app_webhook_deliveries"
+
+    id           = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    app_id       = db.Column(db.String(64), db.ForeignKey("registered_apps.id", ondelete="CASCADE"), nullable=False)
+    product_slug = db.Column(db.String(64), nullable=False)
+    event        = db.Column(db.String(64), nullable=False)
+    success      = db.Column(db.Boolean, nullable=False)
+    status_code  = db.Column(db.Integer, nullable=True)
+    response_body = db.Column(db.Text, nullable=True)
+    error        = db.Column(db.String(255), nullable=True)
+    latency_ms   = db.Column(db.Integer, nullable=True)
+    created_at   = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+

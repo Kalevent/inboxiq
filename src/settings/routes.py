@@ -11,7 +11,7 @@ from src.extensions import db, limiter
 from src.models.auth import Passkey, TOTPDevice
 from src.models.automation import WebhookProvider
 from src.models.core import User, Account, InboxConnection, AccountLLMConfig, ALLOWED_LLM_PROVIDERS
-from src.models.developer import RegisteredApp, DeveloperAccessRequest, AppProductAccess
+from src.models.developer import RegisteredApp, DeveloperAccessRequest, AppProductAccess, AppWebhookDelivery
 from src.developer.products import PRODUCT_CATALOG
 from src.models.tickets import Ticket
 from src.crypto import encrypt_value, decrypt_value
@@ -2331,3 +2331,44 @@ def developer_test_webhook():
   except Exception as e:
     current_app.logger.error(f"test_webhook error account={account_id} app={app_id}: {e}")
     return jsonify({"ok": False, "error": "internal_error"}), 500
+
+
+@bp.route("/settings/developer/webhook-deliveries", methods=["GET"])
+@login_required_settings
+def developer_webhook_deliveries():
+  """Return the last 10 webhook delivery attempts for an app + product."""
+  account_id = getattr(g, "current_account_id", None)
+  if not account_id:
+    return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+  app_id = (request.args.get("app_id") or "").strip()
+  product_slug = (request.args.get("product_slug") or "").strip()
+  if not app_id or not product_slug:
+    return jsonify({"ok": False, "error": "app_id and product_slug required"}), 400
+
+  app = RegisteredApp.query.filter_by(id=app_id, account_id=account_id).first()
+  if not app:
+    return jsonify({"ok": False, "error": "app not found"}), 404
+
+  deliveries = (
+    AppWebhookDelivery.query
+    .filter_by(app_id=app_id, product_slug=product_slug)
+    .order_by(AppWebhookDelivery.created_at.desc())
+    .limit(10)
+    .all()
+  )
+
+  return jsonify({
+    "ok": True,
+    "deliveries": [
+      {
+        "event":       d.event,
+        "success":     d.success,
+        "status_code": d.status_code,
+        "error":       d.error,
+        "latency_ms":  d.latency_ms,
+        "created_at":  d.created_at.isoformat() if d.created_at else None,
+      }
+      for d in deliveries
+    ],
+  })

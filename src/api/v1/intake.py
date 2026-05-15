@@ -97,10 +97,13 @@ def intake():
         current_app.logger.warning("intake validation failed: %s", exc)
         return jsonify({"error": "validation_error", "message": str(exc)}), 400
 
+    registered_app_id = getattr(g, "intake_app", None) and g.intake_app.id
+
     try:
         task = _celery_client().send_task(
             "inboxiq.process_incoming_email",
-            args=[{"email": normalized, "user_id": user_id, "account_id": account_id}],
+            args=[{"email": normalized, "user_id": user_id, "account_id": account_id,
+                   "registered_app_id": registered_app_id}],
             queue="inbox",
         )
     except Exception as exc:
@@ -330,6 +333,7 @@ def chat_submit():
 
     # ── Registered app origin check ────────────────────────────────────────
     req_client_id = str(context.get("client_id", "") or "").strip()[:64]
+    reg_app = None
     if req_client_id:
         reg_app = RegisteredApp.query.filter_by(
             client_id=req_client_id, status="active"
@@ -413,11 +417,13 @@ def chat_submit():
         return jsonify({"error": "validation_error", "message": "Invalid message format"}), 400
 
     # Queue to Celery for processing (best-effort — never fail the chat if the queue is down)
+    chat_app_id = reg_app.id if reg_app else None
     task_id = None
     try:
         task = _celery_client().send_task(
             "inboxiq.process_incoming_email",
-            args=[{"email": normalized, "user_id": None, "account_id": account_id_int}],
+            args=[{"email": normalized, "user_id": None, "account_id": account_id_int,
+                   "registered_app_id": chat_app_id}],
             queue="inbox",
         )
         task_id = task.id

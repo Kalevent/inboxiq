@@ -511,6 +511,7 @@ celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.fu
 # silently unregistered).
 from src.funnel import tasks as _funnel_tasks  # noqa: F401
 from src.tasks import linkedin as _linkedin_tasks  # noqa: F401
+from src.tasks import developer_webhooks as _developer_webhook_tasks  # noqa: F401
 
 # Route tasks to queues that have consumers. Default queue is "celery" but
 # no worker pod listens on it — every worker (inbox-worker, content-worker,
@@ -614,6 +615,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     email_payload = (payload or {}).get("email") or (payload or {})
     account_id = (payload or {}).get("account_id")
     user_id = (payload or {}).get("user_id")
+    registered_app_id = (payload or {}).get("registered_app_id")
     with tracer.start_as_current_span("celery.process_incoming_email") as span:
 
         # Record task context
@@ -854,6 +856,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     ticket = Ticket(
         account_id=account_id,
         user_id=user_id,
+        registered_app_id=registered_app_id,
         subject=normalized.get("subject"),
         from_email=normalized.get("from_email"),
         body_preview=_build_body_preview(normalized.get("body"), account_id),
@@ -885,6 +888,33 @@ def process_incoming_email_task(self, payload: dict) -> dict:
         "ticket created: id=%s status=%s action_required=%s email_type=%s",
         ticket.id, status, action_required, email_type
     )
+
+    # Fire outbound webhook for registered app (best-effort — never block ticket creation)
+    if registered_app_id:
+        try:
+            from src.tasks.developer_webhooks import deliver_app_webhook, _product_slug_for_provider
+            from datetime import timezone as _tz
+            _product = _product_slug_for_provider(normalized.get("provider", ""))
+            _event_map = {"chat": "chat.message", "forms": "form.submitted", "intake_api": "intake.ticket"}
+            _event = _event_map.get(_product, f"{_product}.ticket")
+            _wh_payload = {
+                "event": _event,
+                "app_id": registered_app_id,
+                "account_id": account_id,
+                "ticket_id": ticket.id,
+                "data": {
+                    "subject": ticket.subject,
+                    "from_email": ticket.from_email,
+                    "category": ticket.category,
+                    "priority": ticket.priority,
+                    "status": ticket.status,
+                },
+                "timestamp": ticket.created_at.replace(tzinfo=_tz.utc).isoformat() if ticket.created_at else None,
+                "test": False,
+            }
+            deliver_app_webhook.delay(registered_app_id, _product, _event, _wh_payload)
+        except Exception as _wh_exc:
+            logging.getLogger(__name__).warning("webhook dispatch failed app=%s: %s", registered_app_id, _wh_exc)
 
     # Best-effort: if this email is a meeting request and a draft was generated,
     # append a booking link so the visitor can self-schedule.

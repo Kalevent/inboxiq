@@ -16,6 +16,7 @@ class Ticket(db.Model):
     id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    registered_app_id = db.Column(db.String(64), db.ForeignKey("registered_apps.id", ondelete="SET NULL"), nullable=True)
     subject = db.Column(db.String(500), nullable=False)
     from_email = db.Column(db.String(255), nullable=False)
     body_preview = db.Column(db.Text, nullable=True)
