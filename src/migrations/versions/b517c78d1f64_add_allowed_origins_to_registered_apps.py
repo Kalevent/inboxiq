@@ -23,7 +23,10 @@ def upgrade():
         batch_op.create_index('ix_automation_studio_waitlist_email', ['email'], unique=False)
 
     with op.batch_alter_table('registered_apps', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('allowed_origins', sa.JSON(), nullable=False))
+        batch_op.add_column(sa.Column('allowed_origins', sa.JSON(), nullable=False, server_default='[]'))
+    # Remove server_default — application code owns the default going forward
+    with op.batch_alter_table('registered_apps', schema=None) as batch_op:
+        batch_op.alter_column('allowed_origins', server_default=None)
 
     # ### end Alembic commands ###
 
