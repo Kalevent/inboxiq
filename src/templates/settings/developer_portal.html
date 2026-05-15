@@ -62,6 +62,85 @@ function copyModal(id, btn) {
   <p class="text-sm text-gray-600 dark:text-slate-300">Register apps and request access to InboxIQ products. Each product gets its own credentials and webhook URL.</p>
 </div>
 
+{% if not account.developer_access %}
+{# ── Request access landing page ─────────────────────────────────────────── #}
+<div class="mt-6 max-w-lg">
+
+  {% if developer_access_request %}
+    {# Request already submitted #}
+    {% if developer_access_request.status == 'pending' %}
+    <div class="rounded-2xl border border-amber-400/30 bg-amber-50 dark:bg-amber-500/10 p-6">
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
+          <svg class="w-4 h-4 text-amber-600 dark:text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="text-sm font-semibold text-amber-800 dark:text-amber-200">Request under review</div>
+          <p class="text-sm text-amber-700 dark:text-amber-300/80 mt-1">We've received your request and will be in touch shortly. Check back here for updates.</p>
+        </div>
+      </div>
+    </div>
+    {% elif developer_access_request.status == 'rejected' %}
+    <div class="rounded-2xl border border-red-400/30 bg-red-50 dark:bg-red-500/10 p-6">
+      <div class="text-sm font-semibold text-red-700 dark:text-red-300 mb-1">Request not approved</div>
+      <p class="text-sm text-red-600 dark:text-red-300/80">Contact <a href="mailto:support@kalevent.com" class="underline hover:text-red-800 dark:hover:text-red-200">support@kalevent.com</a> if you think this is a mistake.</p>
+    </div>
+    {% endif %}
+
+  {% else %}
+    {# Show request form #}
+    <div class="rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900/70 p-6">
+      <div class="flex items-start gap-3 mb-5">
+        <div class="flex-shrink-0 w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center">
+          <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <div class="text-sm font-semibold text-gray-900 dark:text-slate-100">Apply for API access</div>
+          <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Tell us what you're building and we'll get you set up.</p>
+        </div>
+      </div>
+      <form method="POST" action="{{ url_for('settings.developer_post') }}" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="request_access" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Your name</label>
+            <input type="text" name="full_name" required maxlength="255" placeholder="Jane Smith"
+                   class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">Company</label>
+            <input type="text" name="company" required maxlength="255" placeholder="Acme Inc."
+                   class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">What are you building?</label>
+          <textarea name="use_case" required rows="3" maxlength="4000"
+                    placeholder="Describe the integration or product you want to build with InboxIQ APIs…"
+                    class="w-full rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+        </div>
+        <label class="flex items-start gap-2 cursor-pointer">
+          <input type="checkbox" name="agreed_tos" required
+                 class="mt-0.5 rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-indigo-600 focus:ring-indigo-500" />
+          <span class="text-xs text-gray-600 dark:text-slate-400">I agree to the <a href="/terms" class="text-indigo-600 dark:text-indigo-400 hover:underline">Terms of Service</a> and will use the API in accordance with InboxIQ's usage policies.</span>
+        </label>
+        <button type="submit"
+                class="w-full rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors">
+          Submit application
+        </button>
+      </form>
+    </div>
+  {% endif %}
+</div>
+
+{% else %}
+{# ── developer_access granted — show full portal ──────────────────────────── #}
+
 {% if developer_error %}
 <div class="mt-4 rounded-xl border border-red-400/40 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-200">
   {{ developer_error | e }}
@@ -302,3 +381,5 @@ function confirmRevoke(form) {
   return confirm('Revoke ' + name + '? Integrations using these credentials will stop working immediately.');
 }
 </script>
+
+{% endif %}{# account.developer_access #}

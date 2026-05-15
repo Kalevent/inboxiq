@@ -251,12 +251,11 @@ def settings_page(tab):
   selected_app = None
   product_accesses = {}
   if tab == "developer" and account_id:
-    if not (account and account.developer_access):
-      tab = "team"  # silently redirect if not enabled
-    else:
-      developer_access_request = DeveloperAccessRequest.query.filter_by(
-        account_id=account_id
-      ).order_by(DeveloperAccessRequest.created_at.desc()).first()
+    # Always load the access request so the landing page knows if one is pending
+    developer_access_request = DeveloperAccessRequest.query.filter_by(
+      account_id=account_id
+    ).order_by(DeveloperAccessRequest.created_at.desc()).first()
+    if account and account.developer_access:
       registered_apps = RegisteredApp.query.filter_by(
         account_id=account_id
       ).order_by(RegisteredApp.created_at.desc()).all()
@@ -1987,10 +1986,39 @@ def developer_post():
   if not account_id or not account:
     return redirect(url_for("settings.settings_page", tab="team"))
 
-  if not account.developer_access:
-    return redirect(url_for("settings.settings_page", tab="team"))
-
   action = (request.form.get("action") or "").strip()
+
+  # ── Request developer access (allowed before developer_access is granted) ──
+  if action == "request_access":
+    if not account.developer_access:
+      full_name = (request.form.get("full_name") or "").strip()[:255]
+      company = (request.form.get("company") or "").strip()[:255]
+      use_case = (request.form.get("use_case") or "").strip()[:4000]
+      agreed_tos = request.form.get("agreed_tos") == "on"
+      if full_name and company and use_case and agreed_tos:
+        existing = DeveloperAccessRequest.query.filter_by(account_id=account_id).first()
+        if not existing:
+          access_req = DeveloperAccessRequest(
+            account_id=account_id,
+            full_name=full_name,
+            company=company,
+            use_case=use_case,
+            scopes=[],
+            agreed_tos=True,
+            status="pending",
+          )
+          try:
+            db.session.add(access_req)
+            db.session.commit()
+          except Exception:
+            db.session.rollback()
+            raise
+          current_app.logger.info(f"DeveloperAccessRequest created account={account_id}")
+    return redirect(url_for("settings.settings_page", tab="developer"))
+
+  # All other actions require developer_access to be enabled
+  if not account.developer_access:
+    return redirect(url_for("settings.settings_page", tab="developer"))
 
   # ── Register new app ───────────────────────────────────────────────────────
   if action == "register_app":
