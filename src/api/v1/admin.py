@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from flask import request, jsonify, url_for, current_app
+from flask import request, jsonify, url_for, current_app, g
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func, desc, or_, cast, text
 
@@ -9,6 +9,7 @@ from src.extensions import db
 from src.models.core import User, Account, InboxConnection
 from src.models.leads import Lead
 from src.models.tickets import Ticket, TriageLabelConfig
+from src.models.developer import AppProductAccess, RegisteredApp
 from src.api.v1.testimonials import generate_testimonial_token
 from src.billing.emailing import _send_email
 
@@ -764,6 +765,68 @@ def admin_developer_review(request_id):
         f"admin: developer request {request_id} {status} by {admin.email}"
     )
     return jsonify({"ok": True, "status": status})
+
+
+@v1.route("/admin/developer/product-requests", methods=["GET"])
+@jwt_required()
+def admin_developer_product_requests():
+    """List all pending product access requests."""
+    admin = _require_admin()
+    if not admin:
+        return jsonify({"error": "forbidden"}), 403
+
+    requests_all = AppProductAccess.query.filter_by(status="pending").order_by(
+        AppProductAccess.requested_at.desc()
+    ).all()
+    result = []
+    for req in requests_all:
+        app = RegisteredApp.query.get(req.app_id)
+        account = Account.query.get(req.account_id)
+        result.append({
+            "id": req.id,
+            "product_slug": req.product_slug,
+            "status": req.status,
+            "use_case": req.use_case,
+            "requested_at": req.requested_at.isoformat() if req.requested_at else None,
+            "app_name": app.name if app else None,
+            "app_client_id": app.client_id if app else None,
+            "account_email": account.email if account else None,
+            "account_id": req.account_id,
+        })
+    return jsonify(result)
+
+
+@v1.route("/admin/developer/product-requests/<request_id>/review", methods=["POST"])
+@jwt_required()
+def admin_developer_product_request_review(request_id):
+    """Approve or reject a product access request."""
+    admin = _require_admin()
+    if not admin:
+        return jsonify({"error": "forbidden"}), 403
+
+    from datetime import datetime, timezone
+    data = request.get_json(force=True) or {}
+    status = data.get("status", "").strip()
+    if status not in ("approved", "rejected"):
+        return jsonify({"error": "status must be 'approved' or 'rejected'"}), 400
+
+    req = AppProductAccess.query.get(request_id)
+    if not req:
+        return jsonify({"error": "not found"}), 404
+
+    req.status = status
+    req.reviewed_by = admin.id
+    if status == "approved":
+        req.approved_at = datetime.now(timezone.utc)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    current_app.logger.info(
+        f"admin: product access {request_id} {status} by {admin.email}"
+    )
+    return jsonify({"status": status})
 
 
 # ── SaaS Metrics ──────────────────────────────────────────────────────────────
