@@ -1,433 +1,456 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Security &amp; Privacy · InboxIQ by Kalevent</title>
-  <meta name="description" content="InboxIQ gives you full control over where your data lives and which AI processes it — from managed cloud to fully air-gapped on your own infrastructure." />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.min.css') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
-</head>
-<body class="pub-page bg-slate-50 text-slate-900 antialiased">
-  <div class="min-h-screen flex flex-col">
+{% extends "marketing/base.html" %}
 
-    <!-- Nav -->
-    <header class="border-b border-slate-200 bg-white/90 backdrop-blur sticky top-0 z-10">
-    <nav class="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2 hover:opacity-90 transition-opacity">
-        <div class="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white flex-shrink-0">KI</div>
-        <div>
-          <div class="font-semibold text-lg tracking-tight text-white">Kalevent</div>
-          <div class="text-xs text-slate-400">InboxIQ – Your Inbox, Smarter</div>
-        </div>
-      </a>
-      <div class="flex items-center gap-4">
-        <a href="/login" class="text-sm text-slate-300 hover:text-white transition-colors">Sign in</a>
-        <button class="dark-mode-toggle" onclick="toggleDarkMode()" aria-label="Toggle dark mode">🌙</button>
-        <a href="/signup" class="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg transition-colors">Start free trial →</a>
-      </div>
-    </nav>
-    </header>
+{% block title %}Security &amp; Privacy — InboxIQ{% endblock %}
+{% block meta_description %}InboxIQ gives you three deployment models and explicit control over which AI provider processes your emails. GDPR ready. Data encrypted in transit and at rest. Bring your own LLM key.{% endblock %}
+{% block canonical %}{{ url_for('security', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
-    <main class="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+{% block content %}
+<div class="space-y-24 pb-8">
 
-      <!-- Hero -->
-      <div class="mb-12">
-        <p class="text-xs uppercase tracking-[0.2em] text-indigo-300/80 mb-3">Security &amp; Privacy</p>
-        <h1 class="text-3xl sm:text-4xl font-semibold text-white tracking-tight mb-4">
-          You decide where your data lives<br class="hidden sm:block" /> and which AI touches it.
-        </h1>
-        <p class="text-slate-300 max-w-2xl text-sm sm:text-base">
-          Most AI tools give you one option: their cloud, their models, their rules.
-          InboxIQ is different — you can run it fully managed, bring your own LLM keys,
-          or deploy the entire stack on your own infrastructure.
-          Your support email is sensitive. You should control where it goes.
-        </p>
-        <p class="text-slate-500 mt-3 text-xs">Last updated: March 2026</p>
-      </div>
-
-      <!-- Deployment tier cards — the centrepiece -->
-      <div class="mb-12">
-        <h2 class="text-lg font-semibold text-white mb-5">Choose your deployment model</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-          <!-- Cloud SaaS -->
-          <div class="bg-slate-900/70 border border-slate-700 rounded-2xl p-5 flex flex-col gap-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold uppercase tracking-wide text-green-400">Available now</span>
-              <span class="text-xl">☁️</span>
-            </div>
-            <div>
-              <p class="text-white font-semibold text-base">Cloud</p>
-              <p class="text-slate-400 text-xs mt-1">Fully managed by Kalevent</p>
-            </div>
-            <ul class="text-slate-300 text-xs space-y-1.5 flex-1">
-              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> Zero setup — works out of the box</li>
-              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> AWS us-west-2, AES-256 at rest</li>
-              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> AI via InboxIQ's OpenAI account</li>
-              <li class="flex items-start gap-2"><span class="text-slate-500 flex-shrink-0">→</span> <span class="text-slate-400">Data processed by OpenAI API (no training on inputs)</span></li>
-            </ul>
-            <p class="text-xs text-slate-500 pt-2 border-t border-slate-800">Default for all accounts</p>
-          </div>
-
-          <!-- BYOL -->
-          <div class="bg-indigo-950/60 border border-indigo-700/60 rounded-2xl p-5 flex flex-col gap-3 ring-1 ring-indigo-500/20">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold uppercase tracking-wide text-indigo-300">Available now</span>
-              <span class="text-xl">🔑</span>
-            </div>
-            <div>
-              <p class="text-white font-semibold text-base">Bring Your Own LLM</p>
-              <p class="text-slate-400 text-xs mt-1">Your API key, your AI endpoint</p>
-            </div>
-            <ul class="text-slate-300 text-xs space-y-1.5 flex-1">
-              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> OpenAI, Anthropic, Ollama, or any OpenAI-compatible endpoint</li>
-              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> Your email content goes to <em>your</em> AI account, not InboxIQ's</li>
-              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> API key stored encrypted, never logged</li>
-              <li class="flex items-start gap-2"><span class="text-green-400 flex-shrink-0">✓</span> Switch or remove at any time</li>
-            </ul>
-            <a href="/settings?tab=ai_provider" class="mt-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors">
-              Configure in Settings →
-            </a>
-          </div>
-
-          <!-- Self-hosted -->
-          <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 flex flex-col gap-3 opacity-90">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold uppercase tracking-wide text-yellow-400">Coming soon</span>
-              <span class="text-xl">🏢</span>
-            </div>
-            <div>
-              <p class="text-white font-semibold text-base">Self-hosted</p>
-              <p class="text-slate-400 text-xs mt-1">Your infrastructure, Kalevent license</p>
-            </div>
-            <ul class="text-slate-300 text-xs space-y-1.5 flex-1">
-              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Deploy InboxIQ on your own cloud or data centre</li>
-              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Your data never leaves your infrastructure</li>
-              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Helm chart + Docker Compose provided</li>
-              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Use your own LLM or self-hosted Ollama</li>
-            </ul>
-            <a href="mailto:hello@kalevent.com?subject=Self-hosted%20InboxIQ%20%E2%80%94%20interested" class="mt-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors border border-slate-700">
-              Notify me when ready →
-            </a>
-          </div>
-
-          <!-- Air-gapped -->
-          <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-5 flex flex-col gap-3 opacity-90">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold uppercase tracking-wide text-yellow-400">Coming soon</span>
-              <span class="text-xl">🔒</span>
-            </div>
-            <div>
-              <p class="text-white font-semibold text-base">Air-gapped</p>
-              <p class="text-slate-400 text-xs mt-1">Zero outbound. Fully offline.</p>
-            </div>
-            <ul class="text-slate-300 text-xs space-y-1.5 flex-1">
-              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> No external network calls — ever</li>
-              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> AI via local Ollama (runs on your hardware)</li>
-              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Meets the strictest government &amp; defence requirements</li>
-              <li class="flex items-start gap-2"><span class="text-indigo-400 flex-shrink-0">✓</span> Offline license validation</li>
-            </ul>
-            <a href="mailto:hello@kalevent.com?subject=Air-gapped%20InboxIQ%20%E2%80%94%20interested" class="mt-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors border border-slate-700">
-              Contact us →
-            </a>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Status strip -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-10">
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Encryption in Transit</span>
-          <span class="text-slate-400 text-xs">TLS 1.2+ everywhere</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Encryption at Rest</span>
-          <span class="text-slate-400 text-xs">AWS RDS AES-256</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">BYOL AI Routing</span>
-          <span class="text-slate-400 text-xs">Settings → AI Provider</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Threat Detection</span>
-          <span class="text-slate-400 text-xs">AWS GuardDuty</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Dependency Scanning</span>
-          <span class="text-slate-400 text-xs">GitHub Dependabot</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Secret Scanning</span>
-          <span class="text-slate-400 text-xs">Gitleaks — every commit</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Code Analysis</span>
-          <span class="text-slate-400 text-xs">Semgrep OWASP Top 10</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Container Scanning</span>
-          <span class="text-slate-400 text-xs">Trivy — every deploy</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Audit Trail</span>
-          <span class="text-slate-400 text-xs">Activity Log — Settings</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Right to Erasure</span>
-          <span class="text-slate-400 text-xs">GDPR Article 17 — Settings</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-green-400 text-xs font-semibold uppercase tracking-wide">Active</span>
-          <span class="text-white text-sm font-medium">Incident Response Plan</span>
-          <span class="text-slate-400 text-xs">72hr breach notification</span>
-        </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-1">
-          <span class="text-yellow-400 text-xs font-semibold uppercase tracking-wide">In Progress</span>
-          <span class="text-white text-sm font-medium">SOC 2 Type II</span>
-          <span class="text-slate-400 text-xs">Pursuing 2026</span>
-        </div>
-      </div>
-
-      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl shadow-2xl shadow-indigo-500/10 p-6 sm:p-8 space-y-8">
-
-        <!-- Infrastructure -->
-        <section class="space-y-4">
-          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-indigo-400">&#9679;</span> Infrastructure &amp; Storage
-          </h2>
-          <ul class="space-y-3 text-slate-300 text-sm sm:text-base">
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Hosted on AWS (us-west-2)</strong> — all data stored within Amazon Web Services infrastructure. AWS maintains ISO 27001, SOC 2, and GDPR compliance at the infrastructure level.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Encryption at rest</strong> — PostgreSQL database uses AWS RDS with AES-256 encryption. File attachments are stored in S3 with server-side encryption.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Encryption in transit</strong> — all communication between your browser, our servers, and third-party APIs uses TLS 1.2 or higher.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">File attachment isolation</strong> — uploaded files are served from a dedicated isolated domain (<code class="text-indigo-300 bg-slate-800 px-1 rounded text-xs">files.kalevent.com</code>) with strict security headers, preventing cross-site data exposure.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Customer data isolation</strong> — every database query is scoped to your account. No customer can access another's tickets, leads, or email data, enforced at the application layer.</span>
-            </li>
-          </ul>
-        </section>
-
-        <!-- AI sub-processors -->
-        <section class="space-y-4">
-          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-indigo-400">&#9679;</span> AI Sub-processors
-          </h2>
-          <p class="text-slate-300 text-sm sm:text-base">
-            By default (Cloud tier), InboxIQ uses OpenAI's API to power email triage, draft replies, and lead scoring.
-            Switch to BYOL in <strong class="text-white">Settings &rarr; AI Provider</strong> and your email content
-            goes to your chosen endpoint instead — InboxIQ's OpenAI account is never used for that traffic.
-          </p>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm border-collapse">
-              <thead>
-                <tr class="border-b border-slate-700">
-                  <th class="text-left py-2 pr-4 text-slate-400 font-medium">Sub-processor</th>
-                  <th class="text-left py-2 pr-4 text-slate-400 font-medium">Purpose</th>
-                  <th class="text-left py-2 text-slate-400 font-medium">Data sent</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-800">
-                <tr>
-                  <td class="py-3 pr-4 text-white font-medium">OpenAI (API)</td>
-                  <td class="py-3 pr-4 text-slate-300">Email triage, draft replies, lead scoring <span class="text-slate-500 text-xs">(Cloud tier only)</span></td>
-                  <td class="py-3 text-slate-300">Email subject &amp; body text</td>
-                </tr>
-                <tr>
-                  <td class="py-3 pr-4 text-white font-medium">Amazon Web Services</td>
-                  <td class="py-3 pr-4 text-slate-300">Compute, database, file storage, email delivery (SES)</td>
-                  <td class="py-3 text-slate-300">All customer data (stored)</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4 text-slate-300 text-sm">
-            <strong class="text-white">OpenAI API data policy:</strong> OpenAI's API Data Processing Agreement prohibits
-            using API inputs to train models. Your email content is processed to generate a response and is not retained
-            beyond the request. See <a href="https://openai.com/policies/api-data-usage-policies" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 underline">OpenAI's API data usage policy</a>.
-          </div>
-        </section>
-
-        <!-- Access control -->
-        <section class="space-y-4">
-          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-indigo-400">&#9679;</span> Access Control
-          </h2>
-          <ul class="space-y-3 text-slate-300 text-sm sm:text-base">
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Role-based access</strong> — team members are assigned roles (Owner, Admin, Agent, Viewer). Each role limits what data and settings a user can access or change.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">JWT authentication</strong> — sessions use short-lived signed tokens. No persistent session cookies that could be silently hijacked.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Passkey &amp; TOTP support</strong> — team members can secure accounts with hardware passkeys or authenticator app 2FA in addition to passwords.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Argon2 password hashing</strong> — passwords are hashed with Argon2id, the winner of the Password Hashing Competition and current OWASP recommendation. Argon2 is intentionally slow and memory-hard, making offline brute-force attacks impractical even if the database were ever compromised.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Immutable activity log</strong> — every security-relevant action (sign-in, 2FA changes, inbox connections, role changes, AI provider updates) is written to an append-only audit log scoped to your account. View your full history anytime at <strong class="text-white">Settings → Activity Log</strong>, and export it as CSV for compliance or audit purposes.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Right to erasure (GDPR Article 17)</strong> — account owners can permanently delete their account and all associated data directly from <strong class="text-white">Settings → Security → Delete account</strong>. Billing records are anonymised and retained for 7 years as required by law. All other data is hard-deleted immediately.</span>
-            </li>
-          </ul>
-        </section>
-
-        <!-- Vulnerability management -->
-        <section class="space-y-4">
-          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-indigo-400">&#9679;</span> Vulnerability Management &amp; Secure Development
-          </h2>
-          <ul class="space-y-3 text-slate-300 text-sm sm:text-base">
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Static application security testing (Semgrep)</strong> — every pull request is automatically scanned with Semgrep using the OWASP Top 10, Flask security, and secrets detection rule sets. The pipeline is configured to block merges if any finding is reported — no defective code can reach production.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Secret scanning (Gitleaks)</strong> — every commit is scanned for accidentally committed API keys, tokens, private keys, and credentials. The check runs in CI before any code is merged, preventing secrets from ever entering the codebase history.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Container image scanning (Trivy)</strong> — the production Docker image is scanned for OS-level and library CVEs on every build before it is pushed to the container registry. High or critical vulnerabilities block the deploy pipeline.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Automated dependency scanning (Dependabot)</strong> — GitHub Dependabot scans all Python dependencies weekly and automatically opens pull requests to patch vulnerable packages before they can be exploited.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Branch protection &amp; required checks</strong> — the <code class="text-indigo-300 bg-slate-800 px-1 rounded text-xs">main</code> branch is protected. All three security scans (Semgrep, Gitleaks, Trivy) plus dependency validation must pass before any code merge is permitted. No one — including administrators — can bypass these gates.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Infrastructure threat detection</strong> — AWS GuardDuty continuously monitors CloudTrail logs, VPC flow logs, and DNS traffic for suspicious activity such as credential abuse, port scanning, or communication with known malicious IPs.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-green-400 mt-0.5 flex-shrink-0">&#10003;</span>
-              <span><strong class="text-white">Incident Response Plan</strong> — we maintain a documented IRP with P1/P2/P3 severity classification, 72-hour GDPR breach notification procedures, and post-incident review requirements.</span>
-            </li>
-          </ul>
-        </section>
-
-        <!-- Observability -->
-        <section class="space-y-4">
-          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-indigo-400">&#9679;</span> Observability &amp; Monitoring
-          </h2>
-          <p class="text-slate-300 text-sm sm:text-base">
-            All tracing and LLM observability runs on our own infrastructure — self-hosted
-            <a href="https://phoenix.arize.com" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 underline">Arize Phoenix</a>
-            inside our Kubernetes cluster. Traces, including LLM inputs and outputs, never leave our servers to a third-party analytics platform.
-          </p>
-        </section>
-
-        <!-- Compliance roadmap -->
-        <section class="space-y-4">
-          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-indigo-400">&#9679;</span> Compliance Roadmap
-          </h2>
-          <ul class="space-y-3 text-slate-300 text-sm sm:text-base">
-            <li class="flex items-start gap-3">
-              <span class="text-yellow-400 mt-0.5 flex-shrink-0">&#9679;</span>
-              <span><strong class="text-white">SOC 2 Type II</strong> — in progress. We are building the controls and evidence program required for a SOC 2 Type II audit. We expect to complete our first audit in 2026.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-yellow-400 mt-0.5 flex-shrink-0">&#9679;</span>
-              <span><strong class="text-white">GDPR</strong> — we publish a Data Processing Agreement (DPA) for EU customers on request. Email <a href="mailto:privacy@kalevent.com" class="text-indigo-400 hover:text-indigo-300 underline">privacy@kalevent.com</a> to receive a signed DPA.</span>
-            </li>
-            <li class="flex items-start gap-3">
-              <span class="text-slate-500 mt-0.5 flex-shrink-0">&#9679;</span>
-              <span><strong class="text-white">HIPAA</strong> — not yet supported. Do not use InboxIQ for processing Protected Health Information (PHI) until HIPAA controls are published.</span>
-            </li>
-          </ul>
-        </section>
-
-        <!-- Vulnerability disclosure -->
-        <section class="space-y-4">
-          <h2 class="text-xl font-semibold text-white flex items-center gap-2">
-            <span class="text-indigo-400">&#9679;</span> Vulnerability Disclosure
-          </h2>
-          <p class="text-slate-300 text-sm sm:text-base">
-            If you discover a security vulnerability in InboxIQ, please report it responsibly to
-            <a href="mailto:security@kalevent.com" class="text-indigo-400 hover:text-indigo-300 underline">security@kalevent.com</a>
-            with the subject line <strong class="text-white">"Security vulnerability"</strong>.
-            We will acknowledge your report within 48 hours and keep you updated as we investigate and remediate.
-            We ask that you give us reasonable time to fix the issue before public disclosure.
-          </p>
-        </section>
-
-        <!-- Contact -->
-        <section class="space-y-3 pt-2 border-t border-slate-800">
-          <h2 class="text-xl font-semibold text-white">Questions?</h2>
-          <p class="text-slate-300 text-sm sm:text-base">
-            For security, privacy, data deletion requests, or to request a signed DPA — reach us via
-            <a href="mailto:security@kalevent.com" class="text-indigo-400 hover:text-indigo-300 underline">security@kalevent.com</a>
-            or use the <strong class="text-white">feedback form inside the app</strong>
-            (Dashboard → Feedback tab) to report bugs, billing issues, or anything else.
-          </p>
-        </section>
-
-      </div>
-    </main>
-
-    <!-- CTA -->
-    <div class="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
-      <div class="bg-indigo-950/60 border border-indigo-700/40 rounded-2xl p-8 text-center">
-        <h2 class="text-xl sm:text-2xl font-semibold text-white mb-2">Ready to take control of your support inbox?</h2>
-        <p class="text-slate-300 text-sm mb-6 max-w-xl mx-auto">Your data stays where you want it. Start with our managed cloud — or bring your own LLM key from day one.</p>
-        <a href="/signup" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
-          Start free trial →
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Security &amp; Privacy</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        You decide where your data lives<br class="hidden sm:block"> and which AI touches it.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        InboxIQ gives you three deployment models and explicit control over which AI provider processes your emails. No surprises. No lock-in.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+          Start free trial
         </a>
-        <p class="text-slate-500 text-xs mt-3">No credit card required</p>
+        <a href="{{ url_for('settings.settings_page', tab='ai_provider') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Configure BYOL in Settings &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+          </svg>
+          GDPR Ready
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+          </svg>
+          Encrypted in transit &amp; at rest
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+          </svg>
+          Use your own LLM key
+        </span>
       </div>
     </div>
+  </header>
 
-    <!-- Footer -->
-    <footer class="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 border-t border-slate-800/50 mt-8">
-      <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-slate-500">
-        <span>&copy; {{ current_year }} Kalevent Ltd. All rights reserved.</span>
-        <span class="hidden md:inline text-slate-700">•</span>
-        <a href="{{ url_for('privacy') }}" class="hover:text-white transition-colors">Privacy Policy</a>
-        <span class="hidden md:inline text-slate-700">•</span>
-        <a href="{{ url_for('terms') }}" class="hover:text-white transition-colors">Terms of Service</a>
-        <span class="hidden md:inline text-slate-700">•</span>
-        <a href="{{ url_for('contact') }}" class="hover:text-white transition-colors">Contact</a>
+  {# ── Deployment Models ─────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Deployment Models</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Pick the deployment that fits your security requirements</h2>
+      <p class="text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        All plans start on Cloud. BYOL is available today. Self-hosted and Air-gapped are on the roadmap for compliance-heavy industries.
+      </p>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+      {# Cloud — default/muted #}
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+          <svg class="w-5 h-5 text-brand-ink-soft" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" />
+          </svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink text-lg">Cloud</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">InboxIQ manages infrastructure. Your emails are processed in our secure multi-tenant environment.</p>
+        <ul class="space-y-2">
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            TLS 1.3 in transit
+          </li>
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            AES-256 at rest
+          </li>
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            EU/US region selection
+          </li>
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            SOC 2 (in progress)
+          </li>
+        </ul>
       </div>
-    </footer>
 
-  </div>
-  <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
-</body>
-</html>
+      {# BYOL — featured / recommended #}
+      <div class="rounded-2xl border-2 border-brand-accent bg-brand-lavender p-6 space-y-4 relative overflow-visible">
+        <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-accent text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">Most Popular</span>
+        <div class="w-10 h-10 rounded-xl bg-brand-accent/10 flex items-center justify-center">
+          <svg class="w-5 h-5 text-brand-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+          </svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink text-lg">BYOL — Bring Your Own LLM</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Connect your own OpenAI, Anthropic, or Azure OpenAI key. AI calls go from your browser to your provider — we never see the payload.</p>
+        <ul class="space-y-2">
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            Zero data retention at InboxIQ for AI payloads
+          </li>
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            Works with any OpenAI-compatible endpoint
+          </li>
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            Rotate or revoke keys at any time
+          </li>
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            Per-inbox key isolation
+          </li>
+        </ul>
+        <a href="{{ url_for('settings.settings_page', tab='ai_provider') }}"
+           class="inline-flex items-center text-sm font-semibold text-brand-accent hover:text-brand-accent-soft transition-colors">
+          Configure in Settings &#8594;
+        </a>
+      </div>
+
+      {# Self-hosted — coming soon, dimmed #}
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-4 opacity-60">
+        <div class="flex items-center justify-between">
+          <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+            <svg class="w-5 h-5 text-brand-ink-soft" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7m0 0a3 3 0 01-3 3m0 3h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008zm-3 6h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008z" />
+            </svg>
+          </div>
+          <span class="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-1 rounded-full">Coming soon</span>
+        </div>
+        <h3 class="font-semibold text-brand-ink text-lg" aria-label="Self-hosted — coming soon">Self-hosted</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Deploy InboxIQ inside your own VPC or private cloud. Full control over data residency and network egress.</p>
+        <ul class="space-y-2">
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            Docker + Kubernetes manifests
+          </li>
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            Bring your own Postgres &amp; Redis
+          </li>
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            No outbound calls except to configured AI provider
+          </li>
+        </ul>
+      </div>
+
+      {# Air-gapped — coming soon, dimmed #}
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-4 opacity-60">
+        <div class="flex items-center justify-between">
+          <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+            <svg class="w-5 h-5 text-brand-ink-soft" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+          </div>
+          <span class="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-1 rounded-full">Coming soon</span>
+        </div>
+        <h3 class="font-semibold text-brand-ink text-lg" aria-label="Air-gapped — coming soon">Air-gapped</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Fully isolated deployment with no internet connectivity. Purpose-built for regulated industries and government.</p>
+        <ul class="space-y-2">
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            Offline AI model support (Ollama compatible)
+          </li>
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            Signed artefact bundles
+          </li>
+          <li class="flex items-start gap-2 text-sm text-brand-ink-soft">
+            <svg class="w-4 h-4 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            Audit-ready installation guide
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  {# ── Security Posture Grid ─────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Security Posture</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Built for teams that take security seriously</h2>
+    </div>
+    <div class="grid md:grid-cols-2 gap-12">
+
+      {# Infrastructure #}
+      <div>
+        <h3 class="font-semibold text-brand-ink mb-5">Infrastructure</h3>
+        <ul class="space-y-5">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Encryption in transit (TLS 1.3)</p>
+              <p class="text-brand-ink-soft text-sm">All data in flight is encrypted using TLS 1.3.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Encryption at rest (AES-256)</p>
+              <p class="text-brand-ink-soft text-sm">Database and object storage encrypted at rest with AES-256.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Isolated file serving</p>
+              <p class="text-brand-ink-soft text-sm">User uploads served from files.kalevent.com — isolated from the main application domain.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      {# Access Control #}
+      <div>
+        <h3 class="font-semibold text-brand-ink mb-5">Access Control</h3>
+        <ul class="space-y-5">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">JWT-based authentication</p>
+              <p class="text-brand-ink-soft text-sm">Short-lived signed tokens. No session cookies stored on the server.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Passkey / WebAuthn support</p>
+              <p class="text-brand-ink-soft text-sm">Phishing-resistant hardware-bound login via FIDO2 passkeys.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Role-scoped API credentials</p>
+              <p class="text-brand-ink-soft text-sm">Developer API keys are scoped to specific permissions (intake:write, tickets:read).</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      {# Application Security #}
+      <div>
+        <h3 class="font-semibold text-brand-ink mb-5">Application Security</h3>
+        <ul class="space-y-5">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Dependency scanning</p>
+              <p class="text-brand-ink-soft text-sm">Dependabot monitors all packages for known CVEs.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Secret scanning</p>
+              <p class="text-brand-ink-soft text-sm">GitHub Advanced Security scans every commit for accidentally committed credentials.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Container image scanning</p>
+              <p class="text-brand-ink-soft text-sm">Every container build is scanned for OS-level CVEs before deployment.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">SAST / code analysis</p>
+              <p class="text-brand-ink-soft text-sm">Static analysis runs on every pull request.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      {# Compliance & Observability #}
+      <div>
+        <h3 class="font-semibold text-brand-ink mb-5">Compliance &amp; Observability</h3>
+        <ul class="space-y-5">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Audit log</p>
+              <p class="text-brand-ink-soft text-sm">Every authenticated action is logged with user, timestamp, and IP. Visible to account owners in Settings.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Rate limiting on all public endpoints</p>
+              <p class="text-brand-ink-soft text-sm">Flask-Limiter enforces per-IP rate limits on every public-facing route.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">GDPR-ready data controls</p>
+              <p class="text-brand-ink-soft text-sm">Account deletion, data export, and right-to-erasure requests supported.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Vulnerability disclosure programme</p>
+              <p class="text-brand-ink-soft text-sm">Responsible disclosure policy with 24-hour acknowledgement SLA.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+  {# ── AI Sub-processors ─────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">AI Sub-processors</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">We tell you exactly which AI sees your emails</h2>
+    </div>
+    <div class="grid lg:grid-cols-2 gap-12 items-start">
+
+      {# Sub-processor table #}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-brand-accent/20">
+              <th class="text-left pb-3 font-semibold text-brand-ink">Provider</th>
+              <th class="text-left pb-3 font-semibold text-brand-ink">Used for</th>
+              <th class="text-left pb-3 font-semibold text-brand-ink">Data retention</th>
+              <th class="text-left pb-3 font-semibold text-brand-ink">Opt-out</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-brand-accent/10">
+            <tr>
+              <td class="py-4 pr-4 text-brand-ink font-medium">OpenAI (default)</td>
+              <td class="py-4 pr-4 text-brand-ink-soft">Email triage, draft replies</td>
+              <td class="py-4 pr-4 text-brand-ink-soft">0 days (Zero Data Retention policy)</td>
+              <td class="py-4 text-brand-ink-soft">Use BYOL to replace</td>
+            </tr>
+            <tr>
+              <td class="py-4 pr-4 text-brand-ink font-medium">Your provider (BYOL)</td>
+              <td class="py-4 pr-4 text-brand-ink-soft">All AI features</td>
+              <td class="py-4 pr-4 text-brand-ink-soft">Your own policy</td>
+              <td class="py-4 text-brand-ink-soft">N/A — you control it</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {# OpenAI ZDR callout #}
+      <div class="bg-white rounded-2xl p-8 space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-accent/10 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-brand-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
+          </div>
+          <h3 class="font-semibold text-brand-ink">OpenAI Zero Data Retention</h3>
+        </div>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">
+          InboxIQ calls OpenAI's API with ZDR enabled. OpenAI does not use your emails to train models and retains no data after responding.
+        </p>
+        <a href="https://platform.openai.com/docs/models/how-we-use-your-data" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center text-sm font-semibold text-brand-accent hover:text-brand-accent-soft transition-colors">
+          OpenAI ZDR policy &#8594;
+        </a>
+      </div>
+
+    </div>
+  </section>
+  {# ── Compliance + Disclosure + Contact ────────────────────── #}
+  <section>
+    <div class="grid md:grid-cols-3 gap-8">
+
+      {# Compliance Roadmap #}
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Compliance Roadmap</h3>
+        <ul class="space-y-3">
+          <li class="flex items-center justify-between">
+            <span class="text-sm text-brand-ink-soft">SOC 2 Type I</span>
+            <span class="text-xs font-semibold bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full">In progress</span>
+          </li>
+          <li class="flex items-center justify-between">
+            <span class="text-sm text-brand-ink-soft">GDPR</span>
+            <span class="text-xs font-semibold bg-green-50 text-green-700 px-2 py-0.5 rounded-full">Ready</span>
+          </li>
+          <li class="flex items-center justify-between">
+            <span class="text-sm text-brand-ink-soft">HIPAA</span>
+            <span class="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Planned</span>
+          </li>
+          <li class="flex items-center justify-between">
+            <span class="text-sm text-brand-ink-soft">ISO 27001</span>
+            <span class="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Planned</span>
+          </li>
+        </ul>
+      </div>
+
+      {# Vulnerability Disclosure #}
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
+        <h3 class="font-semibold text-brand-ink">Vulnerability Disclosure</h3>
+        <p class="text-sm text-brand-ink-soft leading-relaxed">
+          We operate a responsible disclosure programme. If you discover a vulnerability, please report it to
+          <a href="mailto:security@kalevent.com" class="text-brand-accent hover:text-brand-accent-soft">security@kalevent.com</a>.
+          We aim to acknowledge within 24 hours and resolve critical issues within 72 hours.
+        </p>
+        <a href="mailto:security@kalevent.com"
+           class="inline-flex items-center text-sm font-semibold text-brand-accent hover:text-brand-accent-soft transition-colors">
+          Report a vulnerability &#8594;
+        </a>
+      </div>
+
+      {# Security Contact #}
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
+        <h3 class="font-semibold text-brand-ink">Security Team</h3>
+        <p class="text-sm text-brand-ink-soft leading-relaxed">
+          Questions about our security posture, penetration test results, or compliance documentation? Reach our security team directly.
+        </p>
+        <a href="mailto:security@kalevent.com"
+           class="inline-flex items-center text-sm font-semibold text-brand-accent hover:text-brand-accent-soft transition-colors">
+          security@kalevent.com &#8594;
+        </a>
+      </div>
+
+    </div>
+  </section>
+  {# ── CTA Footer ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      Ready to take control of your inbox data?
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Start free — no credit card required. Configure BYOL in under 5 minutes.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
