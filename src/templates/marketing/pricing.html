@@ -2,7 +2,7 @@
 
 {% block title %}Pricing | InboxIQ — Per-Inbox Pricing, Not Per Seat{% endblock %}
 {% block meta_description %}
-InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI costs — all triage and drafts included. See what each plan covers and how to calculate your ROI.
+InboxIQ charges per active inbox, not per seat. Starter from £9/inbox/mo. No hidden AI costs — all triage and drafts included. See what each plan covers and how to calculate your ROI.
 {% endblock %}
 {% block canonical %}{{ url_for('pricing_page', _external=True) }}{% endblock %}
 
@@ -72,70 +72,110 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
     </div>
   </section>
 
-  {# ── Plans ─────────────────────────────────────────────────── #}
-  <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  {# ── Billing toggle ──────────────────────────────────────── #}
+  <div class="flex items-center justify-center">
+    <div class="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 gap-1 dark:border-slate-700 dark:bg-slate-800">
+      <button id="btn-monthly" onclick="setBilling('monthly')"
+              class="px-4 py-1.5 text-sm font-medium rounded-lg bg-white shadow-sm text-slate-950 border border-slate-200 dark:bg-slate-700 dark:text-white dark:border-slate-600">
+        Monthly
+      </button>
+      <button id="btn-annual" onclick="setBilling('annual')"
+              class="px-4 py-1.5 text-sm font-medium rounded-lg text-slate-500 dark:text-slate-400">
+        Annual
+        <span class="ml-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800">Save ~17%</span>
+      </button>
+    </div>
+  </div>
 
-    {# Pro #}
+  {# ── Plans ─────────────────────────────────────────────────── #}
+  <section class="grid sm:grid-cols-2 lg:grid-cols-5 gap-5" id="pricing-plans">
+
+    {# Free — BYOL #}
     <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 flex flex-col shadow-sm dark:bg-slate-900 dark:border-slate-800">
       <div>
-        <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Pro</p>
-        <p class="text-3xl font-bold text-slate-950 dark:text-white">£49<span class="text-base font-normal text-slate-400">/mo</span></p>
-        <p class="text-slate-400 text-xs mt-1">Up to 2 inboxes</p>
+        <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Free</p>
+        <p class="text-3xl font-bold text-slate-950 dark:text-white">£0<span class="text-base font-normal text-slate-400">/mo</span></p>
+        <p class="text-slate-400 text-xs mt-1">BYOL required &bull; 1 inbox</p>
       </div>
       <ul class="space-y-2 text-slate-600 text-sm leading-relaxed flex-1 dark:text-slate-300">
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> AI triage on every email</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 1,000 AI decisions/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 50 AI decisions/mo</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Urgency &amp; intent detection</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Automation rules</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Dashboard &amp; top topics</li>
-        <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB draft replies + meeting scheduling</li>
-        <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> Advanced automation</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> AI draft replies</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 1 automation rule (label / archive / mark read)</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 1 booking page &bull; 5 meetings/mo</li>
+      </ul>
+      <p class="text-xs text-slate-400 leading-relaxed dark:text-slate-500">You supply the OpenAI / Anthropic key — AI calls go directly to your provider. InboxIQ never sees the payload.</p>
+      <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
+        Get started free
+      </a>
+    </div>
+
+    {# Starter #}
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 flex flex-col shadow-sm dark:bg-slate-900 dark:border-slate-800">
+      <div>
+        <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Starter</p>
+        <p class="text-3xl font-bold text-slate-950 dark:text-white"><span class="price-mo">£9</span><span class="price-yr hidden">£7</span><span class="text-base font-normal text-slate-400">/inbox/mo</span></p>
+        <p class="text-slate-400 text-xs mt-1">1 inbox</p>
+        <p class="text-emerald-600 text-xs mt-0.5 price-yr hidden">Billed as £84/yr — save 22%</p>
+      </div>
+      <ul class="space-y-2 text-slate-600 text-sm leading-relaxed flex-1 dark:text-slate-300">
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> AI triage on every email</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 200 AI decisions/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Urgency &amp; intent detection</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Automation (3 rules, label / archive / mark read)</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 1 static booking page</li>
+        <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> BYOL — Bring Your Own LLM key</li>
+        <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB draft replies</li>
       </ul>
       <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
         Get started
       </a>
     </div>
 
-    {# Business — highlighted #}
+    {# Pro — highlighted #}
     <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 flex flex-col ring-2 ring-indigo-500 relative shadow-sm dark:bg-slate-900 dark:border-slate-800">
       <div class="absolute -top-3 left-1/2 -translate-x-1/2">
         <span class="bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">Most popular</span>
       </div>
       <div>
-        <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Business</p>
-        <p class="text-3xl font-bold text-slate-950 dark:text-white">£149<span class="text-base font-normal text-slate-400">/mo</span></p>
-        <p class="text-slate-400 text-xs mt-1">Up to 5 inboxes</p>
+        <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Pro</p>
+        <p class="text-3xl font-bold text-slate-950 dark:text-white"><span class="price-mo">£29</span><span class="price-yr hidden">£24</span><span class="text-base font-normal text-slate-400">/inbox/mo</span></p>
+        <p class="text-slate-400 text-xs mt-1">Unlimited inboxes</p>
+        <p class="text-emerald-600 text-xs mt-0.5 price-yr hidden">Billed as £288/yr — save 17%</p>
       </div>
       <ul class="space-y-2 text-slate-600 text-sm leading-relaxed flex-1 dark:text-slate-300">
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Everything in Pro</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 5,000 AI decisions/mo</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> KB-grounded draft replies + meeting scheduling</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 500 automation runs/mo</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Multi-inbox invite link</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> API access</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Audit trail</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Everything in Starter</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 1,000 AI decisions/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> BYOL — Bring Your Own LLM key</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Automation (25 rules, all standard actions)</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 50 temp booking links/mo</li>
+        <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB-grounded draft replies</li>
+        <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> Activity log &amp; audit trail</li>
       </ul>
       <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition text-sm">
         Get started
       </a>
     </div>
 
-    {# Scale #}
+    {# Business #}
     <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 flex flex-col shadow-sm dark:bg-slate-900 dark:border-slate-800">
       <div>
-        <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Scale</p>
-        <p class="text-3xl font-bold text-slate-950 dark:text-white">£399<span class="text-base font-normal text-slate-400">/mo</span></p>
-        <p class="text-slate-400 text-xs mt-1">Up to 15 inboxes</p>
+        <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Business</p>
+        <p class="text-3xl font-bold text-slate-950 dark:text-white"><span class="price-mo">£49</span><span class="price-yr hidden">£40</span><span class="text-base font-normal text-slate-400">/inbox/mo</span></p>
+        <p class="text-slate-400 text-xs mt-1">Unlimited inboxes</p>
+        <p class="text-emerald-600 text-xs mt-0.5 price-yr hidden">Billed as £480/yr — save 18%</p>
       </div>
       <ul class="space-y-2 text-slate-600 text-sm leading-relaxed flex-1 dark:text-slate-300">
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Everything in Business</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 25,000 AI decisions/mo</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 5,000 automation runs/mo</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Up to 15 inboxes</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Unlimited registered apps</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Priority support</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Everything in Pro</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 5,000 AI decisions/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> KB-grounded draft replies + meeting scheduling</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Automation Studio (100 rules, full conditions)</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Activity log &amp; audit trail (1 year)</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Prior authorization workflows</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Developer portal &amp; API add-ons</li>
       </ul>
-      <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
+      <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition text-sm">
         Get started
       </a>
     </div>
@@ -148,13 +188,12 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
         <p class="text-slate-400 text-xs mt-1">Unlimited inboxes</p>
       </div>
       <ul class="space-y-2 text-slate-600 text-sm leading-relaxed flex-1 dark:text-slate-300">
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Everything in Scale</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Everything in Business</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Unlimited AI decisions</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Unlimited inboxes</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Self-hosted &amp; air-gapped options</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Dedicated onboarding</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Custom automation workflows</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> SLA &amp; uptime guarantee</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Security review &amp; DPA</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Security review &amp; custom DPA</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Dedicated Slack channel</li>
       </ul>
       <a href="{{ url_for('contact') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
@@ -162,6 +201,34 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
       </a>
     </div>
 
+  </section>
+
+  {# ── Overage ──────────────────────────────────────────────── #}
+  <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+    <div class="flex flex-col lg:flex-row lg:items-start gap-6">
+      <div class="space-y-2 flex-1">
+        <h2 class="text-lg font-semibold text-slate-950 dark:text-white">Hitting your limit mid-month? Overage keeps you going.</h2>
+        <p class="text-slate-600 text-sm leading-relaxed dark:text-slate-300">By default, triage pauses when you hit your monthly quota and we send an in-app alert. Enable opt-in overage in billing settings and InboxIQ keeps triaging — excess decisions are charged at your plan's per-decision rate.</p>
+        <p class="text-xs text-slate-400 dark:text-slate-500 pt-1">You'll receive an alert at 80% usage. Overage is always opt-in — we never charge without your consent.</p>
+      </div>
+      <div class="grid grid-cols-3 gap-3 text-center text-sm flex-shrink-0">
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 dark:bg-slate-800/50 dark:border-slate-700">
+          <p class="font-semibold text-slate-700 dark:text-slate-200 text-xs mb-1">Starter</p>
+          <p class="text-indigo-600 font-bold text-xl dark:text-indigo-400">£0.08</p>
+          <p class="text-slate-400 text-xs mt-0.5">per extra decision</p>
+        </div>
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 dark:bg-slate-800/50 dark:border-slate-700">
+          <p class="font-semibold text-slate-700 dark:text-slate-200 text-xs mb-1">Pro</p>
+          <p class="text-indigo-600 font-bold text-xl dark:text-indigo-400">£0.05</p>
+          <p class="text-slate-400 text-xs mt-0.5">per extra decision</p>
+        </div>
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 dark:bg-slate-800/50 dark:border-slate-700">
+          <p class="font-semibold text-slate-700 dark:text-slate-200 text-xs mb-1">Business</p>
+          <p class="text-indigo-600 font-bold text-xl dark:text-indigo-400">£0.03</p>
+          <p class="text-slate-400 text-xs mt-0.5">per extra decision</p>
+        </div>
+      </div>
+    </div>
   </section>
 
   {# ── What counts as an AI decision ─────────────────────────── #}
@@ -204,7 +271,7 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
     <div class="grid sm:grid-cols-3 gap-4 pt-2">
       <div class="bg-slate-50 border border-slate-100 rounded-lg p-4 space-y-1 dark:bg-slate-800/50 dark:border-slate-700">
         <p class="text-slate-950 font-semibold text-sm dark:text-white">50 emails/week</p>
-        <p class="text-slate-500 text-xs dark:text-slate-400">≈ 200 AI decisions/mo &mdash; well within Pro</p>
+        <p class="text-slate-500 text-xs dark:text-slate-400">≈ 200 AI decisions/mo &mdash; fits Starter</p>
       </div>
       <div class="bg-slate-50 border border-slate-100 rounded-lg p-4 space-y-1 dark:bg-slate-800/50 dark:border-slate-700">
         <p class="text-slate-950 font-semibold text-sm dark:text-white">150 emails/week</p>
@@ -231,8 +298,8 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
       <h3 class="font-semibold text-slate-950 dark:text-white">ROI at a glance — Business plan, 3 inboxes</h3>
       <div class="space-y-2 text-sm">
         <div class="flex justify-between py-2 border-b border-slate-100 dark:border-slate-700">
-          <span class="text-slate-600 dark:text-slate-300">InboxIQ Business plan</span>
-          <span class="text-slate-700 font-semibold dark:text-slate-300">£149/mo</span>
+          <span class="text-slate-600 dark:text-slate-300">InboxIQ Business (3 inboxes &times; £49)</span>
+          <span class="text-slate-700 font-semibold dark:text-slate-300">£147/mo</span>
         </div>
         <div class="flex justify-between py-2 border-b border-slate-100 dark:border-slate-700">
           <span class="text-slate-600 dark:text-slate-300">Time recovered per inbox (1.5 hr/day × 22 days)</span>
@@ -251,6 +318,53 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
     </div>
   </section>
 
+  {# ── Comparison table ────────────────────────────────────── #}
+  <section class="space-y-5">
+    <div class="space-y-1 text-center">
+      <h2 class="text-2xl font-semibold text-slate-950 dark:text-white">How InboxIQ compares</h2>
+      <p class="text-slate-500 text-sm dark:text-slate-400">Per-inbox pricing beats per-seat tools — especially when a small team shares one or two inboxes.</p>
+    </div>
+    <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60">
+            <th class="text-left py-3 px-4 font-semibold text-slate-700 dark:text-slate-200 w-1/4">Tool</th>
+            <th class="text-left py-3 px-4 font-semibold text-slate-700 dark:text-slate-200">Pricing model</th>
+            <th class="text-right py-3 px-4 font-semibold text-slate-700 dark:text-slate-200">2 inboxes · 4 agents</th>
+            <th class="text-right py-3 px-4 font-semibold text-slate-700 dark:text-slate-200">AI triage included</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+          <tr class="bg-indigo-50/40 dark:bg-indigo-500/5">
+            <td class="py-3 px-4 font-semibold text-indigo-600 dark:text-indigo-400">InboxIQ Pro</td>
+            <td class="py-3 px-4 text-slate-600 dark:text-slate-300">Per inbox</td>
+            <td class="py-3 px-4 text-right font-bold text-slate-950 dark:text-white">£58/mo</td>
+            <td class="py-3 px-4 text-right font-semibold text-emerald-600 dark:text-emerald-400">&#10003; Included</td>
+          </tr>
+          <tr>
+            <td class="py-3 px-4 text-slate-700 dark:text-slate-200">Zendesk Support</td>
+            <td class="py-3 px-4 text-slate-500 dark:text-slate-400">Per agent</td>
+            <td class="py-3 px-4 text-right text-slate-700 dark:text-slate-200">£550/mo</td>
+            <td class="py-3 px-4 text-right text-slate-400">Add-on extra</td>
+          </tr>
+          <tr>
+            <td class="py-3 px-4 text-slate-700 dark:text-slate-200">Freshdesk Growth</td>
+            <td class="py-3 px-4 text-slate-500 dark:text-slate-400">Per agent</td>
+            <td class="py-3 px-4 text-right text-slate-700 dark:text-slate-200">£150/mo</td>
+            <td class="py-3 px-4 text-right text-slate-400">Add-on extra</td>
+          </tr>
+          <tr>
+            <td class="py-3 px-4 text-slate-700 dark:text-slate-200">Front</td>
+            <td class="py-3 px-4 text-slate-500 dark:text-slate-400">Per seat</td>
+            <td class="py-3 px-4 text-right text-slate-700 dark:text-slate-200">£360/mo</td>
+            <td class="py-3 px-4 text-right text-slate-400">Add-on extra</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-xs text-slate-400 dark:text-slate-500 text-center">Competitor prices are indicative based on published SMB rates. InboxIQ assumes 2 inboxes &times; £29 (Pro). Other tools assume 4 agents at typical plan rates.</p>
+  </section>
+
   {# ── FAQ ───────────────────────────────────────────────────── #}
   <section class="space-y-6">
     <h2 class="text-2xl font-semibold text-slate-950 dark:text-white">Pricing FAQ</h2>
@@ -266,7 +380,7 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
         ),
         (
           "What happens if I exceed my AI decision limit?",
-          "Triage continues but excess decisions are billed at the overage rate shown in your dashboard. We notify you before you exceed your limit."
+          "By default, triage pauses when your quota runs out and we notify you in-app. You can enable overage in billing settings to keep triage running — excess decisions are charged at the overage rate for your plan. You'll receive a warning at 80% usage."
         ),
         (
           "Is there a free trial?",
@@ -274,7 +388,7 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
         ),
         (
           "Do you offer annual billing?",
-          "Yes. Annual billing is available at 2 months free (equivalent to ~17% off). Contact us to switch."
+          "Yes. Toggle annual billing on the pricing page to see the discounted monthly equivalent — Starter £7/mo, Pro £24/mo, Business £40/mo. Billed as a single annual charge. Switch any time from billing settings."
         ),
         (
           "Can I downgrade my plan?",
@@ -346,6 +460,28 @@ InboxIQ charges per active inbox, not per seat. Pro from £49/mo. No hidden AI c
         }
       }
     ]
+  }
+  </script>
+
+  <script>
+  function setBilling(mode) {
+    document.querySelectorAll('.price-mo').forEach(function(el) {
+      el.classList.toggle('hidden', mode === 'annual');
+    });
+    document.querySelectorAll('.price-yr').forEach(function(el) {
+      el.classList.toggle('hidden', mode === 'monthly');
+    });
+    var mo = document.getElementById('btn-monthly');
+    var yr = document.getElementById('btn-annual');
+    var active = ['bg-white','shadow-sm','text-slate-950','border','border-slate-200'];
+    var inactive = ['text-slate-500'];
+    if (mode === 'annual') {
+      active.forEach(function(c){ yr.classList.add(c); mo.classList.remove(c); });
+      inactive.forEach(function(c){ mo.classList.add(c); yr.classList.remove(c); });
+    } else {
+      active.forEach(function(c){ mo.classList.add(c); yr.classList.remove(c); });
+      inactive.forEach(function(c){ yr.classList.add(c); mo.classList.remove(c); });
+    }
   }
   </script>
 

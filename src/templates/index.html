@@ -196,6 +196,16 @@
           <a href="/features" class="dm-nav-link text-slate-600 hover:text-slate-900">Features</a>
           <a href="/pricing" class="dm-nav-link text-slate-600 hover:text-slate-900">Pricing</a>
           <a href="#roi" class="dm-nav-link text-slate-600 hover:text-slate-900">ROI</a>
+          <div class="landing-menu-wrap group" style="position: relative; z-index: 8000;">
+            <button data-dropdown="company-header" class="dm-nav-link inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 focus:outline-none">
+              <span>Resources</span>
+              <span class="dm-nav-arrow text-[10px] text-slate-400">▼</span>
+            </button>
+            <div data-dropdown-menu="company-header" class="dm-dropdown landing-menu absolute left-0 mt-2 hidden min-w-[180px] rounded-lg border border-slate-200 bg-white shadow-lg backdrop-blur z-50" style="z-index: 9000;">
+              <a href="{{ url_for('security') }}" class="block px-4 py-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900">Security</a>
+              <a href="{{ url_for('blog.blog_index') }}" class="block px-4 py-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900">Blog</a>
+            </div>
+          </div>
           {% if current_user.is_authenticated %}
             <a href="/upgrade" class="dm-nav-link font-semibold text-indigo-600 hover:text-indigo-700">Upgrade</a>
           {% endif %}
@@ -365,6 +375,20 @@
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- ── Inbox demo — works inside Gmail & Outlook ─────────────────── -->
+      <section class="dm-section-white border-b border-slate-100 bg-slate-50">
+        <div class="mx-auto max-w-4xl px-6 py-12 lg:px-8">
+          <p class="text-center text-xs font-semibold uppercase tracking-widest text-indigo-600 mb-6">Works inside your inbox &mdash; no new dashboard to learn</p>
+          <div class="relative overflow-hidden rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/60 bg-white">
+            <video autoplay muted loop playsinline class="w-full block"
+                   poster="{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}">
+              <source src="{{ url_for('static', filename='demo/inboxiq-gmail-demo.mp4') }}" type="video/mp4">
+            </video>
+          </div>
+          <p class="text-center mt-4 text-sm text-slate-500">InboxIQ triages and drafts replies directly inside Gmail and Outlook &mdash; your team never leaves the inbox</p>
         </div>
       </section>
 
@@ -1033,11 +1057,11 @@
             </button>
 
             <div id="roiResults" class="text-xs text-slate-700 space-y-2">
-              <p class="dm-muted text-slate-500">Fill in your numbers and click "Calculate ROI".</p>
+              <p class="dm-muted text-slate-500">Start typing your numbers above to see your ROI instantly.</p>
             </div>
 
             <p class="mt-4 text-[10px] text-slate-400">
-              * Assumes InboxIQ drafts replies for 80% of repetitive emails, reducing compose time by 90%. Compared against the Pro plan (£99/month).
+              * Assumes InboxIQ drafts replies for 80% of repetitive emails, reducing compose time by 90%. Compared against the Pro plan (£29/inbox/mo).
             </p>
           </div>
         </div>
@@ -1053,7 +1077,7 @@
           <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-8 py-6 text-left dark:border-slate-700 dark:bg-slate-800/40">
               <p class="text-sm font-semibold text-slate-500 uppercase tracking-widest">Plans from</p>
-              <p class="mt-1 text-4xl font-bold text-slate-950 dark:text-white">£49<span class="text-lg font-normal text-slate-500">/mo</span></p>
+              <p class="mt-1 text-4xl font-bold text-slate-950 dark:text-white">£9<span class="text-lg font-normal text-slate-500">/inbox/mo</span></p>
               <ul class="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
                 <li class="flex items-center gap-2"><svg class="h-4 w-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>7-day free trial — full Business plan access</li>
                 <li class="flex items-center gap-2"><svg class="h-4 w-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>No credit card required</li>
@@ -1065,6 +1089,40 @@
           <p class="mt-6 text-sm text-slate-500">
             <a href="/pricing" class="font-semibold text-indigo-600 hover:text-indigo-500">See full pricing and plan comparison →</a>
           </p>
+          <!-- Per-inbox vs per-seat comparison -->
+          <div class="mt-12 overflow-x-auto">
+            <table class="mx-auto w-full max-w-2xl text-sm text-left">
+              <thead>
+                <tr class="border-b border-slate-200">
+                  <th class="pr-6 pb-3 text-left text-xs font-semibold uppercase tracking-widest text-slate-400">10-person team, 2 handle support email</th>
+                  <th class="px-4 pb-3 text-center text-xs font-semibold uppercase tracking-widest text-slate-400">Monthly cost</th>
+                  <th class="px-4 pb-3 text-center text-xs font-semibold uppercase tracking-widest text-slate-400">Pricing model</th>
+                  <th class="pl-4 pb-3 text-center text-xs font-semibold uppercase tracking-widest text-slate-400">vs helpdesks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="bg-indigo-50">
+                  <td class="pr-6 py-4 pl-3 font-bold text-slate-900">InboxIQ</td>
+                  <td class="px-4 py-4 text-center text-2xl font-bold text-emerald-600">£58</td>
+                  <td class="px-4 py-4 text-center text-slate-600">2 inboxes &times; £29 (Pro)</td>
+                  <td class="pl-4 py-4 text-center font-semibold text-emerald-600">—</td>
+                </tr>
+                <tr class="border-t border-slate-100">
+                  <td class="pr-6 py-3 text-slate-600">Zendesk Team</td>
+                  <td class="px-4 py-3 text-center font-semibold text-slate-900">~£550</td>
+                  <td class="px-4 py-3 text-center text-slate-500">10 seats &times; £55</td>
+                  <td class="pl-4 py-3 text-center font-semibold text-red-500">9.5&times; more</td>
+                </tr>
+                <tr class="border-t border-slate-100">
+                  <td class="pr-6 py-3 text-slate-600">Freshdesk Growth</td>
+                  <td class="px-4 py-3 text-center font-semibold text-slate-900">~£150</td>
+                  <td class="px-4 py-3 text-center text-slate-500">10 seats &times; £15</td>
+                  <td class="pl-4 py-3 text-center font-semibold text-red-400">2.6&times; more</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="mt-3 text-xs text-slate-400 text-center">Prices approximate. Per-seat tools charge for every team member, even those who never reply to a customer email.</p>
+          </div>
         </div>
       </section>
       <!-- ── CTA ────────────────────────────────────────────────────────── -->
@@ -1080,6 +1138,21 @@
             <button onclick="document.getElementById('demoGateModal').style.display='flex'" class="inline-flex items-center justify-center rounded-2xl border border-slate-700 px-6 py-3 text-base font-semibold text-white transition hover:border-slate-500 hover:bg-slate-900">
               Watch 60s demo
             </button>
+          </div>
+
+          <div class="mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-slate-400">
+            <span class="flex items-center gap-1.5">
+              <svg class="h-3.5 w-3.5 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              GDPR Ready
+            </span>
+            <span class="flex items-center gap-1.5">
+              <svg class="h-3.5 w-3.5 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              Data encrypted in transit
+            </span>
+            <span class="flex items-center gap-1.5">
+              <svg class="h-3.5 w-3.5 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+              We never sell your data
+            </span>
           </div>
 
           <div class="mt-12 border-t border-slate-800 pt-10">
@@ -1128,29 +1201,10 @@
         </div>
       </section>
 
-    <!-- Demo Gate Modal -->
+    <!-- Demo Gate Modal (no email gate — video plays immediately) -->
     <div id="demoGateModal" style="display:none" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" data-video-src="{{ url_for('static', filename='demo/InboxIQ.mp4') }}" data-poster-src="{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}">
       <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-        <h3 class="text-base font-semibold text-slate-100 mb-1">Watch the 60-second demo</h3>
-        <p class="text-xs text-slate-400 mb-4">Enter your work email and the demo plays instantly.</p>
-        <form id="demoGateForm" class="space-y-3">
-          <input
-            id="demoGateEmail"
-            type="email"
-            required
-            placeholder="you@company.com"
-            class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          />
-          <button
-            id="demoGateSubmit"
-            type="submit"
-            class="w-full inline-flex justify-center rounded-full bg-indigo-500 hover:bg-indigo-400 text-white text-sm font-semibold px-4 py-2 transition disabled:opacity-60"
-          >
-            Watch demo →
-          </button>
-        </form>
-        <p id="demoGateError" class="hidden mt-2 text-xs text-red-400"></p>
-        <button id="demoGateClose" class="mt-3 w-full text-xs text-slate-500 hover:text-slate-300">Cancel</button>
+        <button id="demoGateClose" class="block ml-auto text-xs text-slate-500 hover:text-slate-300">✕ Close</button>
       </div>
     </div>
     </main>
