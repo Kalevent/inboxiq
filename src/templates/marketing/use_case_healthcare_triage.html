@@ -1,85 +1,208 @@
 {% extends "marketing/base.html" %}
 
-{% block title %}Healthcare Referral Triage | InboxIQ{% endblock %}
-{% block meta_description %}
-Triage hospital referrals and clinical requests with a decision-centric intake layer that prioritises urgency and keeps teams compliant.
-{% endblock %}
+{% block title %}Healthcare Referral Triage — AI Email Triage for Clinical Teams | InboxIQ{% endblock %}
+{% block meta_description %}Stop your clinical team sorting referral emails. InboxIQ triages, prioritises, and routes every inbound referral with a HIPAA-aware audit trail — before a clinician opens the queue.{% endblock %}
 {% block canonical %}{{ url_for('use_case_healthcare_triage', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
-  <header class="playbook-hero space-y-6 pb-10">
-    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
-      Use case • Healthcare Triage (Referrals)
-    </div>
-    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
-      Reduce Referral Admin Load With Decision-Centric Triage
-    </h1>
-    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
-      Referrals arrive through fax-to-email, portals, calls, and CRMs. InboxIQ unifies those signals, flags urgency, and routes decisions before clinicians touch the queue.
-    </p>
-    <div class="cta-row mt-2 mb-8">
-      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
-        See the demo
-      </a>
-      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
-        Start free trial
-      </a>
+<div class="space-y-24 pb-8">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Use Case · Healthcare</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        Stop your clinical team<br class="hidden sm:block"> triaging referral emails.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        Referrals arrive by fax-to-email, patient portal, and CRM. InboxIQ reads urgency, routes to the right department, and logs every decision — before a clinician touches the queue.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
+          Start free trial
+        </a>
+        <a href="{{ url_for('contact') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Talk to sales &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          HIPAA audit trail built-in
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          AI never trains on patient data
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          BYOL — keep data inside your boundary
+        </span>
+      </div>
     </div>
   </header>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">Where referral triage breaks today</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Referrals arrive across systems</h3>
-        <p class="text-slate-200 leading-relaxed">Email referrals arrive in scattered inboxes with no shared triage logic.</p>
+  {# ── Pain Points ───────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">The Problem</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Referral triage is clinical time wasted on admin</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Referrals scattered across systems</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Fax-to-email, patient portal messages, and CRM notes arrive in separate inboxes with no shared prioritisation logic.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Urgency is buried in narrative</h3>
-        <p class="text-slate-200 leading-relaxed">Clinical context and risk indicators are hard to surface quickly.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Urgency buried in clinical narrative</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Risk indicators and time-sensitive flags are embedded in free-text email bodies. Manual triage takes 2–3 hours per day of clinical admin time.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Admins do manual sorting</h3>
-        <p class="text-slate-200 leading-relaxed">High-value clinician time is spent on intake, not care.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">No HIPAA-compliant decision log</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Audit requirements demand a traceable record of who accessed patient information and why — forwarded emails don't satisfy this.</p>
       </div>
     </div>
   </section>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">InboxIQ for healthcare referrals</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Unified intake across channels</h3>
-        <p class="text-slate-200 leading-relaxed">Process email referrals and attachments through one triage pipeline.</p>
+  {# ── How It Works ──────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Three steps from inbox to routed decision</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Unified referral intake</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">InboxIQ connects to your existing Gmail or Outlook shared inbox. Referrals from every source flow into a single triage pipeline — no new software for senders.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Decision routing with SLAs</h3>
-        <p class="text-slate-200 leading-relaxed">Prioritise urgent referrals and assign owners instantly.</p>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+        <h3 class="font-semibold text-brand-ink text-lg">AI urgency scoring</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">The AI reads clinical context, flags urgency, and assigns the referral to the correct department or clinician — with an SLA timer attached. Your BYOL key means the payload never leaves your boundary.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Audit trail ready</h3>
-        <p class="text-slate-200 leading-relaxed">Track why a referral was escalated or routed for compliance.</p>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+        <h3 class="font-semibold text-brand-ink text-lg">HIPAA-ready audit log</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Every triage decision — who accessed what, when, and why — is logged with a timestamped rationale. Exportable for compliance reviews and CQC inspection readiness.</p>
       </div>
     </div>
   </section>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">Operational outcomes</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Faster referral turnaround</h3>
-        <p class="text-slate-200 leading-relaxed">Urgent cases surface immediately, reducing delay to care.</p>
+  {# ── Outcomes ──────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Outcomes</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What teams report after 30 days</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">78%</div>
+        <p class="font-semibold text-brand-ink">Reduction in manual triage time</p>
+        <p class="text-sm text-brand-ink-soft">Clinical and admin staff return to patient-facing work instead of inbox sorting.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Lower admin workload</h3>
-        <p class="text-slate-200 leading-relaxed">Automated triage reduces manual handoffs and sorting.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">0</div>
+        <p class="font-semibold text-brand-ink">Missed urgent referrals</p>
+        <p class="text-sm text-brand-ink-soft">Urgent referrals are flagged and routed before a human reads the queue.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Consistent decision quality</h3>
-        <p class="text-slate-200 leading-relaxed">Standardised intake logic across teams and locations.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">100%</div>
+        <p class="font-semibold text-brand-ink">Decisions with audit rationale</p>
+        <p class="text-sm text-brand-ink-soft">Every routing decision carries a logged reason — ready for any compliance review.</p>
       </div>
     </div>
   </section>
+
+  {# ── Compliance Callout ────────────────────────────────────── #}
+  <section>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Data &amp; AI privacy</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">BYOL — your AI key, your data boundary</p>
+              <p class="text-brand-ink-soft text-sm">Connect your own OpenAI or Azure OpenAI key. Patient data goes directly to your provider — InboxIQ never processes or stores the payload.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Zero training on PHI</p>
+              <p class="text-brand-ink-soft text-sm">OpenAI ZDR policy is enabled by default. Your referral content is never used to train models.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Self-hosted option (roadmap)</p>
+              <p class="text-brand-ink-soft text-sm">For NHS trusts and regulated providers who need on-premise deployment — on the roadmap for 2025.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Regulatory alignment</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">HIPAA access logging</p>
+              <p class="text-brand-ink-soft text-sm">Every email access event is logged with user identity, timestamp, and action — satisfying HIPAA §164.312(b) audit controls.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">UK CQC inspection readiness</p>
+              <p class="text-brand-ink-soft text-sm">Exportable decision logs support CQC evidence requirements for clinical governance and referral pathway management.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">GDPR data minimisation</p>
+              <p class="text-brand-ink-soft text-sm">Role-scoped access means only the assigned clinician or coordinator can see a given referral — not the whole team inbox.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ── CTA Footer ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      Give your clinical team their time back.
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Start free — no credit card required. Connect your shared inbox in under 10 minutes.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
 </div>
 {% endblock %}

@@ -1,85 +1,208 @@
 {% extends "marketing/base.html" %}
 
-{% block title %}HR Request Triage | InboxIQ{% endblock %}
-{% block meta_description %}
-Route HR requests with a unified intake layer that prioritises urgency, assigns owners, and keeps decision trails clear.
-{% endblock %}
+{% block title %}HR Request Triage — AI Email Triage for HR Teams | InboxIQ{% endblock %}
+{% block meta_description %}Route every HR request to the right person before it becomes a complaint. InboxIQ classifies sensitivity, enforces GDPR-aware routing, and keeps a clear ownership trail across all employee requests.{% endblock %}
 {% block canonical %}{{ url_for('use_case_hr', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
-  <header class="playbook-hero space-y-6 pb-10">
-    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
-      Use case • HR Requests
-    </div>
-    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
-      HR Request Triage Without the Inbox Chaos
-    </h1>
-    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
-      InboxIQ triages HR requests arriving by email, then routes decisions with owners and SLAs.
-    </p>
-    <div class="cta-row mt-2 mb-8">
-      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
-        See the demo
-      </a>
-      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
-        Start free trial
-      </a>
+<div class="space-y-24 pb-8">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Use Case · HR Operations</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        Route every HR request to the right person<br class="hidden sm:block"> before it becomes a complaint.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        HR inboxes mix urgent grievances with routine queries. InboxIQ classifies sensitivity, routes confidentially to the right HR partner, and keeps a complete ownership trail — GDPR-compliant by design.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
+          Start free trial
+        </a>
+        <a href="{{ url_for('contact') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Talk to sales &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          GDPR data minimisation by design
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Confidential routing for sensitive cases
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Employment law record-keeping
+        </span>
+      </div>
     </div>
   </header>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">Where HR intake breaks</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Requests arrive everywhere</h3>
-        <p class="text-slate-200 leading-relaxed">Email sits in scattered inboxes with no shared visibility or ownership.</p>
+  {# ── Pain Points ───────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">The Problem</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">The HR shared inbox is a liability</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Sensitive requests visible to the whole team</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Grievances, disciplinary responses, and medical disclosures land in a shared inbox that every HR team member can read — a GDPR data minimisation violation waiting to happen.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Sensitive cases need clear routing</h3>
-        <p class="text-slate-200 leading-relaxed">Escalations can’t be left to chance or manual sorting.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Urgent cases buried under routine queries</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">A grievance or absence escalation sits behind 40 holiday request emails. Without urgency classification, the time-sensitive cases are invisible.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Audit trails are inconsistent</h3>
-        <p class="text-slate-200 leading-relaxed">Teams lack a record of how decisions were made.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">No clear ownership or resolution trail</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Employment tribunal evidence requires a clear log of who handled a request, what decision was made, and when. Shared inbox threads don't provide this.</p>
       </div>
     </div>
   </section>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">InboxIQ for HR operations</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Unified HR intake</h3>
-        <p class="text-slate-200 leading-relaxed">Centralise all HR requests into a single decision stream.</p>
+  {# ── How It Works ──────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Classify, route confidentially, log everything</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Sensitivity classification</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">InboxIQ reads each incoming HR request and classifies it: grievance, disciplinary, absence, payroll, general query. Sensitive categories are immediately separated from the general queue.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Decision routing + SLAs</h3>
-        <p class="text-slate-200 leading-relaxed">Assign owners and deadlines automatically based on request type.</p>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+        <h3 class="font-semibold text-brand-ink text-lg">GDPR-aware confidential routing</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Sensitive requests are routed only to the designated HR Business Partner — not the shared inbox. Data minimisation is enforced automatically. Only the assigned handler sees the content.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Audit-friendly decisions</h3>
-        <p class="text-slate-200 leading-relaxed">Track why requests were routed or escalated for compliance.</p>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Ownership and resolution log</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Every request gets an owner, an SLA, and a logged outcome. The complete trail — who handled it, what action was taken, and when — is available for Subject Access Requests and tribunal evidence.</p>
       </div>
     </div>
   </section>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">Outcomes teams care about</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Faster HR response times</h3>
-        <p class="text-slate-200 leading-relaxed">Urgent requests surface immediately with clear ownership.</p>
+  {# ── Outcomes ──────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Outcomes</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What HR teams report after 30 days</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">55%</div>
+        <p class="font-semibold text-brand-ink">Fewer misdirected sensitive requests</p>
+        <p class="text-sm text-brand-ink-soft">Grievances and medical disclosures reach only the intended handler — not the whole team inbox.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Lower admin burden</h3>
-        <p class="text-slate-200 leading-relaxed">Reduce manual sorting and duplicate responses.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">3×</div>
+        <p class="font-semibold text-brand-ink">Faster response on grievance cases</p>
+        <p class="text-sm text-brand-ink-soft">Urgent cases are prioritised and assigned before the routine queue is processed.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Consistent handling</h3>
-        <p class="text-slate-200 leading-relaxed">Standardised routing across teams and locations.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">100%</div>
+        <p class="font-semibold text-brand-ink">Requests with an owner and log</p>
+        <p class="text-sm text-brand-ink-soft">Every request has a named owner, SLA, and resolution record — ready for SAR responses and tribunal evidence.</p>
       </div>
     </div>
   </section>
+
+  {# ── Compliance Callout ────────────────────────────────────── #}
+  <section>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">GDPR compliance</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Article 5 data minimisation enforced</p>
+              <p class="text-brand-ink-soft text-sm">Role-scoped routing ensures only the necessary HR partner accesses sensitive employee data — not the full team.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Subject Access Request support</p>
+              <p class="text-brand-ink-soft text-sm">Complete access logs make SAR responses straightforward — every view of an employee's data is recorded with identity and timestamp.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">BYOL — employee data never leaves your boundary</p>
+              <p class="text-brand-ink-soft text-sm">Use your own AI key. HR request content goes directly to your provider — InboxIQ never stores email payloads.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Employment law record-keeping</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Tribunal-ready decision trail</p>
+              <p class="text-brand-ink-soft text-sm">Every action on a grievance or disciplinary request is logged with the handler identity, timestamp, and outcome notes.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Consistent SLA enforcement</p>
+              <p class="text-brand-ink-soft text-sm">Automated SLA timers mean statutory acknowledgement windows (e.g. 5-day grievance acknowledgement) are never missed.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Exportable case records</p>
+              <p class="text-brand-ink-soft text-sm">Case history is exportable for legal review, Acas early conciliation, and employment tribunal submissions.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ── CTA Footer ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      Give your HR team a compliant inbox — not a liability.
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Start free — no credit card required. Connect your HR inbox in under 10 minutes.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
 </div>
 {% endblock %}
