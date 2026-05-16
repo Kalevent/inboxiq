@@ -229,23 +229,15 @@
 
 // ── Demo Gate ─────────────────────────────────────────────────────────────
 (function () {
-  var modal      = document.getElementById('demoGateModal');
-  var form       = document.getElementById('demoGateForm');
-  var emailInput = document.getElementById('demoGateEmail');
-  var submitBtn  = document.getElementById('demoGateSubmit');
-  var errorEl    = document.getElementById('demoGateError');
-  var closeBtn   = document.getElementById('demoGateClose');
+  var modal    = document.getElementById('demoGateModal');
+  var closeBtn = document.getElementById('demoGateClose');
 
   if (!modal) return;
 
-  var SESSION_KEY = 'demo_unlocked';
-
-  // Video src: prefer data attribute on modal, fall back to known static path
   function playVideoInModal() {
-    var src = modal.dataset.videoSrc || '/static/demo/InboxIQ.mp4';
-    var poster = modal.dataset.posterSrc || '/static/demo/inboxiq-dashboard.png';
-    var inner = modal.querySelector('div');
-    // Expand modal panel to fit video
+    var src    = modal.dataset.videoSrc   || '/static/demo/InboxIQ.mp4';
+    var poster = modal.dataset.posterSrc  || '/static/demo/inboxiq-dashboard.png';
+    var inner  = modal.querySelector('div');
     inner.style.maxWidth = '860px';
     inner.innerHTML =
       '<button id="demoGateClose2" style="float:right;font-size:1.2rem;color:#94a3b8;background:none;border:none;cursor:pointer;margin-bottom:8px">✕</button>' +
@@ -256,19 +248,10 @@
     });
   }
 
-  // If already unlocked this session, open straight to video
   function openModal() {
     modal.style.display = 'flex';
-    if (sessionStorage.getItem(SESSION_KEY)) {
-      playVideoInModal();
-    } else if (emailInput) {
-      emailInput.focus();
-    }
+    playVideoInModal();
   }
-
-  // Legacy play button (kept for backwards compat, may not exist)
-  var playBtn = document.getElementById('demoPlayBtn');
-  if (playBtn) playBtn.addEventListener('click', openModal);
 
   if (closeBtn) {
     closeBtn.addEventListener('click', function () { modal.style.display = 'none'; });
@@ -278,47 +261,14 @@
     if (e.target === modal) modal.style.display = 'none';
   });
 
-  if (form) {
-    form.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      var email = (emailInput.value || '').trim().toLowerCase();
-      if (!email) return;
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Just a sec...';
-      errorEl.classList.add('hidden');
-
-      try {
-        var resp = await fetch('/api/v1/enterprise/inquiry', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({ name: email, email: email, source: 'demo_gate' }),
-        });
-        if (!resp.ok) throw new Error('Request failed');
-        sessionStorage.setItem(SESSION_KEY, '1');
-        playVideoInModal();
-      } catch (_) {
-        errorEl.textContent = 'Something went wrong — please try again.';
-        errorEl.classList.remove('hidden');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Watch demo →';
-      }
-    });
-  }
-
-  // Wire any "Watch 60s demo" buttons that open the modal directly
   document.querySelectorAll('[data-open-demo]').forEach(function (btn) {
     btn.addEventListener('click', openModal);
   });
 
-  // Public opener — lets other sections trigger the gate with a custom video
+  // Public opener — lets other sections trigger the modal with a custom video
   window._inboxiqOpenVideoModal = function (cfg) {
     if (cfg.videoSrc)  modal.dataset.videoSrc  = cfg.videoSrc;
     if (cfg.posterSrc) modal.dataset.posterSrc = cfg.posterSrc;
-    var h3 = modal.querySelector('h3');
-    if (h3) h3.textContent = cfg.title || 'Watch the 60-second demo';
-    var p = modal.querySelector('div > p');
-    if (p) p.textContent = cfg.subtitle || 'Enter your work email and the demo plays instantly.';
     openModal();
   };
 })();
