@@ -119,8 +119,12 @@
 
   const roiButton = document.getElementById('roiButton');
   if (roiButton) {
-    roiButton.addEventListener('click', calculateROI);
+    roiButton.style.display = 'none';
   }
+
+  [emailsInput, minutesInput, hourlyInput].forEach(function (el) {
+    if (el) el.addEventListener('input', calculateROI);
+  });
 
   function setCtaStatus(type, message, options = {}) {
     if (!ctaStatus) return;
