@@ -383,10 +383,8 @@
         <div class="mx-auto max-w-4xl px-6 py-12 lg:px-8">
           <p class="text-center text-xs font-semibold uppercase tracking-widest text-indigo-600 mb-6">Works inside your inbox &mdash; no new dashboard to learn</p>
           <div class="relative overflow-hidden rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/60 bg-white">
-            <video autoplay muted loop playsinline class="w-full block"
-                   poster="{{ url_for('static', filename='demo/inboxiq-dashboard.png') }}">
-              <source src="{{ url_for('static', filename='demo/inboxiq-gmail-demo.mp4') }}" type="video/mp4">
-            </video>
+            <div id="inbox-demo"></div>
+            <script src="{{ url_for('static', filename='js/inbox-demo.js') }}"></script>
           </div>
           <p class="text-center mt-4 text-sm text-slate-500">InboxIQ triages and drafts replies directly inside Gmail and Outlook &mdash; your team never leaves the inbox</p>
         </div>
