@@ -14,6 +14,45 @@ logger = logging.getLogger(__name__)
 booking_bp = Blueprint("booking", __name__)
 
 
+@booking_bp.get("/book/me/<handle>")
+def book_me_page(handle: str):
+    """Permanent booking page generated from the account's booking handle."""
+    from src.models.core import AccountFeatureFlags, Account
+    flags = AccountFeatureFlags.query.filter_by(booking_handle=handle).first()
+    if not flags:
+        return render_template(
+            "booking/expired.html",
+            title="Booking link not found",
+            message="This booking link is not valid. Please request an updated link.",
+            meet_link=None,
+        ), 404
+
+    account_id = flags.account_id
+    account = Account.query.get(account_id)
+    account_name = account.name if account else "InboxIQ"
+
+    provider = _detect_provider(account_id)
+    slots = []
+    if provider:
+        try:
+            duration = flags.booking_duration_minutes or 30
+            slots = get_available_slots(
+                account_id=account_id,
+                duration_minutes=duration,
+                provider=provider,
+            )
+        except Exception as exc:
+            logger.warning("Slot fetch failed for book_me page account=%s: %s", account_id, exc)
+
+    return render_template(
+        "booking/book_me.html",
+        handle=handle,
+        account_name=account_name,
+        duration_minutes=flags.booking_duration_minutes or 30,
+        slots=slots,
+    )
+
+
 @booking_bp.get("/book/<token>")
 def book_page(token: str):
     payload = verify_booking_token(token)
@@ -190,6 +229,29 @@ def api_generate_booking():
     except Exception as exc:
         logger.error("API generate booking failed account=%s: %s", account_id, exc)
         return jsonify({"error": "Failed to generate booking link"}), 500
+
+
+@booking_bp.get("/api/v1/bookings/feature-status")
+@jwt_required()
+def api_booking_feature_status():
+    """
+    Returns booking feature flags for the current account.
+
+    Frontend uses this to:
+    - Show an upgrade prompt when dynamic_booking_enabled=false and the
+      email is a meeting request (draft reply has no booking link).
+    - Insert static_booking_url when composing a proactive outbound email.
+    """
+    from src.models.core import AccountFeatureFlags
+    account_id = getattr(g, "current_account_id", None)
+    if not account_id:
+        return jsonify({"error": "account required"}), 400
+
+    flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
+    return jsonify({
+        "dynamic_booking_enabled": flags.dynamic_booking_enabled if flags else True,
+        "static_booking_url": flags.static_booking_url if flags else None,
+    })
 
 
 def _detect_provider(account_id: int):

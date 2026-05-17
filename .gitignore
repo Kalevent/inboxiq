@@ -47,6 +47,16 @@ data/
 
 # Node / Tailwind build tooling
 src/node_modules/
+
+# Social media assets — uploaded directly, not served from app
+src/static/img/brand/carousels/
+src/static/img/brand/reels/
+
+# Playwright MCP session data
+.playwright-mcp/
+
+# Local screenshots
+*.png
 src/package-lock.json
 
 # Development/planning docs

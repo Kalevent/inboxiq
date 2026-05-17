@@ -211,6 +211,14 @@ def fetch_calendar_slots(
         if not is_meeting_request(subject, body):
             return ""
 
+        from src.models.core import AccountFeatureFlags
+        flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
+
+        # Dynamic expiring booking URL — plan-gated (compute cost).
+        # If disabled, no booking link is included in the draft — upsell path.
+        if not (flags is None or flags.dynamic_booking_enabled):
+            return ""
+
         if ticket_id and requester_email:
             from src.booking.service import generate_booking
             booking_url = generate_booking(
@@ -224,11 +232,10 @@ def fetch_calendar_slots(
 
         from src.integrations.gcal import get_available_slots_text as gcal_slots
         from src.integrations.outlook_cal import get_available_slots_text as outlook_slots
-        # Try Google Calendar first, fall back to Outlook Calendar
         slots = gcal_slots(account_id)
         if not slots:
             slots = outlook_slots(account_id)
-        return slots
+        return slots or ""
     except Exception as exc:
         logger.warning("fetch_calendar_slots failed account=%s: %s", account_id, exc)
         return ""
