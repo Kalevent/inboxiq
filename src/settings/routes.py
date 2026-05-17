@@ -895,7 +895,7 @@ def save_booking_duration():
 @login_required_settings
 def generate_booking_link():
     """Generate a permanent InboxIQ booking page URL for this account."""
-    import uuid
+    import re
     from src.models.core import AccountFeatureFlags, InboxConnection
     account_id = getattr(g, "current_account_id", None)
     if not account_id:
@@ -914,15 +914,24 @@ def generate_booking_link():
         )
         return redirect(url_for("settings.settings_page", tab="integrations"))
 
+    handle = request.form.get("handle", "").strip().lower()
+    if not handle or not re.match(r'^[a-z0-9][a-z0-9\-]{1,38}[a-z0-9]$', handle):
+        flash("Handle must be 3–40 characters, letters, numbers and hyphens only, and cannot start or end with a hyphen.", "error")
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+
+    existing = AccountFeatureFlags.query.filter_by(booking_handle=handle).first()
+    if existing and existing.account_id != account_id:
+        flash("That handle is already taken. Please choose another.", "error")
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+
     base_url = current_app.config.get("APP_BASE_URL", "https://kalevent.com")
     try:
         flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
         if not flags:
             flags = AccountFeatureFlags(account_id=account_id)
             db.session.add(flags)
-        if not flags.booking_handle:
-            flags.booking_handle = str(uuid.uuid4())
-        flags.static_booking_url = f"{base_url}/book/me/{flags.booking_handle}"
+        flags.booking_handle = handle
+        flags.static_booking_url = f"{base_url}/book/me/{handle}"
         db.session.commit()
         flash("Your booking link has been generated.", "success")
     except Exception:

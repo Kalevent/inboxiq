@@ -3093,7 +3093,7 @@
       <div class="flex items-start justify-between mb-4">
         <div>
           <h2 class="text-base font-semibold text-white">Create your booking page</h2>
-          <p class="text-sm text-slate-400 mt-1">This generates a permanent InboxIQ booking page backed by your connected calendar.</p>
+          <p class="text-sm text-slate-400 mt-1">Choose a handle for your permanent InboxIQ booking page.</p>
         </div>
         <button type="button" onclick="document.getElementById('generateBookingModal').classList.add('hidden')"
                 class="text-slate-500 hover:text-white ml-4 mt-0.5 transition">
@@ -3101,34 +3101,72 @@
         </button>
       </div>
 
-      <div class="bg-slate-800 border border-white/10 rounded-xl p-4 mb-5 space-y-2 text-sm text-slate-300">
-        <div class="flex items-start gap-2">
-          <svg class="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-          <span>Your link will be at <span class="text-indigo-300 font-mono text-xs">kalevent.com/book/me/…</span></span>
-        </div>
-        <div class="flex items-start gap-2">
-          <svg class="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-          <span>Available slots are pulled live from your connected calendar</span>
-        </div>
-        <div class="flex items-start gap-2">
-          <svg class="w-4 h-4 text-green-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-          <span>Permanent link — share it in emails, your email signature, or anywhere</span>
-        </div>
-      </div>
-
-      <form method="POST" action="{{ url_for('settings.generate_booking_link') }}">
+      <form method="POST" action="{{ url_for('settings.generate_booking_link') }}" id="generateBookingForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-slate-400 mb-1">Your handle</label>
+          <div class="flex items-center bg-slate-800 border border-white/10 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+            <span class="text-xs text-slate-500 pl-3 pr-1 whitespace-nowrap select-none">kalevent.com/book/me/</span>
+            <input type="text" name="handle" id="bookingHandle"
+                   placeholder="your-name"
+                   maxlength="40"
+                   pattern="[a-z0-9][a-z0-9\-]{1,38}[a-z0-9]"
+                   class="flex-1 bg-transparent text-sm text-white py-2.5 pr-3 outline-none placeholder-slate-600"
+                   oninput="updateBookingPreview(this.value)" />
+          </div>
+          <p id="bookingHandleHint" class="text-xs text-slate-500 mt-1.5">Letters, numbers and hyphens only. Min 3 characters.</p>
+        </div>
+
+        <div class="bg-slate-800 border border-white/10 rounded-xl px-4 py-3 mb-5">
+          <p class="text-xs text-slate-500 mb-1">Your booking link will be:</p>
+          <p id="bookingUrlPreview" class="text-sm text-indigo-300 font-mono break-all">kalevent.com/book/me/<span class="text-slate-500">your-name</span></p>
+        </div>
+
+        <div class="space-y-2 text-sm text-slate-400 mb-5">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span>Slots pulled live from your connected calendar</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            <span>Permanent — add to your email signature or share anywhere</span>
+          </div>
+        </div>
+
         <div class="flex gap-3">
           <button type="button" onclick="document.getElementById('generateBookingModal').classList.add('hidden')"
                   class="flex-1 text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-lg font-medium border border-slate-700 transition">
             Cancel
           </button>
-          <button type="submit" class="flex-1 text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-lg font-semibold transition">
+          <button type="submit" id="generateBookingBtn" class="flex-1 text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-lg font-semibold transition">
             Generate link
           </button>
         </div>
       </form>
     </div>
   </div>
+
+  <script>
+    function updateBookingPreview(val) {
+      const clean = val.toLowerCase().replace(/[^a-z0-9\-]/g, '');
+      const preview = document.getElementById('bookingUrlPreview');
+      const hint = document.getElementById('bookingHandleHint');
+      const btn = document.getElementById('generateBookingBtn');
+      if (clean.length < 3) {
+        preview.innerHTML = 'kalevent.com/book/me/<span class="text-slate-500">' + (clean || 'your-name') + '</span>';
+        hint.textContent = clean.length > 0 ? 'At least ' + (3 - clean.length) + ' more character(s) needed.' : 'Letters, numbers and hyphens only. Min 3 characters.';
+        hint.className = 'text-xs text-amber-400 mt-1.5';
+        btn.disabled = true;
+        btn.className = 'flex-1 text-sm bg-indigo-900 text-indigo-400 cursor-not-allowed px-4 py-2.5 rounded-lg font-semibold';
+      } else {
+        preview.innerHTML = 'kalevent.com/book/me/<span class="text-white">' + clean + '</span>';
+        hint.textContent = 'Looks good.';
+        hint.className = 'text-xs text-green-400 mt-1.5';
+        btn.disabled = false;
+        btn.className = 'flex-1 text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-lg font-semibold transition';
+      }
+    }
+  </script>
 </body>
 </html>
