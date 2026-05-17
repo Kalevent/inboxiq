@@ -133,13 +133,10 @@ class ContentWriterAgent(BaseAgent):
                 db.session.rollback()
             raise
 
-        blog_post_id = result.get("blog_post_id")
-        if blog_post_id:
-            topic_obj.status = "generated"
-            topic_obj.generated_content_id = blog_post_id
-        else:
-            # Duplicate slug — content already exists; mark as generated
-            topic_obj.status = "generated"
+        # Mark as generated regardless — generated_content_id is not set here
+        # because the pipeline produces a BlogPost (blog_posts table), not a
+        # GeneratedContent (generated_content table), and the FK would violate.
+        topic_obj.status = "generated"
         try:
             db.session.commit()
         except Exception:
