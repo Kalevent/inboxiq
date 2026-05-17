@@ -161,7 +161,7 @@ def cli_dspy_fix_priorities(confirm: bool):
 @app.cli.command("seed-plans")
 def cli_seed_plans():
     """
-    Seed the plans table with Pro, Business, Scale, Enterprise definitions.
+    Seed the plans table with Free, Starter, Pro, Business, Enterprise.
     Safe to re-run: skips plans that already exist (matched by code).
     Run AFTER Stripe products and prices have been created.
     """
@@ -169,8 +169,33 @@ def cli_seed_plans():
 
     definitions = [
         dict(
+            code="free",
+            price_cents=0, currency="GBP", seats=1,
+            ai_decisions_limit=50,
+            chat_enabled=False, chat_limit=None,
+            automation_enabled=False, automation_runs_limit=None,
+            content_gen_enabled=False, content_posts_limit=None,
+            lead_discovery_enabled=False, leads_limit=None,
+            nurture_enabled=False, nurture_emails_limit=None,
+            distribution_enabled=False,
+            api_access_enabled=False, registered_apps_limit=0,
+        ),
+        dict(
+            code="starter",
+            price_cents=900, currency="GBP", seats=1,
+            ai_decisions_limit=200,
+            chat_enabled=False, chat_limit=None,
+            automation_enabled=False, automation_runs_limit=None,
+            content_gen_enabled=False, content_posts_limit=None,
+            lead_discovery_enabled=False, leads_limit=None,
+            nurture_enabled=False, nurture_emails_limit=None,
+            distribution_enabled=False,
+            api_access_enabled=False, registered_apps_limit=0,
+            stripe_ai_overage_price_id="price_1TYDDuJSevdfPcyKsatbFchH",
+        ),
+        dict(
             code="pro",
-            price_cents=4900, currency="GBP", seats=2,
+            price_cents=2900, currency="GBP", seats=2,
             ai_decisions_limit=1000,
             chat_enabled=False, chat_limit=None,
             automation_enabled=False, automation_runs_limit=None,
@@ -183,7 +208,7 @@ def cli_seed_plans():
         ),
         dict(
             code="business",
-            price_cents=14900, currency="GBP", seats=5,
+            price_cents=4900, currency="GBP", seats=5,
             ai_decisions_limit=5000,
             chat_enabled=True, chat_limit=200,
             automation_enabled=True, automation_runs_limit=500,
@@ -196,23 +221,6 @@ def cli_seed_plans():
             stripe_chat_overage_price_id="price_1T3QtCJSevdfPcyKdXODzJ41",
             stripe_automation_overage_price_id="price_1T3QtDJSevdfPcyKWvbnclxe",
             stripe_nurture_overage_price_id="price_1T3QtDJSevdfPcyK5YUJsopX",
-        ),
-        dict(
-            code="scale",
-            price_cents=39900, currency="GBP", seats=15,
-            ai_decisions_limit=25000,
-            chat_enabled=True, chat_limit=1000,
-            automation_enabled=True, automation_runs_limit=5000,
-            content_gen_enabled=True, content_posts_limit=30,
-            lead_discovery_enabled=True, leads_limit=200,
-            nurture_enabled=True, nurture_emails_limit=20000,
-            distribution_enabled=True,
-            api_access_enabled=True, registered_apps_limit=999999,
-            stripe_ai_overage_price_id="price_1T3QtEJSevdfPcyKwEr1qCZM",
-            stripe_chat_overage_price_id="price_1T3QtEJSevdfPcyK0J9Cq240",
-            stripe_automation_overage_price_id="price_1T3QtFJSevdfPcyKSv89eccb",
-            stripe_nurture_overage_price_id="price_1T3QtGJSevdfPcyKtq1lPtMK",
-            stripe_leads_overage_price_id="price_1T3QtGJSevdfPcyKGoEpkwEj",
         ),
         dict(
             code="enterprise",
