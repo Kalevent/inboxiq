@@ -5,32 +5,33 @@
 InboxIQ connects each person's Gmail or Outlook inbox and applies AI triage automatically. No shared mailbox. No migration. Every inbox in your team gets the same intelligence.
 {% endblock %}
 {% block canonical %}{{ url_for('shared_inbox', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
+<div class="space-y-24 pb-8">
 
   {# ── Hero ──────────────────────────────────────────────────── #}
   <header class="grid lg:grid-cols-2 gap-10 items-center">
     <div class="space-y-5">
-      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      <div class="inline-flex items-center gap-2 rounded-full bg-brand-accent/10 text-brand-accent px-3 py-1 text-xs font-semibold">
         InboxIQ &bull; Multi-Inbox
       </div>
-      <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-brand-ink">
         AI triage on every inbox<br class="hidden sm:block"> in your team.
       </h1>
-      <p class="text-slate-300 leading-relaxed">
+      <p class="text-brand-ink-soft leading-relaxed">
         InboxIQ connects each person's Gmail or Outlook individually — and gives every inbox the same AI triage.
         No shared mailbox. No migration. No new tool for your team to learn.
       </p>
       <div class="flex flex-wrap gap-3">
-        <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition text-sm">
+        <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition text-sm">
           Connect your team's inboxes free
         </a>
-        <a href="#how-it-works" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition text-sm">
+        <a href="#how-it-works" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition text-sm">
           See how it works
         </a>
       </div>
-      <p class="text-slate-500 text-xs">Each person keeps their own inbox &bull; Invite takes 30 seconds</p>
+      <p class="text-brand-ink-soft text-xs">Each person keeps their own inbox &bull; Invite takes 30 seconds</p>
     </div>
 
     {# ── Multi-inbox dashboard mockup ── #}
@@ -74,25 +75,25 @@ InboxIQ connects each person's Gmail or Outlook inbox and applies AI triage auto
 
   {# ── Metrics ───────────────────────────────────────────────── #}
   <div class="grid grid-cols-3 gap-4">
-    <div class="marketing-card text-center space-y-1">
-      <p class="text-3xl font-bold text-indigo-300">30s</p>
-      <p class="text-slate-400 text-sm">to invite a teammate</p>
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center space-y-1">
+      <p class="text-3xl font-bold text-brand-accent">30s</p>
+      <p class="text-brand-ink-soft text-sm">to invite a teammate</p>
     </div>
-    <div class="marketing-card text-center space-y-1">
-      <p class="text-3xl font-bold text-indigo-300">100%</p>
-      <p class="text-slate-400 text-sm">of emails triaged per inbox</p>
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center space-y-1">
+      <p class="text-3xl font-bold text-brand-accent">100%</p>
+      <p class="text-brand-ink-soft text-sm">of emails triaged per inbox</p>
     </div>
-    <div class="marketing-card text-center space-y-1">
-      <p class="text-3xl font-bold text-indigo-300">0</p>
-      <p class="text-slate-400 text-sm">inboxes to migrate or share</p>
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center space-y-1">
+      <p class="text-3xl font-bold text-brand-accent">0</p>
+      <p class="text-brand-ink-soft text-sm">inboxes to migrate or share</p>
     </div>
   </div>
 
   {# ── How it works ──────────────────────────────────────────── #}
-  <section class="grid lg:grid-cols-2 gap-8 marketing-section" id="how-it-works">
+  <section class="grid lg:grid-cols-2 gap-8" id="how-it-works">
     <div class="space-y-4">
-      <h2 class="text-2xl font-semibold text-white">How InboxIQ works across a team</h2>
-      <p class="text-slate-300 text-sm leading-relaxed">
+      <h2 class="text-2xl font-semibold text-brand-ink">How InboxIQ works across a team</h2>
+      <p class="text-brand-ink-soft text-sm leading-relaxed">
         InboxIQ is not a shared mailbox. Each person on your team connects their own Gmail or Outlook inbox via OAuth.
         The AI triage pipeline runs on every inbox independently — same intelligence, each person's own space.
       </p>
@@ -105,71 +106,71 @@ InboxIQ connects each person's Gmail or Outlook inbox and applies AI triage auto
         ] %}
         {% for num, title, desc in steps %}
         <div class="flex gap-3">
-          <div class="h-6 w-6 rounded-full bg-indigo-500/20 text-indigo-300 flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5">{{ num }}</div>
+          <div class="h-6 w-6 rounded-full bg-brand-accent/10 text-brand-accent flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5">{{ num }}</div>
           <div>
-            <p class="text-white font-semibold text-sm">{{ title }}</p>
-            <p class="text-slate-400 text-sm leading-relaxed">{{ desc }}</p>
+            <p class="text-brand-ink font-semibold text-sm">{{ title }}</p>
+            <p class="text-brand-ink-soft text-sm leading-relaxed">{{ desc }}</p>
           </div>
         </div>
         {% endfor %}
       </div>
     </div>
 
-    <div class="marketing-card space-y-4">
-      <h2 class="text-xl font-semibold text-white">Why not a shared mailbox?</h2>
-      <p class="text-slate-300 text-sm leading-relaxed">
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
+      <h2 class="text-xl font-semibold text-brand-ink">Why not a shared mailbox?</h2>
+      <p class="text-brand-ink-soft text-sm leading-relaxed">
         Shared mailboxes (support@, hello@) work until they don't.
         When two people work from the same inbox, emails get missed, double-replied, or sit unowned.
         InboxIQ's approach is different: AI triage runs on each person's own inbox.
       </p>
       <div class="grid grid-cols-2 gap-3 text-sm">
-        <div class="bg-slate-800/50 rounded-xl p-3 space-y-1">
-          <p class="text-slate-500 text-xs font-semibold uppercase tracking-wide">Shared mailbox</p>
-          <ul class="space-y-1 text-slate-400 text-xs">
+        <div class="bg-red-50 rounded-xl p-3 space-y-1">
+          <p class="text-brand-ink-soft text-xs font-semibold uppercase tracking-wide">Shared mailbox</p>
+          <ul class="space-y-1 text-brand-ink-soft text-xs">
             <li>&#10007; Double replies happen</li>
             <li>&#10007; No clear ownership</li>
             <li>&#10007; Everything visible to all</li>
             <li>&#10007; One inbox, all chaos</li>
           </ul>
         </div>
-        <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 space-y-1">
-          <p class="text-indigo-400 text-xs font-semibold uppercase tracking-wide">InboxIQ</p>
-          <ul class="space-y-1 text-slate-300 text-xs">
-            <li class="flex gap-1"><span class="text-indigo-400">&#10003;</span> Each inbox stays private</li>
-            <li class="flex gap-1"><span class="text-indigo-400">&#10003;</span> AI decides who acts</li>
-            <li class="flex gap-1"><span class="text-indigo-400">&#10003;</span> Same triage logic per inbox</li>
-            <li class="flex gap-1"><span class="text-indigo-400">&#10003;</span> No migration, ever</li>
+        <div class="bg-brand-accent/5 border border-brand-accent/20 rounded-xl p-3 space-y-1">
+          <p class="text-brand-accent text-xs font-semibold uppercase tracking-wide">InboxIQ</p>
+          <ul class="space-y-1 text-brand-ink-soft text-xs">
+            <li class="flex gap-1"><span class="text-brand-accent">&#10003;</span> Each inbox stays private</li>
+            <li class="flex gap-1"><span class="text-brand-accent">&#10003;</span> AI decides who acts</li>
+            <li class="flex gap-1"><span class="text-brand-accent">&#10003;</span> Same triage logic per inbox</li>
+            <li class="flex gap-1"><span class="text-brand-accent">&#10003;</span> No migration, ever</li>
           </ul>
         </div>
       </div>
-      <div class="bg-slate-800/50 rounded-lg p-3 text-xs text-slate-400 border border-slate-700/50">
+      <div class="bg-gray-50 rounded-lg p-3 text-xs text-brand-ink-soft border border-gray-200">
         InboxIQ never stores email body content. Labels and triage decisions are written back to each person's inbox. Data stays with your provider.
       </div>
     </div>
   </section>
 
   {# ── Who it's for ──────────────────────────────────────────── #}
-  <section class="marketing-card space-y-5 marketing-section">
-    <h2 class="text-xl font-semibold text-white">Built for small B2B SaaS teams — 2 to 15 people handling email</h2>
+  <section class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+    <h2 class="text-xl font-semibold text-brand-ink">Built for small B2B SaaS teams — 2 to 15 people handling email</h2>
     <div class="grid sm:grid-cols-3 gap-6 text-sm">
       <div class="space-y-2">
-        <p class="text-indigo-300 font-semibold">You're the one triaging for the whole team</p>
-        <p class="text-slate-400 leading-relaxed">Forwarding emails, tagging teammates, chasing replies. InboxIQ gives everyone the same AI triage so you don't have to do it manually.</p>
+        <p class="text-brand-accent font-semibold">You're the one triaging for the whole team</p>
+        <p class="text-brand-ink-soft leading-relaxed">Forwarding emails, tagging teammates, chasing replies. InboxIQ gives everyone the same AI triage so you don't have to do it manually.</p>
       </div>
       <div class="space-y-2">
-        <p class="text-indigo-300 font-semibold">You want visibility without a shared mailbox</p>
-        <p class="text-slate-400 leading-relaxed">Each person keeps their own inbox. You get a consolidated view of what's been triaged across the team — P1s surfaced, noise suppressed.</p>
+        <p class="text-brand-accent font-semibold">You want visibility without a shared mailbox</p>
+        <p class="text-brand-ink-soft leading-relaxed">Each person keeps their own inbox. You get a consolidated view of what's been triaged across the team — P1s surfaced, noise suppressed.</p>
       </div>
       <div class="space-y-2">
-        <p class="text-indigo-300 font-semibold">You rejected Zendesk as too heavy</p>
-        <p class="text-slate-400 leading-relaxed">You don't need ticket queues and agent routing. You need AI that understands each email and labels it — inside the inbox your team already uses.</p>
+        <p class="text-brand-accent font-semibold">You rejected Zendesk as too heavy</p>
+        <p class="text-brand-ink-soft leading-relaxed">You don't need ticket queues and agent routing. You need AI that understands each email and labels it — inside the inbox your team already uses.</p>
       </div>
     </div>
   </section>
 
   {# ── FAQ ───────────────────────────────────────────────────── #}
-  <section class="space-y-4 marketing-section">
-    <h2 class="text-2xl font-semibold text-white">FAQ</h2>
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-brand-ink">FAQ</h2>
     <div class="grid sm:grid-cols-2 gap-4">
       {% set faqs = [
         ("Does each teammate need their own InboxIQ account?", "No. You invite teammates from your InboxIQ settings. They connect their own Gmail or Outlook via OAuth — one link, 30 seconds."),
@@ -178,23 +179,23 @@ InboxIQ connects each person's Gmail or Outlook inbox and applies AI triage auto
         ("Is this GDPR compliant?", "InboxIQ never stores email body content. Only triage decisions and labels are stored. Email content stays with your Gmail or Outlook provider."),
       ] %}
       {% for q, a in faqs %}
-      <div class="marketing-card space-y-1">
-        <h3 class="font-semibold text-white text-sm">{{ q }}</h3>
-        <p class="text-slate-400 text-sm leading-relaxed">{{ a }}</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-1">
+        <h3 class="font-semibold text-brand-ink text-sm">{{ q }}</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">{{ a }}</p>
       </div>
       {% endfor %}
     </div>
   </section>
 
   {# ── CTA ───────────────────────────────────────────────────── #}
-  <section class="bg-indigo-600 text-white rounded-2xl p-8 space-y-4 marketing-section">
-    <h2 class="text-2xl font-semibold">Give every inbox on your team AI triage</h2>
-    <p class="text-indigo-100 text-sm max-w-xl">Connect Gmail or Outlook in under 2 minutes. Invite teammates in 30 seconds. InboxIQ starts labelling immediately.</p>
-    <div class="flex flex-wrap gap-3">
-      <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition text-sm">
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Give every inbox on your team AI triage.</h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">Connect Gmail or Outlook in under 2 minutes. Invite teammates in 30 seconds. InboxIQ starts labelling immediately.</p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}" class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
         Connect your inbox free
       </a>
-      <a href="{{ url_for('solutions_email_ai_triage') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-300 text-white font-semibold hover:bg-indigo-500/70 transition text-sm">
+      <a href="{{ url_for('solutions_email_ai_triage') }}" class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
         See AI email triage &rarr;
       </a>
     </div>

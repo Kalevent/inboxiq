@@ -962,11 +962,14 @@ html.dark .marketing-footer a:hover { color: #ffffff !important; }
 
 /* ── Dropdown menus: light mode ──────────────────────────────────────── */
 html:not(.dark) .pub-page .landing-menu,
-html:not(.dark) .marketing-body .landing-menu {
+html:not(.dark) .marketing-body .landing-menu,
+html:not(.dark) .marketing-body-light .landing-menu {
   background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
 }
 html:not(.dark) .pub-page .landing-menu a,
-html:not(.dark) .marketing-body .landing-menu a { color: #475569 !important; }
+html:not(.dark) .marketing-body .landing-menu a,
+html:not(.dark) .marketing-body-light .landing-menu a { color: #1e293b !important; font-weight: 500 !important; }
 html:not(.dark) .pub-page .landing-menu a:hover,
-html:not(.dark) .marketing-body .landing-menu a:hover { background-color: #f8fafc !important; color: #020617 !important; }
+html:not(.dark) .marketing-body .landing-menu a:hover,
+html:not(.dark) .marketing-body-light .landing-menu a:hover { background-color: #f1ecff !important; color: #5B5BD6 !important; }

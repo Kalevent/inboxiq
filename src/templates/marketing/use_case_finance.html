@@ -1,85 +1,208 @@
 {% extends "marketing/base.html" %}
 
-{% block title %}Finance Approval Triage | InboxIQ{% endblock %}
-{% block meta_description %}
-Route finance approvals and billing requests with unified intake, clear prioritisation, and audit-ready decision trails.
-{% endblock %}
+{% block title %}Finance Approval Triage — AI Email Triage for Finance Teams | InboxIQ{% endblock %}
+{% block meta_description %}Approve, escalate, and audit finance requests without a pile of forwarded emails. InboxIQ routes approvals to the right authoriser, enforces SOX-compliant decision trails, and eliminates missed payment deadlines.{% endblock %}
 {% block canonical %}{{ url_for('use_case_finance', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
-  <header class="playbook-hero space-y-6 pb-10">
-    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
-      Use case • Finance Approvals
-    </div>
-    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
-      Finance Approvals With Clear Decisions and SLAs
-    </h1>
-    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
-      InboxIQ triages finance requests arriving by email, then routes approvals with owners, urgency, and audit trails.
-    </p>
-    <div class="cta-row mt-2 mb-8">
-      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
-        See the demo
-      </a>
-      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
-        Start free trial
-      </a>
+<div class="space-y-24 pb-8">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Use Case · Finance Operations</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        Approve, escalate, and audit finance requests<br class="hidden sm:block"> without a pile of forwarded emails.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        InboxIQ identifies approval type, routes to the correct authoriser with deadline context, and logs every decision with a SOX-compliant audit trail — automatically.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
+          Start free trial
+        </a>
+        <a href="{{ url_for('contact') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Talk to sales &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          SOX Section 404 audit trail
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Segregation of duties enforced
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Zero missed payment deadlines
+        </span>
+      </div>
     </div>
   </header>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">Where finance intake slows down</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Approvals arrive via many channels</h3>
-        <p class="text-slate-200 leading-relaxed">Invoices, vendor requests, and approvals are scattered across tools.</p>
+  {# ── Pain Points ───────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">The Problem</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Finance approvals get lost in shared inboxes</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Approval requests lost in shared inboxes</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Invoice approvals, purchase order sign-offs, and expense claims land in a shared finance inbox with no routing. Time-sensitive items sit unread until someone manually picks them up.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Priority is unclear</h3>
-        <p class="text-slate-200 leading-relaxed">Urgent approvals get buried in general inboxes.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">No escalation path for urgent items</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">A payment due today sits beside a routine reimbursement claim. Without urgency classification, deadlines are missed and supplier relationships suffer.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Audit demands are rising</h3>
-        <p class="text-slate-200 leading-relaxed">Teams need consistent decision trails for compliance.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">SOX audits expose forwarded-email trails</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">SOX Section 404 requires documented internal controls over financial reporting. Email forwards with "FYI — please approve" don't satisfy this.</p>
       </div>
     </div>
   </section>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">InboxIQ for finance teams</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Unified intake stream</h3>
-        <p class="text-slate-200 leading-relaxed">Centralise email across all finance and approval inboxes.</p>
+  {# ── How It Works ──────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Classify, route to the right authoriser, log the decision</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Approval type classification</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">InboxIQ reads each inbound finance request and classifies it: invoice approval, PO sign-off, expense claim, budget exception, compliance review. Each type follows its own routing rules.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Decision routing + SLAs</h3>
-        <p class="text-slate-200 leading-relaxed">Auto-assign approvals and escalations to owners.</p>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Authorisation-level routing</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Requests above threshold are escalated to the correct authority level automatically — enforcing segregation of duties. Deadline context is attached so the approver sees due date before opening the email.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Audit-ready outcomes</h3>
-        <p class="text-slate-200 leading-relaxed">Every decision includes why it was routed or escalated.</p>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+        <h3 class="font-semibold text-brand-ink text-lg">SOX-compliant decision log</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Every approval decision is logged with approver identity, timestamp, and action taken. Exportable for internal audit, external audit, and SOX Section 404 control documentation.</p>
       </div>
     </div>
   </section>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">Operational outcomes</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Faster approvals</h3>
-        <p class="text-slate-200 leading-relaxed">High-urgency decisions surface instantly.</p>
+  {# ── Outcomes ──────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Outcomes</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What finance teams report after 30 days</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">70%</div>
+        <p class="font-semibold text-brand-ink">Reduction in approval turnaround</p>
+        <p class="text-sm text-brand-ink-soft">Requests reach the right authoriser immediately — no manual routing or "did you see my email?" follow-up.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Fewer bottlenecks</h3>
-        <p class="text-slate-200 leading-relaxed">Clear ownership removes the need for follow-up chasing.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">0</div>
+        <p class="font-semibold text-brand-ink">Missed payment deadlines</p>
+        <p class="text-sm text-brand-ink-soft">Due-date context surfaces with each approval request — urgent items are routed and flagged before the queue review.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Consistent controls</h3>
-        <p class="text-slate-200 leading-relaxed">Standardised decision rules across teams and vendors.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">100%</div>
+        <p class="font-semibold text-brand-ink">Decisions with approver identity logged</p>
+        <p class="text-sm text-brand-ink-soft">Every approval is timestamped and attributed — ready for internal audit and SOX compliance documentation.</p>
       </div>
     </div>
   </section>
+
+  {# ── Compliance Callout ────────────────────────────────────── #}
+  <section>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">SOX &amp; internal controls</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">SOX Section 404 control documentation</p>
+              <p class="text-brand-ink-soft text-sm">Decision logs provide auditable evidence of financial approval controls — supporting management's assertion on internal control effectiveness.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Segregation of duties enforcement</p>
+              <p class="text-brand-ink-soft text-sm">Routing rules prevent the same person from both requesting and approving. Threshold-based escalation is automatic, not manual.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">AP/AR audit trail</p>
+              <p class="text-brand-ink-soft text-sm">Every accounts payable and receivable decision is logged — supporting both internal review and external audit requirements.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Data security</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">BYOL — financial data in your boundary</p>
+              <p class="text-brand-ink-soft text-sm">Connect your own OpenAI or Azure OpenAI key. Invoice and contract content goes directly to your AI provider — InboxIQ never stores email payloads.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Role-scoped access</p>
+              <p class="text-brand-ink-soft text-sm">Only the designated approver can action a request. Access logs record every view — supporting need-to-know access principles.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">TLS 1.3 + AES-256 at rest</p>
+              <p class="text-brand-ink-soft text-sm">All routing metadata encrypted in transit and at rest. SOC 2 Type I in progress.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ── CTA Footer ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      Close the loop on every finance approval.
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Start free — no credit card required. Connect your finance inbox in under 10 minutes.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
 </div>
 {% endblock %}

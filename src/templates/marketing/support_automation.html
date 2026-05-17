@@ -5,33 +5,34 @@
 InboxIQ automates email support for small B2B SaaS teams — triage every inbound email, draft a reply from your KB, fire automation rules, and surface P1s before you open your inbox.
 {% endblock %}
 {% block canonical %}{{ url_for('support_automation', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
+<div class="space-y-24 pb-8">
 
   {# ── Hero ──────────────────────────────────────────────────── #}
   <header class="grid lg:grid-cols-2 gap-10 items-center">
     <div class="space-y-5">
-      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      <div class="inline-flex items-center gap-2 rounded-full bg-brand-accent/10 text-brand-accent px-3 py-1 text-xs font-semibold">
         InboxIQ &bull; Support Automation
       </div>
-      <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-brand-ink">
         Email support automation<br class="hidden sm:block"> without the helpdesk.
       </h1>
-      <p class="text-slate-300 leading-relaxed">
+      <p class="text-brand-ink-soft leading-relaxed">
         InboxIQ automates the full email support loop — triage every inbound email, draft a grounded reply from your KB,
         fire automation rules, and surface critical issues before you open your inbox.
         All inside Gmail or Outlook. No new tool for your team.
       </p>
       <div class="flex flex-wrap gap-3">
-        <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition text-sm">
+        <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition text-sm">
           Automate your support inbox
         </a>
-        <a href="#pipeline" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition text-sm">
+        <a href="#pipeline" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition text-sm">
           See the full pipeline
         </a>
       </div>
-      <p class="text-slate-500 text-xs">Works inside Gmail and Outlook &bull; No Zendesk required</p>
+      <p class="text-brand-ink-soft text-xs">Works inside Gmail and Outlook &bull; No Zendesk required</p>
     </div>
 
     {# ── Support email pipeline mockup ── #}
@@ -90,42 +91,42 @@ InboxIQ automates email support for small B2B SaaS teams — triage every inboun
 
   {# ── Metrics ───────────────────────────────────────────────── #}
   <div class="grid grid-cols-3 gap-4">
-    <div class="marketing-card text-center space-y-1">
-      <p class="text-3xl font-bold text-indigo-300">&lt;60s</p>
-      <p class="text-slate-400 text-sm">from email received to draft ready</p>
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center space-y-1">
+      <p class="text-3xl font-bold text-brand-accent">&lt;60s</p>
+      <p class="text-brand-ink-soft text-sm">from email received to draft ready</p>
     </div>
-    <div class="marketing-card text-center space-y-1">
-      <p class="text-3xl font-bold text-indigo-300">~85%</p>
-      <p class="text-slate-400 text-sm">draft acceptance rate</p>
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center space-y-1">
+      <p class="text-3xl font-bold text-brand-accent">~85%</p>
+      <p class="text-brand-ink-soft text-sm">draft acceptance rate</p>
     </div>
-    <div class="marketing-card text-center space-y-1">
-      <p class="text-3xl font-bold text-indigo-300">0</p>
-      <p class="text-slate-400 text-sm">helpdesk seats required</p>
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center space-y-1">
+      <p class="text-3xl font-bold text-brand-accent">0</p>
+      <p class="text-brand-ink-soft text-sm">helpdesk seats required</p>
     </div>
   </div>
 
   {# ── Full pipeline ─────────────────────────────────────────── #}
-  <section class="space-y-6 marketing-section" id="pipeline">
+  <section class="space-y-6" id="pipeline">
     <div class="space-y-1">
-      <h2 class="text-2xl font-semibold text-white">The full support automation pipeline</h2>
-      <p class="text-slate-400 text-sm">Every support email runs through five layers automatically — before you open your inbox.</p>
+      <h2 class="text-2xl font-semibold text-brand-ink">The full support automation pipeline</h2>
+      <p class="text-brand-ink-soft text-sm">Every support email runs through five layers automatically — before you open your inbox.</p>
     </div>
     <div class="relative">
-      <div class="hidden lg:block absolute left-5 top-6 bottom-6 w-px bg-slate-700/50"></div>
+      <div class="hidden lg:block absolute left-5 top-6 bottom-6 w-px bg-gray-200"></div>
       <div class="space-y-4">
         {% set pipeline = [
-          ("1", "Triage", "indigo", "Every inbound email is classified by intent (support, billing, feedback), urgency (P1–P4), and sentiment (frustrated, neutral, positive). Labels applied inside Gmail or Outlook automatically."),
-          ("2", "Thread read", "blue", "InboxIQ reads the full email thread for context — not just the latest message. Prior replies, previous issues, and thread history inform the draft."),
-          ("3", "KB search", "violet", "Your knowledge base is searched semantically for the most relevant articles. The draft is grounded in your actual documentation — not hallucinated."),
-          ("4", "Draft reply", "purple", "A draft reply is written and placed in your Gmail or Outlook drafts. You review, edit if needed, and send. You stay in control."),
-          ("5", "Automation rules", "pink", "Rules fire after triage: label the email, forward P1s to Slack, archive newsletters, auto-archive transactional receipts. Set once, runs on every email."),
+          ("1", "Triage", "Every inbound email is classified by intent (support, billing, feedback), urgency (P1–P4), and sentiment (frustrated, neutral, positive). Labels applied inside Gmail or Outlook automatically."),
+          ("2", "Thread read", "InboxIQ reads the full email thread for context — not just the latest message. Prior replies, previous issues, and thread history inform the draft."),
+          ("3", "KB search", "Your knowledge base is searched semantically for the most relevant articles. The draft is grounded in your actual documentation — not hallucinated."),
+          ("4", "Draft reply", "A draft reply is written and placed in your Gmail or Outlook drafts. You review, edit if needed, and send. You stay in control."),
+          ("5", "Automation rules", "Rules fire after triage: label the email, forward P1s to Slack, archive newsletters, auto-archive transactional receipts. Set once, runs on every email."),
         ] %}
-        {% for num, title, color, desc in pipeline %}
+        {% for num, title, desc in pipeline %}
         <div class="flex gap-4 items-start">
-          <div class="h-10 w-10 rounded-full bg-{{ color }}-500/20 text-{{ color }}-300 flex-shrink-0 flex items-center justify-center text-sm font-bold border border-{{ color }}-500/30 relative z-10">{{ num }}</div>
-          <div class="flex-1 bg-slate-800/40 rounded-xl p-4 border border-slate-700/30">
-            <p class="text-white font-semibold text-sm mb-1">{{ title }}</p>
-            <p class="text-slate-400 text-sm leading-relaxed">{{ desc }}</p>
+          <div class="h-10 w-10 rounded-full bg-brand-accent/10 text-brand-accent flex-shrink-0 flex items-center justify-center text-sm font-bold border border-brand-accent/20 relative z-10">{{ num }}</div>
+          <div class="flex-1 rounded-2xl border border-gray-200 bg-white p-4">
+            <p class="text-brand-ink font-semibold text-sm mb-1">{{ title }}</p>
+            <p class="text-brand-ink-soft text-sm leading-relaxed">{{ desc }}</p>
           </div>
         </div>
         {% endfor %}
@@ -134,9 +135,9 @@ InboxIQ automates email support for small B2B SaaS teams — triage every inboun
   </section>
 
   {# ── What gets automated ───────────────────────────────────── #}
-  <section class="grid lg:grid-cols-2 gap-8 marketing-section">
+  <section class="grid lg:grid-cols-2 gap-8">
     <div class="space-y-4">
-      <h2 class="text-2xl font-semibold text-white">What gets automated</h2>
+      <h2 class="text-2xl font-semibold text-brand-ink">What gets automated</h2>
       <div class="space-y-3">
         {% set automations = [
           ("&#127381;", "P1 escalation", "Critical emails (system down, churn risk, angry VIP) are flagged immediately — Slack notification fires before you open Gmail."),
@@ -145,39 +146,39 @@ InboxIQ automates email support for small B2B SaaS teams — triage every inboun
           ("&#128190;", "Noise suppression", "Transactional emails, newsletters, and automated alerts are labelled and archived silently — no drafts, no tickets, no noise."),
         ] %}
         {% for icon, title, desc in automations %}
-        <div class="flex gap-3 bg-slate-800/40 rounded-xl p-4 border border-slate-700/30">
+        <div class="flex gap-3 rounded-2xl border border-gray-200 bg-white p-4">
           <span class="text-xl flex-shrink-0">{{ icon }}</span>
           <div>
-            <p class="text-white font-semibold text-sm">{{ title }}</p>
-            <p class="text-slate-400 text-sm leading-relaxed">{{ desc }}</p>
+            <p class="text-brand-ink font-semibold text-sm">{{ title }}</p>
+            <p class="text-brand-ink-soft text-sm leading-relaxed">{{ desc }}</p>
           </div>
         </div>
         {% endfor %}
       </div>
     </div>
 
-    <div class="marketing-card space-y-4">
-      <h2 class="text-xl font-semibold text-white">Who it's for</h2>
-      <p class="text-slate-300 text-sm leading-relaxed">
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
+      <h2 class="text-xl font-semibold text-brand-ink">Who it's for</h2>
+      <p class="text-brand-ink-soft text-sm leading-relaxed">
         InboxIQ is built for founders and ops leads at B2B SaaS companies with 5–50 employees
         who handle support email themselves — or with one or two teammates.
       </p>
       <ul class="space-y-3 text-sm">
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span class="text-slate-300">You're handling 50–300 support emails a week manually</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span class="text-slate-300">You rejected Zendesk — too heavy, too many seats, too much setup</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span class="text-slate-300">Your team lives in Gmail or Outlook and you want AI, not a new tool</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span class="text-slate-300">You want P1s surfaced before you open your inbox — not after</span></li>
-        <li class="flex gap-2"><span class="text-indigo-400 mt-0.5">&#10003;</span><span class="text-slate-300">You want draft replies grounded in your docs — not hallucinated</span></li>
+        <li class="flex gap-2"><span class="text-brand-accent mt-0.5">&#10003;</span><span class="text-brand-ink-soft">You're handling 50–300 support emails a week manually</span></li>
+        <li class="flex gap-2"><span class="text-brand-accent mt-0.5">&#10003;</span><span class="text-brand-ink-soft">You rejected Zendesk — too heavy, too many seats, too much setup</span></li>
+        <li class="flex gap-2"><span class="text-brand-accent mt-0.5">&#10003;</span><span class="text-brand-ink-soft">Your team lives in Gmail or Outlook and you want AI, not a new tool</span></li>
+        <li class="flex gap-2"><span class="text-brand-accent mt-0.5">&#10003;</span><span class="text-brand-ink-soft">You want P1s surfaced before you open your inbox — not after</span></li>
+        <li class="flex gap-2"><span class="text-brand-accent mt-0.5">&#10003;</span><span class="text-brand-ink-soft">You want draft replies grounded in your docs — not hallucinated</span></li>
       </ul>
-      <div class="bg-slate-800/50 rounded-lg p-3 text-xs text-slate-400 border border-slate-700/50">
+      <div class="bg-gray-50 rounded-lg p-3 text-xs text-brand-ink-soft border border-gray-200">
         Connect Gmail or Outlook in 2 minutes. No configuration required to get started — InboxIQ triages on the next poll cycle.
       </div>
     </div>
   </section>
 
   {# ── FAQ ───────────────────────────────────────────────────── #}
-  <section class="space-y-4 marketing-section">
-    <h2 class="text-2xl font-semibold text-white">FAQ</h2>
+  <section class="space-y-4">
+    <h2 class="text-2xl font-semibold text-brand-ink">FAQ</h2>
     <div class="grid sm:grid-cols-2 gap-4">
       {% set faqs = [
         ("Do I need a helpdesk or ticketing system?", "No. InboxIQ works entirely inside Gmail or Outlook. Labels replace tickets. Drafts replace manual replies. No external tool required."),
@@ -186,23 +187,23 @@ InboxIQ automates email support for small B2B SaaS teams — triage every inboun
         ("How long does setup take?", "Under 2 minutes to connect Gmail or Outlook via OAuth. Connect your KB (Notion, Intercom, docs URL) to enable draft replies. No config required to start triaging."),
       ] %}
       {% for q, a in faqs %}
-      <div class="marketing-card space-y-1">
-        <h3 class="font-semibold text-white text-sm">{{ q }}</h3>
-        <p class="text-slate-400 text-sm leading-relaxed">{{ a }}</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-1">
+        <h3 class="font-semibold text-brand-ink text-sm">{{ q }}</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">{{ a }}</p>
       </div>
       {% endfor %}
     </div>
   </section>
 
   {# ── CTA ───────────────────────────────────────────────────── #}
-  <section class="bg-indigo-600 text-white rounded-2xl p-8 space-y-4 marketing-section">
-    <h2 class="text-2xl font-semibold">Handle support email in a fraction of the time</h2>
-    <p class="text-indigo-100 text-sm max-w-xl">Connect Gmail or Outlook in 2 minutes. InboxIQ triages every email, drafts replies from your KB, and surfaces P1s automatically.</p>
-    <div class="flex flex-wrap gap-3">
-      <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition text-sm">
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Handle support email in a fraction of the time.</h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">Connect Gmail or Outlook in 2 minutes. InboxIQ triages every email, drafts replies from your KB, and surfaces P1s automatically.</p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}" class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
         Connect your inbox free
       </a>
-      <a href="{{ url_for('solutions_email_draft_replies') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-300 text-white font-semibold hover:bg-indigo-500/70 transition text-sm">
+      <a href="{{ url_for('solutions_email_draft_replies') }}" class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
         See draft replies &rarr;
       </a>
     </div>

@@ -5,28 +5,29 @@
 InboxIQ's Automation Studio lets you build rules that fire on what the AI decided — intent, urgency, sentiment — not just keywords. Label, archive, forward, notify, and more.
 {% endblock %}
 {% block canonical %}{{ url_for('email_triage', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
+<div class="space-y-24 pb-8">
 
   {# ── Hero ──────────────────────────────────────────────────── #}
   <header class="grid lg:grid-cols-2 gap-10 items-center">
     <div class="space-y-5">
-      <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
+      <div class="inline-flex items-center gap-2 rounded-full bg-brand-accent/10 text-brand-accent px-3 py-1 text-xs font-semibold">
         InboxIQ &bull; Email Automation
       </div>
-      <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
+      <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-brand-ink">
         Automation rules that fire on what the AI decided — not just keywords.
       </h1>
-      <p class="text-slate-300 leading-relaxed">
+      <p class="text-brand-ink-soft leading-relaxed">
         Traditional email rules match on sender or subject line. InboxIQ rules trigger on triage output —
         intent, urgency, sentiment. Write them in plain English. The model converts them.
       </p>
       <div class="flex flex-wrap gap-3">
-        <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition text-sm">
+        <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition text-sm">
           Connect your inbox free
         </a>
-        <a href="#examples" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition text-sm">
+        <a href="#examples" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition text-sm">
           See example rules
         </a>
       </div>
@@ -77,9 +78,9 @@ InboxIQ's Automation Studio lets you build rules that fire on what the AI decide
   </header>
 
   {# Keyword rules vs AI rules #}
-  <section class="grid lg:grid-cols-2 gap-8 marketing-section">
-    <div class="marketing-card space-y-3">
-      <h2 class="text-lg font-semibold text-white">Traditional keyword rules — why they break</h2>
+  <section class="grid lg:grid-cols-2 gap-8">
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+      <h2 class="text-lg font-semibold text-brand-ink">Traditional keyword rules — why they break</h2>
       <div class="space-y-2 text-sm">
         <div class="bg-slate-800/40 rounded-lg p-3">
           <p class="text-slate-400 font-mono text-[11px]">Subject contains 'urgent'</p>
@@ -99,8 +100,8 @@ InboxIQ's Automation Studio lets you build rules that fire on what the AI decide
         </div>
       </div>
     </div>
-    <div class="marketing-card space-y-3">
-      <h2 class="text-lg font-semibold text-white">InboxIQ rules — trigger on intent, not words</h2>
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+      <h2 class="text-lg font-semibold text-brand-ink">InboxIQ rules — trigger on intent, not words</h2>
       <div class="space-y-2 text-sm">
         <div class="bg-slate-800/40 rounded-lg p-3">
           <p class="text-indigo-300 font-mono text-[11px]">intent = support AND urgency = P1</p>
@@ -123,46 +124,46 @@ InboxIQ's Automation Studio lets you build rules that fire on what the AI decide
   </section>
 
   {# What rules can do #}
-  <section class="space-y-5 marketing-section" id="examples">
-    <h2 class="text-2xl font-semibold text-white">What automation rules can do</h2>
+  <section class="space-y-5" id="examples">
+    <h2 class="text-2xl font-semibold text-brand-ink">What automation rules can do</h2>
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="marketing-card text-center space-y-2">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center space-y-2">
         <div class="text-3xl">&#127991;</div>
-        <h3 class="font-semibold text-white text-sm">Label</h3>
-        <p class="text-slate-400 text-xs leading-relaxed">Apply Gmail labels or Outlook categories — colour-coded, grouped under InboxIQ/ in your sidebar.</p>
+        <h3 class="font-semibold text-brand-ink text-sm">Label</h3>
+        <p class="text-brand-ink-soft text-xs leading-relaxed">Apply Gmail labels or Outlook categories — colour-coded, grouped under InboxIQ/ in your sidebar.</p>
       </div>
-      <div class="marketing-card text-center space-y-2">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center space-y-2">
         <div class="text-3xl">&#128230;</div>
-        <h3 class="font-semibold text-white text-sm">Archive</h3>
-        <p class="text-slate-400 text-xs leading-relaxed">Silently archive transactional or promotional emails so they never appear in your active queue.</p>
+        <h3 class="font-semibold text-brand-ink text-sm">Archive</h3>
+        <p class="text-brand-ink-soft text-xs leading-relaxed">Silently archive transactional or promotional emails so they never appear in your active queue.</p>
       </div>
-      <div class="marketing-card text-center space-y-2">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center space-y-2">
         <div class="text-3xl">&#128228;</div>
-        <h3 class="font-semibold text-white text-sm">Forward</h3>
-        <p class="text-slate-400 text-xs leading-relaxed">Route billing to billing@, ops requests to ops@, support issues to your team — automatically.</p>
+        <h3 class="font-semibold text-brand-ink text-sm">Forward</h3>
+        <p class="text-brand-ink-soft text-xs leading-relaxed">Route billing to billing@, ops requests to ops@, support issues to your team — automatically.</p>
       </div>
-      <div class="marketing-card text-center space-y-2">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center space-y-2">
         <div class="text-3xl">&#128276;</div>
-        <h3 class="font-semibold text-white text-sm">Notify</h3>
-        <p class="text-slate-400 text-xs leading-relaxed">Post to Slack or trigger a webhook when an urgent or frustrated email arrives.</p>
+        <h3 class="font-semibold text-brand-ink text-sm">Notify</h3>
+        <p class="text-brand-ink-soft text-xs leading-relaxed">Post to Slack or trigger a webhook when an urgent or frustrated email arrives.</p>
       </div>
     </div>
   </section>
 
   {# Natural language builder #}
-  <section class="marketing-card space-y-5 marketing-section">
+  <section class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
     <div class="grid lg:grid-cols-2 gap-8 items-center">
       <div class="space-y-3">
-        <h2 class="text-xl font-semibold text-white">Write rules in plain English</h2>
-        <p class="text-slate-300 text-sm leading-relaxed">
+        <h2 class="text-xl font-semibold text-brand-ink">Write rules in plain English</h2>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">
           Type what you want to happen. InboxIQ converts it into a structured rule automatically.
           No dropdowns, no AND/OR logic trees to configure.
         </p>
-        <ul class="space-y-1.5 text-sm text-slate-400">
-          <li class="flex gap-2 italic"><span class="text-indigo-400">&#8250;</span>"If a support email is urgent, notify me on Slack"</li>
-          <li class="flex gap-2 italic"><span class="text-indigo-400">&#8250;</span>"Archive all promotional emails automatically"</li>
-          <li class="flex gap-2 italic"><span class="text-indigo-400">&#8250;</span>"Forward billing queries to the finance team"</li>
-          <li class="flex gap-2 italic"><span class="text-indigo-400">&#8250;</span>"Flag any frustrated customer for my immediate review"</li>
+        <ul class="space-y-1.5 text-sm text-brand-ink-soft">
+          <li class="flex gap-2 italic"><span class="text-brand-accent">&#8250;</span>"If a support email is urgent, notify me on Slack"</li>
+          <li class="flex gap-2 italic"><span class="text-brand-accent">&#8250;</span>"Archive all promotional emails automatically"</li>
+          <li class="flex gap-2 italic"><span class="text-brand-accent">&#8250;</span>"Forward billing queries to the finance team"</li>
+          <li class="flex gap-2 italic"><span class="text-brand-accent">&#8250;</span>"Flag any frustrated customer for my immediate review"</li>
         </ul>
       </div>
       <div class="bg-slate-800/60 rounded-xl p-4 space-y-3 border border-slate-700/50">
@@ -184,14 +185,14 @@ InboxIQ's Automation Studio lets you build rules that fire on what the AI decide
   </section>
 
   {# CTA #}
-  <section class="bg-indigo-600 text-white rounded-2xl p-8 space-y-4 marketing-section">
-    <h2 class="text-2xl font-semibold">Build your first rule in 30 seconds</h2>
-    <p class="text-indigo-100 text-sm max-w-xl">Connect your inbox, let triage run, then add automation rules in plain English. No configuration required to start.</p>
-    <div class="flex flex-wrap gap-3">
-      <a href="{{ url_for('signup_page') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition text-sm">
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Build your first rule in 30 seconds.</h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">Connect your inbox, let triage run, then add automation rules in plain English. No configuration required to start.</p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}" class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
         Connect your inbox free
       </a>
-      <a href="{{ url_for('ai_email_triage') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-indigo-300 text-white font-semibold hover:bg-indigo-500/70 transition text-sm">
+      <a href="{{ url_for('ai_email_triage') }}" class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
         See AI triage first &rarr;
       </a>
     </div>

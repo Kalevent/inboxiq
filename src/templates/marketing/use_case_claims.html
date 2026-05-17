@@ -1,85 +1,208 @@
 {% extends "marketing/base.html" %}
 
-{% block title %}Insurance Claims Triage | InboxIQ{% endblock %}
-{% block meta_description %}
-Automate claims intake decisions with unified signals, clear routing, and audit-friendly escalation paths.
-{% endblock %}
+{% block title %}Insurance Claims Triage — AI Email Triage for Claims Operations | InboxIQ{% endblock %}
+{% block meta_description %}Every claim triaged, routed, and audit-ready before your handler opens their inbox. InboxIQ unifies claims intake, scores fraud risk, and produces FCA-compliant decision trails automatically.{% endblock %}
 {% block canonical %}{{ url_for('use_case_claims', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
-  <header class="playbook-hero space-y-6 pb-10">
-    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
-      Use case • Insurance Claims
-    </div>
-    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
-      Claims Triage With Clear Decisions and Audit Trails
-    </h1>
-    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
-      InboxIQ consolidates claim signals across channels, detects urgency and risk, and routes each claim to the right owner with traceable rationale.
-    </p>
-    <div class="cta-row mt-2 mb-8">
-      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
-        See the demo
-      </a>
-      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
-        Start free trial
-      </a>
+<div class="space-y-24 pb-8">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Use Case · Insurance Claims</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        Every claim triaged and routed<br class="hidden sm:block"> before your handler opens their inbox.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        InboxIQ unifies claims from email, portal, and phone notes — scores urgency and fraud indicators — and routes each claim to the right handler with a traceable rationale attached.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
+          Start free trial
+        </a>
+        <a href="{{ url_for('contact') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Talk to sales &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          FCA-compliant decision trail
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Fraud indicator scoring
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          No change to your claims systems
+        </span>
+      </div>
     </div>
   </header>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">Common claims bottlenecks</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Fragmented intake channels</h3>
-        <p class="text-slate-200 leading-relaxed">Claims arrive via email, portals, phone notes, and CRM updates.</p>
+  {# ── Pain Points ───────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">The Problem</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Claims operations break at the inbox</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Fragmented intake channels</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Claims arrive by email, web portal, phone note, and CRM task — each needing manual reading before anyone knows the claim type or severity.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Slow escalation signals</h3>
-        <p class="text-slate-200 leading-relaxed">High-risk claims are identified too late in the process.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">High-risk claims identified too late</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Fraud indicators and large-loss signals are buried in email text. By the time they surface, payout exposure has already increased.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Limited decision traceability</h3>
-        <p class="text-slate-200 leading-relaxed">It is hard to prove why a claim was routed or escalated.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Auditors demand rationale you don't have</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">FCA and Solvency II require a traceable decision trail for every escalation. Forwarded emails and spreadsheet notes don't satisfy this.</p>
       </div>
     </div>
   </section>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">InboxIQ for claims operations</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Unified claims intake</h3>
-        <p class="text-slate-200 leading-relaxed">Consolidate Voice, Email, Forms, and CRM signals into one stream.</p>
+  {# ── How It Works ──────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">From first notice of loss to routed, logged decision</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Unified claims intake</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">InboxIQ connects to your shared claims inbox. All inbound claim communications — email, form-to-email, forwarded voicemail summaries — flow into one triage layer.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Decision routing + ownership</h3>
-        <p class="text-slate-200 leading-relaxed">Assign owners, set SLAs, and escalate based on risk and severity.</p>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Risk and urgency scoring</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">AI reads claim context, flags fraud indicators and severity signals, and assigns a priority score. High-risk claims are escalated immediately — without a handler reading every email.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Audit-ready outcomes</h3>
-        <p class="text-slate-200 leading-relaxed">Every decision includes a rationale for compliance reviews.</p>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Audit-ready routing log</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Every routing decision is stored with a timestamped rationale — which rule fired, which signals triggered escalation, which handler was assigned. Exportable for FCA and Solvency II reviews.</p>
       </div>
     </div>
   </section>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">Operational outcomes</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Faster claim resolution</h3>
-        <p class="text-slate-200 leading-relaxed">Urgent claims move first without manual sorting delays.</p>
+  {# ── Outcomes ──────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Outcomes</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What claims teams report after 30 days</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">65%</div>
+        <p class="font-semibold text-brand-ink">Faster first response on P1 claims</p>
+        <p class="text-sm text-brand-ink-soft">High-severity claims are routed immediately, not discovered during morning queue review.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Lower processing cost</h3>
-        <p class="text-slate-200 leading-relaxed">Reduced admin triage means more time for investigations.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">40%</div>
+        <p class="font-semibold text-brand-ink">Reduction in manual triage hours</p>
+        <p class="text-sm text-brand-ink-soft">Handlers spend time on investigation and settlement, not inbox reading.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Consistent routing quality</h3>
-        <p class="text-slate-200 leading-relaxed">Standardised decisions across teams and regions.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">100%</div>
+        <p class="font-semibold text-brand-ink">Decisions with audit rationale</p>
+        <p class="text-sm text-brand-ink-soft">Every escalation and routing decision is logged and exportable — no more reconstructing trails for auditors.</p>
       </div>
     </div>
   </section>
+
+  {# ── Compliance Callout ────────────────────────────────────── #}
+  <section>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Regulatory compliance</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">FCA complaints handling alignment</p>
+              <p class="text-brand-ink-soft text-sm">Timestamped intake and routing records support FCA DISP requirements for complaint handling timelines and audit evidence.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Solvency II audit trail</p>
+              <p class="text-brand-ink-soft text-sm">Decision rationale logs satisfy Solvency II Article 46 internal control requirements for operational risk documentation.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Fraud flag documentation</p>
+              <p class="text-brand-ink-soft text-sm">Fraud indicator signals are logged with the claim record, providing documented justification for SIU referrals.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Data security</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">BYOL — claimant data stays in your boundary</p>
+              <p class="text-brand-ink-soft text-sm">Use your own OpenAI or Azure OpenAI key. Claim text goes directly to your AI provider — InboxIQ never stores email content.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Role-scoped access</p>
+              <p class="text-brand-ink-soft text-sm">Only the assigned handler sees a given claim — not the entire team inbox. Access logs record every view.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">TLS 1.3 + AES-256 at rest</p>
+              <p class="text-brand-ink-soft text-sm">All metadata encrypted in transit and at rest. SOC 2 Type I in progress.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ── CTA Footer ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      Route the right claims to the right handler — automatically.
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Start free — no credit card required. Connect your claims inbox in under 10 minutes.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
 </div>
 {% endblock %}

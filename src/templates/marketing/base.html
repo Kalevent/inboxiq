@@ -51,12 +51,14 @@
                   <span>Use cases</span>
                   <span class="text-[10px] text-slate-400">▼</span>
                 </button>
-                <div class="landing-menu absolute left-0 mt-2 hidden min-w-[220px] rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900 group-hover:block group-focus-within:block z-50">
-                  <a href="{{ url_for('use_case_support') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Support Triage</a>
-                  <a href="{{ url_for('use_case_healthcare_triage') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Healthcare Triage (Referrals)</a>
-                  <a href="{{ url_for('use_case_claims') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Insurance Claims</a>
-                  <a href="{{ url_for('use_case_hr') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">HR Requests</a>
-                  <a href="{{ url_for('use_case_finance') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Finance Approvals</a>
+                <div class="landing-menu absolute left-0 top-full pt-2 hidden group-hover:block group-focus-within:block z-50">
+                  <div class="min-w-[220px] rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                    <a href="{{ url_for('use_case_support') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Support Triage</a>
+                    <a href="{{ url_for('use_case_healthcare_triage') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Healthcare Triage (Referrals)</a>
+                    <a href="{{ url_for('use_case_claims') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Insurance Claims</a>
+                    <a href="{{ url_for('use_case_hr') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">HR Requests</a>
+                    <a href="{{ url_for('use_case_finance') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Finance Approvals</a>
+                  </div>
                 </div>
               </div>
             {% elif request.path.startswith('/solutions') %}
@@ -65,12 +67,14 @@
                   <span>Solutions</span>
                   <span class="text-[10px] text-slate-400">▼</span>
                 </button>
-                <div class="landing-menu absolute left-0 mt-2 hidden min-w-[240px] rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900 group-hover:block group-focus-within:block z-50">
-                  <a href="{{ url_for('solutions_email_ai_triage') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">AI Email Triage</a>
-                  <a href="{{ url_for('solutions_email_draft_replies') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Draft Replies</a>
-                  <a href="{{ url_for('solutions_email_triage_automation') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Email Triage Automation</a>
-                  <a href="{{ url_for('solutions_email_shared_inbox') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Shared Inbox</a>
-                  <a href="{{ url_for('solutions_email_support_automation') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Support Automation</a>
+                <div class="landing-menu absolute left-0 top-full pt-2 hidden group-hover:block group-focus-within:block z-50">
+                  <div class="min-w-[240px] rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                    <a href="{{ url_for('solutions_email_ai_triage') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">AI Email Triage</a>
+                    <a href="{{ url_for('solutions_email_draft_replies') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Draft Replies</a>
+                    <a href="{{ url_for('solutions_email_triage_automation') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Email Triage Automation</a>
+                    <a href="{{ url_for('solutions_email_shared_inbox') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Shared Inbox</a>
+                    <a href="{{ url_for('solutions_email_support_automation') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Support Automation</a>
+                  </div>
                 </div>
               </div>
             {% else %}
@@ -83,12 +87,14 @@
                   <span>Use cases</span>
                   <span class="text-[10px] text-slate-400">▼</span>
                 </button>
-                <div class="landing-menu absolute left-0 mt-2 hidden min-w-[220px] rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900 group-hover:block group-focus-within:block z-50">
-                  <a href="{{ url_for('use_case_support') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Support Triage</a>
-                  <a href="{{ url_for('use_case_healthcare_triage') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Healthcare Triage (Referrals)</a>
-                  <a href="{{ url_for('use_case_claims') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Insurance Claims</a>
-                  <a href="{{ url_for('use_case_hr') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">HR Requests</a>
-                  <a href="{{ url_for('use_case_finance') }}" class="block px-4 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">Finance Approvals</a>
+                <div class="landing-menu absolute left-0 top-full pt-2 hidden group-hover:block group-focus-within:block z-50">
+                  <div class="min-w-[220px] rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                    <a href="{{ url_for('use_case_support') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Support Triage</a>
+                    <a href="{{ url_for('use_case_healthcare_triage') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Healthcare Triage (Referrals)</a>
+                    <a href="{{ url_for('use_case_claims') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Insurance Claims</a>
+                    <a href="{{ url_for('use_case_hr') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">HR Requests</a>
+                    <a href="{{ url_for('use_case_finance') }}" class="block px-4 py-2.5 text-slate-800 font-medium hover:bg-brand-accent/5 hover:text-brand-accent dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">Finance Approvals</a>
+                  </div>
                 </div>
               </div>
             {% endif %}

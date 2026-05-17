@@ -1,67 +1,215 @@
 {% extends "marketing/base.html" %}
 
-{% block title %}Decision Routing | InboxIQ{% endblock %}
-{% block meta_description %}
-Decision-centric triage that routes, escalates, and assigns ownership with auditable outcomes.
-{% endblock %}
+{% block title %}AI Decision Routing — Triage, Prioritise, and Route Every Email | InboxIQ{% endblock %}
+{% block meta_description %}InboxIQ makes the triage decision before your team opens the queue: what needs action, who owns it, what the urgency is, and why. Every decision logged with a traceable rationale.{% endblock %}
 {% block canonical %}{{ url_for('solutions_decisions', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
-  <header class="playbook-hero space-y-6 pb-10">
-    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
-      Solutions • Decisions
-    </div>
-    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
-      Decision Routing That Teams Can Trust
-    </h1>
-    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
-      InboxIQ makes the decision before the queue: what needs action, who owns it, and when it’s due—plus the audit trail.
-    </p>
-    <div class="cta-row mt-2 mb-8">
-      <a href="{{ url_for('root') }}#demo" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-400 transition">
-        Watch the demo
-      </a>
-      <a href="{{ url_for('root') }}#cta" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 text-slate-100 font-semibold hover:border-slate-500 transition">
-        Start free trial
-      </a>
+<div class="space-y-24 pb-8">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Solutions · Decision Routing</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        Every email triaged, prioritised,<br class="hidden sm:block"> and routed — before your team reads it.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        InboxIQ reads every inbound email, classifies intent and urgency, assigns an owner, and logs the rationale — so your team starts with a decision-ready queue, not a pile of unread mail.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
+          Start free trial
+        </a>
+        <a href="{{ url_for('contact') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Talk to sales &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Works inside Gmail &amp; Outlook
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Every decision with a logged rationale
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          No new tool for your team
+        </span>
+      </div>
     </div>
   </header>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">What decisions include</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Action required or auto-handled</h3>
-        <p class="text-slate-200 leading-relaxed">InboxIQ filters noise and routes real work.</p>
+  {# ── What a decision includes ──────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">What InboxIQ decides</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Four things resolved before you open the email</h2>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent/10 flex items-center justify-center">
+          <svg class="w-5 h-5 text-brand-accent" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Intent</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Support, billing, feature request, feedback, or transactional — classified from the full email body, not just subject line keywords.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Owner + SLA</h3>
-        <p class="text-slate-200 leading-relaxed">Each decision has clear accountability.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent/10 flex items-center justify-center">
+          <svg class="w-5 h-5 text-brand-accent" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Urgency</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">P1 through P4 scoring based on tone, context, and churn signals — not just the word "urgent" in the subject.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Audit trail</h3>
-        <p class="text-slate-200 leading-relaxed">See why something was routed or escalated.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent/10 flex items-center justify-center">
+          <svg class="w-5 h-5 text-brand-accent" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Owner</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">The right agent, team, or department assigned automatically based on intent, urgency, and your routing rules.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent/10 flex items-center justify-center">
+          <svg class="w-5 h-5 text-brand-accent" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Rationale</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Why was this classified P1? Why was it routed to support and not billing? Every decision is explained and logged.</p>
       </div>
     </div>
   </section>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">Why decision-centric beats automation</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">No blind auto-replies</h3>
-        <p class="text-slate-200 leading-relaxed">Draft replies are optional, never forced.</p>
+  {# ── Why decision-centric beats keyword rules ─────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Why this beats keyword-based rules</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Reads intent, not words</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Traditional rules match "urgent" in the subject. InboxIQ reads the full email context — tone, implied urgency, account signals — and classifies intent from meaning, not pattern matching.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Consistent outcomes</h3>
-        <p class="text-slate-200 leading-relaxed">Decision rules apply across teams and channels.</p>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Routes before the queue forms</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Routing happens at intake — before your team opens the inbox. P1s are escalated immediately. Noise is suppressed. Your team arrives to a prioritised, owned queue rather than a pile of unread mail.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Operational clarity</h3>
-        <p class="text-slate-200 leading-relaxed">Leadership can measure, review, and improve.</p>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Every decision is auditable</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Every triage outcome — label applied, owner assigned, escalation triggered — is logged with a timestamped rationale. Reviewable, exportable, and improvable.</p>
       </div>
     </div>
   </section>
+
+  {# ── Outcomes ──────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Outcomes</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What teams report after 30 days</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">100%</div>
+        <p class="font-semibold text-brand-ink">Emails with intent + urgency label</p>
+        <p class="text-sm text-brand-ink-soft">No email reaches the queue without a decision attached to it.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">0</div>
+        <p class="font-semibold text-brand-ink">P1 emails missed or delayed</p>
+        <p class="text-sm text-brand-ink-soft">Critical issues are escalated at intake — before the daily queue review starts.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">60%</div>
+        <p class="font-semibold text-brand-ink">Reduction in daily triage time</p>
+        <p class="text-sm text-brand-ink-soft">Teams skip manual classification and go directly to resolution.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Enterprise callout ────────────────────────────────────── #}
+  <section>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Consistent, reviewable decisions</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Plain-English automation rules</p>
+              <p class="text-brand-ink-soft text-sm">Write rules in plain English — "if billing and urgent, forward to billing@ and notify Slack". The model converts them to structured logic.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Decisions visible in your existing inbox</p>
+              <p class="text-brand-ink-soft text-sm">Labels appear inside Gmail or Outlook — no new dashboard to check. Your team's workflow stays unchanged.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Feedback improves accuracy</p>
+              <p class="text-brand-ink-soft text-sm">Corrections on misclassified emails retrain the model. Accuracy compounds with use.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Audit &amp; compliance</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Every decision timestamped and logged</p>
+              <p class="text-brand-ink-soft text-sm">Label applied, rule fired, owner assigned — all recorded with the email reference and reason.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Exportable for compliance reviews</p>
+              <p class="text-brand-ink-soft text-sm">Decision logs are exportable — useful for SLA audits, HIPAA/FCA compliance, and internal reporting.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">BYOL data isolation</p>
+              <p class="text-brand-ink-soft text-sm">Use your own AI key — email content goes directly to your provider. InboxIQ stores decisions and labels, never email payloads.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ── CTA Footer ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      Stop triaging. Start resolving.
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Connect Gmail or Outlook in 2 minutes. InboxIQ starts triaging on the next poll cycle.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
 </div>
 {% endblock %}

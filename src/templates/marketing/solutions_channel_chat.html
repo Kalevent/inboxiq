@@ -1,41 +1,150 @@
 {% extends "marketing/base.html" %}
 
-{% block title %}Chat Intake | InboxIQ{% endblock %}
-{% block meta_description %}
-Route chat handoffs into a decision-centric queue with ownership and SLAs.
-{% endblock %}
+{% block title %}Chat Intake — Triage Live Chat Handoffs Into Owned, Audited Decisions | InboxIQ{% endblock %}
+{% block meta_description %}Route chat handoffs through InboxIQ's triage pipeline. Urgency scored, owner assigned, and every routing decision logged — automatically.{% endblock %}
 {% block canonical %}{{ url_for('solutions_chat', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
-  <header class="playbook-hero space-y-6 pb-10">
-    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
-      Solutions • Chat
+<div class="space-y-24 pb-8">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Solutions · Chat Intake</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        Chat handoffs triaged, owned,<br class="hidden sm:block"> and logged automatically.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        When a live chat ends, the handoff arrives as a notification — and disappears into a shared inbox. InboxIQ reads the context, scores urgency, assigns the right team member, and logs the decision before anyone opens the queue.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
+          Start free trial
+        </a>
+        <a href="{{ url_for('contact') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Talk to sales &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Works with Intercom, Drift, Zendesk Chat
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Same routing rules as email
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Audit trail on every handoff
+        </span>
+      </div>
     </div>
-    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
-      Chat Handoffs With Clear Decisions
-    </h1>
-    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
-      InboxIQ turns chat handoffs into decision-ready work with owners, SLAs, and audit trails.
-    </p>
   </header>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">Why teams choose InboxIQ</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Unified triage</h3>
-        <p class="text-slate-200 leading-relaxed">Chat sits beside email, forms, and CRM.</p>
+  {# ── Pain Points ───────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">The Problem</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Chat handoffs fall through the cracks</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">High-value escalations missed</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">An enterprise customer's chat escalation arrives as a handoff notification — and sits unread in the same queue as routine chat transcripts.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Immediate ownership</h3>
-        <p class="text-slate-200 leading-relaxed">InboxIQ assigns a decision owner instantly.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">No context at handoff</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">The team member who picks up the handoff has to re-read the full chat transcript to understand what happened. No urgency score. No next step. Just a pile of text.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Audit-ready routing</h3>
-        <p class="text-slate-200 leading-relaxed">See why each chat was escalated.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">No single owner</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Chat handoffs land in a shared inbox. The handoff sits unassigned until someone manually routes it — by which time the customer has already followed up by email.</p>
       </div>
     </div>
   </section>
+
+  {# ── How It Works ──────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Chat handoff to routed, owned decision</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Chat platforms forward handoffs to InboxIQ</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Intercom, Drift, Zendesk Chat, and most live chat tools can send handoff notifications to an email address or webhook. InboxIQ connects to that destination and picks up every handoff automatically.</p>
+      </div>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+        <h3 class="font-semibold text-brand-ink text-lg">AI reads the transcript and scores urgency</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">InboxIQ reads the chat context, detects sentiment, identifies the customer tier, and assigns an urgency score. Churn risk, billing issues, and enterprise escalations are surfaced immediately.</p>
+      </div>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Routed to the right owner with full context</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">The handoff lands with a named owner, urgency context, and suggested next step — not a wall of text. Your team acts, not sorts.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Outcomes ──────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Outcomes</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What teams report after 30 days</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">0</div>
+        <p class="font-semibold text-brand-ink">High-urgency handoffs missed</p>
+        <p class="text-sm text-brand-ink-soft">Escalations from enterprise and at-risk accounts are flagged and routed before anyone opens the queue.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">100%</div>
+        <p class="font-semibold text-brand-ink">Handoffs with named owner</p>
+        <p class="text-sm text-brand-ink-soft">Every chat handoff is assigned to a team member with a response deadline — no shared-inbox limbo.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">2×</div>
+        <p class="font-semibold text-brand-ink">Faster follow-up on escalations</p>
+        <p class="text-sm text-brand-ink-soft">Context at point of handoff means no time lost re-reading the transcript before taking action.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── CTA Footer ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      Chat handoffs deserve the same triage as email.
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Connect your chat platform's handoff inbox in under 10 minutes. Start free — no credit card required.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
 </div>
 {% endblock %}

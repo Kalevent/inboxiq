@@ -1,41 +1,125 @@
 {% extends "marketing/base.html" %}
 
-{% block title %}CRM Intake | InboxIQ{% endblock %}
-{% block meta_description %}
-Bring CRM signals into your decision stream with InboxIQ.
-{% endblock %}
+{% block title %}CRM Intake — Route CRM Signals Through InboxIQ's Decision Engine | InboxIQ{% endblock %}
+{% block meta_description %}Bring CRM updates, deal events, and contact activity into InboxIQ's triage pipeline. Route CRM signals to the right owner with urgency scoring and a full audit trail.{% endblock %}
 {% block canonical %}{{ url_for('solutions_crm', _external=True) }}{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
-<div class="marketing-main space-y-16">
-  <header class="playbook-hero space-y-6 pb-10">
-    <div class="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 text-indigo-200 px-3 py-1 text-xs font-semibold">
-      Solutions • CRM
+<div class="space-y-24 pb-8">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Solutions · CRM Intake</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        CRM signals routed with urgency<br class="hidden sm:block"> and ownership — automatically.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        CRM updates — deal stage changes, churned customer flags, payment failures — arrive as emails or API events. InboxIQ triages them with the same AI logic as email: urgency scoring, owner assignment, and a logged rationale.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
+          Start free trial
+        </a>
+        <a href="{{ url_for('contact') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Talk to sales &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Via email notification or Intake API
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Same routing rules as email
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Audit trail on every event
+        </span>
+      </div>
     </div>
-    <h1 class="text-3xl sm:text-4xl font-semibold leading-tight text-white">
-      CRM Signals Routed With Ownership and SLAs
-    </h1>
-    <p class="text-lg text-slate-200 leading-relaxed max-w-3xl">
-      InboxIQ turns CRM updates into decisions so teams act fast without digging through pipelines.
-    </p>
   </header>
 
-  <section class="marketing-section space-y-6">
-    <h2 class="text-2xl font-semibold text-white">What you gain</h2>
-    <div class="grid md:grid-cols-3 gap-4">
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Unified intake</h3>
-        <p class="text-slate-200 leading-relaxed">CRM becomes part of your decision stream.</p>
+  {# ── Pain Points ───────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">The Problem</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">CRM signals get buried alongside email noise</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Critical account events ignored</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">A CRM notification about an enterprise account going dormant or a deal going cold arrives as an email — and sits unread in a shared inbox.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Clear escalation rules</h3>
-        <p class="text-slate-200 leading-relaxed">High-risk signals are detected immediately.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">No urgency classification</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">CRM email notifications all look the same. A payment failure at an enterprise account and a minor contact update have identical priority in the inbox.</p>
       </div>
-      <div class="marketing-card space-y-2">
-        <h3 class="font-semibold text-white">Decision traceability</h3>
-        <p class="text-slate-200 leading-relaxed">Know why a CRM event was routed.</p>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">No clear owner assigned</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">CRM notifications go to a shared address. Everyone assumes someone else is handling the account event. Nobody acts until the situation escalates.</p>
       </div>
     </div>
   </section>
+
+  {# ── How It Works ──────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">CRM event to routed, owned decision</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Route CRM notifications to InboxIQ</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Configure your CRM to send notification emails to your connected InboxIQ inbox — or push events directly via the Intake API for programmatic integration.</p>
+      </div>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+        <h3 class="font-semibold text-brand-ink text-lg">AI reads the event and scores urgency</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">InboxIQ classifies the event type (churn risk, payment failure, deal update, renewal reminder) and scores urgency. High-risk events are escalated immediately.</p>
+      </div>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Routed to the account owner</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Each CRM event is assigned to the correct account manager or team based on your routing rules. The account owner gets the event with urgency context — no digging through CRM required.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── CTA Footer ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      CRM signals deserve the same urgency as email.
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Start free — connect your CRM notification inbox in under 10 minutes.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
 </div>
 {% endblock %}
