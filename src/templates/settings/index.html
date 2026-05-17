@@ -1327,6 +1327,14 @@
                   </p>
                 </div>
 
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% for category, message in messages %}
+                    <div class="rounded-xl border px-4 py-3 text-sm {% if category == 'success' %}border-emerald-400/40 bg-emerald-500/10 text-emerald-100{% else %}border-rose-400/40 bg-rose-500/10 text-rose-100{% endif %}">
+                      {{ message }}
+                    </div>
+                  {% endfor %}
+                {% endwith %}
+
                 <div class="mt-6 grid settings-2col md:grid-cols-2 gap-4">
                   {% for conn in inbox_connections %}
                   <div class="rounded-2xl border {% if conn.status == 'connected' %}border-emerald-700/40 bg-emerald-950/10{% elif conn.status == 'pending' %}border-amber-700/40 bg-amber-950/10{% else %}border-slate-800 bg-slate-900/70{% endif %} p-5">

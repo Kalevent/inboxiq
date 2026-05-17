@@ -894,15 +894,31 @@ def save_booking_duration():
 @bp.post("/integrations/static-booking-url")
 @login_required_settings
 def save_static_booking_url():
-    from src.models.core import AccountFeatureFlags
+    from src.models.core import AccountFeatureFlags, InboxConnection
     account_id = getattr(g, "current_account_id", None)
     if not account_id:
         return redirect(url_for("settings.settings_page", tab="integrations"))
 
     raw = (request.form.get("static_booking_url") or "").strip()
-    # Accept blank (clears the URL) or a valid http(s) URL
-    if raw and not raw.startswith(("http://", "https://")):
-        raw = ""
+
+    # Only validate calendar connection when saving a URL (clearing is always allowed)
+    if raw:
+        if not raw.startswith(("http://", "https://")):
+            flash("Please enter a valid URL starting with https://", "error")
+            return redirect(url_for("settings.settings_page", tab="integrations"))
+
+        has_calendar = InboxConnection.query.filter(
+            InboxConnection.account_id == account_id,
+            InboxConnection.provider.in_(("gcal", "outlook_cal")),
+            InboxConnection.status == "connected",
+        ).first()
+        if not has_calendar:
+            flash(
+                "Connect your Google Calendar or Outlook Calendar first — "
+                "InboxIQ needs a calendar to fulfil meeting bookings.",
+                "error",
+            )
+            return redirect(url_for("settings.settings_page", tab="integrations"))
 
     try:
         flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
@@ -911,9 +927,12 @@ def save_static_booking_url():
             db.session.add(flags)
         flags.static_booking_url = raw or None
         db.session.commit()
+        if raw:
+            flash("Booking URL saved.", "success")
     except Exception:
         db.session.rollback()
         current_app.logger.error("Failed to save static_booking_url account=%s", account_id)
+        flash("Failed to save booking URL. Please try again.", "error")
 
     return redirect(url_for("settings.settings_page", tab="integrations"))
 
