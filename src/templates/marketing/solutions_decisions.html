@@ -1,7 +1,7 @@
 {% extends "marketing/base.html" %}
 
-{% block title %}AI Decision Routing — Triage, Prioritise, and Route Every Email | InboxIQ{% endblock %}
-{% block meta_description %}InboxIQ makes the triage decision before your team opens the queue: what needs action, who owns it, what the urgency is, and why. Every decision logged with a traceable rationale.{% endblock %}
+{% block title %}AI Triage Intelligence — Classify, Prioritise, and Route Every Signal | InboxIQ{% endblock %}
+{% block meta_description %}InboxIQ classifies every inbound signal before your team opens the queue: intent, urgency, owner, and rationale — all resolved automatically. Every triage outcome logged with a traceable audit trail.{% endblock %}
 {% block canonical %}{{ url_for('solutions_decisions', _external=True) }}{% endblock %}
 {% block body_class %}marketing-body-light{% endblock %}
 
@@ -11,12 +11,12 @@
   {# ── Hero ──────────────────────────────────────────────────── #}
   <header class="text-center pt-12 pb-4">
     <div class="max-w-3xl mx-auto space-y-7">
-      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Solutions · Decision Routing</span>
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Solutions · Triage Intelligence</span>
       <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
-        Every email triaged, prioritised,<br class="hidden sm:block"> and routed — before your team reads it.
+        Every signal classified, prioritised,<br class="hidden sm:block"> and routed — before your team reads it.
       </h1>
       <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
-        InboxIQ reads every inbound email, classifies intent and urgency, assigns an owner, and logs the rationale — so your team starts with a decision-ready queue, not a pile of unread mail.
+        InboxIQ's Triage Intelligence reads every inbound signal, classifies intent and urgency, assigns an owner, and logs the rationale — so your team starts with a pre-sorted, owned queue, not a pile of unread mail.
       </p>
       <div class="flex flex-wrap justify-center items-center gap-4">
         <a href="{{ url_for('signup_page') }}"
@@ -48,8 +48,8 @@
   {# ── What a decision includes ──────────────────────────────── #}
   <section>
     <div class="space-y-3 mb-10 text-center">
-      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">What InboxIQ decides</span>
-      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Four things resolved before you open the email</h2>
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">What Triage Intelligence classifies</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Four dimensions resolved before your team reads it</h2>
     </div>
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
       <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
@@ -87,7 +87,7 @@
   <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
     <div class="space-y-3 mb-10">
       <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
-      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Why this beats keyword-based rules</h2>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Why AI triage beats keyword-based rules</h2>
     </div>
     <div class="grid md:grid-cols-3 gap-8">
       <div class="space-y-4">
@@ -137,7 +137,7 @@
   <section>
     <div class="grid md:grid-cols-2 gap-8">
       <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
-        <h3 class="font-semibold text-brand-ink">Consistent, reviewable decisions</h3>
+        <h3 class="font-semibold text-brand-ink">Consistent, auditable triage</h3>
         <ul class="space-y-4">
           <li class="flex items-start gap-3">
             <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
@@ -149,7 +149,7 @@
           <li class="flex items-start gap-3">
             <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
             <div>
-              <p class="font-medium text-brand-ink text-sm">Decisions visible in your existing inbox</p>
+              <p class="font-medium text-brand-ink text-sm">Triage results visible in your existing inbox</p>
               <p class="text-brand-ink-soft text-sm">Labels appear inside Gmail or Outlook — no new dashboard to check. Your team's workflow stays unchanged.</p>
             </div>
           </li>
@@ -192,6 +192,20 @@
   </section>
 
   {# ── CTA Footer ────────────────────────────────────────────── #}
+  {# ── Related Use Cases ─────────────────────────────────────── #}
+  <section class="space-y-4">
+    <div class="space-y-1 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Common use cases</span>
+      <h2 class="text-xl font-semibold text-brand-ink">See it in practice</h2>
+    </div>
+    <div class="flex flex-wrap justify-center gap-3">
+      <a href="{{ url_for('use_case_support') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Support Triage &rarr;</a>
+      <a href="{{ url_for('use_case_sales') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Sales &amp; BD &rarr;</a>
+      <a href="{{ url_for('use_case_ecommerce') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">E-commerce &rarr;</a>
+      <a href="{{ url_for('use_case_healthcare_triage') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Healthcare Triage &rarr;</a>
+    </div>
+  </section>
+
   <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
     <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
       Stop triaging. Start resolving.

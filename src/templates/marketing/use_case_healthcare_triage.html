@@ -185,6 +185,20 @@
   </section>
 
   {# ── CTA Footer ────────────────────────────────────────────── #}
+  {# ── Related Solutions ─────────────────────────────────────── #}
+  <section class="space-y-4">
+    <div class="space-y-1 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Related solutions</span>
+      <h2 class="text-xl font-semibold text-brand-ink">How InboxIQ handles it</h2>
+    </div>
+    <div class="flex flex-wrap justify-center gap-3">
+      <a href="{{ url_for('solutions_email_ai_triage') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">AI Email Triage &rarr;</a>
+      <a href="{{ url_for('solutions_forms') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Forms Intake &rarr;</a>
+      <a href="{{ url_for('solutions_decisions') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Triage Intelligence &rarr;</a>
+      <a href="{{ url_for('solutions_api') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">API &amp; Webhooks &rarr;</a>
+    </div>
+  </section>
+
   <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
     <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
       Give your clinical team their time back.
