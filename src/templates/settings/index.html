@@ -1662,12 +1662,10 @@
 
                     {% elif gcal_connection and gcal_connection.status == 'connected' or outlook_cal_connection and outlook_cal_connection.status == 'connected' %}
                       {# Calendar connected but no link yet — show generate button #}
-                      <form method="POST" action="{{ url_for('settings.generate_booking_link') }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        <button type="submit" class="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-semibold transition">
-                          Generate my booking link
-                        </button>
-                      </form>
+                      <button type="button" onclick="document.getElementById('generateBookingModal').classList.remove('hidden')"
+                              class="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-semibold transition">
+                        Generate my booking link
+                      </button>
 
                     {% else %}
                       {# No calendar connected — prompt to connect first #}
@@ -3088,5 +3086,49 @@
   {% endif %}
 
   <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
+
+  {# ── Generate booking link modal ───────────────────────────── #}
+  <div id="generateBookingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <h2 class="text-base font-semibold text-white">Create your booking page</h2>
+          <p class="text-sm text-slate-400 mt-1">This generates a permanent InboxIQ booking page backed by your connected calendar.</p>
+        </div>
+        <button type="button" onclick="document.getElementById('generateBookingModal').classList.add('hidden')"
+                class="text-slate-500 hover:text-white ml-4 mt-0.5 transition">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="bg-slate-800 border border-white/10 rounded-xl p-4 mb-5 space-y-2 text-sm text-slate-300">
+        <div class="flex items-start gap-2">
+          <svg class="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          <span>Your link will be at <span class="text-indigo-300 font-mono text-xs">kalevent.com/book/me/…</span></span>
+        </div>
+        <div class="flex items-start gap-2">
+          <svg class="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span>Available slots are pulled live from your connected calendar</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <svg class="w-4 h-4 text-green-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <span>Permanent link — share it in emails, your email signature, or anywhere</span>
+        </div>
+      </div>
+
+      <form method="POST" action="{{ url_for('settings.generate_booking_link') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="flex gap-3">
+          <button type="button" onclick="document.getElementById('generateBookingModal').classList.add('hidden')"
+                  class="flex-1 text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-lg font-medium border border-slate-700 transition">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-lg font-semibold transition">
+            Generate link
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </body>
 </html>
