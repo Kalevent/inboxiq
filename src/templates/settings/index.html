@@ -1628,6 +1628,22 @@
                     </form>
                   </div>
 
+                  <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2">
+                    <div class="text-sm font-semibold text-slate-100 mb-1">Booking link</div>
+                    <p class="text-sm text-slate-400 mb-3">Your Calendly, Cal.com, or other booking page URL. InboxIQ inserts this into draft replies when a meeting request is detected and no calendar is connected.</p>
+                    <form method="POST" action="{{ url_for('settings.save_static_booking_url') }}" class="flex items-center gap-3">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                      <input type="url" name="static_booking_url"
+                             value="{{ feature_flags.static_booking_url or '' }}"
+                             placeholder="https://calendly.com/you/30min"
+                             class="flex-1 bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      <button type="submit" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium whitespace-nowrap">Save</button>
+                    </form>
+                    {% if feature_flags and feature_flags.static_booking_url %}
+                    <p class="text-xs text-slate-500 mt-2">Current: <a href="{{ feature_flags.static_booking_url }}" target="_blank" rel="noopener" class="text-indigo-400 hover:underline truncate">{{ feature_flags.static_booking_url }}</a></p>
+                    {% endif %}
+                  </div>
+
                   <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2 settings-span-2">
                     <div class="text-sm font-semibold text-slate-100">Webhook / API</div>
                     <p class="text-sm text-slate-300 mt-2">

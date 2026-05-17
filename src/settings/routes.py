@@ -891,6 +891,33 @@ def save_booking_duration():
     return redirect(url_for("settings.settings_page", tab="integrations"))
 
 
+@bp.post("/integrations/static-booking-url")
+@login_required_settings
+def save_static_booking_url():
+    from src.models.core import AccountFeatureFlags
+    account_id = getattr(g, "current_account_id", None)
+    if not account_id:
+        return redirect(url_for("settings.settings_page", tab="integrations"))
+
+    raw = (request.form.get("static_booking_url") or "").strip()
+    # Accept blank (clears the URL) or a valid http(s) URL
+    if raw and not raw.startswith(("http://", "https://")):
+        raw = ""
+
+    try:
+        flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
+        if not flags:
+            flags = AccountFeatureFlags(account_id=account_id)
+            db.session.add(flags)
+        flags.static_booking_url = raw or None
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.error("Failed to save static_booking_url account=%s", account_id)
+
+    return redirect(url_for("settings.settings_page", tab="integrations"))
+
+
 @bp.route("/integrations/social/disconnect", methods=["POST"])
 @login_required_settings
 def integrations_social_disconnect():
