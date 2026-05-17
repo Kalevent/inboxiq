@@ -192,6 +192,29 @@ def api_generate_booking():
         return jsonify({"error": "Failed to generate booking link"}), 500
 
 
+@booking_bp.get("/api/v1/bookings/feature-status")
+@jwt_required()
+def api_booking_feature_status():
+    """
+    Returns booking feature flags for the current account.
+
+    Frontend uses this to:
+    - Show an upgrade prompt when dynamic_booking_enabled=false and the
+      email is a meeting request (draft reply has no booking link).
+    - Insert static_booking_url when composing a proactive outbound email.
+    """
+    from src.models.core import AccountFeatureFlags
+    account_id = getattr(g, "current_account_id", None)
+    if not account_id:
+        return jsonify({"error": "account required"}), 400
+
+    flags = AccountFeatureFlags.query.filter_by(account_id=account_id).first()
+    return jsonify({
+        "dynamic_booking_enabled": flags.dynamic_booking_enabled if flags else True,
+        "static_booking_url": flags.static_booking_url if flags else None,
+    })
+
+
 def _detect_provider(account_id: int):
     from src.models.core import InboxConnection
     for provider in ("gcal", "outlook_cal"):
