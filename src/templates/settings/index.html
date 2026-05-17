@@ -1637,18 +1637,41 @@
                   </div>
 
                   <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 md:col-span-2">
-                    <div class="text-sm font-semibold text-slate-100 mb-1">Booking link</div>
-                    <p class="text-sm text-slate-400 mb-3">Your Calendly, Cal.com, or other booking page URL. InboxIQ inserts this into draft replies when a meeting request is detected and no calendar is connected.</p>
-                    <form method="POST" action="{{ url_for('settings.save_static_booking_url') }}" class="flex items-center gap-3">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                      <input type="url" name="static_booking_url"
-                             value="{{ feature_flags.static_booking_url or '' }}"
-                             placeholder="https://calendly.com/you/30min"
-                             class="flex-1 bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                      <button type="submit" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium whitespace-nowrap">Save</button>
-                    </form>
+                    <div class="text-sm font-semibold text-slate-100 mb-1">Your booking link</div>
+                    <p class="text-sm text-slate-400 mb-3">An InboxIQ booking page backed by your connected calendar. Share this link in emails so recipients can book a meeting with you directly.</p>
+
                     {% if feature_flags and feature_flags.static_booking_url %}
-                    <p class="text-xs text-slate-500 mt-2">Current: <a href="{{ feature_flags.static_booking_url }}" target="_blank" rel="noopener" class="text-indigo-400 hover:underline truncate">{{ feature_flags.static_booking_url }}</a></p>
+                      {# Link generated — show read-only with copy button #}
+                      <div class="flex items-center gap-2 bg-slate-800 border border-white/10 rounded-lg px-3 py-2 mb-3">
+                        <span id="bookingUrlDisplay" class="flex-1 text-sm text-indigo-300 truncate">{{ feature_flags.static_booking_url }}</span>
+                        <button type="button" onclick="navigator.clipboard.writeText('{{ feature_flags.static_booking_url }}').then(() => { this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 1500); })"
+                                class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded border border-slate-700 hover:border-slate-500 transition whitespace-nowrap">Copy</button>
+                      </div>
+                      {# Power user override #}
+                      <details class="text-xs text-slate-500">
+                        <summary class="cursor-pointer hover:text-slate-300 transition">Override booking URL</summary>
+                        <form method="POST" action="{{ url_for('settings.save_static_booking_url') }}" class="flex items-center gap-2 mt-2">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                          <input type="url" name="static_booking_url"
+                                 value="{{ feature_flags.static_booking_url or '' }}"
+                                 placeholder="https://kalevent.com/book/me/..."
+                                 class="flex-1 bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                          <button type="submit" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg font-medium whitespace-nowrap">Save</button>
+                        </form>
+                      </details>
+
+                    {% elif gcal_connection and gcal_connection.status == 'connected' or outlook_cal_connection and outlook_cal_connection.status == 'connected' %}
+                      {# Calendar connected but no link yet — show generate button #}
+                      <form method="POST" action="{{ url_for('settings.generate_booking_link') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <button type="submit" class="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-semibold transition">
+                          Generate my booking link
+                        </button>
+                      </form>
+
+                    {% else %}
+                      {# No calendar connected — prompt to connect first #}
+                      <p class="text-sm text-amber-400">Connect your Google Calendar or Outlook Calendar above to generate your booking link.</p>
                     {% endif %}
                   </div>
 

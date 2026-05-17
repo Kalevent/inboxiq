@@ -14,6 +14,45 @@ logger = logging.getLogger(__name__)
 booking_bp = Blueprint("booking", __name__)
 
 
+@booking_bp.get("/book/me/<handle>")
+def book_me_page(handle: str):
+    """Permanent booking page generated from the account's booking handle."""
+    from src.models.core import AccountFeatureFlags, Account
+    flags = AccountFeatureFlags.query.filter_by(booking_handle=handle).first()
+    if not flags:
+        return render_template(
+            "booking/expired.html",
+            title="Booking link not found",
+            message="This booking link is not valid. Please request an updated link.",
+            meet_link=None,
+        ), 404
+
+    account_id = flags.account_id
+    account = Account.query.get(account_id)
+    account_name = account.name if account else "InboxIQ"
+
+    provider = _detect_provider(account_id)
+    slots = []
+    if provider:
+        try:
+            duration = flags.booking_duration_minutes or 30
+            slots = get_available_slots(
+                account_id=account_id,
+                duration_minutes=duration,
+                provider=provider,
+            )
+        except Exception as exc:
+            logger.warning("Slot fetch failed for book_me page account=%s: %s", account_id, exc)
+
+    return render_template(
+        "booking/book_me.html",
+        handle=handle,
+        account_name=account_name,
+        duration_minutes=flags.booking_duration_minutes or 30,
+        slots=slots,
+    )
+
+
 @booking_bp.get("/book/<token>")
 def book_page(token: str):
     payload = verify_booking_token(token)
