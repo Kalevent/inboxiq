@@ -103,7 +103,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £9/inbox/mo. No hi
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Urgency &amp; intent detection</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> AI draft replies</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 1 automation rule (label / archive / mark read)</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 1 booking page &bull; 5 meetings/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> InboxIQ booking page (/book/me/…)</li>
       </ul>
       <p class="text-xs text-slate-400 leading-relaxed dark:text-slate-500">You supply the OpenAI / Anthropic key — AI calls go directly to your provider. InboxIQ never sees the payload.</p>
       <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
@@ -124,9 +124,10 @@ InboxIQ charges per active inbox, not per seat. Starter from £9/inbox/mo. No hi
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 200 AI decisions/mo</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Urgency &amp; intent detection</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Automation (3 rules, label / archive / mark read)</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 1 static booking page</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> InboxIQ booking page (/book/me/…)</li>
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> BYOL — Bring Your Own LLM key</li>
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB draft replies</li>
+        <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> Dynamic booking links in draft replies</li>
       </ul>
       <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
         Get started
@@ -149,7 +150,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £9/inbox/mo. No hi
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 1,000 AI decisions/mo</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> BYOL — Bring Your Own LLM key</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Automation (25 rules, all standard actions)</li>
-        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> 50 temp booking links/mo</li>
+        <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Dynamic booking links in draft replies</li>
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB-grounded draft replies</li>
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> Activity log &amp; audit trail</li>
       </ul>
@@ -254,7 +255,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £9/inbox/mo. No hi
         (
           "Draft replies + meeting scheduling",
           "Included in AI decisions quota",
-          "Draft generation — including AI-scheduled meeting replies — draws from the same AI decisions pool. No separate counter. If you receive 100 emails and 40 get drafts, that's still 100 AI decisions total.",
+          "Draft generation draws from the same AI decisions pool — no separate counter. Dynamic booking links (auto-inserted into draft replies when a meeting is requested) are available on Pro and above. Free and Starter include the InboxIQ booking page (/book/me/…) which recipients can use to self-schedule.",
           "text-emerald-600 dark:text-green-300", "bg-emerald-50 border border-emerald-100 dark:bg-green-500/10 dark:border-green-500/20"
         ),
       ] %}
