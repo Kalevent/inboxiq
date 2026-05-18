@@ -48,17 +48,28 @@
             <p class="text-slate-600 dark:text-slate-300 text-sm sm:text-base max-w-xl">
               Add a payment method and pick your plan before your trial ends. Secure card capture via Stripe; fallback to Barclays if needed.
             </p>
-            <div class="grid sm:grid-cols-2 gap-4">
-              <div class="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
+            <div class="grid sm:grid-cols-3 gap-4">
+              <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Starter</h3>
+                </div>
+                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100">£9 <span class="text-sm text-slate-500 dark:text-slate-400">/ mo</span></div>
+                <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mt-3">
+                  <li>✓ 200 AI decisions/mo</li>
+                  <li>✓ Triage & draft replies</li>
+                  <li>✓ 1 inbox</li>
+                </ul>
+              </div>
+              <div class="bg-white dark:bg-slate-900/70 border border-indigo-300 dark:border-indigo-500/50 rounded-2xl p-5">
                 <div class="flex items-center justify-between mb-2">
                   <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Pro</h3>
                   <span class="text-xs px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200">Most popular</span>
                 </div>
-                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100">£29 <span class="text-sm text-slate-500 dark:text-slate-400">/ inbox / month</span></div>
+                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100">£29 <span class="text-sm text-slate-500 dark:text-slate-400">/ mo</span></div>
                 <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mt-3">
-                  <li>✓ Automatic triage & ticket creation</li>
-                  <li>✓ Sentiment & priority</li>
-                  <li>✓ Up to 3,000 AI actions/month</li>
+                  <li>✓ 1,000 AI decisions/mo</li>
+                  <li>✓ Meeting scheduling in replies</li>
+                  <li>✓ Unlimited inboxes</li>
                 </ul>
               </div>
               <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
@@ -66,11 +77,11 @@
                   <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Business</h3>
                   <span class="text-xs px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-100">Teams</span>
                 </div>
-                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100">£99 <span class="text-sm text-slate-500 dark:text-slate-400">/ inbox / month</span></div>
+                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100">£49 <span class="text-sm text-slate-500 dark:text-slate-400">/ mo</span></div>
                 <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mt-3">
-                  <li>✓ Everything in Pro</li>
-                  <li>✓ Up to 15,000 AI actions/month</li>
-                  <li>✓ Multi-agent routing + SLA alerts</li>
+                  <li>✓ 5,000 AI decisions/mo</li>
+                  <li>✓ Automation + KB draft replies</li>
+                  <li>✓ API access</li>
                 </ul>
               </div>
             </div>
@@ -89,8 +100,9 @@
               <div>
                 <label class="text-xs text-slate-500">Plan</label>
                 <select name="plan_choice" class="checkout-input w-full mt-1 rounded-lg px-3 py-2 text-sm">
-                  <option value="pro" selected>Pro – £29 / inbox / month</option>
-                  <option value="business">Business – £99 / inbox / month</option>
+                  <option value="starter">Starter – £9 / month</option>
+                  <option value="pro" selected>Pro – £29 / month</option>
+                  <option value="business">Business – £49 / month</option>
                 </select>
               </div>
               <div>
@@ -106,7 +118,7 @@
                 <div id="card-errors" class="text-[12px] text-rose-500 dark:text-rose-300"></div>
               </div>
               <button id="billingSubmit" type="submit" class="w-full mt-2 inline-flex justify-center items-center gap-2 rounded-full bg-indigo-500 hover:bg-indigo-400 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed">
-                Start Pro with this card
+                Start subscription
               </button>
               <p class="text-[11px] text-slate-400 dark:text-slate-500">We never store card details. Tokens are processed via Stripe; Barclays hosted checkout is available as fallback.</p>
               <div id="billingStatus" class="hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm"></div>
