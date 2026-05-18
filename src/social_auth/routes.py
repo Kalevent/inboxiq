@@ -601,7 +601,7 @@ def facebook_callback():
 
 _GCAL_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 _GCAL_TOKEN_URL = "https://oauth2.googleapis.com/token"
-_GCAL_SCOPE = "https://www.googleapis.com/auth/calendar"
+_GCAL_SCOPE = "https://www.googleapis.com/auth/calendar.events"
 _GCAL_PROVIDER = "gcal"
 
 
