@@ -529,6 +529,19 @@ def create_app() -> Flask:
   def pricing_page():
     return render_template("marketing/pricing.html")
 
+  @app.get("/vs/<competitor_slug>")
+  def competitor_comparison(competitor_slug):
+    import datetime
+    from src.marketing.competitors import get_competitor
+    competitor = get_competitor(competitor_slug)
+    if not competitor:
+      abort(404)
+    return render_template(
+      "marketing/comparison.html",
+      competitor=competitor,
+      year=datetime.date.today().year,
+    )
+
   @app.route("/robots.txt")
   def robots_txt():
     # Serve SEO-friendly robots.txt at the root.
