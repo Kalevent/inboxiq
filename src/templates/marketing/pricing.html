@@ -6,6 +6,57 @@ InboxIQ charges per active inbox, not per seat. Starter from £9/inbox/mo. No hi
 {% endblock %}
 {% block canonical %}{{ url_for('pricing_page', _external=True) }}{% endblock %}
 
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What counts as an inbox in InboxIQ pricing?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "An inbox is a Gmail or Outlook email address connected to InboxIQ. A shared support inbox like support@yourcompany.com counts as one inbox. InboxIQ charges per inbox, not per person — a team of 10 where 2 people share one inbox pays for 1 inbox, not 10 seats."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens if I exceed my AI decisions limit?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "AI decisions are used each time InboxIQ triages, classifies, or drafts a reply for an email. If you exceed your monthly limit, overage is charged per additional decision at a small per-decision rate. You can also upgrade your plan at any time from your billing settings."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I cancel my InboxIQ subscription at any time?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. InboxIQ subscriptions are monthly with no minimum term. You can cancel at any time from your account settings and your access continues until the end of the billing period."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How long is the free trial and what is included?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "InboxIQ offers a 7-day free trial with full access to all features on the Pro plan. No credit card is required to start. At the end of the trial you can choose a plan or your account pauses automatically."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is there an enterprise plan for larger teams?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. InboxIQ offers an enterprise plan with custom AI decision limits, dedicated support, compliance configurations (HIPAA, SOX, GDPR), BYOL AI routing, and self-hosted deployment options. Contact us for enterprise pricing."
+      }
+    }
+  ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-16 py-12 px-4 sm:px-6 max-w-5xl mx-auto">
 

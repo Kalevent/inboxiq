@@ -3,6 +3,33 @@
 {% block title %}Sales &amp; BD — AI Email Triage for Inbound Sales Teams | InboxIQ{% endblock %}
 {% block meta_description %}Stop losing deals to slow replies. InboxIQ reads every inbound sales email, surfaces demo requests and enterprise inquiries instantly, and drafts replies grounded in your pricing and feature docs — before your team opens the inbox.{% endblock %}
 {% block canonical %}{{ url_for('use_case_sales', _external=True) }}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to automate sales email triage and meeting scheduling with InboxIQ",
+    "description": "Use AI email triage and meeting scheduling to respond faster to inbound sales leads inside Gmail or Outlook.",
+    "step": [
+      {"@type": "HowToStep", "name": "Connect your sales inbox", "text": "Connect the Gmail or Outlook inbox that receives inbound leads and demo requests via OAuth."},
+      {"@type": "HowToStep", "name": "Configure lead routing and meeting scheduling", "text": "Write rules like 'For demo requests, draft a reply with a booking link.' InboxIQ detects buying intent and schedules meetings automatically."},
+      {"@type": "HowToStep", "name": "Review AI draft replies", "text": "AI draft replies with personalised context and booking links appear inside Gmail or Outlook. Sales reps review and send — no new CRM dashboard required."}
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": "How does InboxIQ help sales teams respond faster to inbound leads?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ's AI email triage detects inbound lead emails, scores buying intent, and generates personalised draft replies — all inside Gmail or Outlook with no new dashboard. Meeting scheduling links are automatically included in replies when demo requests are detected."}},
+      {"@type": "Question", "name": "Can InboxIQ schedule sales meetings automatically from email?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ detects meeting requests in incoming emails and inserts a booking link in the AI draft reply. The prospect picks a time from the sales rep's calendar availability and the meeting is created automatically — no back-and-forth required."}},
+      {"@type": "Question", "name": "Does InboxIQ work inside Gmail and Outlook for sales teams?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ works inside Gmail and Outlook with no new dashboard. Sales reps continue using the inbox they already use — InboxIQ adds AI triage, intent scoring, draft replies, and meeting scheduling on top."}},
+      {"@type": "Question", "name": "How does InboxIQ prioritise inbound sales leads by buying intent?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ's AI scores each incoming email for buying intent signals — pricing questions, comparison queries, demo requests, decision timelines — and assigns a priority score. High-intent leads appear at the top of the inbox so sales reps respond to the best opportunities first."}}
+    ]
+  }
+]
+</script>
+{% endblock %}
 {% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}

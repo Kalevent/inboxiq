@@ -10,6 +10,7 @@ from .outline_creator import OutlineCreatorModule
 from .content_writer import ContentWriterModule
 from .editor import EditorModule
 from .seo_optimizer import SEOOptimizerModule
+from .faq_generator import BlogFAQGeneratorModule
 
 __all__ = [
     "TopicGeneratorModule",
@@ -17,4 +18,5 @@ __all__ = [
     "ContentWriterModule",
     "EditorModule",
     "SEOOptimizerModule",
+    "BlogFAQGeneratorModule",
 ]

@@ -7,6 +7,83 @@ InboxIQ triage, labels, drafts, and automation run inside Gmail and Outlook — 
 {% block canonical %}{{ url_for('features_page', _external=True) }}{% endblock %}
 {% block body_class %}marketing-body-light{% endblock %}
 
+{% block extra_head %}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What does InboxIQ's AI email triage actually do?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "InboxIQ's AI email triage reads each incoming email, classifies it by topic and intent, assigns a priority score, applies a label, and generates a draft reply — all inside Gmail or Outlook with no new dashboard. Your team sees a prioritised, pre-drafted inbox instead of a raw pile of emails."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does InboxIQ work inside Gmail and Outlook without a new dashboard?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. InboxIQ works entirely inside Gmail and Outlook — there is no new dashboard to log into and no platform to learn. AI triage, draft replies, labels, and meeting scheduling all appear directly in the inbox your team already uses."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is AI meeting scheduling in InboxIQ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "InboxIQ can automatically insert a booking link into AI-drafted replies when a meeting request is detected. The recipient clicks the link, picks a time from your calendar availability, and the meeting is created automatically — no back-and-forth required."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What automation features does InboxIQ include?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "InboxIQ's Automation Studio lets you create rules in plain English — for example, 'When an email arrives from a domain I've never seen before, label it as a new lead and draft an introduction.' Rules can route emails, apply labels, trigger notifications, and chain multi-step workflows."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does InboxIQ support multiple inboxes and team members?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. InboxIQ supports multiple connected Gmail and Outlook inboxes across your team. Each inbox is triaged independently. The Pro and Business plans include unlimited inboxes and multi-seat access."
+        }
+      }
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to set up AI email triage with InboxIQ",
+    "description": "Connect your Gmail or Outlook inbox to InboxIQ and start AI email triage in minutes — no new dashboard, no migration.",
+    "totalTime": "PT5M",
+    "step": [
+      {
+        "@type": "HowToStep",
+        "name": "Connect your inbox",
+        "text": "Click 'Connect Gmail' or 'Connect Outlook' and authorise InboxIQ via OAuth. Your inbox connects in under a minute with no email migration required."
+      },
+      {
+        "@type": "HowToStep",
+        "name": "Configure your triage rules",
+        "text": "InboxIQ starts triaging immediately with sensible defaults. Optionally write plain-English automation rules in Automation Studio to customise routing, labels, and escalation behaviour."
+      },
+      {
+        "@type": "HowToStep",
+        "name": "Review AI draft replies",
+        "text": "AI-generated draft replies appear directly in Gmail or Outlook for each triaged email. Review, edit if needed, and send — or enable auto-send for fully automated responses on specific email types."
+      }
+    ]
+  }
+]
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-24 pb-8">
 

@@ -21,7 +21,15 @@ class ContentWriterSignature(dspy.Signature):
     include_stats = dspy.InputField(desc="Boolean: include industry statistics and data")
 
     # Output fields
-    blog_post_draft = dspy.OutputField(desc="Full blog post in markdown format with H2/H3 headings, paragraphs, lists, bold/italic emphasis")
+    blog_post_draft = dspy.OutputField(
+        desc=(
+            "Full blog post in markdown format with H2/H3 headings, paragraphs, lists, "
+            "bold/italic emphasis. MUST end with a '## Frequently Asked Questions' section "
+            "containing exactly 5 Q&A pairs in this format:\n"
+            "**Question text?**\n\nAnswer text.\n\n"
+            "Q&A pairs must be specific to the post topic and directly useful to the reader."
+        )
+    )
     word_count = dspy.OutputField(desc="Actual word count (int)")
     readability_score = dspy.OutputField(desc="Flesch reading ease score estimate (0-100, target >60)")
     sections_written = dspy.OutputField(desc="Number of sections completed (int)")

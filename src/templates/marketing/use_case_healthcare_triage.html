@@ -3,6 +3,33 @@
 {% block title %}Healthcare Referral Triage — AI Email Triage for Clinical Teams | InboxIQ{% endblock %}
 {% block meta_description %}Stop your clinical team sorting referral emails. InboxIQ triages, prioritises, and routes every inbound referral with a HIPAA-aware audit trail — before a clinician opens the queue.{% endblock %}
 {% block canonical %}{{ url_for('use_case_healthcare_triage', _external=True) }}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to automate healthcare referral email triage with InboxIQ",
+    "description": "Use AI email triage to classify and route patient referral emails inside Gmail or Outlook with no new dashboard.",
+    "step": [
+      {"@type": "HowToStep", "name": "Connect your NHS or clinic inbox", "text": "Connect the Gmail or Outlook inbox that receives referrals via OAuth. InboxIQ starts classifying referral emails immediately."},
+      {"@type": "HowToStep", "name": "Configure referral routing rules", "text": "Write plain-English rules: 'Route urgent referrals to the on-call team and draft an acknowledgement.' InboxIQ applies HIPAA-aware handling automatically."},
+      {"@type": "HowToStep", "name": "Review AI draft responses", "text": "AI draft replies appear inside Gmail or Outlook for each referral. Clinicians review and send — no new dashboard, no new login."}
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": "Can InboxIQ handle HIPAA-compliant email triage for healthcare?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ supports HIPAA-aware deployment options including BYOL (bring your own LLM) and self-hosted configurations where patient data never leaves your infrastructure. AI email triage works inside Gmail and Outlook with no new dashboard."}},
+      {"@type": "Question", "name": "How does AI email triage help with patient referral workflows?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ classifies incoming referral emails by urgency, specialty, and action required, then generates draft acknowledgements and routing labels — all inside Gmail or Outlook with no new dashboard. This reduces manual triage time for administrative and clinical teams."}},
+      {"@type": "Question", "name": "Does InboxIQ work inside NHS Gmail or Outlook inboxes?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ connects to any Gmail or Outlook inbox via OAuth, including NHS-issued Google Workspace and Microsoft 365 accounts. AI triage and draft replies work inside the inbox with no new dashboard or migration."}},
+      {"@type": "Question", "name": "What is BYOL AI routing in InboxIQ for healthcare?", "acceptedAnswer": {"@type": "Answer", "text": "BYOL (bring your own LLM) lets healthcare organisations route AI inference through their own approved model endpoint — such as Azure OpenAI with a BAA in place — so patient email data never leaves their approved infrastructure. This is available on InboxIQ Business and Enterprise plans."}}
+    ]
+  }
+]
+</script>
+{% endblock %}
 {% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}

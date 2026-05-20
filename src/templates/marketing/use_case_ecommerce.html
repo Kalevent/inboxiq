@@ -3,6 +3,33 @@
 {% block title %}E-commerce &amp; Customer Success — AI Email Triage for Online Retailers | InboxIQ{% endblock %}
 {% block meta_description %}Stop order issues and refund requests from falling through the cracks. InboxIQ classifies every customer email by type and urgency, drafts replies from your return and shipping policies, and surfaces chargeback risks before they escalate.{% endblock %}
 {% block canonical %}{{ url_for('use_case_ecommerce', _external=True) }}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to automate e-commerce support email triage with InboxIQ",
+    "description": "Use AI email triage to classify and auto-respond to order, returns, and shipping queries inside Gmail or Outlook.",
+    "step": [
+      {"@type": "HowToStep", "name": "Connect your support inbox", "text": "Connect the Gmail or Outlook inbox that receives customer queries via OAuth. InboxIQ classifies order, shipping, and returns emails immediately."},
+      {"@type": "HowToStep", "name": "Configure auto-response rules", "text": "Write rules like 'For order status queries, draft a reply with tracking link instructions.' InboxIQ handles high-volume repetitive queries automatically."},
+      {"@type": "HowToStep", "name": "Review or auto-send AI replies", "text": "AI draft replies appear inside Gmail or Outlook. Enable auto-send for standard query types to handle volume without extra headcount."}
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": "How does InboxIQ help e-commerce teams handle high email volume?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ's AI email triage classifies incoming customer emails by type — order status, returns, shipping, complaints — and generates appropriate draft replies automatically inside Gmail or Outlook. Teams can enable auto-send for standard queries, handling volume without additional headcount."}},
+      {"@type": "Question", "name": "Can InboxIQ auto-respond to order status and returns emails?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ can be configured with automation rules to detect order status and returns queries and draft or auto-send appropriate responses. This works inside Gmail and Outlook with no new dashboard."}},
+      {"@type": "Question", "name": "Does InboxIQ work inside Gmail and Outlook for e-commerce support?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ AI email triage works inside Gmail and Outlook with no new dashboard. E-commerce support teams continue using the inbox they already use."}},
+      {"@type": "Question", "name": "How does InboxIQ reduce response time for e-commerce support emails?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ triages and drafts replies for every incoming email instantly — there is no manual reading and sorting queue. Support agents open Gmail or Outlook to find pre-prioritised, pre-drafted emails ready to review and send."}}
+    ]
+  }
+]
+</script>
+{% endblock %}
 {% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}

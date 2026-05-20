@@ -48,9 +48,13 @@ try:
     from src.dspy.content import (
         SEOOptimizerModule,
     )
+    from src.dspy.content.faq_generator import BlogFAQGeneratorModule
+    from src.dspy import _configure_dspy
     DSPY_AVAILABLE = True
 except ImportError:
     DSPY_AVAILABLE = False
+    BlogFAQGeneratorModule = None  # type: ignore[assignment,misc]
+    _configure_dspy = None  # type: ignore[assignment]
 
 
 def initialize_dspy():
@@ -336,3 +340,79 @@ def generate_blog_from_pitched_topic(topic_id: str):
 
     goal = json.dumps({"mode": "pitched", "topic_id": topic_id})
     return ContentWriterAgent(account_id=1).execute(goal)  # 1 = system account; pitched topics are admin-triggered
+
+
+def enrich_blog_posts_for_geo() -> dict:
+    """
+    One-time task: append a FAQ section to published blog posts that lack one.
+
+    Run manually:
+        kubectl exec -n kaley deploy/inboxiq -- python -c "
+        from src.app import create_app; app = create_app()
+        with app.app_context():
+            from src.content.tasks import enrich_blog_posts_for_geo
+            print(enrich_blog_posts_for_geo())
+        "
+
+    Not intended for recurring scheduling.
+    Returns dict with counts: enriched, skipped, errors.
+    """
+    from datetime import timezone
+    from src.sanitize import sanitize_html
+
+    all_posts = BlogPost.query.filter(
+        BlogPost.status == "published",
+        BlogPost.markdown.isnot(None),
+    ).all()
+
+    counts = {"enriched": 0, "skipped": 0, "errors": 0}
+
+    # Filter eligible posts before initialising DSPy (avoids unnecessary LLM setup)
+    # Posts already containing a FAQ section or below quality threshold are skipped
+    eligible = [
+        p for p in all_posts
+        if "## Frequently Asked Questions" not in (p.markdown or "")
+        and (p.dspy_quality_score or 0) >= 0.5
+    ]
+    counts["skipped"] += len(all_posts) - len(eligible)
+
+    if not eligible:
+        logger.info("enrich_blog_posts_for_geo complete: %s", counts)
+        return counts
+
+    _configure_dspy(max_tokens=1000, temperature=0.5)
+    module = BlogFAQGeneratorModule()
+
+    for post in eligible:
+        try:
+            prediction = module(
+                post_content=post.markdown,
+                post_title=post.title or "",
+                primary_keyword=post.primary_keyword or "",
+            )
+            faq_section = prediction.faq_markdown.strip()
+            if not faq_section:
+                counts["skipped"] += 1
+                continue
+
+            post.markdown = post.markdown.rstrip() + "\n\n" + faq_section
+            converter = markdown.Markdown(extensions=["extra", "codehilite", "toc"])
+            raw_html = converter.convert(post.markdown)
+            post.content_html = sanitize_html(raw_html)
+            if hasattr(post, "rendered_html"):
+                post.rendered_html = post.content_html
+            post.updated_at = datetime.now(timezone.utc)
+
+            try:
+                db.session.commit()
+                counts["enriched"] += 1
+            except Exception:
+                db.session.rollback()
+                counts["errors"] += 1
+
+        except Exception as exc:
+            logger.warning("enrich_blog_posts_for_geo: failed for post %s: %s", post.id, exc)
+            counts["errors"] += 1
+
+    logger.info("enrich_blog_posts_for_geo complete: %s", counts)
+    return counts

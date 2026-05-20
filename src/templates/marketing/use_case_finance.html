@@ -3,6 +3,33 @@
 {% block title %}Finance Approval Triage — AI Email Triage for Finance Teams | InboxIQ{% endblock %}
 {% block meta_description %}Approve, escalate, and audit finance requests without a pile of forwarded emails. InboxIQ routes approvals to the right authoriser, enforces SOX-compliant decision trails, and eliminates missed payment deadlines.{% endblock %}
 {% block canonical %}{{ url_for('use_case_finance', _external=True) }}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to automate finance approval email workflows with InboxIQ",
+    "description": "Use AI email triage to classify, route, and automate finance approval workflows inside Gmail or Outlook.",
+    "step": [
+      {"@type": "HowToStep", "name": "Connect your finance inbox", "text": "Connect the Gmail or Outlook inbox that receives invoices, purchase orders, and approval requests via OAuth."},
+      {"@type": "HowToStep", "name": "Configure approval routing rules", "text": "Write rules like 'Route invoices over £10,000 to the CFO for approval.' InboxIQ classifies and routes automatically."},
+      {"@type": "HowToStep", "name": "Review and approve via email", "text": "Approvers receive AI-drafted summaries and approval prompts directly in Gmail or Outlook — no new dashboard, no new login."}
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": "How does InboxIQ support SOX-compliant finance email workflows?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ logs every triage decision, routing action, and approval with a timestamped audit trail — supporting SOX controls around segregation of duties and approval workflows. AI email triage works inside Gmail and Outlook with no new dashboard."}},
+      {"@type": "Question", "name": "Can InboxIQ automate invoice and purchase order email triage?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ classifies incoming finance emails — invoices, POs, expense claims, payment queries — and routes them to the correct approver with an AI-drafted summary. This works inside Gmail or Outlook with no new dashboard."}},
+      {"@type": "Question", "name": "Does InboxIQ integrate with QuickBooks or accounting software?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ can detect transaction emails from Stripe and similar payment processors, extract transaction data, and generate QuickBooks-compatible CSV exports for import into accounting software. Direct API sync is on the roadmap."}},
+      {"@type": "Question", "name": "Does InboxIQ work inside Gmail and Outlook for finance teams?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ AI email triage works inside Gmail and Outlook with no new dashboard. Finance teams continue using the inbox they already use — InboxIQ adds classification, routing, approval workflows, and AI draft replies on top."}}
+    ]
+  }
+]
+</script>
+{% endblock %}
 {% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}

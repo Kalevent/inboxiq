@@ -197,3 +197,31 @@ def load_blog_post(slug: str):
   except Exception as exc:
     current_app.logger.error("BlogPost lookup failed for slug %s: %s", slug, exc)
   return None
+
+
+def extract_faq_pairs(markdown_text):
+  """
+  Parse Q&A pairs from a '## Frequently Asked Questions' section in markdown.
+  Returns list of {"q": str, "a": str} dicts, max 6 pairs.
+  Expects bold questions: **Question?** followed by answer paragraph.
+  """
+  if not markdown_text:
+    return []
+  faq_match = re.search(
+    r"##\s+Frequently Asked Questions\s*\n(.*?)(?=\n##|\Z)",
+    markdown_text,
+    re.DOTALL | re.IGNORECASE,
+  )
+  if not faq_match:
+    return []
+  faq_block = faq_match.group(1)
+  pattern = re.compile(r"\*\*(.+?)\*\*\s*\n+(.+?)(?=\n\n\*\*|\Z)", re.DOTALL)
+  pairs = []
+  for match in pattern.finditer(faq_block):
+    q = match.group(1).strip()
+    a = " ".join(match.group(2).strip().split())
+    if q and a:
+      pairs.append({"q": q, "a": a})
+    if len(pairs) >= 6:
+      break
+  return pairs

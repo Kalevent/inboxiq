@@ -1,0 +1,158 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}InboxIQ vs {{ competitor.name }} ({{ year }}) — AI Email Triage Comparison · Kalevent{% endblock %}
+{% block meta_description %}{{ competitor.description }}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": {{ ("InboxIQ vs " + competitor.name) | tojson }},
+  "description": {{ competitor.description | tojson }},
+  "url": {{ ("https://kalevent.com/vs/" + competitor.slug) | tojson }},
+  "mainEntity": {
+    "@type": "FAQPage",
+    "mainEntity": [
+      {% for faq in competitor.faqs %}
+      {
+        "@type": "Question",
+        "name": {{ faq.q | tojson }},
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": {{ faq.a | tojson }}
+        }
+      }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
+
+  <!-- Hero -->
+  <div class="text-center space-y-4">
+    <p class="text-xs uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Comparison · {{ year }}</p>
+    <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
+      InboxIQ vs {{ competitor.name }}
+    </h1>
+    <p class="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">{{ competitor.tagline }}</p>
+  </div>
+
+  <!-- Verdict -->
+  <div class="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-2xl p-6">
+    <p class="text-sm font-semibold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide mb-2">Our verdict</p>
+    <p class="text-slate-800 dark:text-slate-200 text-base leading-relaxed">{{ competitor.verdict }}</p>
+  </div>
+
+  <!-- Comparison table -->
+  <div>
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Feature comparison</h2>
+    <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+            <th class="text-left px-4 py-3 font-semibold text-slate-700 dark:text-slate-300 w-1/2"></th>
+            <th class="text-center px-4 py-3 font-semibold text-indigo-700 dark:text-indigo-300">InboxIQ</th>
+            <th class="text-center px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">{{ competitor.name }}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+          <tr>
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Works inside Gmail &amp; Outlook</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">✓ Yes</td>
+            <td class="px-4 py-3 text-center text-slate-500">{% if competitor.works_in_gmail_outlook %}✓ Yes{% else %}✗ No{% endif %}</td>
+          </tr>
+          <tr class="bg-slate-50/50 dark:bg-slate-900/30">
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">AI email triage</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">✓ Included</td>
+            <td class="px-4 py-3 text-center text-slate-500">{% if competitor.ai_triage %}{{ competitor.ai_triage_note }}{% else %}✗ No{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Pricing model</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">Per inbox · from £9/mo</td>
+            <td class="px-4 py-3 text-center text-slate-500">{{ competitor.pricing_model }}</td>
+          </tr>
+          <tr class="bg-slate-50/50 dark:bg-slate-900/30">
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Setup time</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">Minutes via OAuth</td>
+            <td class="px-4 py-3 text-center text-slate-500">{{ competitor.setup_time }}</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">No new dashboard</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">✓ Yes</td>
+            <td class="px-4 py-3 text-center text-slate-500">✗ No</td>
+          </tr>
+          <tr class="bg-slate-50/50 dark:bg-slate-900/30">
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Meeting scheduling in replies</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">✓ Yes</td>
+            <td class="px-4 py-3 text-center text-slate-500">{% if competitor.meeting_scheduling %}✓ Yes{% else %}✗ No{% endif %}</td>
+          </tr>
+          <tr>
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Free trial</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">7 days</td>
+            <td class="px-4 py-3 text-center text-slate-500">{{ competitor.free_trial }}</td>
+          </tr>
+          <tr class="bg-slate-50/50 dark:bg-slate-900/30">
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Self-hosted option</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">Coming soon</td>
+            <td class="px-4 py-3 text-center text-slate-500">{% if competitor.self_hosted %}✓ Yes{% else %}✗ No{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Where competitor wins -->
+  <div class="grid md:grid-cols-2 gap-8">
+    <div class="space-y-4">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white">Where {{ competitor.name }} wins</h2>
+      <ul class="space-y-3">
+        {% for point in competitor.competitor_wins %}
+        <li class="flex gap-3 text-slate-600 dark:text-slate-300 text-sm">
+          <span class="text-slate-400 mt-0.5">→</span>
+          <span>{{ point }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="space-y-4">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white">Where InboxIQ wins</h2>
+      <ul class="space-y-3">
+        {% for point in competitor.inboxiq_wins %}
+        <li class="flex gap-3 text-slate-600 dark:text-slate-300 text-sm">
+          <span class="text-emerald-500 mt-0.5">✓</span>
+          <span>{{ point }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="space-y-6">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Frequently asked questions</h2>
+    <dl class="space-y-4">
+      {% for faq in competitor.faqs %}
+      <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+        <dt class="font-semibold text-slate-900 dark:text-white text-sm mb-2">{{ faq.q }}</dt>
+        <dd class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{{ faq.a }}</dd>
+      </div>
+      {% endfor %}
+    </dl>
+  </div>
+
+  <!-- CTA -->
+  <div class="text-center bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-slate-950 border border-indigo-200 dark:border-indigo-800 rounded-2xl p-10 space-y-4">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Try AI email triage inside Gmail or Outlook</h2>
+    <p class="text-slate-600 dark:text-slate-300 text-sm">Works inside Gmail and Outlook · No new dashboard · 7-day free trial</p>
+    <a href="/signup" class="inline-flex items-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-500 px-6 py-3 text-sm font-semibold text-white transition">
+      Start your free trial · No credit card required
+    </a>
+  </div>
+
+</div>
+{% endblock %}
