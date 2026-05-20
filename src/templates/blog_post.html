@@ -28,16 +28,31 @@
   <script type="application/ld+json">
   {{ {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
+    "@type": "Article",
     "headline": post.title,
     "description": meta_description or "",
-    "author": { "@type": "Organization", "name": "Kalevent / InboxIQ" },
-    "publisher": { "@type": "Organization", "name": "Kalevent / InboxIQ" },
-    "datePublished": post.published_at or "",
-    "dateModified": post.updated_at or post.published_at or "",
-    "mainEntityOfPage": canonical_url
+    "author": { "@type": "Organization", "name": "Kalevent / InboxIQ", "url": "https://kalevent.com" },
+    "publisher": { "@type": "Organization", "name": "Kalevent / InboxIQ", "url": "https://kalevent.com", "logo": { "@type": "ImageObject", "url": "https://kalevent.com/static/social_media/inboxiq-unified-triage-hero.png" } },
+    "datePublished": (post.published_at or "") | string,
+    "dateModified": (post.updated_at or post.published_at or "") | string,
+    "mainEntityOfPage": canonical_url,
+    "image": social_image,
+    "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".blog-article > .space-y-3", ".blog-faq-section"] }
   } | tojson }}
   </script>
+  {% if faq_pairs %}
+  {% set faq_entities = [] %}
+  {% for faq in faq_pairs %}
+    {% set _ = faq_entities.append({"@type": "Question", "name": faq.q, "acceptedAnswer": {"@type": "Answer", "text": faq.a}}) %}
+  {% endfor %}
+  <script type="application/ld+json">
+  {{ {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faq_entities
+  } | tojson }}
+  </script>
+  {% endif %}
 {% endblock %}
 
 {% block content %}

@@ -20,4 +20,6 @@ def blog_post(slug):
     canonical_url = url_for("blog.blog_post", slug=slug, _external=True)
   else:
     canonical_url = canonical or url_for("blog.blog_post", slug=slug, _external=True)
-  return render_template("blog_post.html", post=post, canonical_url=canonical_url)
+  from .services import extract_faq_pairs
+  faq_pairs = extract_faq_pairs(post.get("markdown") if isinstance(post, dict) else getattr(post, "markdown", None))
+  return render_template("blog_post.html", post=post, canonical_url=canonical_url, faq_pairs=faq_pairs)
