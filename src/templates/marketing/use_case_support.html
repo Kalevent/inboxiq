@@ -3,6 +3,33 @@
 {% block title %}Support Triage — AI Email Triage for Customer Support Teams | InboxIQ{% endblock %}
 {% block meta_description %}Stop your support team sorting emails before they can help customers. InboxIQ reads every ticket, scores urgency, routes to the right agent, and drafts a reply — before a human opens the queue.{% endblock %}
 {% block canonical %}{{ url_for('use_case_support', _external=True) }}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to set up AI customer support email triage with InboxIQ",
+    "description": "Use AI email triage to handle customer support emails inside Gmail or Outlook with no new helpdesk.",
+    "step": [
+      {"@type": "HowToStep", "name": "Connect your support inbox", "text": "Connect support@yourcompany.com or any shared Gmail or Outlook inbox via OAuth. InboxIQ starts triaging support emails immediately."},
+      {"@type": "HowToStep", "name": "Configure escalation and routing rules", "text": "Write rules like 'Route churn risk emails to the account manager and generate a retention offer draft.' InboxIQ handles classification and routing automatically."},
+      {"@type": "HowToStep", "name": "Review AI draft replies", "text": "AI-drafted responses appear inside Gmail or Outlook for every support email. Your team reviews, edits if needed, and sends — no helpdesk login required."}
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": "What is AI email triage for customer support?", "acceptedAnswer": {"@type": "Answer", "text": "AI email triage automatically reads, classifies, and prioritises incoming support emails — then generates draft replies — so your support team spends time helping customers rather than sorting emails. InboxIQ does this inside Gmail and Outlook with no new dashboard."}},
+      {"@type": "Question", "name": "Can InboxIQ replace a helpdesk like Zendesk for support email?", "acceptedAnswer": {"@type": "Answer", "text": "For teams that handle support through a shared Gmail or Outlook inbox, InboxIQ is a direct helpdesk alternative with no new dashboard to learn and no migration required. It provides AI email triage, routing, draft replies, and meeting scheduling at a fraction of the per-seat cost of traditional helpdesks."}},
+      {"@type": "Question", "name": "Does InboxIQ work inside Gmail and Outlook for support teams?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ AI email triage works inside Gmail and Outlook — there is no new dashboard, no new login, and no email migration. Support teams continue using the inbox they already know."}},
+      {"@type": "Question", "name": "How does InboxIQ reduce support response times?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ triages and drafts replies for every incoming support email the moment it arrives. Support agents open Gmail or Outlook to find a pre-prioritised, pre-drafted inbox — dramatically reducing the time from email arrival to first response."}}
+    ]
+  }
+]
+</script>
+{% endblock %}
 {% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}

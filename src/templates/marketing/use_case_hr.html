@@ -3,6 +3,33 @@
 {% block title %}HR Request Triage — AI Email Triage for HR Teams | InboxIQ{% endblock %}
 {% block meta_description %}Route every HR request to the right person before it becomes a complaint. InboxIQ classifies sensitivity, enforces GDPR-aware routing, and keeps a clear ownership trail across all employee requests.{% endblock %}
 {% block canonical %}{{ url_for('use_case_hr', _external=True) }}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to automate HR request email triage with InboxIQ",
+    "description": "Use AI email triage to classify and route employee HR requests inside Gmail or Outlook with GDPR-aware handling.",
+    "step": [
+      {"@type": "HowToStep", "name": "Connect your HR inbox", "text": "Connect the Gmail or Outlook inbox that receives HR requests via OAuth. InboxIQ classifies leave, payroll, and policy queries automatically."},
+      {"@type": "HowToStep", "name": "Configure routing by request type", "text": "Write rules like 'Route payroll queries to finance@ and leave requests to the line manager.' InboxIQ applies GDPR-aware data minimisation automatically."},
+      {"@type": "HowToStep", "name": "Review AI draft responses", "text": "AI draft replies appear inside Gmail or Outlook for each request. HR staff review and send — no new dashboard, no new login."}
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": "How does InboxIQ handle GDPR compliance for HR email data?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ supports GDPR-compliant configurations including BYOL AI routing where employee email data never leaves your approved infrastructure, data retention controls, and audit logging of all triage decisions. AI email triage works inside Gmail and Outlook with no new dashboard."}},
+      {"@type": "Question", "name": "Can InboxIQ triage HR requests like leave, payroll, and policy queries?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ's AI email triage automatically classifies HR inbox emails by request type — leave applications, payroll queries, policy questions, grievances — and routes them to the correct handler with a draft response, all inside Gmail or Outlook."}},
+      {"@type": "Question", "name": "Does InboxIQ work inside Gmail and Outlook for HR teams?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ works inside Gmail and Outlook with no new dashboard. HR teams continue using the inbox they already use — InboxIQ adds AI triage, routing labels, and draft replies on top."}},
+      {"@type": "Question", "name": "How does InboxIQ protect employee privacy in HR email triage?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ processes only the minimum data needed for triage classification. BYOL and self-hosted options ensure sensitive HR data stays within your organisation's approved infrastructure. All triage decisions are logged for compliance audit purposes."}}
+    ]
+  }
+]
+</script>
+{% endblock %}
 {% block body_class %}marketing-body-light{% endblock %}
 
 {% block content %}
