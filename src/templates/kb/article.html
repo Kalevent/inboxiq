@@ -1,5 +1,35 @@
 {% extends "kb/base.html" %}
 
+{% block extra_head %}
+<script type="application/ld+json">
+{{ {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": article.title,
+  "url": "https://kalevent.com/kb/" + category.slug + "/" + article.slug,
+  "author": {"@type": "Organization", "name": "Kalevent"},
+  "publisher": {
+    "@type": "Organization",
+    "name": "Kalevent",
+    "logo": {"@type": "ImageObject", "url": "https://kalevent.com/static/social_media/inboxiq-unified-triage-hero.png"}
+  }
+} | tojson }}
+</script>
+{% if category.slug == "faq" %}
+<script type="application/ld+json">
+{{ {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": article.title,
+    "acceptedAnswer": {"@type": "Answer", "text": content | striptags | truncate(500)}
+  }]
+} | tojson }}
+</script>
+{% endif %}
+{% endblock %}
+
 {% block body %}
 <main class="kb-main">
   <div class="kb-article-layout">
