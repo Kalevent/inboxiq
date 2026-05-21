@@ -53,7 +53,7 @@
                 <div class="flex items-center justify-between mb-2">
                   <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Starter</h3>
                 </div>
-                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100">£9 <span class="text-sm text-slate-500 dark:text-slate-400">/ mo</span></div>
+                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100"><span id="card-price-starter" data-gbp="£19" data-eur="€22" data-usd="$24">£19</span> <span class="text-sm text-slate-500 dark:text-slate-400">/ mo</span></div>
                 <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mt-3">
                   <li>✓ 200 AI decisions/mo</li>
                   <li>✓ Triage & draft replies</li>
@@ -65,7 +65,7 @@
                   <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Pro</h3>
                   <span class="text-xs px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200">Most popular</span>
                 </div>
-                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100">£29 <span class="text-sm text-slate-500 dark:text-slate-400">/ mo</span></div>
+                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100"><span id="card-price-pro" data-gbp="£39" data-eur="€46" data-usd="$49">£39</span> <span class="text-sm text-slate-500 dark:text-slate-400">/ mo</span></div>
                 <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mt-3">
                   <li>✓ 1,000 AI decisions/mo</li>
                   <li>✓ Meeting scheduling in replies</li>
@@ -77,7 +77,7 @@
                   <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Business</h3>
                   <span class="text-xs px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-100">Teams</span>
                 </div>
-                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100">£49 <span class="text-sm text-slate-500 dark:text-slate-400">/ mo</span></div>
+                <div class="text-2xl font-semibold text-indigo-700 dark:text-indigo-100"><span id="card-price-business" data-gbp="£59" data-eur="€69" data-usd="$75">£59</span> <span class="text-sm text-slate-500 dark:text-slate-400">/ mo</span></div>
                 <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mt-3">
                   <li>✓ 5,000 AI decisions/mo</li>
                   <li>✓ Automation + KB draft replies</li>
@@ -100,9 +100,9 @@
               <div>
                 <label class="text-xs text-slate-500">Plan</label>
                 <select name="plan_choice" class="checkout-input w-full mt-1 rounded-lg px-3 py-2 text-sm">
-                  <option value="starter">Starter – £19 / month</option>
-                  <option value="pro" selected>Pro – £39 / month</option>
-                  <option value="business">Business – £59 / month</option>
+                  <option value="starter" data-gbp="Starter – £19 / month" data-eur="Starter – €22 / month" data-usd="Starter – $24 / month">Starter – £19 / month</option>
+                  <option value="pro" selected data-gbp="Pro – £39 / month" data-eur="Pro – €46 / month" data-usd="Pro – $49 / month">Pro – £39 / month</option>
+                  <option value="business" data-gbp="Business – £59 / month" data-eur="Business – €69 / month" data-usd="Business – $75 / month">Business – £59 / month</option>
                 </select>
               </div>
               <div>
@@ -177,6 +177,27 @@
       localStorage.removeItem('inboxiq_currency');
     } catch(e) {}
     stripeCardBlock.appendChild(stripeStatus);
+
+    function applyCheckoutCurrency(cur) {
+      // Update left-side plan card prices
+      ['starter','pro','business'].forEach(function(plan) {
+        var el = document.getElementById('card-price-' + plan);
+        if (el) el.textContent = el.dataset[cur] || el.dataset.gbp;
+      });
+      // Update plan dropdown option labels
+      if (planSelect) {
+        Array.from(planSelect.options).forEach(function(opt) {
+          opt.textContent = opt.dataset[cur] || opt.dataset.gbp;
+        });
+      }
+    }
+    if (currencySelect) {
+      currencySelect.addEventListener('change', function() {
+        applyCheckoutCurrency(this.value);
+      });
+      // Apply on load in case currency was pre-selected from localStorage
+      applyCheckoutCurrency(currencySelect.value);
+    }
 
     // Ensure form controls are enabled (defensive against unexpected disabled state).
     [providerSelect, planSelect, emailInput].forEach((el) => {

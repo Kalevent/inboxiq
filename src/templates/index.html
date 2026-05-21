@@ -1177,14 +1177,21 @@
 
 
       <!-- ── Pricing teaser ──────────────────────────────────────────────── -->
-      <section class="dm-section-white border-b border-slate-200 bg-white">
+      <section id="hp-pricing-section" class="dm-section-white border-b border-slate-200 bg-white">
         <div class="mx-auto max-w-4xl px-6 py-16 text-center lg:px-8">
           <h2 class="dm-heading text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Priced per inbox, not per seat</h2>
           <p class="dm-body mt-4 text-lg text-slate-600">A 10-person team where 2 people handle customer email pays for 2 inboxes — not 10 seats.</p>
+          <div class="mt-4 flex justify-center">
+            <div class="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 gap-1">
+              <button id="hp-cur-gbp" onclick="hpSetCurrency('gbp')" class="px-3 py-1.5 text-sm font-medium rounded-lg bg-white shadow-sm text-slate-950 border border-slate-200">£ GBP</button>
+              <button id="hp-cur-eur" onclick="hpSetCurrency('eur')" class="px-3 py-1.5 text-sm font-medium rounded-lg text-slate-500">€ EUR</button>
+              <button id="hp-cur-usd" onclick="hpSetCurrency('usd')" class="px-3 py-1.5 text-sm font-medium rounded-lg text-slate-500">$ USD</button>
+            </div>
+          </div>
           <div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-8 py-6 text-left dark:border-slate-700 dark:bg-slate-800/40">
               <p class="text-sm font-semibold text-slate-500 uppercase tracking-widest">Plans from</p>
-              <p class="mt-1 text-4xl font-bold text-slate-950 dark:text-white">£19<span class="text-lg font-normal text-slate-500">/inbox/mo</span></p>
+              <p class="mt-1 text-4xl font-bold text-slate-950 dark:text-white"><span id="hp-plan-from" data-gbp="£19" data-eur="€22" data-usd="$24">£19</span><span class="text-lg font-normal text-slate-500">/inbox/mo</span></p>
               <ul class="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
                 <li class="flex items-center gap-2"><svg class="h-4 w-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>7-day free trial — full Business plan access</li>
                 <li class="flex items-center gap-2"><svg class="h-4 w-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>No credit card required</li>
@@ -1210,20 +1217,20 @@
               <tbody>
                 <tr class="bg-indigo-50">
                   <td class="pr-6 py-4 pl-3 font-bold text-slate-900">InboxIQ</td>
-                  <td class="px-4 py-4 text-center text-2xl font-bold text-emerald-600">£78</td>
-                  <td class="px-4 py-4 text-center text-slate-600">2 inboxes &times; £39 (Pro)</td>
+                  <td class="px-4 py-4 text-center text-2xl font-bold text-emerald-600"><span id="hp-inboxiq-cost" data-gbp="£78" data-eur="€92" data-usd="$98">£78</span></td>
+                  <td class="px-4 py-4 text-center text-slate-600"><span id="hp-inboxiq-calc" data-gbp="2 inboxes × £39 (Pro)" data-eur="2 inboxes × €46 (Pro)" data-usd="2 inboxes × $49 (Pro)">2 inboxes × £39 (Pro)</span></td>
                   <td class="pl-4 py-4 text-center font-semibold text-emerald-600">—</td>
                 </tr>
                 <tr class="border-t border-slate-100">
                   <td class="pr-6 py-3 text-slate-600">Zendesk Team</td>
-                  <td class="px-4 py-3 text-center font-semibold text-slate-900">~£550</td>
-                  <td class="px-4 py-3 text-center text-slate-500">10 seats &times; £55</td>
+                  <td class="px-4 py-3 text-center font-semibold text-slate-900"><span data-gbp="~£550" data-eur="~€643" data-usd="~$698">~£550</span></td>
+                  <td class="px-4 py-3 text-center text-slate-500"><span data-gbp="10 seats × £55" data-eur="10 seats × €64" data-usd="10 seats × $70">10 seats × £55</span></td>
                   <td class="pl-4 py-3 text-center font-semibold text-red-500">9.5&times; more</td>
                 </tr>
                 <tr class="border-t border-slate-100">
                   <td class="pr-6 py-3 text-slate-600">Freshdesk Growth</td>
-                  <td class="px-4 py-3 text-center font-semibold text-slate-900">~£150</td>
-                  <td class="px-4 py-3 text-center text-slate-500">10 seats &times; £15</td>
+                  <td class="px-4 py-3 text-center font-semibold text-slate-900"><span data-gbp="~£150" data-eur="~€175" data-usd="~$190">~£150</span></td>
+                  <td class="px-4 py-3 text-center text-slate-500"><span data-gbp="10 seats × £15" data-eur="10 seats × €17" data-usd="10 seats × $19">10 seats × £15</span></td>
                   <td class="pl-4 py-3 text-center font-semibold text-red-400">2.6&times; more</td>
                 </tr>
               </tbody>
@@ -1231,6 +1238,29 @@
             <p class="mt-3 text-xs text-slate-400 text-center">Prices approximate. Per-seat tools charge for every team member, even those who never reply to a customer email.</p>
           </div>
         </div>
+          <script>
+          (function(){
+            var _hpCur = localStorage.getItem('inboxiq_currency') || 'gbp';
+            window.hpSetCurrency = function(cur) {
+              _hpCur = cur;
+              document.querySelectorAll('#hp-pricing-section [data-gbp]').forEach(function(el){
+                el.textContent = el.dataset[cur] || el.dataset.gbp;
+              });
+              ['gbp','eur','usd'].forEach(function(c){
+                var btn = document.getElementById('hp-cur-' + c);
+                if (!btn) return;
+                var on = c === cur;
+                btn.classList.toggle('bg-white', on);
+                btn.classList.toggle('shadow-sm', on);
+                btn.classList.toggle('text-slate-950', on);
+                btn.classList.toggle('border', on);
+                btn.classList.toggle('border-slate-200', on);
+                btn.classList.toggle('text-slate-500', !on);
+              });
+            };
+            document.addEventListener('DOMContentLoaded', function(){ hpSetCurrency(_hpCur); });
+          })();
+          </script>
       </section>
       <!-- ── CTA ────────────────────────────────────────────────────────── -->
       <section id="cta" class="bg-slate-950">
