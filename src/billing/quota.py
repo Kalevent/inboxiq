@@ -8,9 +8,9 @@ check_and_increment(meter, account_id) is the single call-site entry point:
   3. If the feature flag for this meter is off on the plan → raises FeatureDisabled (403).
   4. If limit is None  → unlimited plan; increment and return.
   5. If within limit   → increment and return.
-  6. If over limit     → increment (we bill overage, not block). Reporting to
-                         Stripe is currently disabled pending v15 MeterEvent migration
-                         (see _report_stripe_overage); overage is logged loudly.
+  6. If over limit     → increment (we bill overage, not block). Creates a pending
+                         Stripe InvoiceItem for the marginal overage units; Stripe
+                         picks it up automatically on the customer's next invoice.
 
 Meters:
   ai_decisions, chat_conversations, automation_runs,
@@ -71,28 +71,12 @@ def _get_plan_for_account(account_id: int) -> Optional[Plan]:
     return Plan.query.filter_by(code=profile.plan_choice).first()
 
 
-def _get_subscription_item_id(subscription_provider_id: str, overage_price_id: str) -> Optional[str]:
-    """
-    Find the Stripe subscription item ID for a given metered price within a subscription.
-    Returns None if not found.
-    """
-    try:
-        import stripe  # type: ignore
-        sub = stripe.Subscription.retrieve(subscription_provider_id, expand=["items"])
-        for item in sub["items"]["data"]:
-            if item["price"]["id"] == overage_price_id:
-                return item["id"]
-    except Exception as exc:
-        logger.warning("Could not retrieve Stripe subscription items for %s: %s", subscription_provider_id, exc)
-    return None
-
-
 def _report_stripe_overage(plan: Plan, account_id: int, meter: str, units: int) -> None:
     """
-    Look up the Stripe subscription item for an overage price and log that overage
-    occurred. Reporting to Stripe is disabled until we migrate from the removed
-    SubscriptionItem.create_usage_record (stripe-python v14) to stripe.billing.MeterEvent
-    (v15+); see the call site below.
+    Create a pending Stripe InvoiceItem for overage units.
+
+    Stripe automatically picks up pending invoice items when the subscription's
+    next invoice is generated — no Meter objects or subscription item lookup needed.
     Best-effort: errors are logged, never raised.
     """
     overage_attr = _STRIPE_OVERAGE_ATTR.get(meter)
@@ -100,7 +84,7 @@ def _report_stripe_overage(plan: Plan, account_id: int, meter: str, units: int) 
         return
     price_id = getattr(plan, overage_attr, None)
     if not price_id:
-        return  # Stripe metered price not configured for this plan yet
+        return
 
     try:
         import stripe  # type: ignore
@@ -110,7 +94,6 @@ def _report_stripe_overage(plan: Plan, account_id: int, meter: str, units: int) 
             return
 
         from src.models.billing import Subscription
-        # Find the account's active Stripe subscription
         profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
         if not profile:
             return
@@ -126,22 +109,25 @@ def _report_stripe_overage(plan: Plan, account_id: int, meter: str, units: int) 
             logger.debug("No active Stripe subscription for account %d; skipping overage", account_id)
             return
 
-        si_id = _get_subscription_item_id(sub_row.provider_subscription_id, price_id)
-        if not si_id:
-            logger.warning(
-                "Subscription item not found for price %s in sub %s (account=%d meter=%s)",
-                price_id, sub_row.provider_subscription_id, account_id, meter,
-            )
-            return
+        # Retrieve the Stripe customer ID from the subscription
+        stripe_sub = stripe.Subscription.retrieve(sub_row.provider_subscription_id)
+        stripe_customer_id = stripe_sub["customer"]
 
-        # stripe-python v15 removed SubscriptionItem.create_usage_record. Metered usage
-        # now goes through stripe.billing.MeterEvent, which requires a Meter to be
-        # configured on the Stripe side and an event_name on each Plan row — neither
-        # is wired up yet. Until that work lands, overage events are not reported to
-        # Stripe and customers will be undercharged on overage.
-        logger.error(
-            "Stripe overage NOT reported (v15 migration pending): account=%d meter=%s units=%d si=%s price=%s",
-            account_id, meter, units, si_id, price_id,
+        # Retrieve unit_amount from the price so we don't depend on the price type
+        price = stripe.Price.retrieve(price_id)
+        unit_amount = price["unit_amount"]
+        currency = price["currency"]
+
+        stripe.InvoiceItem.create(
+            customer=stripe_customer_id,
+            unit_amount=unit_amount,
+            currency=currency,
+            quantity=units,
+            description=f"Overage: {units} {meter.replace('_', ' ')} over plan limit",
+        )
+        logger.info(
+            "Stripe overage reported: account=%d meter=%s units=%d customer=%s price=%s",
+            account_id, meter, units, stripe_customer_id, price_id,
         )
     except Exception as exc:
         logger.warning("Stripe overage report failed account=%d meter=%s units=%d: %s", account_id, meter, units, exc)
@@ -218,14 +204,14 @@ def check_and_increment(meter: str, account_id: int, quantity: int = 1) -> None:
     result = db.session.execute(stmt)
     new_total = result.scalar()
 
-    # Check overage
+    # Check overage — report only the marginal units that crossed the limit in THIS call,
+    # not the cumulative total, to avoid double-charging on subsequent over-limit calls.
     if plan:
         limit = getattr(plan, limit_col, None)
         if limit is not None and new_total > limit:
-            overage_units = new_total - limit
-            if overage_units > 0:
-                _report_stripe_overage(plan, account_id, meter, overage_units)
-                logger.info(
-                    "Overage: account=%d meter=%s total=%d limit=%d overage=%d",
-                    account_id, meter, new_total, limit, overage_units,
-                )
+            overage_units = min(quantity, new_total - limit)
+            _report_stripe_overage(plan, account_id, meter, overage_units)
+            logger.info(
+                "Overage: account=%d meter=%s total=%d limit=%d overage=%d",
+                account_id, meter, new_total, limit, overage_units,
+            )

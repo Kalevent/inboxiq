@@ -123,8 +123,8 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
     </div>
   </section>
 
-  {# ── Billing toggle ──────────────────────────────────────── #}
-  <div class="flex items-center justify-center">
+  {# ── Billing toggle + currency switcher ─────────────────── #}
+  <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
     <div class="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 gap-1 dark:border-slate-700 dark:bg-slate-800">
       <button id="btn-monthly" onclick="setBilling('monthly')"
               class="px-4 py-1.5 text-sm font-medium rounded-lg bg-white shadow-sm text-slate-950 border border-slate-200 dark:bg-slate-700 dark:text-white dark:border-slate-600">
@@ -136,7 +136,26 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
         <span class="ml-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800">Save ~17%</span>
       </button>
     </div>
+    <div class="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 gap-1 dark:border-slate-700 dark:bg-slate-800">
+      <button id="cur-gbp" onclick="setCurrency('gbp')"
+              class="px-3 py-1.5 text-sm font-medium rounded-lg bg-white shadow-sm text-slate-950 border border-slate-200 dark:bg-slate-700 dark:text-white dark:border-slate-600">
+        £ GBP
+      </button>
+      <button id="cur-eur" onclick="setCurrency('eur')"
+              class="px-3 py-1.5 text-sm font-medium rounded-lg text-slate-500 dark:text-slate-400">
+        € EUR
+      </button>
+      <button id="cur-usd" onclick="setCurrency('usd')"
+              class="px-3 py-1.5 text-sm font-medium rounded-lg text-slate-500 dark:text-slate-400">
+        $ USD
+      </button>
+    </div>
   </div>
+
+  {# ── Currency note (shown when non-GBP is selected) ─────── #}
+  <p id="currency-note" class="hidden text-center text-sm text-slate-500 dark:text-slate-400">
+    Prices above are in GBP for reference. Your selected currency and exact amount will be confirmed at checkout.
+  </p>
 
   {# ── Plans ─────────────────────────────────────────────────── #}
   <section class="grid sm:grid-cols-2 lg:grid-cols-5 gap-5" id="pricing-plans">
@@ -145,7 +164,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
     <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 flex flex-col shadow-sm dark:bg-slate-900 dark:border-slate-800">
       <div>
         <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Free</p>
-        <p class="text-3xl font-bold text-slate-950 dark:text-white">£0<span class="text-base font-normal text-slate-400">/mo</span></p>
+        <p class="text-3xl font-bold text-slate-950 dark:text-white"><span data-gbp="£0" data-eur="€0" data-usd="$0">£0</span><span class="text-base font-normal text-slate-400">/mo</span></p>
         <p class="text-slate-400 text-xs mt-1">BYOL required &bull; 1 inbox</p>
       </div>
       <ul class="space-y-2 text-slate-600 text-sm leading-relaxed flex-1 dark:text-slate-300">
@@ -165,9 +184,9 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
     <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 flex flex-col shadow-sm dark:bg-slate-900 dark:border-slate-800">
       <div>
         <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Starter</p>
-        <p class="text-3xl font-bold text-slate-950 dark:text-white"><span class="price-mo">£19</span><span class="price-yr hidden">£15</span><span class="text-base font-normal text-slate-400">/inbox/mo</span></p>
+        <p class="text-3xl font-bold text-slate-950 dark:text-white"><span class="price-mo" data-gbp="£19" data-eur="€22" data-usd="$24">£19</span><span class="price-yr hidden" data-gbp="£15" data-eur="€18" data-usd="$20">£15</span><span class="text-base font-normal text-slate-400">/inbox/mo</span></p>
         <p class="text-slate-400 text-xs mt-1">1 inbox</p>
-        <p class="text-emerald-600 text-xs mt-0.5 price-yr hidden">Billed as £180/yr — save 21%</p>
+        <p class="text-emerald-600 text-xs mt-0.5 price-yr hidden" data-yr-gbp="Billed as £180/yr — save 21%" data-yr-eur="Billed as €216/yr — save 18%" data-yr-usd="Billed as $240/yr — save 17%">Billed as £180/yr — save 21%</p>
       </div>
       <ul class="space-y-2 text-slate-600 text-sm leading-relaxed flex-1 dark:text-slate-300">
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> AI triage on every email</li>
@@ -179,7 +198,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB draft replies</li>
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> Dynamic booking links in draft replies</li>
       </ul>
-      <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
+      <a href="{{ url_for('signup_page') }}" onclick="choosePlan('starter')" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
         Get started
       </a>
     </div>
@@ -191,9 +210,9 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
       </div>
       <div>
         <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Pro</p>
-        <p class="text-3xl font-bold text-slate-950 dark:text-white"><span class="price-mo">£39</span><span class="price-yr hidden">£32</span><span class="text-base font-normal text-slate-400">/inbox/mo</span></p>
+        <p class="text-3xl font-bold text-slate-950 dark:text-white"><span class="price-mo" data-gbp="£39" data-eur="€46" data-usd="$49">£39</span><span class="price-yr hidden" data-gbp="£32" data-eur="€38" data-usd="$41">£32</span><span class="text-base font-normal text-slate-400">/inbox/mo</span></p>
         <p class="text-slate-400 text-xs mt-1">Unlimited inboxes</p>
-        <p class="text-emerald-600 text-xs mt-0.5 price-yr hidden">Billed as £384/yr — save 18%</p>
+        <p class="text-emerald-600 text-xs mt-0.5 price-yr hidden" data-yr-gbp="Billed as £384/yr — save 18%" data-yr-eur="Billed as €456/yr — save 17%" data-yr-usd="Billed as $492/yr — save 17%">Billed as £384/yr — save 18%</p>
       </div>
       <ul class="space-y-2 text-slate-600 text-sm leading-relaxed flex-1 dark:text-slate-300">
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Everything in Starter</li>
@@ -205,7 +224,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB-grounded draft replies</li>
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> Activity log &amp; audit trail</li>
       </ul>
-      <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition text-sm">
+      <a href="{{ url_for('signup_page') }}" onclick="choosePlan('pro')" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition text-sm">
         Get started
       </a>
     </div>
@@ -214,9 +233,9 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
     <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-5 flex flex-col shadow-sm dark:bg-slate-900 dark:border-slate-800">
       <div>
         <p class="text-slate-500 text-sm font-medium mb-1 dark:text-slate-400">Business</p>
-        <p class="text-3xl font-bold text-slate-950 dark:text-white"><span class="price-mo">£59</span><span class="price-yr hidden">£49</span><span class="text-base font-normal text-slate-400">/inbox/mo</span></p>
+        <p class="text-3xl font-bold text-slate-950 dark:text-white"><span class="price-mo" data-gbp="£59" data-eur="€69" data-usd="$75">£59</span><span class="price-yr hidden" data-gbp="£49" data-eur="€57" data-usd="$62">£49</span><span class="text-base font-normal text-slate-400">/inbox/mo</span></p>
         <p class="text-slate-400 text-xs mt-1">Unlimited inboxes</p>
-        <p class="text-emerald-600 text-xs mt-0.5 price-yr hidden">Billed as £588/yr — save 17%</p>
+        <p class="text-emerald-600 text-xs mt-0.5 price-yr hidden" data-yr-gbp="Billed as £588/yr — save 17%" data-yr-eur="Billed as €684/yr — save 17%" data-yr-usd="Billed as $744/yr — save 17%">Billed as £588/yr — save 17%</p>
       </div>
       <ul class="space-y-2 text-slate-600 text-sm leading-relaxed flex-1 dark:text-slate-300">
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Everything in Pro</li>
@@ -227,7 +246,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Prior authorization workflows</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Developer portal &amp; API add-ons</li>
       </ul>
-      <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition text-sm">
+      <a href="{{ url_for('signup_page') }}" onclick="choosePlan('business')" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition text-sm">
         Get started
       </a>
     </div>
@@ -516,7 +535,11 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
   </script>
 
   <script>
+  var _billingMode = 'monthly';
+  var _currency = 'gbp';
+
   function setBilling(mode) {
+    _billingMode = mode;
     document.querySelectorAll('.price-mo').forEach(function(el) {
       el.classList.toggle('hidden', mode === 'annual');
     });
@@ -534,6 +557,38 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
       active.forEach(function(c){ mo.classList.add(c); yr.classList.remove(c); });
       inactive.forEach(function(c){ yr.classList.add(c); mo.classList.remove(c); });
     }
+  }
+
+  function setCurrency(cur) {
+    _currency = cur;
+    // Swap price amounts
+    document.querySelectorAll('[data-gbp]').forEach(function(el) {
+      el.textContent = el.dataset[cur] || el.dataset.gbp;
+    });
+    // Swap annual billing year total text
+    document.querySelectorAll('[data-yr-gbp]').forEach(function(el) {
+      el.textContent = el.dataset['yr' + cur.charAt(0).toUpperCase() + cur.slice(1)] || el.dataset.yrGbp;
+    });
+    // Update button active states
+    ['cur-gbp','cur-eur','cur-usd'].forEach(function(id) {
+      var btn = document.getElementById(id);
+      if (!btn) return;
+      var isActive = id === 'cur-' + cur;
+      btn.classList.toggle('bg-white', isActive);
+      btn.classList.toggle('shadow-sm', isActive);
+      btn.classList.toggle('text-slate-950', isActive);
+      btn.classList.toggle('border', isActive);
+      btn.classList.toggle('border-slate-200', isActive);
+      btn.classList.toggle('text-slate-500', !isActive);
+    });
+  }
+
+  function choosePlan(plan) {
+    try {
+      localStorage.setItem('inboxiq_plan', plan);
+      localStorage.setItem('inboxiq_billing_interval', _billingMode);
+      localStorage.setItem('inboxiq_currency', _currency);
+    } catch(e) {}
   }
   </script>
 

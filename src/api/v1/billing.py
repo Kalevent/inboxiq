@@ -34,16 +34,20 @@ def _get_service() -> BillingService:
     )
 
 
-def _stripe_price_for_plan(plan_choice: str) -> str | None:
-    """Map plan choice to Stripe price ID via config."""
+def _stripe_price_for_plan(plan_choice: str, interval: str = "monthly", currency: str = "gbp") -> str | None:
+    """Map plan choice + billing interval + currency to Stripe price ID via config."""
     plan = (plan_choice or "").lower()
+    annual = (interval or "monthly").lower() == "annual"
+    cur = (currency or "gbp").lower()
+    # Currency suffix: GBP uses no suffix (legacy), EUR/USD append _EUR / _USD
+    suffix = "" if cur == "gbp" else f"_{cur.upper()}"
     cfg = current_app.config
     if plan == "starter":
-        return cfg.get("STRIPE_PRICE_STARTER")
+        return cfg.get(f"STRIPE_PRICE_STARTER{'_ANNUAL' if annual else ''}{suffix}")
     if plan == "pro":
-        return cfg.get("STRIPE_PRICE_PRO")
+        return cfg.get(f"STRIPE_PRICE_PRO{'_ANNUAL' if annual else ''}{suffix}")
     if plan == "business":
-        return cfg.get("STRIPE_PRICE_BUSINESS")
+        return cfg.get(f"STRIPE_PRICE_BUSINESS{'_ANNUAL' if annual else ''}{suffix}")
     return None
 
 
@@ -115,15 +119,19 @@ def activate_subscription():
         return jsonify({"error": "stripe api key missing"}), 500
 
     plan_choice = data.get("plan_choice") or "pro"
+    billing_interval = data.get("billing_interval") or "monthly"
+    currency = (data.get("currency") or "gbp").lower()
     provider = data.get("provider") or "stripe"
     email = data.get("email")
     if not email:
         return jsonify({"error": "email is required"}), 400
-    # For Stripe, translate plan choice to price id.
+    if currency not in ("gbp", "eur", "usd"):
+        return jsonify({"error": "unsupported_currency", "currency": currency}), 400
+    # For Stripe, translate plan choice + interval + currency to price id.
     if provider == "stripe":
-        price_id = _stripe_price_for_plan(plan_choice)
+        price_id = _stripe_price_for_plan(plan_choice, billing_interval, currency)
         if not price_id:
-            return jsonify({"error": "stripe_price_missing", "plan": plan_choice}), 400
+            return jsonify({"error": "stripe_price_missing", "plan": plan_choice, "interval": billing_interval, "currency": currency}), 400
         plan_code = price_id
     else:
         plan_code = plan_choice

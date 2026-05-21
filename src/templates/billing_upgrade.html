@@ -100,9 +100,24 @@
               <div>
                 <label class="text-xs text-slate-500">Plan</label>
                 <select name="plan_choice" class="checkout-input w-full mt-1 rounded-lg px-3 py-2 text-sm">
-                  <option value="starter">Starter – £9 / month</option>
-                  <option value="pro" selected>Pro – £29 / month</option>
-                  <option value="business">Business – £49 / month</option>
+                  <option value="starter">Starter – £19 / month</option>
+                  <option value="pro" selected>Pro – £39 / month</option>
+                  <option value="business">Business – £59 / month</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs text-slate-500">Billing interval</label>
+                <select name="billing_interval" class="checkout-input w-full mt-1 rounded-lg px-3 py-2 text-sm">
+                  <option value="monthly" selected>Monthly</option>
+                  <option value="annual">Annual (save ~17%)</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs text-slate-500">Currency</label>
+                <select name="currency" class="checkout-input w-full mt-1 rounded-lg px-3 py-2 text-sm">
+                  <option value="gbp" selected>GBP – British Pound (£)</option>
+                  <option value="eur">EUR – Euro (€)</option>
+                  <option value="usd">USD – US Dollar ($)</option>
                 </select>
               </div>
               <div>
@@ -143,7 +158,24 @@
     const providerSelect = document.querySelector('select[name="provider"]');
     const stripeCardBlock = document.getElementById("stripeCardBlock");
     const planSelect = document.querySelector('select[name="plan_choice"]');
+    const intervalSelect = document.querySelector('select[name="billing_interval"]');
+    const currencySelect = document.querySelector('select[name="currency"]');
     const emailInput = document.querySelector('input[name="email"]');
+
+    // Pre-select plan, interval and currency: query params take priority, then localStorage
+    const qp = new URLSearchParams(window.location.search);
+    const savedPlan = qp.get('plan') || localStorage.getItem('inboxiq_plan');
+    const savedInterval = qp.get('interval') || localStorage.getItem('inboxiq_billing_interval');
+    const savedCurrency = qp.get('currency') || localStorage.getItem('inboxiq_currency');
+    if (savedPlan && planSelect) planSelect.value = savedPlan;
+    if (savedInterval && intervalSelect) intervalSelect.value = savedInterval;
+    if (savedCurrency && currencySelect) currencySelect.value = savedCurrency;
+    // Clear after reading so it doesn't persist stale choices
+    try {
+      localStorage.removeItem('inboxiq_plan');
+      localStorage.removeItem('inboxiq_billing_interval');
+      localStorage.removeItem('inboxiq_currency');
+    } catch(e) {}
     stripeCardBlock.appendChild(stripeStatus);
 
     // Ensure form controls are enabled (defensive against unexpected disabled state).
@@ -245,6 +277,8 @@
           const activation = await callApi("/api/v1/billing/activate", {
             email: payload.email,
             plan_choice: payload.plan_choice,
+            billing_interval: payload.billing_interval || "monthly",
+            currency: payload.currency || "gbp",
             provider: "stripe",
           });
           statusBox.textContent = `Activated! Subscription: ${activation.subscription?.status || "active"}. Redirecting you to your dashboard...`;
