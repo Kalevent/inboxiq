@@ -179,7 +179,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB draft replies</li>
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> Dynamic booking links in draft replies</li>
       </ul>
-      <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
+      <a href="{{ url_for('signup_page') }}" onclick="choosePlan('starter')" class="block text-center px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:border-slate-500 hover:text-slate-900 transition text-sm dark:border-slate-600 dark:text-slate-100 dark:hover:border-slate-400">
         Get started
       </a>
     </div>
@@ -205,7 +205,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> KB-grounded draft replies</li>
         <li class="flex gap-2 text-slate-300 dark:text-slate-600"><span>&#10005;</span> Activity log &amp; audit trail</li>
       </ul>
-      <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition text-sm">
+      <a href="{{ url_for('signup_page') }}" onclick="choosePlan('pro')" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition text-sm">
         Get started
       </a>
     </div>
@@ -227,7 +227,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Prior authorization workflows</li>
         <li class="flex gap-2"><span class="text-indigo-600 dark:text-indigo-400">&#10003;</span> Developer portal &amp; API add-ons</li>
       </ul>
-      <a href="{{ url_for('signup_page') }}" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition text-sm">
+      <a href="{{ url_for('signup_page') }}" onclick="choosePlan('business')" class="block text-center px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition text-sm">
         Get started
       </a>
     </div>
@@ -516,7 +516,10 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
   </script>
 
   <script>
+  var _billingMode = 'monthly';
+
   function setBilling(mode) {
+    _billingMode = mode;
     document.querySelectorAll('.price-mo').forEach(function(el) {
       el.classList.toggle('hidden', mode === 'annual');
     });
@@ -534,6 +537,13 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
       active.forEach(function(c){ mo.classList.add(c); yr.classList.remove(c); });
       inactive.forEach(function(c){ yr.classList.add(c); mo.classList.remove(c); });
     }
+  }
+
+  function choosePlan(plan) {
+    try {
+      localStorage.setItem('inboxiq_plan', plan);
+      localStorage.setItem('inboxiq_billing_interval', _billingMode);
+    } catch(e) {}
   }
   </script>
 
