@@ -123,8 +123,8 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
     </div>
   </section>
 
-  {# ── Billing toggle ──────────────────────────────────────── #}
-  <div class="flex items-center justify-center">
+  {# ── Billing toggle + currency switcher ─────────────────── #}
+  <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
     <div class="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 gap-1 dark:border-slate-700 dark:bg-slate-800">
       <button id="btn-monthly" onclick="setBilling('monthly')"
               class="px-4 py-1.5 text-sm font-medium rounded-lg bg-white shadow-sm text-slate-950 border border-slate-200 dark:bg-slate-700 dark:text-white dark:border-slate-600">
@@ -136,7 +136,26 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
         <span class="ml-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800">Save ~17%</span>
       </button>
     </div>
+    <div class="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 gap-1 dark:border-slate-700 dark:bg-slate-800">
+      <button id="cur-gbp" onclick="setCurrency('gbp')"
+              class="px-3 py-1.5 text-sm font-medium rounded-lg bg-white shadow-sm text-slate-950 border border-slate-200 dark:bg-slate-700 dark:text-white dark:border-slate-600">
+        £ GBP
+      </button>
+      <button id="cur-eur" onclick="setCurrency('eur')"
+              class="px-3 py-1.5 text-sm font-medium rounded-lg text-slate-500 dark:text-slate-400">
+        € EUR
+      </button>
+      <button id="cur-usd" onclick="setCurrency('usd')"
+              class="px-3 py-1.5 text-sm font-medium rounded-lg text-slate-500 dark:text-slate-400">
+        $ USD
+      </button>
+    </div>
   </div>
+
+  {# ── Currency note (shown when non-GBP is selected) ─────── #}
+  <p id="currency-note" class="hidden text-center text-sm text-slate-500 dark:text-slate-400">
+    Prices above are in GBP for reference. Your selected currency and exact amount will be confirmed at checkout.
+  </p>
 
   {# ── Plans ─────────────────────────────────────────────────── #}
   <section class="grid sm:grid-cols-2 lg:grid-cols-5 gap-5" id="pricing-plans">
@@ -517,6 +536,7 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
 
   <script>
   var _billingMode = 'monthly';
+  var _currency = 'gbp';
 
   function setBilling(mode) {
     _billingMode = mode;
@@ -539,10 +559,28 @@ InboxIQ charges per active inbox, not per seat. Starter from £19/inbox/mo. No h
     }
   }
 
+  function setCurrency(cur) {
+    _currency = cur;
+    var note = document.getElementById('currency-note');
+    if (note) note.classList.toggle('hidden', cur === 'gbp');
+    ['cur-gbp','cur-eur','cur-usd'].forEach(function(id) {
+      var btn = document.getElementById(id);
+      if (!btn) return;
+      var isActive = id === 'cur-' + cur;
+      btn.classList.toggle('bg-white', isActive);
+      btn.classList.toggle('shadow-sm', isActive);
+      btn.classList.toggle('text-slate-950', isActive);
+      btn.classList.toggle('border', isActive);
+      btn.classList.toggle('border-slate-200', isActive);
+      btn.classList.toggle('text-slate-500', !isActive);
+    });
+  }
+
   function choosePlan(plan) {
     try {
       localStorage.setItem('inboxiq_plan', plan);
       localStorage.setItem('inboxiq_billing_interval', _billingMode);
+      localStorage.setItem('inboxiq_currency', _currency);
     } catch(e) {}
   }
   </script>
