@@ -74,6 +74,9 @@ class Plan(db.Model):
     distribution_enabled     = db.Column(db.Boolean, nullable=False, default=False)
     api_access_enabled       = db.Column(db.Boolean, nullable=False, default=False)
     registered_apps_limit    = db.Column(db.Integer, nullable=False, default=0)
+    byol_enabled             = db.Column(db.Boolean, nullable=False, default=True)
+    audit_log_enabled        = db.Column(db.Boolean, nullable=False, default=False)
+    kb_drafts_enabled        = db.Column(db.Boolean, nullable=False, default=False)
 
     # Monthly included quotas (None = unlimited)
     ai_decisions_limit       = db.Column(db.Integer, nullable=True)
@@ -83,6 +86,10 @@ class Plan(db.Model):
     leads_limit              = db.Column(db.Integer, nullable=True)
     nurture_emails_limit     = db.Column(db.Integer, nullable=True)
     kb_articles_limit        = db.Column(db.Integer, nullable=True)  # None = unlimited
+
+    # Resource count limits (None = unlimited)
+    inbox_limit              = db.Column(db.Integer, nullable=True)
+    automation_rules_limit   = db.Column(db.Integer, nullable=True)
 
     # Stripe metered price IDs for overage reporting (set after Stripe setup)
     stripe_ai_overage_price_id         = db.Column(db.String(128), nullable=True)

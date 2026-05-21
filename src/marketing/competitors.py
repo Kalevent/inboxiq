@@ -38,7 +38,7 @@ COMPETITORS: dict[str, dict] = {
             },
             {
                 "q": "Is InboxIQ cheaper than Zendesk?",
-                "a": "For most small teams, yes. InboxIQ charges per inbox (from £9/month), not per seat. A team of 10 people where 2 handle support pays for 2 inboxes, not 10 agents. Zendesk starts at around £19/agent/month and scales quickly with team size.",
+                "a": "For most small teams, yes. InboxIQ charges per inbox (from £19/month), not per seat. A team of 10 people where 2 handle support pays for 2 inboxes, not 10 agents. Zendesk starts at around £19/agent/month and scales quickly with team size.",
             },
             {
                 "q": "Does InboxIQ work inside Gmail and Outlook like a Zendesk alternative?",
@@ -93,7 +93,7 @@ COMPETITORS: dict[str, dict] = {
             },
             {
                 "q": "Is InboxIQ a good alternative to Freshdesk for small teams?",
-                "a": "Yes. InboxIQ charges per inbox, not per seat, so a small team handling support through one or two shared inboxes pays far less than Freshdesk's per-agent pricing. AI email triage and draft replies are included from £9/month.",
+                "a": "Yes. InboxIQ charges per inbox, not per seat, so a small team handling support through one or two shared inboxes pays far less than Freshdesk's per-agent pricing. AI email triage and draft replies are included from £19/month.",
             },
             {
                 "q": "What is the setup time for InboxIQ compared to Freshdesk?",
@@ -128,7 +128,7 @@ COMPETITORS: dict[str, dict] = {
         ],
         "inboxiq_wins": [
             "Built for email-first support — AI email triage works inside Gmail and Outlook with no new dashboard",
-            "Far lower cost for email-only teams (from £9/inbox vs £74/seat)",
+            "Far lower cost for email-only teams (from £19/inbox vs £74/seat)",
             "No chat widget to install — works entirely inside the existing inbox",
             "AI meeting scheduling in email replies — no equivalent in Intercom",
             "Per-inbox pricing: a team of 10 with 2 support inboxes pays for 2, not 10 seats",
@@ -144,7 +144,7 @@ COMPETITORS: dict[str, dict] = {
             },
             {
                 "q": "Is InboxIQ cheaper than Intercom for email triage?",
-                "a": "Significantly, yes. Intercom starts at around £74 per seat per month. InboxIQ charges per inbox from £9/month — a team with two support inboxes pays £18/month regardless of headcount.",
+                "a": "Significantly, yes. Intercom starts at around £74 per seat per month. InboxIQ charges per inbox from £19/month — a team with two support inboxes pays £38/month regardless of headcount.",
             },
             {
                 "q": "Can InboxIQ replace Intercom for a support team that only uses email?",
@@ -195,7 +195,7 @@ COMPETITORS: dict[str, dict] = {
             },
             {
                 "q": "Is InboxIQ cheaper than Front?",
-                "a": "For most teams, yes. Front charges per seat from £19/month. InboxIQ charges per inbox from £9/month — a team with one shared support inbox pays £9 regardless of how many people access it.",
+                "a": "For most teams, yes. Front charges per seat from £19/month. InboxIQ charges per inbox from £19/month — a team with one shared support inbox pays £19 regardless of how many people access it.",
             },
             {
                 "q": "Can InboxIQ replace Front for a small support team?",
@@ -246,7 +246,7 @@ COMPETITORS: dict[str, dict] = {
             },
             {
                 "q": "Is InboxIQ cheaper than Help Scout for a small team?",
-                "a": "Typically yes. Help Scout charges £20–65 per user per month. InboxIQ charges per inbox from £9/month — a team sharing one support inbox pays £9 regardless of team size.",
+                "a": "Typically yes. Help Scout charges £20–65 per user per month. InboxIQ charges per inbox from £19/month — a team sharing one support inbox pays £19 regardless of team size.",
             },
             {
                 "q": "Can InboxIQ replace Help Scout for email support?",
@@ -297,7 +297,7 @@ COMPETITORS: dict[str, dict] = {
             },
             {
                 "q": "Is InboxIQ cheaper than Groove?",
-                "a": "For single-inbox teams, prices are similar. Groove starts at £16 per user per month. InboxIQ starts at £9 per inbox per month — a team of three sharing one support inbox pays £9 with InboxIQ vs £48 with Groove.",
+                "a": "For single-inbox teams, prices are similar. Groove starts at £16 per user per month. InboxIQ starts at £19 per inbox per month — a team of three sharing one support inbox pays £19 with InboxIQ vs £48 with Groove.",
             },
             {
                 "q": "Does InboxIQ have AI features that Groove lacks?",

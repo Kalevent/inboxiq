@@ -2147,6 +2147,10 @@ def save_llm_config():
     if user.role not in ("owner", "admin"):
         return jsonify({"message": "Owner or Admin role required"}), 403
 
+    from src.features import feature_enabled
+    if not feature_enabled("byol", user.account_id):
+        return jsonify({"message": "Bring Your Own LLM is not available on the Starter plan. Upgrade to Pro or Business."}), 403
+
     data = request.get_json(silent=True) or {}
     provider = (data.get("provider") or "").strip()
     base_url = (data.get("base_url") or "").strip() or None

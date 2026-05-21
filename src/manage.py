@@ -172,6 +172,8 @@ def cli_seed_plans():
             code="free",
             price_cents=0, currency="GBP", seats=1,
             ai_decisions_limit=50,
+            inbox_limit=1, automation_rules_limit=1,
+            byol_enabled=True, audit_log_enabled=False, kb_drafts_enabled=False,
             chat_enabled=False, chat_limit=None,
             automation_enabled=False, automation_runs_limit=None,
             content_gen_enabled=False, content_posts_limit=None,
@@ -182,8 +184,10 @@ def cli_seed_plans():
         ),
         dict(
             code="starter",
-            price_cents=900, currency="GBP", seats=1,
+            price_cents=1900, currency="GBP", seats=1,
             ai_decisions_limit=200,
+            inbox_limit=1, automation_rules_limit=3,
+            byol_enabled=False, audit_log_enabled=False, kb_drafts_enabled=False,
             chat_enabled=False, chat_limit=None,
             automation_enabled=False, automation_runs_limit=None,
             content_gen_enabled=False, content_posts_limit=None,
@@ -195,8 +199,10 @@ def cli_seed_plans():
         ),
         dict(
             code="pro",
-            price_cents=2900, currency="GBP", seats=2,
+            price_cents=3900, currency="GBP", seats=2,
             ai_decisions_limit=1000,
+            inbox_limit=None, automation_rules_limit=25,
+            byol_enabled=True, audit_log_enabled=False, kb_drafts_enabled=False,
             chat_enabled=False, chat_limit=None,
             automation_enabled=False, automation_runs_limit=None,
             content_gen_enabled=False, content_posts_limit=None,
@@ -208,8 +214,10 @@ def cli_seed_plans():
         ),
         dict(
             code="business",
-            price_cents=4900, currency="GBP", seats=5,
+            price_cents=5900, currency="GBP", seats=5,
             ai_decisions_limit=5000,
+            inbox_limit=None, automation_rules_limit=100,
+            byol_enabled=True, audit_log_enabled=True, kb_drafts_enabled=True,
             chat_enabled=True, chat_limit=200,
             automation_enabled=True, automation_runs_limit=500,
             content_gen_enabled=True, content_posts_limit=8,
@@ -226,6 +234,8 @@ def cli_seed_plans():
             code="enterprise",
             price_cents=0, currency="GBP", seats=None,
             ai_decisions_limit=None,
+            inbox_limit=None, automation_rules_limit=None,
+            byol_enabled=True, audit_log_enabled=True, kb_drafts_enabled=True,
             chat_enabled=True, chat_limit=None,
             automation_enabled=True, automation_runs_limit=None,
             content_gen_enabled=True, content_posts_limit=None,
@@ -236,13 +246,28 @@ def cli_seed_plans():
         ),
     ]
 
+    # Columns updated on existing plans when re-running seed
+    _UPSERT_COLS = (
+        "inbox_limit", "automation_rules_limit",
+        "byol_enabled", "audit_log_enabled", "kb_drafts_enabled",
+        "price_cents",
+    )
+
     created = 0
-    skipped = 0
+    updated = 0
     for defn in definitions:
         existing = Plan.query.filter_by(code=defn["code"]).first()
         if existing:
-            click.echo(f"  skip {defn['code']} (already exists)")
-            skipped += 1
+            changed = False
+            for col in _UPSERT_COLS:
+                if col in defn and getattr(existing, col) != defn[col]:
+                    setattr(existing, col, defn[col])
+                    changed = True
+            if changed:
+                click.echo(f"  update {defn['code']}")
+                updated += 1
+            else:
+                click.echo(f"  skip {defn['code']} (no changes)")
             continue
         plan = Plan(**defn)
         db.session.add(plan)
@@ -250,7 +275,7 @@ def cli_seed_plans():
         created += 1
 
     db.session.commit()
-    click.echo(f"Done: {created} created, {skipped} skipped.")
+    click.echo(f"Done: {created} created, {updated} updated.")
 
 
 @app.cli.command("set-enterprise-account")

@@ -105,6 +105,17 @@ def create_rule():
     if role not in _MANAGE_ROLES:
         return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
+
+    from src.features import get_plan_count_limit
+    rules_limit = get_plan_count_limit("automation_rules_limit", account_id)
+    if rules_limit is not None:
+        current_count = AutomationRule.query.filter_by(account_id=account_id).count()
+        if current_count >= rules_limit:
+            return jsonify({
+                "error": f"Your plan allows {rules_limit} automation rule(s). "
+                         "Delete an existing rule or upgrade your plan to add more."
+            }), 403
+
     data = request.get_json()
 
     # Validate required fields
