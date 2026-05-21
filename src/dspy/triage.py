@@ -223,13 +223,18 @@ def _run_dspy_triage_impl(
     # Thread history is already in case["history"]; surface it explicitly for DraftReplySig
     thread_history_json = json.dumps(case.get("history") or [])
 
-    # Fetch KB context if draft reply is enabled
+    # Fetch KB context if draft reply and KB drafts are enabled on the plan
     kb_context_list = []
     kb_context_json = "[]"
     if draft_enabled:
+        from src.features import get_draft_reply_config
+        draft_cfg = get_draft_reply_config(account_id) if account_id else {}
+        kb_allowed = draft_cfg.get("kb_enabled", False)
+
         subject = payload.get("subject", "")
         body = payload.get("body") or payload.get("text") or ""
-        kb_context_list = fetch_kb_context(subject, body, account_id, limit=3)
+        if kb_allowed:
+            kb_context_list = fetch_kb_context(subject, body, account_id, limit=3)
         # If the email is a meeting request and the account has Google Calendar
         # connected, surface available slots so the draft reply can include them.
         from_email = payload.get("from_email") or payload.get("from") or ""

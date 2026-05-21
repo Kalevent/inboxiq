@@ -53,6 +53,9 @@ def feature_enabled(feature: str, account_id: int) -> bool:
         "nurture":         "nurture_enabled",
         "distribution":    "distribution_enabled",
         "api_access":      "api_access_enabled",
+        "byol":            "byol_enabled",
+        "audit_log":       "audit_log_enabled",
+        "kb_drafts":       "kb_drafts_enabled",
     }
     flag_col = _FEATURE_FLAG_MAP.get(feature)
     if flag_col is None:
@@ -80,13 +83,31 @@ def feature_enabled(feature: str, account_id: int) -> bool:
     return bool(getattr(plan, flag_col, False))
 
 
+def get_plan_count_limit(limit_col: str, account_id: int) -> Optional[int]:
+    """
+    Return the plan's count limit for a resource column, or None if unlimited.
+    Returns None (unlimited) when there is no billing profile or no plan row.
+    """
+    from src.models.billing import CustomerBillingProfile, Plan
+
+    profile = CustomerBillingProfile.query.filter_by(account_id=account_id).first()
+    if not profile or not profile.plan_choice:
+        return None
+    plan = Plan.query.filter_by(code=profile.plan_choice).first()
+    if not plan:
+        return None
+    return getattr(plan, limit_col, None)
+
+
 def get_draft_reply_config(account_id: int) -> dict:
     """
     Get draft reply configuration for an account.
 
     Returns:
-        Dict with: enabled, auto_approve, min_confidence
+        Dict with: enabled, auto_approve, min_confidence, kb_enabled
     """
+    kb_enabled = feature_enabled("kb_drafts", account_id)
+
     feature_flags = (
         AccountFeatureFlags.query
         .filter_by(account_id=account_id)
@@ -94,17 +115,18 @@ def get_draft_reply_config(account_id: int) -> dict:
     )
 
     if not feature_flags:
-        # Return defaults (draft reply is on by default for all accounts)
         return {
             "enabled": True,
             "auto_approve": False,
             "min_confidence": 0.7,
+            "kb_enabled": kb_enabled,
         }
 
     return {
         "enabled": feature_flags.draft_reply_enabled,
         "auto_approve": feature_flags.draft_reply_auto_approve,
         "min_confidence": feature_flags.draft_reply_min_confidence,
+        "kb_enabled": kb_enabled,
     }
 
 

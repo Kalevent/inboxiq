@@ -291,6 +291,16 @@ def _store_connection(provider: str, email_address: str, access_token: str, refr
 
     is_new_connection = not conn
     if is_new_connection:
+        if provider in ("gmail", "outlook"):
+            from src.features import get_plan_count_limit
+            inbox_limit = get_plan_count_limit("inbox_limit", account_id)
+            if inbox_limit is not None:
+                existing = InboxConnection.query.filter(
+                    InboxConnection.account_id == account_id,
+                    InboxConnection.provider.in_(["gmail", "outlook"]),
+                ).count()
+                if existing >= inbox_limit:
+                    raise RuntimeError(f"plan_limit:inbox:{inbox_limit}")
         conn = InboxConnection(
             user_id=resolved_user_id,
             account_id=account_id,
@@ -705,7 +715,10 @@ def google_callback():
         try:
             _store_connection("gmail", email, access_token, refresh_token, user_id)
             current_app.logger.info("gmail inbox connected: user_id=%s email=%s", user_id, email)
-        except RuntimeError:
+        except RuntimeError as exc:
+            if str(exc).startswith("plan_limit:inbox:"):
+                limit = str(exc).split(":")[-1]
+                return redirect(f"/dashboard?error=inbox_limit&limit={limit}")
             pass
         # Save calendar connection — calendar scope is bundled into the Gmail auth flow
         # so the same tokens cover Calendar access. Best-effort, never blocks the redirect.
@@ -830,7 +843,10 @@ def outlook_callback():
         try:
             _store_connection("outlook", email, access_token, refresh_token, user_id)
             current_app.logger.info("outlook inbox connected: user_id=%s email=%s", user_id, email)
-        except RuntimeError:
+        except RuntimeError as exc:
+            if str(exc).startswith("plan_limit:inbox:"):
+                limit = str(exc).split(":")[-1]
+                return redirect(f"/dashboard?error=inbox_limit&limit={limit}")
             pass
         # Save calendar connection — Calendars.ReadWrite is bundled into the Outlook auth flow
         user_obj = User.query.get(user_id)

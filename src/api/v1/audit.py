@@ -63,6 +63,10 @@ def get_audit_logs():
     if not account_id:
         return jsonify({"error": "account not found"}), 400
 
+    from src.features import feature_enabled
+    if not feature_enabled("audit_log", account_id):
+        return jsonify({"error": "Audit logs are only available on the Business plan."}), 403
+
     try:
         page = max(1, int(request.args.get("page", 1)))
     except (TypeError, ValueError):
