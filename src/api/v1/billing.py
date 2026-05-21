@@ -34,16 +34,17 @@ def _get_service() -> BillingService:
     )
 
 
-def _stripe_price_for_plan(plan_choice: str) -> str | None:
-    """Map plan choice to Stripe price ID via config."""
+def _stripe_price_for_plan(plan_choice: str, interval: str = "monthly") -> str | None:
+    """Map plan choice + billing interval to Stripe price ID via config."""
     plan = (plan_choice or "").lower()
+    annual = (interval or "monthly").lower() == "annual"
     cfg = current_app.config
     if plan == "starter":
-        return cfg.get("STRIPE_PRICE_STARTER")
+        return cfg.get("STRIPE_PRICE_STARTER_ANNUAL" if annual else "STRIPE_PRICE_STARTER")
     if plan == "pro":
-        return cfg.get("STRIPE_PRICE_PRO")
+        return cfg.get("STRIPE_PRICE_PRO_ANNUAL" if annual else "STRIPE_PRICE_PRO")
     if plan == "business":
-        return cfg.get("STRIPE_PRICE_BUSINESS")
+        return cfg.get("STRIPE_PRICE_BUSINESS_ANNUAL" if annual else "STRIPE_PRICE_BUSINESS")
     return None
 
 
@@ -115,15 +116,16 @@ def activate_subscription():
         return jsonify({"error": "stripe api key missing"}), 500
 
     plan_choice = data.get("plan_choice") or "pro"
+    billing_interval = data.get("billing_interval") or "monthly"
     provider = data.get("provider") or "stripe"
     email = data.get("email")
     if not email:
         return jsonify({"error": "email is required"}), 400
-    # For Stripe, translate plan choice to price id.
+    # For Stripe, translate plan choice + interval to price id.
     if provider == "stripe":
-        price_id = _stripe_price_for_plan(plan_choice)
+        price_id = _stripe_price_for_plan(plan_choice, billing_interval)
         if not price_id:
-            return jsonify({"error": "stripe_price_missing", "plan": plan_choice}), 400
+            return jsonify({"error": "stripe_price_missing", "plan": plan_choice, "interval": billing_interval}), 400
         plan_code = price_id
     else:
         plan_code = plan_choice
