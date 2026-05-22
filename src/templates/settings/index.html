@@ -1057,6 +1057,15 @@
                           <div class="text-xs text-slate-400">Grafana cluster monitoring dashboard</div>
                         </div>
                       </a>
+                      <a href="{{ url_for('settings.integrations_finance') }}" class="flex items-center gap-3 p-3 rounded-lg bg-slate-950/40 border border-slate-800 hover:border-slate-700 transition-colors">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div class="flex-1">
+                          <div class="text-sm font-semibold text-slate-100">Finance Add-on</div>
+                          <div class="text-xs text-slate-400">Stripe → QuickBooks automation</div>
+                        </div>
+                      </a>
                     </div>
                   </div>
 
@@ -1321,16 +1330,255 @@
 
               {% elif integrations_view == 'finance' %}
                 <div class="space-y-3">
-                  {% if finance_addon_active %}
-                    <p class="text-sm text-emerald-200 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1">Finance Add-on · Active</p>
-                    <h2 class="text-xl md:text-3xl font-semibold">Finance Add-on</h2>
-                    <p class="text-sm text-slate-300 max-w-3xl">Your Finance Add-on is active. {{ finance_addon.transactions_this_month or 0 }} transactions processed this month.</p>
-                  {% else %}
-                    <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">Integrations • Finance Add-on</p>
-                    <h2 class="text-xl md:text-3xl font-semibold">Finance Add-on</h2>
-                    <p class="text-sm text-slate-300 max-w-3xl">Upgrade to unlock automated invoice extraction, Stripe reconciliation, and QuickBooks sync.</p>
-                  {% endif %}
+                  <p class="text-sm text-amber-200 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1">
+                    Integrations • Finance Add-on
+                  </p>
+                  <h2 class="text-xl md:text-3xl font-semibold">Finance Add-on</h2>
+                  <p class="text-sm text-slate-300 max-w-3xl">
+                    Automate Stripe payment events into QuickBooks — sync transactions in real time or receive weekly CSV exports.
+                  </p>
                 </div>
+
+                {# ── Upgrade gate ──────────────────────────────────── #}
+                <div id="finance-gate" class="mt-8 {% if finance_addon_active %}hidden{% endif %}">
+                  <div class="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-8 text-center">
+                    <div class="text-4xl mb-4">⚡</div>
+                    <h3 class="text-lg font-semibold mb-2">Upgrade to unlock Finance Add-on</h3>
+                    <p class="text-sm text-slate-300 max-w-md mx-auto mb-6">
+                      Automate Stripe payments into QuickBooks — sync transactions in real time or receive weekly CSV exports.
+                    </p>
+                    <div class="flex flex-wrap justify-center gap-2 mb-6">
+                      <span class="text-xs px-3 py-1 rounded-full border border-slate-600 text-slate-300">✓ Stripe webhook</span>
+                      <span class="text-xs px-3 py-1 rounded-full border border-slate-600 text-slate-300">✓ QuickBooks sync</span>
+                      <span class="text-xs px-3 py-1 rounded-full border border-slate-600 text-slate-300">✓ Weekly CSV export</span>
+                    </div>
+                    <a href="{{ url_for('settings.settings_page', tab='billing') }}" class="inline-flex items-center gap-2 rounded-lg bg-amber-500 hover:bg-amber-400 px-6 py-2.5 text-sm font-semibold text-black transition-colors">
+                      Upgrade to unlock →
+                    </a>
+                    <p class="text-xs text-slate-500 mt-3">Included in Pro and above</p>
+                  </div>
+                </div>
+
+                {# ── Wizard ────────────────────────────────────────── #}
+                <div id="finance-wizard" class="mt-8 {% if not finance_addon_active %}hidden{% endif %}">
+
+                  {# Step 1 — Connect Stripe #}
+                  <div class="finance-step" id="finance-step-1">
+                    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+                      <div class="flex items-center gap-2 mb-6">
+                        <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold text-black">1</div>
+                        <div class="flex-1 h-px bg-slate-700"></div>
+                        <div class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-xs text-slate-400">2</div>
+                        <div class="flex-1 h-px bg-slate-700"></div>
+                        <div class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-xs text-slate-400">3</div>
+                      </div>
+                      <h3 class="text-base font-semibold mb-1">Connect your Stripe webhook</h3>
+                      <p class="text-sm text-slate-400 mb-4">Select the Stripe provider that receives your payment events.</p>
+                      <label class="block text-xs text-slate-400 mb-1">Stripe webhook provider</label>
+                      <select id="finance-stripe-select" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-500 mb-2">
+                        <option value="">Select a Stripe provider…</option>
+                        {% for p in stripe_providers %}
+                          <option value="{{ p.id }}">{{ p.configuration_name }}</option>
+                        {% endfor %}
+                      </select>
+                      <a href="{{ url_for('settings.integrations_webhooks') }}" class="text-xs text-indigo-400 hover:text-indigo-300">
+                        + Add a new Stripe provider first →
+                      </a>
+                      <div class="mt-6 flex justify-end">
+                        <button type="button" onclick="financeShowStep(2)" class="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition-colors">
+                          Next: Choose output →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {# Step 2+3 — Mode + provider/confirmation #}
+                  <div class="finance-step hidden" id="finance-step-2">
+                    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+                      <div class="flex items-center gap-2 mb-6">
+                        <div class="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-black">✓</div>
+                        <div class="flex-1 h-px bg-emerald-500"></div>
+                        <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold text-black">2</div>
+                        <div class="flex-1 h-px bg-slate-700"></div>
+                        <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold text-black">3</div>
+                      </div>
+                      <h3 class="text-base font-semibold mb-4">Output mode</h3>
+                      <div class="grid grid-cols-2 gap-3 mb-6">
+                        <button type="button" id="finance-mode-direct" onclick="financeSelectMode('direct_sync')" class="rounded-xl border border-slate-700 p-4 text-left transition-colors hover:border-amber-500/60">
+                          <div class="text-sm font-semibold mb-1">⚡ Direct sync</div>
+                          <div class="text-xs text-slate-400">Real-time QuickBooks API</div>
+                        </button>
+                        <button type="button" id="finance-mode-csv" onclick="financeSelectMode('csv_export')" class="rounded-xl border border-slate-700 p-4 text-left transition-colors hover:border-amber-500/60">
+                          <div class="text-sm font-semibold mb-1">📎 CSV export</div>
+                          <div class="text-xs text-slate-400">Weekly email attachment</div>
+                        </button>
+                      </div>
+
+                      {# Step 3a — Direct sync QB provider #}
+                      <div id="finance-step3-direct" class="hidden mb-4">
+                        <label class="block text-xs text-slate-400 mb-1">QuickBooks provider</label>
+                        <p class="text-xs text-slate-500 mb-2">Select the QuickBooks provider to post transactions to.</p>
+                        <select id="finance-qb-select" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-500 mb-2">
+                          <option value="">Select a QuickBooks provider…</option>
+                          {% for p in qb_providers %}
+                            <option value="{{ p.id }}">{{ p.configuration_name }}</option>
+                          {% endfor %}
+                        </select>
+                        <a href="{{ url_for('settings.integrations_webhooks') }}" class="text-xs text-indigo-400 hover:text-indigo-300">
+                          + Add a new QuickBooks provider first →
+                        </a>
+                      </div>
+
+                      {# Step 3b — CSV export confirmation #}
+                      <div id="finance-step3-csv" class="hidden mb-4">
+                        <div class="text-xs text-slate-400 mb-2">Ready to activate</div>
+                        <div class="rounded-xl border border-slate-700 bg-slate-950/50 px-4 py-3">
+                          <div class="text-xs text-slate-500 mb-1">Weekly CSV will be sent to:</div>
+                          <div class="text-sm font-medium">{{ account_email }}</div>
+                          <div class="text-xs text-slate-500 mt-1">Every Monday at 08:00 UTC · Intuit-compatible format</div>
+                        </div>
+                      </div>
+
+                      <div class="mt-6 flex justify-between items-center">
+                        <button type="button" onclick="financeShowStep(1)" class="text-sm text-slate-400 hover:text-slate-200">← Back</button>
+                        <button type="button" id="finance-activate-btn" onclick="financeActivate()" disabled class="rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-2 text-sm font-semibold text-black transition-colors">
+                          Activate add-on ⚡
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {# ── Active summary ────────────────────────────────── #}
+                <div id="finance-summary" class="mt-8 {% if not finance_addon_active %}hidden{% endif %}">
+                  <div class="rounded-2xl border border-emerald-700/40 bg-emerald-950/10 p-6">
+                    <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+                      <div>
+                        <div class="text-base font-semibold text-emerald-300">⚡ Finance Add-on · Active</div>
+                        {% if finance_addon %}
+                          <div class="text-sm text-slate-400 mt-1">{{ finance_addon.transactions_this_month }} transactions processed this month</div>
+                        {% endif %}
+                      </div>
+                      <div class="flex gap-2">
+                        <button type="button" onclick="financeReconfigure()" class="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition-colors">
+                          Reconfigure
+                        </button>
+                        <button type="button" onclick="financeDeactivate()" class="rounded-lg border border-slate-600 hover:border-slate-500 px-4 py-2 text-sm text-slate-300 hover:text-white transition-colors">
+                          Deactivate
+                        </button>
+                      </div>
+                    </div>
+                    {% if finance_addon and finance_addon.config_json %}
+                      <div class="grid grid-cols-2 gap-3">
+                        <div class="rounded-xl border border-slate-700 bg-slate-950/50 px-4 py-3">
+                          <div class="text-xs text-slate-500 mb-1 uppercase tracking-wide">Stripe</div>
+                          {% set stripe_name = namespace(found='') %}
+                          {% for p in stripe_providers %}
+                            {% if p.id|string == finance_addon.config_json.get('stripe_provider_id', '')|string %}
+                              {% set stripe_name.found = p.configuration_name %}
+                            {% endif %}
+                          {% endfor %}
+                          <div class="text-sm">{{ stripe_name.found or '—' }}</div>
+                        </div>
+                        <div class="rounded-xl border border-slate-700 bg-slate-950/50 px-4 py-3">
+                          <div class="text-xs text-slate-500 mb-1 uppercase tracking-wide">Output</div>
+                          <div class="text-sm">{{ 'Direct QB sync' if finance_addon.config_json.get('mode') == 'direct_sync' else 'CSV export · weekly' }}</div>
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="mt-6 flex items-center gap-3">
+                  <a href="{{ url_for('settings.integrations_webhooks') }}" class="text-sm text-indigo-200 hover:text-white">
+                    ← Back to Webhook Providers
+                  </a>
+                </div>
+
+                <script>
+                (function () {
+                  var _mode = null;
+                  var _accountEmail = {{ account_email | tojson }};
+
+                  function getCsrfToken() {
+                    return document.cookie.split(';').reduce(function(t, c) {
+                      var p = c.trim().split('=');
+                      return p[0] === 'csrf_access_token' ? decodeURIComponent(p[1]) : t;
+                    }, '');
+                  }
+
+                  window.financeShowStep = function(n) {
+                    document.querySelectorAll('.finance-step').forEach(function(el) {
+                      el.classList.add('hidden');
+                    });
+                    var step = document.getElementById('finance-step-' + n);
+                    if (step) step.classList.remove('hidden');
+                  };
+
+                  window.financeSelectMode = function(mode) {
+                    _mode = mode;
+                    var btnDirect = document.getElementById('finance-mode-direct');
+                    var btnCsv = document.getElementById('finance-mode-csv');
+                    var step3Direct = document.getElementById('finance-step3-direct');
+                    var step3Csv = document.getElementById('finance-step3-csv');
+                    var activateBtn = document.getElementById('finance-activate-btn');
+                    btnDirect.classList.toggle('border-amber-500', mode === 'direct_sync');
+                    btnDirect.classList.toggle('border-slate-700', mode !== 'direct_sync');
+                    btnCsv.classList.toggle('border-amber-500', mode === 'csv_export');
+                    btnCsv.classList.toggle('border-slate-700', mode !== 'csv_export');
+                    step3Direct.classList.toggle('hidden', mode !== 'direct_sync');
+                    step3Csv.classList.toggle('hidden', mode !== 'csv_export');
+                    if (activateBtn) activateBtn.disabled = false;
+                  };
+
+                  window.financeActivate = async function() {
+                    var stripeId = document.getElementById('finance-stripe-select').value;
+                    if (!stripeId) { alert('Please select a Stripe provider.'); return; }
+                    if (!_mode) { alert('Please select an output mode.'); return; }
+                    var payload = { stripe_provider_id: stripeId, mode: _mode };
+                    if (_mode === 'direct_sync') {
+                      var qbId = document.getElementById('finance-qb-select').value;
+                      if (!qbId) { alert('Please select a QuickBooks provider.'); return; }
+                      payload.qb_provider_id = qbId;
+                    } else {
+                      payload.csv_email = _accountEmail;
+                    }
+                    var resp = await fetch('/api/v1/addons/finance/activate', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
+                      body: JSON.stringify(payload),
+                    });
+                    if (resp.ok) {
+                      window.location.reload();
+                    } else if (resp.status === 402) {
+                      window.location.href = "{{ url_for('settings.settings_page', tab='billing') }}";
+                    } else {
+                      var data = await resp.json();
+                      alert('Error: ' + (data.error || 'Unknown error'));
+                    }
+                  };
+
+                  window.financeDeactivate = async function() {
+                    if (!confirm('Deactivate Finance Add-on? Your configuration will be saved but processing will stop.')) return;
+                    var resp = await fetch('/api/v1/addons/finance/deactivate', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
+                    });
+                    if (resp.ok) {
+                      window.location.reload();
+                    } else {
+                      alert('Could not deactivate. Please try again.');
+                    }
+                  };
+
+                  window.financeReconfigure = function() {
+                    document.getElementById('finance-summary').classList.add('hidden');
+                    document.getElementById('finance-wizard').classList.remove('hidden');
+                    window.financeShowStep(1);
+                  };
+                })();
+                </script>
 
               {% else %}
                 <div class="space-y-3">
