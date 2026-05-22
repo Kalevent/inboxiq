@@ -397,7 +397,7 @@ def create_app() -> Flask:
   def terms():
     return render_template("terms_of_service.html")
 
-  @app.route("/contact")
+  @app.route("/contact", methods=["GET"])
   def contact():
     return render_template("contact.html")
 

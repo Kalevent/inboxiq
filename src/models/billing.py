@@ -32,6 +32,7 @@ class CustomerBillingProfile(db.Model):
     trial_end = db.Column(db.DateTime(timezone=True), nullable=True)
     trial_status = db.Column(db.String(32), nullable=False, default="active")  # active|ending_soon|ended
     subscription_status = db.Column(db.String(32), nullable=False, default="none")  # none|active|past_due|canceled
+    stripe_customer_id = db.Column(db.String(64), nullable=True, index=True)  # cus_xxx — set on first Stripe customer create
     default_payment_method_id = db.Column(db.String(64), db.ForeignKey("payment_methods.id"), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

@@ -156,6 +156,7 @@ def activate_subscription():
             customer = stripe_provider.create_customer(email=email, payment_method_id=pm.provider_payment_method_id)
             stripe_provider.attach_payment_method_to_customer(pm.provider_payment_method_id, customer["id"])
             customer_ref = customer["id"]
+            profile.stripe_customer_id = customer_ref
         else:
             customer_ref = profile.id
 

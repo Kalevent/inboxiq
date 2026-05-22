@@ -777,6 +777,11 @@ def delete_landing_page(page_id: str):
 # ── Enterprise inquiry endpoints ──────────────────────────────────────────────
 
 def _inquiry_to_dict(inq: EnterpriseInquiry) -> dict:
+    stripe_customer_id = None
+    if inq.account_id:
+        from src.models.billing import CustomerBillingProfile
+        profile = CustomerBillingProfile.query.filter_by(account_id=inq.account_id).first()
+        stripe_customer_id = getattr(profile, "stripe_customer_id", None) if profile else None
     return {
         "id": inq.id,
         "name": inq.name,
@@ -786,6 +791,7 @@ def _inquiry_to_dict(inq: EnterpriseInquiry) -> dict:
         "employee_count": inq.employee_count,
         "message": inq.message,
         "account_id": inq.account_id,
+        "stripe_customer_id": stripe_customer_id,
         "status": inq.status,
         "admin_notes": inq.admin_notes,
         "created_at": inq.created_at.isoformat() if inq.created_at else None,

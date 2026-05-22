@@ -73,6 +73,34 @@ class StripeProvider(PaymentProvider):
         }
 
     def handle_webhook(self, payload: Dict[str, Any], headers: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
-        # Do not verify signature here; leave to caller to keep this adapter simple.
         event_type = payload.get("type") or "unknown"
+        obj = (payload.get("data") or {}).get("object") or {}
+
+        if event_type in ("customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"):
+            period_end = obj.get("current_period_end")
+            return event_type, {
+                "stripe_subscription_id": obj.get("id"),
+                "stripe_customer_id": obj.get("customer"),
+                "status": obj.get("status"),
+                "plan_choice": (obj.get("metadata") or {}).get("plan_choice"),
+                "price_id": ((obj.get("items") or {}).get("data") or [{}])[0].get("price", {}).get("id"),
+                "current_period_end": period_end,
+                "cancel_at_period_end": obj.get("cancel_at_period_end", False),
+            }
+
+        if event_type == "invoice.paid":
+            return event_type, {
+                "stripe_invoice_id": obj.get("id"),
+                "stripe_subscription_id": obj.get("subscription"),
+                "amount_paid": obj.get("amount_paid") or obj.get("total") or 0,
+                "currency": (obj.get("currency") or "gbp").upper(),
+                "hosted_invoice_url": obj.get("hosted_invoice_url"),
+            }
+
+        if event_type == "invoice.payment_failed":
+            return event_type, {
+                "stripe_invoice_id": obj.get("id"),
+                "stripe_subscription_id": obj.get("subscription"),
+            }
+
         return event_type, payload

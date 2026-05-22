@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional
 from sqlalchemy.exc import OperationalError
@@ -8,6 +9,8 @@ from src.billing.providers.stripe import StripeProvider
 from src.billing.providers.secondary import SecondaryProvider
 from src.billing.providers.barclay import BarclayHostedProvider
 from src.billing.emailing import send_payment_receipt, send_payment_failure, send_trial_reminder, send_trial_ended
+
+logger = logging.getLogger(__name__)
 
 
 class BillingService:
@@ -146,7 +149,173 @@ class BillingService:
     def handle_webhook(self, provider_name: str, payload: Dict[str, Any], headers: Dict[str, Any]) -> Dict[str, Any]:
         provider = self._provider(provider_name)
         event_type, normalized = provider.handle_webhook(payload, headers)
+
+        if provider_name == "stripe":
+            try:
+                if event_type in ("customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"):
+                    self._sync_stripe_subscription(normalized)
+                elif event_type == "invoice.paid":
+                    self._sync_stripe_invoice_paid(normalized)
+                elif event_type == "invoice.payment_failed":
+                    self._handle_stripe_invoice_failed(normalized)
+            except Exception as exc:
+                logger.error("webhook handler error event=%s: %s", event_type, exc)
+
         return {"event": event_type, "data": normalized}
+
+    def _stripe_plan_from_price_id(self, price_id: str) -> Optional[str]:
+        """Reverse-map a Stripe price ID to a plan_choice code using app config."""
+        if not price_id:
+            return None
+        from flask import current_app
+        cfg = current_app.config
+        plan_keys = [
+            ("starter", ["STRIPE_PRICE_STARTER", "STRIPE_PRICE_STARTER_ANNUAL",
+                         "STRIPE_PRICE_STARTER_EUR", "STRIPE_PRICE_STARTER_EUR_ANNUAL",
+                         "STRIPE_PRICE_STARTER_USD", "STRIPE_PRICE_STARTER_USD_ANNUAL"]),
+            ("pro",     ["STRIPE_PRICE_PRO", "STRIPE_PRICE_PRO_ANNUAL",
+                         "STRIPE_PRICE_PRO_EUR", "STRIPE_PRICE_PRO_EUR_ANNUAL",
+                         "STRIPE_PRICE_PRO_USD", "STRIPE_PRICE_PRO_USD_ANNUAL"]),
+            ("business", ["STRIPE_PRICE_BUSINESS", "STRIPE_PRICE_BUSINESS_ANNUAL",
+                          "STRIPE_PRICE_BUSINESS_EUR", "STRIPE_PRICE_BUSINESS_EUR_ANNUAL",
+                          "STRIPE_PRICE_BUSINESS_USD", "STRIPE_PRICE_BUSINESS_USD_ANNUAL"]),
+        ]
+        for plan_code, keys in plan_keys:
+            if any(cfg.get(k) == price_id for k in keys):
+                return plan_code
+        return None
+
+    def _profile_for_stripe_customer(self, stripe_customer_id: str, stripe_sub_id: str) -> Optional[models.CustomerBillingProfile]:
+        """Find the local billing profile for a Stripe customer.
+
+        Tries subscription table first (cheap), then falls back to a Stripe
+        customer lookup by email (for Quote-originated subscriptions we didn't
+        create ourselves).
+        """
+        if stripe_sub_id:
+            db_sub = models.Subscription.query.filter_by(
+                provider="stripe", provider_subscription_id=stripe_sub_id
+            ).first()
+            if db_sub:
+                return models.CustomerBillingProfile.query.get(db_sub.profile_id)
+
+        # Quote flow: retrieve customer from Stripe to get their email
+        try:
+            import stripe as stripe_lib
+            stripe_lib.api_key = self.providers["stripe"].api_key
+            cust = stripe_lib.Customer.retrieve(stripe_customer_id)
+            email = (cust.get("email") or "").lower()
+            if email:
+                return models.CustomerBillingProfile.query.filter_by(email=email).first()
+        except Exception as exc:
+            logger.warning("stripe customer lookup failed cus=%s: %s", stripe_customer_id, exc)
+        return None
+
+    def _sync_stripe_subscription(self, data: Dict[str, Any]) -> None:
+        stripe_sub_id = data.get("stripe_subscription_id")
+        stripe_customer_id = data.get("stripe_customer_id")
+        status = data.get("status") or "active"
+        plan_choice = data.get("plan_choice") or self._stripe_plan_from_price_id(data.get("price_id") or "")
+        period_end_ts = data.get("current_period_end")
+        period_end = datetime.fromtimestamp(period_end_ts, tz=timezone.utc) if period_end_ts else None
+        cancel_at_period_end = data.get("cancel_at_period_end", False)
+
+        profile = self._profile_for_stripe_customer(stripe_customer_id, stripe_sub_id)
+        if not profile:
+            logger.info("No local profile for Stripe subscription %s customer %s — skipped", stripe_sub_id, stripe_customer_id)
+            return
+
+        db_sub = models.Subscription.query.filter_by(
+            provider="stripe", provider_subscription_id=stripe_sub_id
+        ).first()
+        if db_sub:
+            db_sub.status = status
+            db_sub.current_period_end = period_end
+            db_sub.cancel_at_period_end = cancel_at_period_end
+        else:
+            db_sub = models.Subscription(
+                profile_id=profile.id,
+                provider="stripe",
+                provider_subscription_id=stripe_sub_id,
+                status=status,
+                current_period_end=period_end,
+                cancel_at_period_end=cancel_at_period_end,
+            )
+            db.session.add(db_sub)
+
+        profile.subscription_status = status
+        profile.trial_status = "ended"
+        if stripe_customer_id and not profile.stripe_customer_id:
+            profile.stripe_customer_id = stripe_customer_id
+        if plan_choice:
+            profile.plan_choice = plan_choice
+
+        try:
+            db.session.commit()
+            logger.info("Stripe subscription synced sub=%s profile=%s status=%s plan=%s", stripe_sub_id, profile.id, status, profile.plan_choice)
+        except Exception:
+            db.session.rollback()
+            raise
+
+    def _sync_stripe_invoice_paid(self, data: Dict[str, Any]) -> None:
+        stripe_inv_id = data.get("stripe_invoice_id")
+        stripe_sub_id = data.get("stripe_subscription_id")
+        amount_cents = data.get("amount_paid") or 0
+        currency = data.get("currency") or "GBP"
+
+        db_sub = models.Subscription.query.filter_by(
+            provider="stripe", provider_subscription_id=stripe_sub_id
+        ).first() if stripe_sub_id else None
+
+        inv = models.Invoice.query.filter_by(provider_invoice_id=stripe_inv_id).first()
+        if inv:
+            inv.status = "paid"
+            inv.amount_cents = amount_cents
+            inv.pdf_url = data.get("hosted_invoice_url")
+        elif db_sub:
+            inv = models.Invoice(
+                profile_id=db_sub.profile_id,
+                subscription_id=db_sub.id,
+                amount_cents=amount_cents,
+                currency=currency,
+                status="paid",
+                provider="stripe",
+                provider_invoice_id=stripe_inv_id,
+                pdf_url=data.get("hosted_invoice_url"),
+            )
+            db.session.add(inv)
+        else:
+            logger.info("invoice.paid: no matching subscription for %s — skipped", stripe_inv_id)
+            return
+
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
+
+    def _handle_stripe_invoice_failed(self, data: Dict[str, Any]) -> None:
+        stripe_inv_id = data.get("stripe_invoice_id")
+        stripe_sub_id = data.get("stripe_subscription_id")
+
+        inv = models.Invoice.query.filter_by(provider_invoice_id=stripe_inv_id).first()
+        if inv:
+            inv.status = "open"
+
+        db_sub = models.Subscription.query.filter_by(
+            provider="stripe", provider_subscription_id=stripe_sub_id
+        ).first() if stripe_sub_id else None
+        if db_sub:
+            db_sub.status = "past_due"
+            profile = models.CustomerBillingProfile.query.get(db_sub.profile_id)
+            if profile:
+                profile.subscription_status = "past_due"
+
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
 
     # Jobs
     def process_trial_expirations(self, now: Optional[datetime] = None, days_notice: int = 3) -> Dict[str, int]:
