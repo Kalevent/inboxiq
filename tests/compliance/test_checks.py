@@ -123,3 +123,98 @@ def test_aws_rds_encryption_fail():
     from src.compliance.checks.aws import check_rds_encryption
     result = check_rds_encryption(rds)
     assert result.status == STATUS_FAIL
+
+
+# ── GitHub helpers ────────────────────────────────────────────────────────────
+
+def _gh_response(json_data, status=200):
+    r = MagicMock()
+    r.status_code = status
+    r.json.return_value = json_data
+    r.ok = status < 400
+    return r
+
+
+def test_github_branch_protection_pass():
+    from src.compliance.checks.github import check_branch_protection
+    protection = {
+        "required_pull_request_reviews": {"required_approving_review_count": 1},
+        "required_status_checks": {"strict": True, "contexts": []},
+        "enforce_admins": {"enabled": True},
+    }
+    with patch("requests.get", return_value=_gh_response(protection)):
+        result = check_branch_protection("token", "k0f1", "inboxiq")
+    assert result.status == STATUS_PASS
+    assert result.id == "github.branch_protection.main"
+
+
+def test_github_branch_protection_fail_no_reviews():
+    from src.compliance.checks.github import check_branch_protection
+    with patch("requests.get", return_value=_gh_response({}, status=404)):
+        result = check_branch_protection("token", "k0f1", "inboxiq")
+    assert result.status == STATUS_FAIL
+
+
+def test_github_org_2fa_pass():
+    from src.compliance.checks.github import check_org_two_factor
+    org_data = {"two_factor_requirement_enabled": True, "login": "k0f1"}
+    with patch("requests.get", return_value=_gh_response(org_data)):
+        result = check_org_two_factor("token", "k0f1")
+    assert result.status == STATUS_PASS
+    assert result.id == "github.org.two_factor_required"
+
+
+def test_github_org_2fa_fail():
+    from src.compliance.checks.github import check_org_two_factor
+    org_data = {"two_factor_requirement_enabled": False, "login": "k0f1"}
+    with patch("requests.get", return_value=_gh_response(org_data)):
+        result = check_org_two_factor("token", "k0f1")
+    assert result.status == STATUS_FAIL
+
+
+def test_github_admin_list_pass():
+    from src.compliance.checks.github import check_admin_access_list
+    members = [{"login": "k0f1", "role": "admin"}, {"login": "dev2", "role": "member"}]
+    with patch("requests.get", return_value=_gh_response(members)):
+        result = check_admin_access_list("token", "k0f1")
+    assert result.status == STATUS_PASS
+    assert any(e["login"] == "k0f1" for e in result.evidence)
+
+
+# ── Stripe helpers ────────────────────────────────────────────────────────────
+
+def test_stripe_webhook_secret_present():
+    from src.compliance.checks.stripe_checks import check_webhook_secret_configured
+    from flask import Flask
+    app = Flask(__name__)
+    app.config["STRIPE_WEBHOOK_SECRET"] = "whsec_abc123"
+    with app.app_context():
+        result = check_webhook_secret_configured()
+    assert result.status == STATUS_PASS
+    assert result.id == "stripe.webhooks.secret_configured"
+
+
+def test_stripe_webhook_secret_missing():
+    from src.compliance.checks.stripe_checks import check_webhook_secret_configured
+    from flask import Flask
+    app = Flask(__name__)
+    app.config["STRIPE_WEBHOOK_SECRET"] = None
+    with app.app_context():
+        result = check_webhook_secret_configured()
+    assert result.status == STATUS_FAIL
+
+
+def test_stripe_webhook_endpoints_registered():
+    from src.compliance.checks.stripe_checks import check_webhook_endpoints
+    mock_endpoint = MagicMock()
+    mock_endpoint.url = "https://kalevent.com/api/v1/billing/webhooks/stripe"
+    mock_endpoint.enabled_events = ["customer.subscription.updated", "invoice.paid"]
+    mock_endpoint.status = "enabled"
+    with patch("stripe.WebhookEndpoint.list", return_value=MagicMock(auto_spec=True, data=[mock_endpoint])):
+        from flask import Flask
+        app = Flask(__name__)
+        app.config["STRIPE_SECRET_KEY"] = "sk_test_abc"
+        with app.app_context():
+            result = check_webhook_endpoints()
+    assert result.status == STATUS_PASS
+    assert result.id == "stripe.webhooks.endpoints_registered"
