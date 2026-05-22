@@ -961,6 +961,12 @@
           const savingsBtn = i.account_id
             ? `<button onclick="quickSavings(${i.account_id})" class="text-indigo-400 hover:text-indigo-300 text-xs underline">ROI</button>`
             : '';
+          const quoteUrl = i.stripe_customer_id
+            ? `https://dashboard.stripe.com/quotes/create?customer=${i.stripe_customer_id}`
+            : `https://dashboard.stripe.com/search?query=${encodeURIComponent(i.email)}`;
+          const quoteBtn = `<a href="${quoteUrl}" target="_blank" rel="noopener"
+                              class="text-emerald-400 hover:text-emerald-300 text-xs underline"
+                              title="${i.stripe_customer_id ? 'Create Stripe Quote for this customer' : 'Search customer in Stripe (no Stripe ID yet)'}">Quote${i.stripe_customer_id ? '' : ' ↗'}</a>`;
           return `
             <tr class="border-b border-slate-800/60 hover:bg-slate-800/30">
               <td class="py-2 pr-3">
@@ -976,6 +982,7 @@
                 <button onclick="openInquiryModal('${i.id}','${i.status}',${JSON.stringify(i.admin_notes || '')})"
                         class="text-indigo-400 hover:text-indigo-300 text-xs underline">Edit</button>
                 ${savingsBtn}
+                ${quoteBtn}
                 <button onclick="notifyEngineering('${i.id}')"
                         class="text-emerald-400 hover:text-emerald-300 text-xs underline">Notify</button>
                 <button onclick="deleteInquiry('${i.id}')"
