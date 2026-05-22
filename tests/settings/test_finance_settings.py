@@ -56,7 +56,7 @@ def test_finance_settings_upgrade_gate(client):
         MockAccount.query.get.return_value = mock_account
         MockAddon.query.filter_by.return_value.first.return_value = None
         MockWP.query.filter_by.return_value.all.return_value = []
-        resp = client.get("/settings/integrations/finance")
+        resp = client.get("/integrations/finance")
     assert resp.status_code == 200
     assert b"Upgrade to unlock" in resp.data
 
@@ -81,7 +81,7 @@ def test_finance_settings_active_summary(client):
         MockAccount.query.get.return_value = mock_account
         MockAddon.query.filter_by.return_value.first.return_value = mock_addon
         MockWP.query.filter_by.return_value.all.return_value = []
-        resp = client.get("/settings/integrations/finance")
+        resp = client.get("/integrations/finance")
     assert resp.status_code == 200
     assert b"Finance Add-on \xc2\xb7 Active" in resp.data or b"Finance Add-on" in resp.data
 
@@ -115,7 +115,7 @@ def test_finance_settings_passes_providers(client):
             m.all.return_value = results_map.get(kw.get("provider_type"), [])
             return m
         MockWP.query.filter_by.side_effect = fb
-        resp = client.get("/settings/integrations/finance")
+        resp = client.get("/integrations/finance")
     assert resp.status_code == 200
     assert b"My Stripe (production)" in resp.data
     assert b"QuickBooks Online" in resp.data
