@@ -55,6 +55,7 @@ KB_CATEGORIES = [
             {"slug": "actions", "title": "Available actions"},
             {"slug": "inbox-actions", "title": "Inbox actions — Gmail & Outlook"},
             {"slug": "rule-recipes", "title": "Rule recipes and examples"},
+            {"slug": "finance-addon", "title": "Finance Add-on — Stripe to QuickBooks"},
         ],
     },
     {

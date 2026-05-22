@@ -1,7 +1,7 @@
 {% extends "marketing/base.html" %}
 
-{% block title %}Finance Approval Triage — AI Email Triage for Finance Teams | InboxIQ{% endblock %}
-{% block meta_description %}Approve, escalate, and audit finance requests without a pile of forwarded emails. InboxIQ routes approvals to the right authoriser, enforces SOX-compliant decision trails, and eliminates missed payment deadlines.{% endblock %}
+{% block title %}Stripe to QuickBooks Automation — Finance Add-on | InboxIQ{% endblock %}
+{% block meta_description %}InboxIQ detects Stripe payment emails and automatically syncs transactions to QuickBooks or delivers a weekly Intuit-compatible CSV — no manual data entry, no separate webhook setup.{% endblock %}
 {% block canonical %}{{ url_for('use_case_finance', _external=True) }}{% endblock %}
 {% block extra_head %}
 <script type="application/ld+json">
@@ -9,22 +9,22 @@
   {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    "name": "How to automate finance approval email workflows with InboxIQ",
-    "description": "Use AI email triage to classify, route, and automate finance approval workflows inside Gmail or Outlook.",
+    "name": "How to automate Stripe payments into QuickBooks with InboxIQ",
+    "description": "Use InboxIQ's Finance Add-on to detect Stripe payment emails and sync transactions to QuickBooks automatically — no webhook configuration required.",
     "step": [
-      {"@type": "HowToStep", "name": "Connect your finance inbox", "text": "Connect the Gmail or Outlook inbox that receives invoices, purchase orders, and approval requests via OAuth."},
-      {"@type": "HowToStep", "name": "Configure approval routing rules", "text": "Write rules like 'Route invoices over £10,000 to the CFO for approval.' InboxIQ classifies and routes automatically."},
-      {"@type": "HowToStep", "name": "Review and approve via email", "text": "Approvers receive AI-drafted summaries and approval prompts directly in Gmail or Outlook — no new dashboard, no new login."}
+      {"@type": "HowToStep", "name": "Connect your Stripe webhook provider", "text": "In Settings → Integrations → Finance Add-on, select the Stripe webhook provider that receives your payment confirmation emails."},
+      {"@type": "HowToStep", "name": "Choose your output mode", "text": "Select Direct sync to post transactions to QuickBooks in real time, or CSV export to receive a weekly Intuit-compatible CSV by email every Monday."},
+      {"@type": "HowToStep", "name": "Activate the add-on", "text": "Click Activate. InboxIQ begins processing Stripe payment emails immediately — no separate webhook endpoint setup required."}
     ]
   },
   {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
-      {"@type": "Question", "name": "How does InboxIQ support SOX-compliant finance email workflows?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ logs every triage decision, routing action, and approval with a timestamped audit trail — supporting SOX controls around segregation of duties and approval workflows. AI email triage works inside Gmail and Outlook with no new dashboard."}},
-      {"@type": "Question", "name": "Can InboxIQ automate invoice and purchase order email triage?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ classifies incoming finance emails — invoices, POs, expense claims, payment queries — and routes them to the correct approver with an AI-drafted summary. This works inside Gmail or Outlook with no new dashboard."}},
-      {"@type": "Question", "name": "Does InboxIQ integrate with QuickBooks or accounting software?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ can detect transaction emails from Stripe and similar payment processors, extract transaction data, and generate QuickBooks-compatible CSV exports for import into accounting software. Direct API sync is on the roadmap."}},
-      {"@type": "Question", "name": "Does InboxIQ work inside Gmail and Outlook for finance teams?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ AI email triage works inside Gmail and Outlook with no new dashboard. Finance teams continue using the inbox they already use — InboxIQ adds classification, routing, approval workflows, and AI draft replies on top."}}
+      {"@type": "Question", "name": "Do I need to configure a Stripe webhook to use InboxIQ's Finance Add-on?", "acceptedAnswer": {"@type": "Answer", "text": "No. InboxIQ detects Stripe payment confirmation emails directly inside your connected Gmail or Outlook inbox. The email notification from Stripe is the trigger — no webhook endpoint setup required."}},
+      {"@type": "Question", "name": "How does InboxIQ sync Stripe transactions to QuickBooks?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ classifies incoming Stripe payment emails as transactions, extracts the payment data, and either posts it to QuickBooks via the API in real time (Direct sync mode) or batches it into an Intuit-compatible CSV emailed every Monday (CSV export mode)."}},
+      {"@type": "Question", "name": "What QuickBooks versions does InboxIQ support?", "acceptedAnswer": {"@type": "Answer", "text": "Direct sync uses the QuickBooks Online API. CSV export is compatible with both QuickBooks Online and QuickBooks Desktop via the Import Data feature."}},
+      {"@type": "Question", "name": "Which InboxIQ plan includes the Finance Add-on?", "acceptedAnswer": {"@type": "Answer", "text": "The Finance Add-on is available on Business and Enterprise plans. Starter and Pro accounts see a discovery gate with an upgrade prompt."}}
     ]
   }
 ]
@@ -38,12 +38,12 @@
   {# ── Hero ──────────────────────────────────────────────────── #}
   <header class="text-center pt-12 pb-4">
     <div class="max-w-3xl mx-auto space-y-7">
-      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Use Case · Finance Operations</span>
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Finance Add-on · Business &amp; Enterprise</span>
       <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
-        Approve, escalate, and audit finance requests<br class="hidden sm:block"> without a pile of forwarded emails.
+        Stripe payments into QuickBooks —<br class="hidden sm:block"> automatically.
       </h1>
       <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
-        InboxIQ identifies approval type, routes to the correct authoriser with deadline context, and logs every decision with a SOX-compliant audit trail — automatically.
+        InboxIQ detects Stripe payment emails in your inbox and syncs each transaction to QuickBooks in real time — or delivers a weekly Intuit-compatible CSV. No manual data entry. No separate webhook setup.
       </p>
       <div class="flex flex-wrap justify-center items-center gap-4">
         <a href="{{ url_for('signup_page') }}"
@@ -58,15 +58,15 @@
       <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
         <span class="flex items-center gap-2">
           <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
-          SOX Section 404 audit trail
+          No webhook endpoint to configure
         </span>
         <span class="flex items-center gap-2">
           <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
-          Segregation of duties enforced
+          Real-time QB sync or weekly CSV
         </span>
         <span class="flex items-center gap-2">
           <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
-          Zero missed payment deadlines
+          Works inside Gmail &amp; Outlook
         </span>
       </div>
     </div>
@@ -76,29 +76,29 @@
   <section>
     <div class="space-y-3 mb-10 text-center">
       <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">The Problem</span>
-      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Finance approvals get lost in shared inboxes</h2>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Stripe sends the data. Someone still has to enter it.</h2>
     </div>
     <div class="grid md:grid-cols-3 gap-6">
       <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
         <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
           <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </div>
-        <h3 class="font-semibold text-brand-ink">Approval requests lost in shared inboxes</h3>
-        <p class="text-brand-ink-soft text-sm leading-relaxed">Invoice approvals, purchase order sign-offs, and expense claims land in a shared finance inbox with no routing. Time-sensitive items sit unread until someone manually picks them up.</p>
+        <h3 class="font-semibold text-brand-ink">Manual QuickBooks entry for every payment</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Stripe sends a payment confirmation email. Someone opens it, copies the amount, date, and customer, then enters it into QuickBooks manually. For every transaction.</p>
       </div>
       <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
         <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
           <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </div>
-        <h3 class="font-semibold text-brand-ink">No escalation path for urgent items</h3>
-        <p class="text-brand-ink-soft text-sm leading-relaxed">A payment due today sits beside a routine reimbursement claim. Without urgency classification, deadlines are missed and supplier relationships suffer.</p>
+        <h3 class="font-semibold text-brand-ink">Zapier adds another tool to manage</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Zapier or Make can bridge Stripe and QuickBooks — but it requires configuring a webhook endpoint, mapping fields, and paying for another subscription that breaks silently.</p>
       </div>
       <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
         <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
           <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
         </div>
-        <h3 class="font-semibold text-brand-ink">SOX audits expose forwarded-email trails</h3>
-        <p class="text-brand-ink-soft text-sm leading-relaxed">SOX Section 404 requires documented internal controls over financial reporting. Email forwards with "FYI — please approve" don't satisfy this.</p>
+        <h3 class="font-semibold text-brand-ink">Reconciliation errors pile up at month end</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Manual entry means missed transactions, duplicate entries, and amounts that don't match. Month-end reconciliation becomes a forensic exercise.</p>
       </div>
     </div>
   </section>
@@ -107,23 +107,53 @@
   <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
     <div class="space-y-3 mb-10">
       <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
-      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Classify, route to the right authoriser, log the decision</h2>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">The email is the trigger. No webhook setup required.</h2>
     </div>
     <div class="grid md:grid-cols-3 gap-8">
       <div class="space-y-4">
         <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
-        <h3 class="font-semibold text-brand-ink text-lg">Approval type classification</h3>
-        <p class="text-brand-ink-soft text-sm leading-relaxed">InboxIQ reads each inbound finance request and classifies it: invoice approval, PO sign-off, expense claim, budget exception, compliance review. Each type follows its own routing rules.</p>
+        <h3 class="font-semibold text-brand-ink text-lg">Stripe sends a payment email</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">A Stripe payment confirmation lands in your connected Gmail or Outlook inbox. InboxIQ classifies it as a <code class="text-xs bg-white/60 px-1 py-0.5 rounded">transaction</code> automatically — no rules to write.</p>
       </div>
       <div class="space-y-4">
         <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
-        <h3 class="font-semibold text-brand-ink text-lg">Authorisation-level routing</h3>
-        <p class="text-brand-ink-soft text-sm leading-relaxed">Requests above threshold are escalated to the correct authority level automatically — enforcing segregation of duties. Deadline context is attached so the approver sees due date before opening the email.</p>
+        <h3 class="font-semibold text-brand-ink text-lg">Finance Add-on extracts the data</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">The add-on reads amount, date, customer, and reference from the email. No parsing configuration needed — InboxIQ understands Stripe's email format out of the box.</p>
       </div>
       <div class="space-y-4">
         <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
-        <h3 class="font-semibold text-brand-ink text-lg">SOX-compliant decision log</h3>
-        <p class="text-brand-ink-soft text-sm leading-relaxed">Every approval decision is logged with approver identity, timestamp, and action taken. Exportable for internal audit, external audit, and SOX Section 404 control documentation.</p>
+        <h3 class="font-semibold text-brand-ink text-lg">QuickBooks gets the entry</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">In <strong>Direct sync</strong> mode the transaction posts to QuickBooks via the API immediately. In <strong>CSV export</strong> mode an Intuit-compatible CSV lands in your inbox every Monday — import in two clicks.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Two Modes ─────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Output Modes</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Choose how transactions reach QuickBooks</h2>
+    </div>
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-4">
+        <div class="text-2xl">⚡</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Direct sync</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Each Stripe payment posts to QuickBooks Online in real time via the API. Your QuickBooks ledger stays current throughout the day — no batch imports, no lag.</p>
+        <ul class="space-y-2 text-sm text-brand-ink-soft">
+          <li class="flex items-center gap-2"><svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>Real-time QuickBooks Online API</li>
+          <li class="flex items-center gap-2"><svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>No manual imports</li>
+          <li class="flex items-center gap-2"><svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>Requires a connected QuickBooks provider</li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-4">
+        <div class="text-2xl">📎</div>
+        <h3 class="font-semibold text-brand-ink text-lg">CSV export</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Transactions are batched weekly and emailed to your account owner address every Monday at 08:00 UTC as an Intuit-compatible CSV. Import directly into QuickBooks Desktop or Online.</p>
+        <ul class="space-y-2 text-sm text-brand-ink-soft">
+          <li class="flex items-center gap-2"><svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>Works with QB Desktop and QB Online</li>
+          <li class="flex items-center gap-2"><svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>Intuit-compatible column format</li>
+          <li class="flex items-center gap-2"><svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>No QuickBooks API credentials needed</li>
+        </ul>
       </div>
     </div>
   </section>
@@ -132,106 +162,87 @@
   <section>
     <div class="space-y-3 mb-10 text-center">
       <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Outcomes</span>
-      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What finance teams report after 30 days</h2>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What changes when entry is automatic</h2>
     </div>
     <div class="grid md:grid-cols-3 gap-6">
       <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
-        <div class="text-4xl font-bold text-brand-accent">70%</div>
-        <p class="font-semibold text-brand-ink">Reduction in approval turnaround</p>
-        <p class="text-sm text-brand-ink-soft">Requests reach the right authoriser immediately — no manual routing or "did you see my email?" follow-up.</p>
-      </div>
-      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
         <div class="text-4xl font-bold text-brand-accent">0</div>
-        <p class="font-semibold text-brand-ink">Missed payment deadlines</p>
-        <p class="text-sm text-brand-ink-soft">Due-date context surfaces with each approval request — urgent items are routed and flagged before the queue review.</p>
+        <p class="font-semibold text-brand-ink">Manual QuickBooks entries</p>
+        <p class="text-sm text-brand-ink-soft">Every Stripe payment processed by the add-on reaches QuickBooks without anyone opening a spreadsheet.</p>
       </div>
       <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
-        <div class="text-4xl font-bold text-brand-accent">100%</div>
-        <p class="font-semibold text-brand-ink">Decisions with approver identity logged</p>
-        <p class="text-sm text-brand-ink-soft">Every approval is timestamped and attributed — ready for internal audit and SOX compliance documentation.</p>
+        <div class="text-4xl font-bold text-brand-accent">3 min</div>
+        <p class="font-semibold text-brand-ink">Setup time</p>
+        <p class="text-sm text-brand-ink-soft">Select your Stripe provider, choose a mode, click Activate. No webhook endpoint, no field mapping, no developer required.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">1</div>
+        <p class="font-semibold text-brand-ink">Tool instead of two</p>
+        <p class="text-sm text-brand-ink-soft">Replace Stripe + Zapier + QuickBooks manual workflow with InboxIQ's built-in Finance Add-on. One less subscription to manage.</p>
       </div>
     </div>
   </section>
 
-  {# ── Compliance Callout ────────────────────────────────────── #}
+  {# ── Setup CTA ─────────────────────────────────────────────── #}
   <section>
-    <div class="grid md:grid-cols-2 gap-8">
-      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
-        <h3 class="font-semibold text-brand-ink">SOX &amp; internal controls</h3>
-        <ul class="space-y-4">
-          <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-            <div>
-              <p class="font-medium text-brand-ink text-sm">SOX Section 404 control documentation</p>
-              <p class="text-brand-ink-soft text-sm">Decision logs provide auditable evidence of financial approval controls — supporting management's assertion on internal control effectiveness.</p>
-            </div>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-            <div>
-              <p class="font-medium text-brand-ink text-sm">Segregation of duties enforcement</p>
-              <p class="text-brand-ink-soft text-sm">Routing rules prevent the same person from both requesting and approving. Threshold-based escalation is automatic, not manual.</p>
-            </div>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-            <div>
-              <p class="font-medium text-brand-ink text-sm">AP/AR audit trail</p>
-              <p class="text-brand-ink-soft text-sm">Every accounts payable and receivable decision is logged — supporting both internal review and external audit requirements.</p>
-            </div>
-          </li>
-        </ul>
+    <div class="rounded-2xl border border-brand-accent/20 bg-brand-lavender p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div class="space-y-1">
+        <p class="font-semibold text-brand-ink">Already using InboxIQ?</p>
+        <p class="text-sm text-brand-ink-soft">Go to Settings → Integrations → Finance Add-on to activate in under 3 minutes.</p>
       </div>
-      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
-        <h3 class="font-semibold text-brand-ink">Data security</h3>
-        <ul class="space-y-4">
-          <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-            <div>
-              <p class="font-medium text-brand-ink text-sm">BYOL — financial data in your boundary</p>
-              <p class="text-brand-ink-soft text-sm">Connect your own OpenAI or Azure OpenAI key. Invoice and contract content goes directly to your AI provider — InboxIQ never stores email payloads.</p>
-            </div>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-            <div>
-              <p class="font-medium text-brand-ink text-sm">Role-scoped access</p>
-              <p class="text-brand-ink-soft text-sm">Only the designated approver can action a request. Access logs record every view — supporting need-to-know access principles.</p>
-            </div>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-            <div>
-              <p class="font-medium text-brand-ink text-sm">TLS 1.3 + AES-256 at rest</p>
-              <p class="text-brand-ink-soft text-sm">All routing metadata encrypted in transit and at rest. SOC 2 Type I in progress.</p>
-            </div>
-          </li>
-        </ul>
+      <a href="/integrations/finance"
+         class="shrink-0 inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors whitespace-nowrap">
+        Set up Finance Add-on →
+      </a>
+    </div>
+  </section>
+
+  {# ── FAQ ───────────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">FAQ</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Common questions</h2>
+    </div>
+    <div class="max-w-2xl mx-auto space-y-6">
+      <div class="space-y-2">
+        <h3 class="font-semibold text-brand-ink">Do I need to configure a Stripe webhook?</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">No. InboxIQ reads the payment confirmation email Stripe already sends to your inbox. There is no webhook endpoint to set up or maintain.</p>
+      </div>
+      <div class="space-y-2">
+        <h3 class="font-semibold text-brand-ink">Which QuickBooks versions are supported?</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Direct sync uses the QuickBooks Online API. CSV export is compatible with QuickBooks Online and QuickBooks Desktop via the Import Data feature.</p>
+      </div>
+      <div class="space-y-2">
+        <h3 class="font-semibold text-brand-ink">Can I switch between Direct sync and CSV export?</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Yes. Click Reconfigure on the Finance Add-on page, select the new mode, and submit. The change takes effect immediately.</p>
+      </div>
+      <div class="space-y-2">
+        <h3 class="font-semibold text-brand-ink">Which plan includes the Finance Add-on?</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Business and Enterprise plans. Starter and Pro accounts see the Finance Add-on section with an upgrade prompt.</p>
       </div>
     </div>
   </section>
 
-  {# ── CTA Footer ────────────────────────────────────────────── #}
   {# ── Related Solutions ─────────────────────────────────────── #}
   <section class="space-y-4">
     <div class="space-y-1 text-center">
       <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Related solutions</span>
-      <h2 class="text-xl font-semibold text-brand-ink">How InboxIQ handles it</h2>
+      <h2 class="text-xl font-semibold text-brand-ink">More ways InboxIQ saves time</h2>
     </div>
     <div class="flex flex-wrap justify-center gap-3">
       <a href="{{ url_for('solutions_email_ai_triage') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">AI Email Triage &rarr;</a>
       <a href="{{ url_for('solutions_decisions') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Triage Intelligence &rarr;</a>
       <a href="{{ url_for('solutions_api') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">API &amp; Webhooks &rarr;</a>
-      <a href="{{ url_for('solutions_forms') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Forms Intake &rarr;</a>
+      <a href="{{ url_for('use_case_ecommerce') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">E-commerce &rarr;</a>
     </div>
   </section>
 
   <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
     <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
-      Close the loop on every finance approval.
+      Stop copying Stripe emails into QuickBooks.
     </h2>
     <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
-      Start free — no credit card required. Connect your finance inbox in under 10 minutes.
+      Start free — no credit card required. Connect your inbox in under 10 minutes.
     </p>
     <div class="flex flex-wrap justify-center gap-4">
       <a href="{{ url_for('signup_page') }}"
