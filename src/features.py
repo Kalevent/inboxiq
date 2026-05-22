@@ -211,3 +211,14 @@ def _eval_condition(condition: dict, ctx: dict) -> bool:
         items = [v.strip().lower() for v in value.split(",")]
         return actual in items
     return False
+
+
+def finance_addon_active(account_id: int) -> bool:
+    """Return True if the Finance add-on is active for this account."""
+    from src.models.addons import AccountAddOn
+    addon = AccountAddOn.query.filter_by(
+        account_id=account_id,
+        addon_type="finance",
+        status="active",
+    ).first()
+    return addon is not None
