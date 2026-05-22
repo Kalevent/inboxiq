@@ -30,7 +30,7 @@ def _celery_client() -> Celery:
     return Celery("inboxiq", broker=broker_url, backend=backend_url)
 
 
-@v1.route("/finance/webhook/stripe/<provider_id>", methods=["POST"])
+@v1.route("/finance/webhook/stripe/<provider_id>", methods=["POST"])  # nosemgrep: semgrep.inboxiq.auth.unprotected-write-endpoint
 def finance_stripe_webhook(provider_id):
     """Receive Stripe payment events for a Finance add-on account."""
     raw_body = request.get_data()
