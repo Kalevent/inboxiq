@@ -34,4 +34,6 @@ from src.api.v1 import (  # noqa: F401
     admin_compliance,
     referrals,
     messages,
+    addons,
+    finance_webhook,
 )

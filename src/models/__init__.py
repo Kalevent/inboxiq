@@ -20,6 +20,7 @@ from src.models.billing import (
     Plan, Subscription, Invoice, ChargeAttempt, AccountUsageCounter,
     table_exists,
 )
+from src.models.addons import AccountAddOn
 from src.models.publishing import NewsletterDraft, WhitepaperDraft
 from src.models.compliance import ComplianceReport
 
@@ -51,6 +52,8 @@ __all__ = [
     "PaymentProviderAccount", "CustomerBillingProfile", "PaymentMethod",
     "Plan", "Subscription", "Invoice", "ChargeAttempt", "AccountUsageCounter",
     "table_exists",
+    # addons
+    "AccountAddOn",
     # publishing
     "NewsletterDraft", "WhitepaperDraft",
     # compliance

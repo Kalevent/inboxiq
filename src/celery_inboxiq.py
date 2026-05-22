@@ -495,6 +495,12 @@ def make_celery(app) -> Celery:
                 "schedule": crontab(day_of_month=1, hour=9, minute=0),
                 "options": {"queue": "inbox"},
             },
+            # Finance add-on — weekly CSV export every Friday at 08:00 UTC
+            "finance_weekly_csv_export": {
+                "task": "finance_addon.generate_weekly_csv_export",
+                "schedule": crontab(day_of_week=5, hour=8, minute=0),
+                "options": {"queue": "inbox"},
+            },
         },
     )
 
@@ -526,6 +532,7 @@ from src.tasks import linkedin as _linkedin_tasks  # noqa: F401
 from src.tasks import developer_webhooks as _developer_webhook_tasks  # noqa: F401
 from src.tasks import audit_log as _audit_log_tasks  # noqa: F401
 from src.tasks import compliance as _compliance_tasks  # noqa: F401
+from src.tasks import finance_addon as _finance_addon_tasks  # noqa: F401
 
 # Route tasks to queues that have consumers. Default queue is "celery" but
 # no worker pod listens on it — every worker (inbox-worker, content-worker,

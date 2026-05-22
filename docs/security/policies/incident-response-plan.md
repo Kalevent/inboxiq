@@ -42,7 +42,10 @@ Any event that compromises or threatens the confidentiality, integrity, or avail
 **P1 Critical:**
 
 - Revoke affected credentials immediately (AWS IAM, API keys, database passwords)
-- Isolate affected Kubernetes pods: `kubectl cordon <node>` or scale deployment to 0
+- Isolate affected Kubernetes pods — scale the compromised deployment to 0:
+  - Main app: `kubectl scale deployment inboxiq --replicas=0 -n kaley`
+  - Specific worker: `kubectl scale deployment inboxiq-celery-inbox-worker --replicas=0 -n kaley`
+  - **Never scale down `redis`** — all other workers depend on it
 - Block offending IPs at the AWS load balancer / security group
 - Do not wipe affected systems before evidence is preserved
 
