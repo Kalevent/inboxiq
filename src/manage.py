@@ -965,5 +965,45 @@ def cli_export_prospects_csv(min_score: int, output: str):
     click.echo(f"Exported {len(leads)} leads to {output}")
 
 
+@app.cli.command("seed-finance-template")
+def cli_seed_finance_template():
+    """Create the Finance add-on pre-built AutomationRule template (idempotent)."""
+    from src.models.automation import AutomationRule
+
+    existing = AutomationRule.query.filter_by(
+        is_template=True,
+        template_category="finance",
+    ).first()
+
+    if existing:
+        click.echo(f"Finance template already exists: {existing.id}")
+        return
+
+    # account_id=1 (founder account) — AutomationRule.account_id is NOT NULL.
+    # Templates are marked is_template=True so they are never executed as live rules.
+    template = AutomationRule(
+        account_id=1,
+        name="Stripe → QuickBooks",
+        description=(
+            "Receive Stripe payment events via webhook and sync them to QuickBooks "
+            "in real-time, or export a weekly CSV for your accountant."
+        ),
+        trigger={"event": "stripe.payment_received", "object": "finance_transaction"},
+        conditions=[],
+        actions=[{"type": "finance_sync"}],
+        is_template=True,
+        template_category="finance",
+        source="template",
+        enabled=False,
+    )
+    db.session.add(template)
+    try:
+        db.session.commit()
+        click.echo(f"Finance template created: {template.id}")
+    except Exception:
+        db.session.rollback()
+        raise
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
