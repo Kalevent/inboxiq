@@ -971,9 +971,18 @@ def cli_seed_finance_template():
     from src.models.automation import AutomationRule
     from src.models.core import Account
 
+    TEMPLATE_CATEGORY = "finance"
+    TEMPLATE_NAME = "Stripe → QuickBooks"
+    TEMPLATE_DESCRIPTION = (
+        "Receive Stripe payment events via webhook and sync them to QuickBooks "
+        "in real-time, or export a weekly CSV for your accountant."
+    )
+    TEMPLATE_TRIGGER = {"event": "stripe.payment_received", "object": "finance_transaction"}
+    TEMPLATE_ACTIONS = [{"type": "finance_sync"}]
+
     existing = AutomationRule.query.filter_by(
         is_template=True,
-        template_category="finance",
+        template_category=TEMPLATE_CATEGORY,
     ).first()
 
     if existing:
@@ -989,16 +998,13 @@ def cli_seed_finance_template():
 
     template = AutomationRule(
         account_id=founder.id,
-        name="Stripe → QuickBooks",
-        description=(
-            "Receive Stripe payment events via webhook and sync them to QuickBooks "
-            "in real-time, or export a weekly CSV for your accountant."
-        ),
-        trigger={"event": "stripe.payment_received", "object": "finance_transaction"},
+        name=TEMPLATE_NAME,
+        description=TEMPLATE_DESCRIPTION,
+        trigger=TEMPLATE_TRIGGER,
         conditions=[],
-        actions=[{"type": "finance_sync"}],
+        actions=TEMPLATE_ACTIONS,
         is_template=True,
-        template_category="finance",
+        template_category=TEMPLATE_CATEGORY,
         source="template",
         enabled=False,
     )
