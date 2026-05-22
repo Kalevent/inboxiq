@@ -9,7 +9,7 @@ from src.models.core import Account
 from src.models.addons import AccountAddOn
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def app():
     """Create application for the tests."""
     app = create_app()
@@ -30,7 +30,7 @@ def app():
         Account.__table__.drop(_db.engine, checkfirst=True)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def db(app):
     """Provide the SQLAlchemy database object."""
     return _db

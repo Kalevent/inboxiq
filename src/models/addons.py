@@ -10,7 +10,7 @@ class AccountAddOn(db.Model):
         db.Index("ix_account_addons_account_type", "account_id", "addon_type"),
     )
 
-    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()))
+    id = db.Column(db.String(64), primary_key=True, default=lambda: str(uuid4()), nullable=False)
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False, index=True)
     addon_type = db.Column(db.String(64), nullable=False)  # "finance"
     status = db.Column(db.String(32), nullable=False, default="inactive")  # active|inactive|cancelled
@@ -45,8 +45,10 @@ class AccountAddOn(db.Model):
             "account_id": self.account_id,
             "addon_type": self.addon_type,
             "status": self.status,
+            "stripe_subscription_id": self.stripe_subscription_id,
             "transactions_this_month": self.transactions_this_month,
             "billing_month": self.billing_month,
             "config_json": self.config_json,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
