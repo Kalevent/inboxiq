@@ -83,6 +83,6 @@ Every merge to `main` is recorded in GitHub's commit history with author, timest
 
 | Role | Responsibility |
 |---|---|
-| Developer (Kofi Afor) | Writes code, opens PR, responds to review comments |
+| Developer (Kofi Ofuafor) | Writes code, opens PR, responds to review comments |
 | Reviewer | Reviews PR for correctness, security, and test coverage |
 | CI/CD pipeline | Enforces tests pass before deploy |
