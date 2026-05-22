@@ -230,6 +230,17 @@
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
                         Automated
                       </a>
+                    {% elif topic.is_payment_topic and finance_addon_active %}
+                      <a href="/integrations/finance"
+                         class="shrink-0 flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg px-3 py-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
+                        ⚡ Configured
+                      </a>
+                    {% elif topic.is_payment_topic %}
+                      <a href="/integrations/finance"
+                         class="shrink-0 text-xs text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 rounded-lg px-3 py-1.5 hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors">
+                        ⚡ Automate payments →
+                      </a>
                     {% else %}
                       <a href="/integrations/automation?prefill={{ ('When category is ' ~ topic.label ~ ', send auto-reply using KB article')|urlencode }}"
                          class="shrink-0 text-xs text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-transparent rounded-lg px-3 py-1.5 hover:bg-indigo-100 dark:hover:bg-indigo-500/10 transition-colors">

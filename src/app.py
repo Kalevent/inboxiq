@@ -991,18 +991,21 @@ def create_app() -> Flask:
               return rule
         return None
 
+      _PAYMENT_KEYWORDS = {"transaction", "payment", "invoice", "receipt", "stripe", "billing", "charge", "refund"}
       top_topics = []
       for label, count in top_raw_topics:
         rule = _rule_for_topic(label)
+        label_words = set(label.lower().replace("-", " ").split())
         top_topics.append({
           "label": label,
           "count": count,
           "rule_id": str(rule.id) if rule else None,
           "rule_name": rule.name if rule else None,
+          "is_payment_topic": bool(label_words & _PAYMENT_KEYWORDS),
         })
     except Exception as e:
       current_app.logger.error(f"Failed to build top topics: {e}")
-      top_topics = [{"label": lbl, "count": cnt, "rule_id": None, "rule_name": None} for lbl, cnt in top_raw_topics]
+      top_topics = [{"label": lbl, "count": cnt, "rule_id": None, "rule_name": None, "is_payment_topic": False} for lbl, cnt in top_raw_topics]
 
     # Draft acceptance rate
     try:
@@ -1043,6 +1046,13 @@ def create_app() -> Flask:
       active_rules_count = 0
       automation_executions_30d = 0
       automation_time_saved_display = "0h"
+
+    try:
+      from src.models.addons import AccountAddOn
+      _finance = AccountAddOn.query.filter_by(account_id=account_id, addon_type="finance").first()
+      finance_addon_active = bool(_finance and _finance.status == "active")
+    except Exception:
+      finance_addon_active = False
 
     from src.models.campaigns import OnboardingVideo, VideoRender as _VR
     onboarding_video = OnboardingVideo.query.filter_by(account_id=account_id).first()
@@ -1092,6 +1102,7 @@ def create_app() -> Flask:
       hours_saved_display=hours_saved_display,
       top_topics=top_topics,
       draft_acceptance_pct=draft_acceptance_pct,
+      finance_addon_active=finance_addon_active,
     )
 
   @app.route("/home", methods=["GET"])
