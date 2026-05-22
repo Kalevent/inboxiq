@@ -113,7 +113,7 @@ Within 5 business days of resolution:
 
 | Role | Contact |
 | --- | --- |
-| Incident lead | Founder — Kofi Afor |
+| Incident lead | Founder — Kofi Ofuafor |
 | Customer notification | security@kalevent.com |
 | GDPR authority (UK ICO) | [ico.org.uk/make-a-complaint](https://ico.org.uk/make-a-complaint) |
 | AWS support | AWS console → Support → Create case |
