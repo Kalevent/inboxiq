@@ -10,6 +10,7 @@ from sqlalchemy import case, or_
 from src.extensions import db, limiter
 from src.models.auth import Passkey, TOTPDevice
 from src.models.automation import WebhookProvider
+from src.models.addons import AccountAddOn
 from src.models.core import User, Account, InboxConnection, AccountLLMConfig, ALLOWED_LLM_PROVIDERS
 from src.models.developer import RegisteredApp, DeveloperAccessRequest, AppProductAccess, AppWebhookDelivery
 from src.developer.products import PRODUCT_CATALOG
@@ -1434,6 +1435,56 @@ def integrations_webhooks():
     crm_prefill=crm_prefill,
     webhook_providers=webhook_providers,
     show_social_integrations=show_social_integrations,
+  )
+
+
+@bp.route("/integrations/finance", methods=["GET"])
+@login_required_settings
+def integrations_finance():
+  """Finance Add-on setup wizard — visible to all, gated by add-on status."""
+  account_id = getattr(g, "current_account_id", None)
+  account = Account.query.get(account_id) if account_id else None
+
+  finance_addon = AccountAddOn.query.filter_by(
+    account_id=account_id, addon_type="finance"
+  ).first() if account_id else None
+
+  stripe_providers = WebhookProvider.query.filter_by(
+    account_id=account_id, provider_type="stripe", enabled=True
+  ).all() if account_id else []
+
+  qb_providers = WebhookProvider.query.filter_by(
+    account_id=account_id, provider_type="quickbooks", enabled=True
+  ).all() if account_id else []
+
+  finance_addon_active = bool(finance_addon and finance_addon.status == "active")
+  account_email = account.email if account else ""
+
+  return render_template(
+    "settings/index.html",
+    active_tab="integrations",
+    integrations_view="finance",
+    team_view=None,
+    billing_view=None,
+    security_view=None,
+    api_allowed=account_allows_api(account_id) if account_id else False,
+    account_id=account_id,
+    account=account,
+    finance_addon=finance_addon,
+    finance_addon_active=finance_addon_active,
+    stripe_providers=stripe_providers,
+    qb_providers=qb_providers,
+    account_email=account_email,
+    crm_connection=None,
+    crm_prefill={},
+    webhook_providers=[],
+    show_social_integrations=False,
+    linkedin_connection=None,
+    twitter_connection=None,
+    facebook_connection=None,
+    gcal_connection=None,
+    outlook_cal_connection=None,
+    inbox_connections=[],
   )
 
 

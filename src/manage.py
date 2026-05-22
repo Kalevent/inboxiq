@@ -969,30 +969,42 @@ def cli_export_prospects_csv(min_score: int, output: str):
 def cli_seed_finance_template():
     """Create the Finance add-on pre-built AutomationRule template (idempotent)."""
     from src.models.automation import AutomationRule
+    from src.models.core import Account
+
+    TEMPLATE_CATEGORY = "finance"
+    TEMPLATE_NAME = "Stripe → QuickBooks"
+    TEMPLATE_DESCRIPTION = (
+        "Receive Stripe payment events via webhook and sync them to QuickBooks "
+        "in real-time, or export a weekly CSV for your accountant."
+    )
+    TEMPLATE_TRIGGER = {"event": "stripe.payment_received", "object": "finance_transaction"}
+    TEMPLATE_ACTIONS = [{"type": "finance_sync"}]
 
     existing = AutomationRule.query.filter_by(
         is_template=True,
-        template_category="finance",
+        template_category=TEMPLATE_CATEGORY,
     ).first()
 
     if existing:
         click.echo(f"Finance template already exists: {existing.id}")
         return
 
-    # account_id=1 (founder account) — AutomationRule.account_id is NOT NULL.
+    # AutomationRule.account_id is NOT NULL — use the oldest account (founder).
     # Templates are marked is_template=True so they are never executed as live rules.
+    founder = Account.query.order_by(Account.id.asc()).first()
+    if not founder:
+        click.echo("Error: no accounts found in database.")
+        return
+
     template = AutomationRule(
-        account_id=1,
-        name="Stripe → QuickBooks",
-        description=(
-            "Receive Stripe payment events via webhook and sync them to QuickBooks "
-            "in real-time, or export a weekly CSV for your accountant."
-        ),
-        trigger={"event": "stripe.payment_received", "object": "finance_transaction"},
+        account_id=founder.id,
+        name=TEMPLATE_NAME,
+        description=TEMPLATE_DESCRIPTION,
+        trigger=TEMPLATE_TRIGGER,
         conditions=[],
-        actions=[{"type": "finance_sync"}],
+        actions=TEMPLATE_ACTIONS,
         is_template=True,
-        template_category="finance",
+        template_category=TEMPLATE_CATEGORY,
         source="template",
         enabled=False,
     )
