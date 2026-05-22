@@ -69,14 +69,9 @@ def _get_or_create_profile(account_id: int, email: str, plan_choice: str | None 
 def add_payment_method():
     user_id = get_jwt_identity()
     data = request.get_json() or {}
-    account_id = (
-        _get_account_id(user_id)
-        or getattr(g, "current_account_id", None)
-        or data.get("account_id")
-        or _lookup_account_id_by_email(data.get("email"))
-    )
+    account_id = _get_account_id(user_id) or getattr(g, "current_account_id", None)
     if not account_id:
-        return jsonify({"error": "Account not found"}), 404
+        return jsonify({"error": "Authentication required"}), 401
 
     if not current_app.config.get("STRIPE_SECRET_KEY"):
         return jsonify({"error": "stripe api key missing"}), 500
@@ -106,14 +101,9 @@ def add_payment_method():
 def activate_subscription():
     user_id = get_jwt_identity()
     data = request.get_json() or {}
-    account_id = (
-        _get_account_id(user_id)
-        or getattr(g, "current_account_id", None)
-        or data.get("account_id")
-        or _lookup_account_id_by_email(data.get("email"))
-    )
+    account_id = _get_account_id(user_id) or getattr(g, "current_account_id", None)
     if not account_id:
-        return jsonify({"error": "Account not found"}), 404
+        return jsonify({"error": "Authentication required"}), 401
 
     if not current_app.config.get("STRIPE_SECRET_KEY"):
         return jsonify({"error": "stripe api key missing"}), 500
@@ -221,8 +211,13 @@ def list_invoices():
 @v1.route("/billing/invoices/<invoice_id>", methods=["GET"])
 @jwt_required()
 def get_invoice(invoice_id: str):
+    user_id = get_jwt_identity()
+    account_id = _get_account_id(user_id)
+    if not account_id:
+        return jsonify({"error": "Account not found"}), 404
     try:
-        inv = models.Invoice.query.get(invoice_id)
+        profile = models.CustomerBillingProfile.query.filter_by(account_id=account_id).first()
+        inv = models.Invoice.query.filter_by(id=invoice_id, profile_id=profile.id).first() if profile else None
     except Exception as exc:
         status, payload = guard_missing_tables(exc)
         return jsonify(payload), status
@@ -244,8 +239,13 @@ def get_invoice(invoice_id: str):
 @v1.route("/billing/retry/<invoice_id>", methods=["POST"])
 @jwt_required()
 def retry_invoice(invoice_id: str):
+    user_id = get_jwt_identity()
+    account_id = _get_account_id(user_id)
+    if not account_id:
+        return jsonify({"error": "Account not found"}), 404
     try:
-        inv = models.Invoice.query.get(invoice_id)
+        profile = models.CustomerBillingProfile.query.filter_by(account_id=account_id).first()
+        inv = models.Invoice.query.filter_by(id=invoice_id, profile_id=profile.id).first() if profile else None
     except Exception as exc:
         status, payload = guard_missing_tables(exc)
         return jsonify(payload), status
@@ -263,8 +263,22 @@ def retry_invoice(invoice_id: str):
 
 @v1.route("/billing/webhooks/stripe", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
 def webhook_stripe():
+    raw_body = request.get_data()
+    sig_header = request.headers.get("Stripe-Signature", "")
+    webhook_secret = current_app.config.get("STRIPE_WEBHOOK_SECRET")
+    if webhook_secret:
+        try:
+            import stripe as _stripe
+            _stripe.api_key = current_app.config.get("STRIPE_SECRET_KEY")
+            _stripe.Webhook.construct_event(raw_body, sig_header, webhook_secret)
+        except Exception:
+            return jsonify({"error": "invalid_signature"}), 400
     billing = _get_service()
-    payload = request.get_json() or {}
+    try:
+        import json as _json
+        payload = _json.loads(raw_body) if raw_body else {}
+    except Exception:
+        payload = {}
     result = billing.handle_webhook("stripe", payload, dict(request.headers))
     return jsonify(result)
 
