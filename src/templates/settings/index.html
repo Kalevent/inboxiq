@@ -1319,6 +1319,19 @@
                 }
                 </script>
 
+              {% elif integrations_view == 'finance' %}
+                <div class="space-y-3">
+                  {% if finance_addon_active %}
+                    <p class="text-sm text-emerald-200 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1">Finance Add-on · Active</p>
+                    <h2 class="text-xl md:text-3xl font-semibold">Finance Add-on</h2>
+                    <p class="text-sm text-slate-300 max-w-3xl">Your Finance Add-on is active. {{ finance_addon.transactions_this_month or 0 }} transactions processed this month.</p>
+                  {% else %}
+                    <p class="text-sm text-indigo-200 inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1">Integrations • Finance Add-on</p>
+                    <h2 class="text-xl md:text-3xl font-semibold">Finance Add-on</h2>
+                    <p class="text-sm text-slate-300 max-w-3xl">Upgrade to unlock automated invoice extraction, Stripe reconciliation, and QuickBooks sync.</p>
+                  {% endif %}
+                </div>
+
               {% else %}
                 <div class="space-y-3">
                   <h2 class="text-xl font-semibold">Integrations</h2>
