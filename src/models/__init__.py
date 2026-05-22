@@ -21,6 +21,7 @@ from src.models.billing import (
     table_exists,
 )
 from src.models.publishing import NewsletterDraft, WhitepaperDraft
+from src.models.compliance import ComplianceReport
 
 __all__ = [
     # core
@@ -52,4 +53,6 @@ __all__ = [
     "table_exists",
     # publishing
     "NewsletterDraft", "WhitepaperDraft",
+    # compliance
+    "ComplianceReport",
 ]
