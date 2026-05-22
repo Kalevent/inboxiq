@@ -1457,7 +1457,7 @@
                       <div>
                         <div class="text-base font-semibold text-emerald-300">⚡ Finance Add-on · Active</div>
                         {% if finance_addon %}
-                          <div class="text-sm text-slate-400 mt-1">{{ finance_addon.transactions_this_month }} transactions processed this month</div>
+                          <div class="text-sm text-slate-400 mt-1">{{ finance_addon.transactions_this_month | default(0) }} transactions processed this month</div>
                         {% endif %}
                       </div>
                       <div class="flex gap-2">
@@ -1535,7 +1535,15 @@
                     btnCsv.classList.toggle('border-slate-700', mode !== 'csv_export');
                     step3Direct.classList.toggle('hidden', mode !== 'direct_sync');
                     step3Csv.classList.toggle('hidden', mode !== 'csv_export');
-                    if (activateBtn) activateBtn.disabled = false;
+                    if (activateBtn) {
+                      var qbSel = document.getElementById('finance-qb-select');
+                      activateBtn.disabled = (mode === 'direct_sync' && qbSel && !qbSel.value);
+                      if (mode === 'direct_sync' && qbSel) {
+                        qbSel.addEventListener('change', function() {
+                          activateBtn.disabled = !qbSel.value;
+                        }, { once: true });
+                      }
+                    }
                   };
 
                   window.financeActivate = async function() {
