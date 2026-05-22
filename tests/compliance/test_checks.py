@@ -218,3 +218,27 @@ def test_stripe_webhook_endpoints_registered():
             result = check_webhook_endpoints()
     assert result.status == STATUS_PASS
     assert result.id == "stripe.webhooks.endpoints_registered"
+
+
+# ── Report tests ──────────────────────────────────────────────────────────────
+
+def test_build_report_json():
+    from src.compliance.runner import CheckResult, STATUS_PASS, STATUS_FAIL
+    from src.compliance.report import build_report_json
+    results = [
+        CheckResult(id="aws.iam.mfa_all_users", title="MFA", status=STATUS_PASS, soc2_controls=["CC6.1"], details="ok"),
+        CheckResult(id="aws.rds.encryption", title="RDS enc", status=STATUS_FAIL, soc2_controls=["CC6.1"], details="fail"),
+    ]
+    report = build_report_json(results, period="2026-05")
+    assert report["period"] == "2026-05"
+    assert report["summary"]["pass"] == 1
+    assert report["summary"]["fail"] == 1
+    assert len(report["checks"]) == 2
+    assert "generated_at" in report
+
+
+def test_s3_key_format():
+    from src.compliance.report import s3_key_for
+    from datetime import date
+    key = s3_key_for(date(2026, 5, 22))
+    assert key == "compliance/reports/2026-05/soc2-evidence-2026-05-22.json"
