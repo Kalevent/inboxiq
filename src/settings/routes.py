@@ -1458,7 +1458,8 @@ def integrations_finance():
   ).all() if account_id else []
 
   finance_addon_active = bool(finance_addon and finance_addon.status == "active")
-  account_email = account.email if account else ""
+  owner = User.query.filter_by(account_id=account_id, role="owner").first() if account_id else None
+  account_email = owner.email if owner else ""
 
   return render_template(
     "settings/index.html",
