@@ -9,8 +9,11 @@ This endpoint is unauthenticated — security is via Stripe signature verificati
 """
 import json
 import logging
+import os
+from functools import lru_cache
 
-from flask import request, jsonify
+from celery import Celery
+from flask import request, jsonify, current_app
 
 from src.api.v1 import v1
 from src.models.automation import WebhookProvider
@@ -18,6 +21,13 @@ from src.models.addons import AccountAddOn
 from src.crypto import decrypt_value
 
 _log = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def _celery_client() -> Celery:
+    broker_url = current_app.config.get("CELERY_BROKER_URL") or os.getenv("CELERY_BROKER_URL")
+    backend_url = current_app.config.get("CELERY_RESULT_BACKEND") or os.getenv("CELERY_RESULT_BACKEND")
+    return Celery("inboxiq", broker=broker_url, backend=backend_url)
 
 
 @v1.route("/finance/webhook/stripe/<provider_id>", methods=["POST"])
@@ -62,11 +72,14 @@ def finance_stripe_webhook(provider_id):
     supported = {"checkout.session.completed", "payment_intent.succeeded"}
 
     if event_type in supported:
-        from src.tasks.finance_addon import process_stripe_event  # local to avoid circular import
-        process_stripe_event.delay(
-            account_id=provider.account_id,
-            provider_id=str(provider.id),
-            event=payload,
+        _celery_client().send_task(
+            "finance_addon.process_stripe_event",
+            kwargs={
+                "account_id": provider.account_id,
+                "provider_id": str(provider.id),
+                "event": payload,
+            },
+            queue="inbox",
         )
 
     return jsonify({"received": True}), 200

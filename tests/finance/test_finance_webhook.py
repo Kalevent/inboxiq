@@ -51,9 +51,10 @@ def test_webhook_dispatches_task(client, app):
             "data": {"object": {}},
         }).encode()
 
+        mock_celery = MagicMock()
         with patch("src.api.v1.finance_webhook.WebhookProvider") as mock_wp_cls, \
              patch("src.api.v1.finance_webhook.AccountAddOn") as mock_addon_cls, \
-             patch("src.tasks.finance_addon.process_stripe_event") as mock_task:
+             patch("src.api.v1.finance_webhook._celery_client", return_value=mock_celery):
             mock_wp_cls.query.filter_by.return_value.first.return_value = mock_provider
             mock_addon_cls.query.filter_by.return_value.first.return_value = mock_addon
 
@@ -63,4 +64,4 @@ def test_webhook_dispatches_task(client, app):
                 content_type="application/json",
             )
         assert resp.status_code == 200
-        mock_task.delay.assert_called_once()
+        mock_celery.send_task.assert_called_once()
