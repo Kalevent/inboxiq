@@ -1360,7 +1360,7 @@
                 </div>
 
                 {# ── Wizard ────────────────────────────────────────── #}
-                <div id="finance-wizard" class="mt-8 {% if not finance_addon_active %}hidden{% endif %}">
+                <div id="finance-wizard" class="mt-8 hidden">
 
                   {# Step 1 — Connect Stripe #}
                   <div class="finance-step" id="finance-step-1">
@@ -1385,7 +1385,7 @@
                         + Add a new Stripe provider first →
                       </a>
                       <div class="mt-6 flex justify-end">
-                        <button type="button" onclick="financeShowStep(2)" class="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition-colors">
+                        <button type="button" onclick="financeNextFromStep1()" class="rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition-colors">
                           Next: Choose output →
                         </button>
                       </div>
@@ -1516,6 +1516,12 @@
                     if (step) step.classList.remove('hidden');
                   };
 
+                  window.financeNextFromStep1 = function() {
+                    var stripeId = document.getElementById('finance-stripe-select').value;
+                    if (!stripeId) { alert('Please select a Stripe provider first.'); return; }
+                    window.financeShowStep(2);
+                  };
+
                   window.financeSelectMode = function(mode) {
                     _mode = mode;
                     var btnDirect = document.getElementById('finance-mode-direct');
@@ -1546,6 +1552,7 @@
                     }
                     var resp = await fetch('/api/v1/addons/finance/activate', {
                       method: 'POST',
+                      credentials: 'same-origin',
                       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
                       body: JSON.stringify(payload),
                     });
@@ -1563,6 +1570,7 @@
                     if (!confirm('Deactivate Finance Add-on? Your configuration will be saved but processing will stop.')) return;
                     var resp = await fetch('/api/v1/addons/finance/deactivate', {
                       method: 'POST',
+                      credentials: 'same-origin',
                       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': getCsrfToken() },
                     });
                     if (resp.ok) {
