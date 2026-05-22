@@ -33,7 +33,7 @@ This document records completion of annual security awareness training by all Ka
 
 | Name | Role | Training Date | Score | Method | Verified By |
 |---|---|---|---|---|---|
-| Kofi Afor | Founder / Lead Engineer | 2026-05-22 | 100% | [Google Form quiz](https://docs.google.com/forms/d/1k4PgMf6904ZyugvLUf8AQJ_LEAGM3iwHadXK7LG8uMA/edit) | Self — sole employee |
+| Kofi Afor | Founder / Lead Engineer | 2026-05-22 | 100% | [Google Form quiz](https://docs.google.com/forms/d/1k4PgMf6904ZyugvLUf8AQJ_LEAGM3iwHadXK7LG8uMA/edit) — [Score evidence](https://docs.google.com/forms/d/e/1FAIpQLSe-HmMwDvHLfDFjBu3YG7OYgbF3Cv9LvbyInY7qOmIcNWdfjA/viewscore?viewscore=AE0zAgBwsnXrQlnlsxQhkBxOQFf1STlF63YKRwr8r8mXA8Db-9VPfmwPXkqZARUyNY_bw6Y) | Self — sole employee |
 
 ---
 
