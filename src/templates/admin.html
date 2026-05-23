@@ -494,11 +494,15 @@
         const dateEl = document.getElementById('ariaArtifactDate');
         const exEl = document.getElementById('ariaArtifactExamples');
         const dspyEl = document.getElementById('ariaArtifactDspy');
+        const countEl = document.getElementById('ariaConversationCount');
+        const exportRow = document.getElementById('ariaExportRow');
 
         if (modelEl) modelEl.textContent = d.model_id || '—';
         if (dateEl) dateEl.textContent = trained.toLocaleString();
         if (exEl) exEl.textContent = d.example_count ? `${d.example_count} examples` : '—';
         if (dspyEl) dspyEl.textContent = d.artifact.dspy_version || '—';
+        if (countEl) countEl.textContent = d.conversation_count != null ? `${d.conversation_count} collected` : '—';
+        if (exportRow && d.conversation_count > 0) exportRow.classList.remove('hidden');
       } catch (err) {
         if (badge) { badge.textContent = 'Error'; badge.className = 'text-xs px-2 py-1 rounded-full bg-red-900/50 text-red-300'; }
         console.error('Aria artifact status failed:', err);
