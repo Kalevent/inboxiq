@@ -142,7 +142,7 @@ def create_app() -> Flask:
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: https://www.gravatar.com https://files.kalevent.com https://www.googletagmanager.com https://www.google-analytics.com https://stats.g.doubleclick.net",
         "font-src 'self' data:",
-        "connect-src 'self' https://127.0.0.1:8000 https://api.kalevent.com https://files.kalevent.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://region1.analytics.google.com",
+        "connect-src 'self' https://127.0.0.1:8000 https://api.kalevent.com https://files.kalevent.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://region1.analytics.google.com https://region1.google-analytics.com",
         "media-src 'self' https://files.kalevent.com",
         "form-action 'self'",
         "frame-ancestors 'none'",
