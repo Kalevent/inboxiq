@@ -5,6 +5,41 @@
               <p class="text-sm text-slate-300 mt-1">DSPy evaluation, triage configuration, and training data export.</p>
             </div>
 
+            <!-- Aria Chat Widget Artifact Status -->
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h2 class="text-lg font-semibold text-slate-100">Aria Chat Widget</h2>
+                  <p class="text-xs text-slate-400 mt-1">DSPy compiled artifact — trained locally, committed to git, ships with each deploy.</p>
+                </div>
+                <span id="ariaArtifactBadge" class="text-xs px-2 py-1 rounded-full bg-slate-800 text-slate-400">Loading…</span>
+              </div>
+              <dl id="ariaArtifactDetails" class="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm hidden">
+                <div>
+                  <dt class="text-xs text-slate-500 uppercase tracking-wide">Model</dt>
+                  <dd id="ariaArtifactModel" class="text-slate-200 font-mono text-xs mt-0.5"></dd>
+                </div>
+                <div>
+                  <dt class="text-xs text-slate-500 uppercase tracking-wide">Last trained</dt>
+                  <dd id="ariaArtifactDate" class="text-slate-200 text-xs mt-0.5"></dd>
+                </div>
+                <div>
+                  <dt class="text-xs text-slate-500 uppercase tracking-wide">Training examples</dt>
+                  <dd id="ariaArtifactExamples" class="text-slate-200 text-xs mt-0.5"></dd>
+                </div>
+                <div>
+                  <dt class="text-xs text-slate-500 uppercase tracking-wide">DSPy version</dt>
+                  <dd id="ariaArtifactDspy" class="text-slate-200 font-mono text-xs mt-0.5"></dd>
+                </div>
+              </dl>
+              <div class="mt-4 rounded-xl bg-slate-950/60 border border-slate-700 px-4 py-3 text-xs text-slate-400 space-y-1">
+                <p class="font-semibold text-slate-300">To retrain:</p>
+                <p>1. Add examples to <code class="text-indigo-300">dspy_artifacts/chat_widget_examples.json</code></p>
+                <p>2. Run <code class="text-indigo-300">flask train-chat-widget</code> locally</p>
+                <p>3. Commit <code class="text-indigo-300">.dspy/</code> — artifact ships with the next deploy</p>
+              </div>
+            </div>
+
             <div class="grid md:grid-cols-2 gap-4">
               <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
                 <div>

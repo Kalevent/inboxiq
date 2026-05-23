@@ -32,6 +32,7 @@ from src.api.v1 import (  # noqa: F401
     admin_insights,
     admin_marketing,
     admin_compliance,
+    admin_ai,
     referrals,
     messages,
     addons,
