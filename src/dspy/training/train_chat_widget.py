@@ -1,15 +1,40 @@
 """
 DSPy training pipeline for the chat widget reply module.
 
-Run manually once you have real chat data:
+## When to retrain
+
+Run `flask train-chat-widget` LOCALLY (not in production) when:
+
+  1. You add new examples to dspy_artifacts/chat_widget_examples.json
+     (e.g. after collecting real visitor conversations — aim for 20+ before retraining)
+  2. Intent accuracy drops — Aria misclassifying book_demo vs needs_human in live chats
+  3. You change the ChatWidgetReplySignature (new fields, updated instructions)
+  4. You switch the DSPy model (DSPY_MODEL env var) — artifact is model-specific
+
+After retraining locally, commit the updated .dspy/ artifact:
+    git add .dspy/
+    git commit -m "feat(dspy): retrain chat widget on <N> examples"
+
+The artifact ships with the next deploy. Production reads it automatically.
+
+## Prerequisites for local retraining
+
+  DSPY_ARTIFACT_SECRET must match the production value (see src/prod.env).
+  If the secrets differ, production will reject the artifact via HMAC check.
+
+## Adding training examples
+
+Edit dspy_artifacts/chat_widget_examples.json. Each example needs:
+  message, reply, intent (none | book_demo | needs_human)
+  Optional: account_name, visitor_name, branch, conversation_history
+
+## Run
+
     flask train-chat-widget
 
 Or from Python:
     from src.dspy.training.train_chat_widget import train_chat_widget_module
     train_chat_widget_module()
-
-Training examples live in dspy_artifacts/chat_widget_examples.json.
-Add new examples there to improve Aria's responses and intent detection.
 """
 from __future__ import annotations
 
