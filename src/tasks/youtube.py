@@ -29,8 +29,6 @@ from src.notifications.emails import send_youtube_digest_email
 
 logger = logging.getLogger(__name__)
 
-ACCOUNT_ID = 2
-
 PRODUCT_NAME = "InboxIQ"
 PRODUCT_VALUE_PROPOSITION = (
     "InboxIQ is AI-driven email triage and auto-reply for B2B SaaS support and sales teams. "
@@ -202,7 +200,10 @@ def _run_dspy_script_generation(
 # ── Task 1: Generate Scripts ─────────────────────────────────────────────────
 
 @shared_task(name="youtube.generate_scripts")
-def generate_scripts(account_id: int = ACCOUNT_ID, video_style: str = "avatar") -> Dict[str, Any]:
+def generate_scripts(account_id: int | None = None, video_style: str = "avatar") -> Dict[str, Any]:
+    if not account_id:
+        logger.error("youtube.generate_scripts called without account_id — set YOUTUBE_ACCOUNT_ID env var")
+        return {"status": "error", "reason": "account_id required"}
     blog_post_offset = 0 if video_style == "avatar" else 1
     blog_post = _get_latest_blog_post(account_id, offset=blog_post_offset)
     if not blog_post:
@@ -383,7 +384,10 @@ def _generate_dalle_frames(prompts: list, account_id: int) -> list:
 
 
 @shared_task(name="youtube.render_videos")
-def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
+def render_videos(account_id: int | None = None) -> Dict[str, Any]:
+    if not account_id:
+        logger.error("youtube.render_videos called without account_id — set YOUTUBE_ACCOUNT_ID env var")
+        return {"status": "error", "reason": "account_id required"}
     avatar_id = os.getenv("HEYGEN_AVATAR_ID", "")
     voice_id = os.getenv("HEYGEN_VOICE_ID", "")
     submitted = 0
@@ -508,7 +512,10 @@ def render_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
 # ── Task 3: Publish Videos ───────────────────────────────────────────────────
 
 @shared_task(name="youtube.publish_videos")
-def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
+def publish_videos(account_id: int | None = None) -> Dict[str, Any]:
+    if not account_id:
+        logger.error("youtube.publish_videos called without account_id — set YOUTUBE_ACCOUNT_ID env var")
+        return {"status": "error", "reason": "account_id required"}
     base_url = "https://kalevent.com/signup"
     published = 0
     failed = 0
@@ -641,8 +648,11 @@ def publish_videos(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
 # ── Task 4: Send Digest ──────────────────────────────────────────────────────
 
 @shared_task(name="youtube.send_digest")
-def send_digest(account_id: int = ACCOUNT_ID) -> Dict[str, Any]:
+def send_digest(account_id: int | None = None) -> Dict[str, Any]:
     """Daily 8:30am. Email admin: published this week, pipeline status, funnel attribution."""
+    if not account_id:
+        logger.error("youtube.send_digest called without account_id — set YOUTUBE_ACCOUNT_ID env var")
+        return {"status": "error", "reason": "account_id required"}
     admin_email = os.getenv("ADMIN_EMAILS", "").split(",")[0].strip()
     if not admin_email:
         return {"status": "skipped", "reason": "no ADMIN_EMAILS configured"}
