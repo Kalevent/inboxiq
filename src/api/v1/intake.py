@@ -533,11 +533,32 @@ def _generate_chat_reply(account_id_int: int, message: str, name: str, company: 
         account_name = "InboxIQ"
 
     try:
-        _, _, dspy = _configure_dspy()
-        module = build_chat_widget_reply(dspy)
+        _, model_id, dspy = _configure_dspy()
+
+        # Try to load a compiled (optimised) chat widget module
+        module = None
+        try:
+            from src.dspy.cache import _load_compiled_module
+            module = _load_compiled_module(dspy, f"chat_widget_{model_id}", None, None)
+        except Exception:
+            pass
+        if not module:
+            module = build_chat_widget_reply(dspy)
+
+        # Fetch relevant KB articles for this account
+        knowledge_base = ""
+        try:
+            from src.retrieval.kb_search import search_kb_articles, format_kb_context_for_prompt
+            kb_results = search_kb_articles(message, account_id_int, limit=3)
+            if kb_results:
+                knowledge_base = format_kb_context_for_prompt(kb_results)
+        except Exception:
+            pass
+
         result = module(
             account_name=account_name,
             visitor_name=name or "",
+            knowledge_base=knowledge_base,
             branch=branch,
             conversation_history=_json.dumps(history or []),
             message=message,

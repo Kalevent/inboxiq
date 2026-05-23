@@ -284,6 +284,8 @@ def build_chat_widget_reply(dspy: Any) -> Any:
         - Branch 'talk': visitor wants human support — first answer their question helpfully, then be warm and conversational.
         - Never say you cannot help — always give a useful answer or point to a relevant resource.
         - Do not mention you are collecting contact details — that is handled separately by the widget.
+        When knowledge_base contains articles, use their specific content and URLs in preference to
+        the hardcoded product knowledge above. Always link to the article URL when referencing it.
 
         INTENT OUTPUT RULES — output exactly one value for the intent field:
         - book_demo: visitor expresses interest in a product demo, live walkthrough, or scheduling a call/meeting
@@ -293,6 +295,7 @@ def build_chat_widget_reply(dspy: Any) -> Any:
         """
         account_name = dspy.InputField(desc="Name of the company whose chat widget this is.")
         visitor_name = dspy.InputField(desc="Name of the website visitor (may be empty).")
+        knowledge_base = dspy.InputField(desc="Relevant KB articles for this account (XML-delimited, may be empty). When present, use their content for specific answers and include their URLs as HTML links.")
         branch = dspy.InputField(desc="Widget branch: 'demo' (evaluating the product) or 'talk' (wants human support).")
         conversation_history = dspy.InputField(desc="Prior messages in this chat as a JSON array, oldest first.")
         message = dspy.InputField(desc="The visitor's latest message.")
@@ -304,10 +307,11 @@ def build_chat_widget_reply(dspy: Any) -> Any:
             super().__init__()
             self.predict = dspy.Predict(ChatWidgetReplySignature)
 
-        def forward(self, account_name: str, visitor_name: str, branch: str, conversation_history: str, message: str) -> Any:
+        def forward(self, account_name: str, visitor_name: str, knowledge_base: str, branch: str, conversation_history: str, message: str) -> Any:
             return self.predict(
                 account_name=account_name,
                 visitor_name=visitor_name,
+                knowledge_base=knowledge_base,
                 branch=branch,
                 conversation_history=conversation_history,
                 message=message,
