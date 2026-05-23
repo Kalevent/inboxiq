@@ -241,7 +241,7 @@
     const options = [
       { icon: '🎬', label: 'See how it works', phase: 'demo' },
       { icon: '🚀', label: 'Start free trial', fn: () => { window.location.href = signupUrl; } },
-      { icon: '📅', label: 'Book a 30-min demo', phase: 'book_demo', hidden: !handle },
+      { icon: '📅', label: 'Book a 30-min demo', fn: () => { state.messages = []; transition('book_demo'); }, hidden: !handle },
       { icon: '💬', label: 'Talk to someone', phase: 'talk_name' },
     ].filter(o => !o.hidden);
 
@@ -404,16 +404,16 @@
     document.body.appendChild(bubble);
     document.body.appendChild(el('div', { id: 'iq-panel' }));
 
-    // Restore session if visitor had started a conversational flow.
-    // Booking phases are not restored — they expire with the session and
-    // a visitor can re-enter them via the greeting button if needed.
+    // Booking phases are never restored across page loads — always reset them to closed.
+    // This must run regardless of dismissed state so clicking the bubble always shows greeting.
     const _RESTORABLE = new Set(['greeting', 'demo', 'talk_name', 'talk_email', 'talk_chat']);
+    if (state.phase !== 'closed' && !_RESTORABLE.has(state.phase)) {
+      state.phase = 'closed'; persist();
+    }
+
+    // Restore a conversational session if visitor had started a flow and not dismissed.
     if (!state.dismissed && state.phase !== 'closed') {
-      if (_RESTORABLE.has(state.phase)) {
-        transition(state.phase);
-      } else {
-        state.phase = 'closed'; persist();
-      }
+      transition(state.phase);
     }
 
     // Auto-open: badge pulse at 5 s, panel opens at 6.5 s — fresh sessions only
