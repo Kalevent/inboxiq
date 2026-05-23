@@ -721,4 +721,57 @@ def chat_book_demo():
         current_app.logger.error("Demo booking email send failed: %s", exc)
         return jsonify({"error": "email_send_failed"}), 500
 
+
+@v1.route("/chat/save-session", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+def chat_save_session():
+    """
+    Public endpoint — saves a completed Aria chat session for DSPy training data.
+    Called fire-and-forget from the widget when book_demo or needs_human intent fires.
+    """
+    payload = request.get_json(silent=True) or {}
+
+    intent = str(payload.get("intent", "")).strip()
+    if intent not in ("book_demo", "needs_human"):
+        return jsonify({"ok": False}), 400
+
+    try:
+        account_id = int(payload.get("account_id") or 0) or None
+    except (TypeError, ValueError):
+        account_id = None
+
+    visitor_name = sanitize_html(str(payload.get("visitor_name", "")).strip())[:200]
+    visitor_email = str(payload.get("visitor_email", "")).strip().lower()[:200]
+    branch = str(payload.get("branch", "demo")).strip()
+    branch = branch if branch in ("demo", "talk") else "demo"
+
+    raw_messages = payload.get("messages", [])
+    if not isinstance(raw_messages, list):
+        raw_messages = []
+    clean_messages = [
+        {"role": str(m.get("role", ""))[:10], "text": str(m.get("text", ""))[:2000]}
+        for m in raw_messages[:100]
+        if isinstance(m, dict) and m.get("role") in ("user", "bot")
+    ]
+
+    if not clean_messages:
+        return jsonify({"ok": False}), 400
+
+    try:
+        from src.models.misc import AriaConversation
+        conv = AriaConversation(
+            account_id=account_id,
+            visitor_name=visitor_name,
+            visitor_email=visitor_email,
+            branch=branch,
+            intent=intent,
+            messages=json.dumps(clean_messages),
+        )
+        db.session.add(conv)
+        db.session.commit()
+        return jsonify({"ok": True}), 201
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.error("chat save-session failed: %s", exc)
+        return jsonify({"ok": False}), 500
+
     return jsonify({"ok": True}), 200

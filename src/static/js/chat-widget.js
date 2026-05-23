@@ -159,6 +159,22 @@
     } catch (_) { return { ok: false }; }
   }
 
+  function apiSaveSession(intent) {
+    try {
+      fetch('/api/v1/chat/save-session', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account_id: Number(account) || null,
+          visitor_name: state.name || '',
+          visitor_email: state.email || '',
+          branch: (state.phase === 'talk_chat' || state.phase === 'talk_name') ? 'talk' : 'demo',
+          intent,
+          messages: state.messages,
+        }),
+      });
+    } catch (_) {}
+  }
+
   async function apiBookDemo(email) {
     try {
       const r = await fetch('/api/v1/chat/book-demo', {
@@ -326,6 +342,7 @@
 
   function _executeDemoBooking(email, msgsEl) {
     if (!handle) return;
+    apiSaveSession('book_demo');
     apiBookDemo(email).then(ok => {
       const conf = el('div', { class: 'iq-msg bot' });
       conf.innerHTML = ok
@@ -337,6 +354,7 @@
 
   function _executeHumanHandoff(email, msgsEl) {
     state.email = email; state.emailCaptured = true; persist();
+    apiSaveSession('needs_human');
     apiCreateInquiry().then(() => {
       const conf = el('div', { class: 'iq-msg bot' });
       conf.innerHTML = `Done! I've notified the team — someone will follow up at <strong>${escapeHtml(email)}</strong> soon. Feel free to keep chatting in the meantime.`;

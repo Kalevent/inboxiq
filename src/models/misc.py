@@ -112,3 +112,16 @@ class Booking(db.Model):
         }
 
 
+class AriaConversation(db.Model):
+    """Chat widget conversations saved when a conclusive intent fires (book_demo or needs_human).
+    Used as a source for DSPy training examples — export via admin AI & Training section."""
+    __tablename__ = "aria_conversations"
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=True, index=True)
+    visitor_name = db.Column(db.String(200), nullable=False, default="")
+    visitor_email = db.Column(db.String(200), nullable=False, default="")
+    branch = db.Column(db.String(20), nullable=False, default="demo")
+    intent = db.Column(db.String(30), nullable=False)
+    messages = db.Column(db.Text, nullable=False, default="[]")
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
