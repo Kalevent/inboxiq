@@ -901,7 +901,7 @@ def submit_enterprise_inquiry():
             f"Phone:          {phone or '—'}\n"
             f"Employees:      {employee_count or '—'}\n"
             f"Account ID:     {account_id or '—'}\n\n"
-            f"Message:\n{message or '(none)'}\n\n"
+            f"Conversation transcript:\n{message or '(none)'}\n\n"
             f"Inquiry ID: {inq.id}\n"
             f"Review at: https://kalevent.com/admin"
         )
@@ -915,7 +915,7 @@ def submit_enterprise_inquiry():
             f"<tr><td><strong>Employees</strong></td><td>{employee_count or '—'}</td></tr>"
             f"<tr><td><strong>Account ID</strong></td><td>{account_id or '—'}</td></tr>"
             f"</table>"
-            f"<p><strong>Message:</strong><br/>{message or '(none)'}</p>"
+            f"<p><strong>Conversation transcript:</strong></p><pre style='background:#f9fafb;padding:12px;border-radius:6px;font-size:12px;white-space:pre-wrap;word-break:break-word'>{message or '(none)'}</pre>"
             f"<p>Inquiry ID: <code>{inq.id}</code></p>"
         )
         for admin_email in admin_list:

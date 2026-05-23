@@ -170,13 +170,19 @@
   }
 
   async function apiCreateInquiry() {
+    const lines = state.messages.map(m => {
+      const speaker = m.role === 'user' ? (state.name || 'Visitor') : 'Aria';
+      const text = m.role === 'bot' ? m.text.replace(/<[^>]+>/g, '') : m.text;
+      return `${speaker}: ${text}`;
+    });
+    const transcript = lines.length ? `[Aria chat widget]\n${lines.join('\n')}` : 'Chat widget — no messages recorded';
     try {
       const r = await fetch('/api/v1/enterprise/inquiry', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: state.name, email: state.email,
           account_id: Number(account) || null,
-          message: 'Chat widget — talk branch',
+          message: transcript,
         }),
       });
       return r.ok || r.status === 201;
