@@ -409,14 +409,15 @@
     document.body.appendChild(bubble);
     document.body.appendChild(el('div', { id: 'iq-panel' }));
 
-    // Booking phases are never restored across page loads — always reset them to closed.
-    // This must run regardless of dismissed state so clicking the bubble always shows greeting.
-    const _RESTORABLE = new Set(['greeting', 'demo', 'talk_name', 'talk_email', 'talk_chat']);
+    // Only restore phases that have real conversation history worth returning to.
+    // greeting/talk_name/talk_email are stateless entry points — reset them so
+    // the visitor always lands on the greeting menu rather than mid-flow prompts.
+    const _RESTORABLE = new Set(['demo', 'talk_chat']);
     if (state.phase !== 'closed' && !_RESTORABLE.has(state.phase)) {
       state.phase = 'closed'; persist();
     }
 
-    // Restore a conversational session if visitor had started a flow and not dismissed.
+    // Restore a mid-conversation session if visitor had not dismissed.
     if (!state.dismissed && state.phase !== 'closed') {
       transition(state.phase);
     }
