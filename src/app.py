@@ -383,7 +383,11 @@ def create_app() -> Flask:
 
   @app.route("/", methods=["GET"])
   def root():
-    return render_template("index.html")
+    from src.models.core import AccountFeatureFlags
+    _homepage_account_id = int(os.getenv("HOMEPAGE_ACCOUNT_ID", "2"))
+    _flags = AccountFeatureFlags.query.filter_by(account_id=_homepage_account_id).first()
+    booking_handle = _flags.booking_handle if _flags else None
+    return render_template("index.html", booking_handle=booking_handle)
 
   @app.route("/favicon.ico")
   def favicon():

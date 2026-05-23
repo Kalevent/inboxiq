@@ -13,14 +13,16 @@ def _secret() -> bytes:
     return current_app.config["SECRET_KEY"].encode()
 
 
-def make_booking_token(payload: dict) -> str:
+def make_booking_token(payload: dict, ttl_seconds: int | None = None) -> str:
     """
     Sign a booking payload and return a URL-safe token string.
 
     payload must contain: account_id, ticket_id, subject,
     requester_email, requester_name, duration_minutes.
+    ttl_seconds overrides the default 7-day TTL (e.g. 48*3600 for demo links).
     """
-    data = {**payload, "exp": int(time_module.time()) + _TTL_SECONDS}
+    ttl = ttl_seconds if ttl_seconds is not None else _TTL_SECONDS
+    data = {**payload, "exp": int(time_module.time()) + ttl}
     body = json.dumps(data, separators=(",", ":"), sort_keys=True)
     sig = hmac.new(_secret(), body.encode(), hashlib.sha256).hexdigest()
     encoded = base64.urlsafe_b64encode(body.encode()).decode().rstrip("=")

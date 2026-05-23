@@ -583,3 +583,117 @@ def _ensure_chat_connection(account_id: int) -> None:
     )
     db.session.add(conn)
     db.session.commit()
+
+
+_DEMO_BOOKING_TTL = 48 * 3600  # 48 hours
+
+
+@v1.route("/chat/book-demo", methods=["POST"])  # nosemgrep: inboxiq.auth.unprotected-write-endpoint
+def chat_book_demo():
+    """
+    Public endpoint called by Aria widget when a visitor requests a demo.
+    Resolves account from booking handle, creates a 48-hour booking token,
+    sends it by email, and captures the visitor as a lead.
+    """
+    payload = request.get_json(silent=True) or {}
+    email = str(payload.get("email", "")).strip().lower()[:200]
+    handle = str(payload.get("handle", "")).strip()[:36]
+
+    if not email or "@" not in email or "." not in email.split("@")[-1]:
+        return jsonify({"error": "valid email required"}), 400
+    if not handle:
+        return jsonify({"error": "handle required"}), 400
+
+    from src.models.core import AccountFeatureFlags
+    flags = AccountFeatureFlags.query.filter_by(booking_handle=handle).first()
+    if not flags:
+        return jsonify({"error": "not_found"}), 404
+
+    account_id = flags.account_id
+
+    # Create lead (or update engagement on returning visitor)
+    try:
+        now_dt = datetime.now(timezone.utc)
+        existing = Lead.query.filter_by(email=email, account_id=account_id).first()
+        if not existing:
+            lead = Lead(
+                account_id=account_id,
+                name=email.split("@")[0],
+                email=email,
+                source="aria_demo_request",
+                status="New Lead",
+                current_funnel_stage=DISCOVERY,
+                stage_entered_at=now_dt,
+                last_engagement_at=now_dt,
+                engagement_count=1,
+                created_at=now_dt,
+                updated_at=now_dt,
+            )
+            db.session.add(lead)
+            db.session.flush()
+            funnel_stage = LeadFunnelStage(
+                lead_id=lead.id,
+                stage=DISCOVERY,
+                sub_stage="aria_demo_request",
+                metadata_json={"handle": handle},
+            )
+            db.session.add(funnel_stage)
+        else:
+            existing.last_engagement_at = now_dt
+            existing.engagement_count = (existing.engagement_count or 0) + 1
+            if existing.current_funnel_stage == VISITS:
+                existing.current_funnel_stage = DISCOVERY
+                existing.stage_entered_at = now_dt
+                funnel_stage = LeadFunnelStage(
+                    lead_id=existing.id,
+                    stage=DISCOVERY,
+                    sub_stage="aria_demo_request",
+                    metadata_json={"handle": handle},
+                )
+                db.session.add(funnel_stage)
+        db.session.commit()
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.warning("Demo booking lead capture failed (non-fatal): %s", exc)
+
+    # Generate 48-hour signed token and send booking link
+    try:
+        from src.booking.tokens import make_booking_token
+        from src.notifications.emails import send_email
+
+        token = make_booking_token(
+            {"handle": handle, "requester_email": email, "type": "demo_request"},
+            ttl_seconds=_DEMO_BOOKING_TTL,
+        )
+        base_url = os.getenv("APP_BASE_URL", "https://kalevent.com")
+        booking_url = f"{base_url}/book/demo/{token}"
+
+        html_body = f"""
+<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+  <h2 style="margin:0 0 16px;color:#111827;">Your InboxIQ demo booking link</h2>
+  <p style="color:#374151;margin:0 0 8px;">Hi there,</p>
+  <p style="color:#374151;margin:0 0 24px;">
+    Here's your personalised link to schedule a 30-minute demo.
+    It's valid for 48 hours.
+  </p>
+  <a href="{booking_url}"
+     style="display:inline-block;background:#6366f1;color:#fff;padding:12px 24px;
+            border-radius:8px;text-decoration:none;font-weight:600;">
+    Book your demo &rarr;
+  </a>
+  <p style="color:#9ca3af;font-size:12px;margin-top:32px;">
+    If you didn't request this, just ignore this email. The link expires automatically.
+  </p>
+</div>"""
+
+        send_email(
+            to_email=email,
+            subject="Your InboxIQ demo booking link",
+            html_body=html_body,
+            preheader="Your 30-min demo booking link — valid for 48 hours.",
+        )
+    except Exception as exc:
+        current_app.logger.error("Demo booking email send failed: %s", exc)
+        return jsonify({"error": "email_send_failed"}), 500
+
+    return jsonify({"ok": True}), 200
