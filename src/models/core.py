@@ -96,6 +96,7 @@ class AccountFeatureFlags(db.Model):
     dynamic_booking_enabled = db.Column(db.Boolean, nullable=False, default=True, server_default='true')
     booking_handle = db.Column(db.String(36), nullable=True, unique=True)
     static_booking_url = db.Column(db.String(512), nullable=True)
+    aria_book_demo_enabled = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -109,6 +110,7 @@ class AccountFeatureFlags(db.Model):
             "dynamic_booking_enabled": self.dynamic_booking_enabled,
             "booking_handle": self.booking_handle,
             "static_booking_url": self.static_booking_url,
+            "aria_book_demo_enabled": self.aria_book_demo_enabled,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

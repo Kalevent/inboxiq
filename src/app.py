@@ -386,7 +386,8 @@ def create_app() -> Flask:
     from src.models.core import AccountFeatureFlags
     _homepage_account_id = int(os.getenv("HOMEPAGE_ACCOUNT_ID", "2"))
     _flags = AccountFeatureFlags.query.filter_by(account_id=_homepage_account_id).first()
-    booking_handle = _flags.booking_handle if _flags else None
+    aria_book_demo = bool(_flags and _flags.aria_book_demo_enabled)
+    booking_handle = (_flags.booking_handle if _flags else None) if aria_book_demo else None
     return render_template("index.html", booking_handle=booking_handle)
 
   @app.route("/favicon.ico")
