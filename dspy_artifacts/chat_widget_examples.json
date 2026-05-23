@@ -1,0 +1,82 @@
+[
+  {
+    "account_name": "InboxIQ",
+    "visitor_name": "Sarah",
+    "branch": "demo",
+    "conversation_history": "[]",
+    "message": "What does InboxIQ actually do with my emails?",
+    "knowledge_base": "",
+    "reply": "InboxIQ automatically triages every incoming email — categorising it as support, billing, transaction, or spam — and drafts a contextual reply for your team to approve with one click. You handle the relationship; Aria handles the volume. <a href='https://kalevent.com/features/email-triage'>See how triage works →</a>",
+    "intent": "none"
+  },
+  {
+    "account_name": "InboxIQ",
+    "visitor_name": "James",
+    "branch": "demo",
+    "conversation_history": "[]",
+    "message": "Can I see a live demo of this?",
+    "knowledge_base": "",
+    "reply": "Absolutely — a 30-minute demo is the fastest way to see it handling real emails. I can send a booking link straight to your inbox.",
+    "intent": "book_demo"
+  },
+  {
+    "account_name": "InboxIQ",
+    "visitor_name": "Priya",
+    "branch": "demo",
+    "conversation_history": "[]",
+    "message": "How much does it cost?",
+    "knowledge_base": "",
+    "reply": "Starter is £19/seat/month — includes AI triage and draft replies. Pro at £49/seat adds unlimited inboxes, automation rules, and advanced analytics. All plans include a 7-day free trial with no credit card needed. <a href='https://kalevent.com/pricing'>See full pricing →</a>",
+    "intent": "none"
+  },
+  {
+    "account_name": "InboxIQ",
+    "visitor_name": "Tom",
+    "branch": "talk",
+    "conversation_history": "[{\"role\": \"user\", \"text\": \"I signed up last week\"}, {\"role\": \"bot\", \"text\": \"Welcome! How can I help?\"}]",
+    "message": "I haven't heard back from anyone and my trial is running out",
+    "knowledge_base": "",
+    "reply": "I'm sorry to hear that — a week without a response isn't acceptable and I'll make sure someone reaches out to you today. To connect you with the right person, what's the best email to reach you at?",
+    "intent": "needs_human"
+  },
+  {
+    "account_name": "InboxIQ",
+    "visitor_name": "Marcus",
+    "branch": "demo",
+    "conversation_history": "[]",
+    "message": "We use Salesforce — does InboxIQ integrate with it?",
+    "knowledge_base": "",
+    "reply": "Yes — InboxIQ integrates with Salesforce so triage decisions and conversation context sync directly to your CRM records. For complex Salesforce configurations, it's worth talking through your setup with the team. <a href='https://kalevent.com/features'>See all integrations →</a>",
+    "intent": "none"
+  },
+  {
+    "account_name": "InboxIQ",
+    "visitor_name": "Aisha",
+    "branch": "talk",
+    "conversation_history": "[]",
+    "message": "I want to talk to someone about enterprise pricing",
+    "knowledge_base": "",
+    "reply": "Happy to connect you with the right person — enterprise pricing is custom and depends on seat count, SLA requirements, and any compliance needs. What email should I pass along?",
+    "intent": "needs_human"
+  },
+  {
+    "account_name": "InboxIQ",
+    "visitor_name": "Oliver",
+    "branch": "demo",
+    "conversation_history": "[]",
+    "message": "Does it work with Gmail?",
+    "knowledge_base": "",
+    "reply": "Yes — InboxIQ connects directly to Gmail via OAuth and works inside your existing inbox. No new dashboard to learn; triage labels and draft replies appear right in Gmail. <a href='https://kalevent.com/signup'>Start your free trial →</a>",
+    "intent": "none"
+  },
+  {
+    "account_name": "InboxIQ",
+    "visitor_name": "Chen",
+    "branch": "demo",
+    "conversation_history": "[{\"role\": \"user\", \"text\": \"Can I try before buying?\"}, {\"role\": \"bot\", \"text\": \"Yes — 7-day free trial, no credit card needed.\"}]",
+    "message": "I'd like to book a proper walkthrough with your team",
+    "knowledge_base": "",
+    "reply": "Great — a 30-minute walkthrough is the best way to see it in action with your specific email volume. I can get a booking link over to you right away.",
+    "intent": "book_demo"
+  }
+]

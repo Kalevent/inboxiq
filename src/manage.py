@@ -1017,5 +1017,16 @@ def cli_seed_finance_template():
         raise
 
 
+@app.cli.command("train-chat-widget")
+def train_chat_widget_cmd():
+    """Run DSPy BootstrapFewShot optimisation on the Aria chat widget module."""
+    from src.dspy.training.train_chat_widget import train_chat_widget_module
+    result = train_chat_widget_module()
+    if result:
+        click.echo("Chat widget module trained and saved.")
+    else:
+        click.echo("Training failed or skipped — check logs.")
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
