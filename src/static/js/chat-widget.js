@@ -370,7 +370,7 @@
     panel.innerHTML = ''; panel.classList.add('open');
     document.getElementById('iq-bubble')?.classList.remove('has-badge');
     panel.appendChild(buildHeader(() => {
-      state.dismissed = true; state.phase = 'closed'; persist();
+      state.phase = 'closed'; persist();
       panel.classList.remove('open');
     }));
     const body = el('div', { class: 'iq-body' });
@@ -405,13 +405,14 @@
       state.phase = 'closed'; persist();
     }
 
-    // Restore a mid-conversation session if visitor had not dismissed.
-    if (!state.dismissed && state.phase !== 'closed') {
+    // Restore a mid-conversation session (demo or talk_chat with message history).
+    if (state.phase !== 'closed') {
       transition(state.phase);
     }
 
-    // Auto-open: badge pulse at 5 s, panel opens at 6.5 s — fresh sessions only
-    if (!state.dismissed && state.phase === 'closed') {
+    // Auto-open: badge pulse at 5 s, panel opens at 6.5 s — fires every page load
+    // unless there is an active conversation to restore.
+    if (state.phase === 'closed') {
       setTimeout(() => {
         if (state.dismissed || state.phase !== 'closed') return;
         document.getElementById('iq-bubble')?.classList.add('has-badge');
