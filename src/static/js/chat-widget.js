@@ -404,9 +404,16 @@
     document.body.appendChild(bubble);
     document.body.appendChild(el('div', { id: 'iq-panel' }));
 
-    // Restore session if visitor had started a flow
+    // Restore session if visitor had started a conversational flow.
+    // Booking phases are not restored — they expire with the session and
+    // a visitor can re-enter them via the greeting button if needed.
+    const _RESTORABLE = new Set(['greeting', 'demo', 'talk_name', 'talk_email', 'talk_chat']);
     if (!state.dismissed && state.phase !== 'closed') {
-      transition(state.phase);
+      if (_RESTORABLE.has(state.phase)) {
+        transition(state.phase);
+      } else {
+        state.phase = 'closed'; persist();
+      }
     }
 
     // Auto-open: badge pulse at 5 s, panel opens at 6.5 s — fresh sessions only
