@@ -301,7 +301,7 @@
 
   function renderTalkName(body) {
     const msgsEl = el('div', { class: 'iq-msgs' });
-    msgsEl.appendChild(mkMsg("Happy to connect you with our team! What's your name?", 'bot'));
+    msgsEl.appendChild(mkMsg("Hi there! I'm Aria 👋 What's your name?", 'bot'));
     body.appendChild(msgsEl);
     const errEl = el('p', { class: 'iq-err' });
     body.appendChild(errEl);
@@ -309,28 +309,7 @@
     const send = () => {
       const name = inp.value.trim();
       if (!name) { errEl.textContent = 'Please enter your name.'; return; }
-      state.name = name; persist(); transition('talk_email');
-    };
-    btn.addEventListener('click', send);
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
-    body.appendChild(row);
-  }
-
-  function renderTalkEmail(body) {
-    const msgsEl = el('div', { class: 'iq-msgs' });
-    msgsEl.appendChild(mkMsg(`Nice to meet you, ${state.name}! What's the best email to reach you on?`, 'bot'));
-    body.appendChild(msgsEl);
-    const errEl = el('p', { class: 'iq-err' });
-    body.appendChild(errEl);
-    const { row, inp, btn } = mkInput('Your email', 'email');
-    const send = async () => {
-      const email = inp.value.trim().toLowerCase();
-      if (!email || !email.includes('@') || !email.split('@')[1]?.includes('.')) {
-        errEl.textContent = 'Please enter a valid email address.'; return;
-      }
-      state.email = email; btn.disabled = true;
-      await apiCreateInquiry(); persist();
-      transition('talk_chat');
+      state.name = name; persist(); transition('talk_chat');
     };
     btn.addEventListener('click', send);
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
@@ -339,9 +318,12 @@
 
   function renderTalkChat(body) {
     const msgsEl = el('div', { class: 'iq-msgs' });
-    const confirm = mkMsg('', 'bot');
-    confirm.innerHTML = `Got it! Someone from the team will follow up at <strong>${escapeHtml(state.email)}</strong>. While you wait, is there anything I can help you with now?`;
-    msgsEl.appendChild(confirm);
+    // Fresh session — greet by name and start helping. Returning session — resume.
+    if (state.messages.length === 0) {
+      const greeting = mkMsg('', 'bot');
+      greeting.innerHTML = `Nice to meet you, <strong>${escapeHtml(state.name)}</strong>! How can I help you today?`;
+      msgsEl.appendChild(greeting);
+    }
     state.messages.forEach(m => msgsEl.appendChild(mkMsg(m.text, m.role)));
     body.appendChild(msgsEl);
 
@@ -358,6 +340,12 @@
       msgsEl.appendChild(mkMsg(reply, 'bot'));
       state.messages.push({ role: 'bot', text: reply });
       persist(); scrollMsgs(msgsEl);
+      // After 3 exchanges offer a human follow-up — unobtrusively
+      if (state.messages.length === 6 && !document.getElementById('iq-soft-cta')) {
+        const s = el('p', { class: 'iq-soft', id: 'iq-soft-cta' });
+        s.innerHTML = `Want someone from the team to reach out? <a href="mailto:hello@kalevent.com">Email us →</a>`;
+        body.appendChild(s);
+      }
     };
     btn.addEventListener('click', send);
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
@@ -369,11 +357,11 @@
     greeting: renderGreeting,
     demo: renderDemo,
     talk_name: renderTalkName,
-    talk_email: renderTalkEmail,
     talk_chat: renderTalkChat,
     book_demo: renderBookDemo,
     book_demo_email: renderBookDemo,   // alias for any persisted sessions
     book_demo_sent: renderBookDemo,    // alias for any persisted sessions
+    talk_email: renderTalkChat,        // legacy alias — redirect to conversation
   };
 
   function transition(phase) {
