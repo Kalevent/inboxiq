@@ -11,7 +11,7 @@
 
   // ── State ────────────────────────────────────────────────────────────────
   // phase: closed | greeting | demo | talk_name | talk_email | talk_chat | book_demo
-  let state = { phase: 'closed', name: '', email: '', messages: [], dismissed: false };
+  let state = { phase: 'closed', name: '', email: '', messages: [], dismissed: false, emailCaptured: false };
   try { const s = sessionStorage.getItem(SESSION_KEY); if (s) state = JSON.parse(s); } catch (_) {}
   function persist() { try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(state)); } catch (_) {} }
 
@@ -316,15 +316,50 @@
     body.appendChild(row);
   }
 
+  function _buildContactCapture(body, msgsEl, mainRow, showAskMsg) {
+    if (document.getElementById('iq-contact-ask')) return;
+    if (showAskMsg) {
+      const askMsg = mkMsg("To connect you with the right person on our team, what's the best email address to reach you at?", 'bot');
+      msgsEl.appendChild(askMsg);
+      scrollMsgs(msgsEl);
+    }
+    const section = el('div', { id: 'iq-contact-ask', style: 'margin-top:6px' });
+    const errEl = el('p', { class: 'iq-err' });
+    const { row: eRow, inp: eInp, btn: eBtn } = mkInput('Your email address', 'email');
+    const submit = async () => {
+      const email = eInp.value.trim().toLowerCase();
+      if (!email || !email.includes('@') || !email.split('@')[1]?.includes('.')) {
+        errEl.textContent = 'Please enter a valid email address.'; return;
+      }
+      state.email = email; eBtn.disabled = true; errEl.textContent = '';
+      await apiCreateInquiry();
+      state.emailCaptured = true; persist();
+      section.remove();
+      const conf = mkMsg('', 'bot');
+      conf.innerHTML = `Done! I've passed your details to the team — someone will be in touch at <strong>${escapeHtml(email)}</strong> soon. Feel free to keep chatting in the meantime.`;
+      msgsEl.appendChild(conf);
+      scrollMsgs(msgsEl);
+    };
+    eBtn.addEventListener('click', submit);
+    eInp.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    section.appendChild(errEl);
+    section.appendChild(eRow);
+    body.insertBefore(section, mainRow);
+  }
+
   function renderTalkChat(body) {
     const msgsEl = el('div', { class: 'iq-msgs' });
-    // Fresh session — greet by name and start helping. Returning session — resume.
     if (state.messages.length === 0) {
       const greeting = mkMsg('', 'bot');
       greeting.innerHTML = `Nice to meet you, <strong>${escapeHtml(state.name)}</strong>! How can I help you today?`;
       msgsEl.appendChild(greeting);
     }
-    state.messages.forEach(m => msgsEl.appendChild(mkMsg(m.text, m.role)));
+    // Render stored messages — bot messages may contain sanitised HTML (links)
+    state.messages.forEach(m => {
+      const msg = el('div', { class: `iq-msg ${m.role}` });
+      if (m.role === 'user') { msg.textContent = m.text; } else { msg.innerHTML = m.text; }
+      msgsEl.appendChild(msg);
+    });
     body.appendChild(msgsEl);
 
     const { row, inp, btn } = mkInput('Type a message…');
@@ -337,19 +372,29 @@
       const result = await apiChat(text, 'talk');
       t.remove(); btn.disabled = false;
       const reply = result.ok ? (result.reply || "Thanks for reaching out!") : "Something went wrong — please try again.";
-      msgsEl.appendChild(mkMsg(reply, 'bot'));
+      // Bot replies may include sanitised HTML links from the AI
+      const replyEl = el('div', { class: 'iq-msg bot' }); replyEl.innerHTML = reply;
+      msgsEl.appendChild(replyEl);
       state.messages.push({ role: 'bot', text: reply });
       persist(); scrollMsgs(msgsEl);
-      // After 3 exchanges offer a human follow-up — unobtrusively
-      if (state.messages.length === 6 && !document.getElementById('iq-soft-cta')) {
-        const s = el('p', { class: 'iq-soft', id: 'iq-soft-cta' });
-        s.innerHTML = `Want someone from the team to reach out? <a href="mailto:hello@kalevent.com">Email us →</a>`;
-        body.appendChild(s);
+      // After 2 exchanges (4 messages), ask for contact details
+      if (state.messages.length >= 4 && !state.emailCaptured) {
+        _buildContactCapture(body, msgsEl, row, true);
       }
     };
     btn.addEventListener('click', send);
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
     body.appendChild(row);
+
+    // Restore state on page reload
+    if (state.emailCaptured && state.email) {
+      const note = el('p', { class: 'iq-soft' });
+      note.innerHTML = `Team notified at <strong>${escapeHtml(state.email)}</strong> — they'll be in touch soon.`;
+      body.appendChild(note);
+    } else if (state.messages.length >= 4) {
+      // Conversation in progress — show contact ask without repeating the bot message
+      _buildContactCapture(body, msgsEl, row, false);
+    }
   }
 
   // ── State machine ────────────────────────────────────────────────────────
