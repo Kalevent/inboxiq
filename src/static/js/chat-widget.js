@@ -10,7 +10,7 @@
   const SESSION_KEY = 'inboxiq_chat_v2';
 
   // ── State ────────────────────────────────────────────────────────────────
-  // phase: closed | greeting | demo | talk_name | talk_email | talk_chat | book_demo_email | book_demo_sent
+  // phase: closed | greeting | demo | talk_name | talk_email | talk_chat | book_demo
   let state = { phase: 'closed', name: '', email: '', messages: [], dismissed: false };
   try { const s = sessionStorage.getItem(SESSION_KEY); if (s) state = JSON.parse(s); } catch (_) {}
   function persist() { try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(state)); } catch (_) {} }
@@ -184,48 +184,53 @@
   }
 
   // ── Phase renderers ──────────────────────────────────────────────────────
-  function renderBookDemoEmail(body) {
+  function renderBookDemo(body) {
     const msgsEl = el('div', { class: 'iq-msgs' });
     msgsEl.appendChild(mkMsg(
-      "Which email should I send your booking link to?<br>" +
+      "Happy to set that up! 📅<br>Which email should I send your booking link to?<br>" +
       "<span style=\"font-size:12px;color:#6b7280;\">I'll only use it to send the link — nothing else.</span>",
       'bot'
     ));
+    state.messages.forEach(m => msgsEl.appendChild(mkMsg(m.text, m.role)));
     body.appendChild(msgsEl);
-    const errEl = el('p', { class: 'iq-err' });
-    body.appendChild(errEl);
-    const { row, inp, btn } = mkInput('Your email address', 'email');
+
+    const { row, inp, btn } = mkInput('Type your email…');
     const send = async () => {
-      const email = inp.value.trim().toLowerCase();
-      if (!email || !email.includes('@') || !email.split('@')[1]?.includes('.')) {
-        errEl.textContent = 'Please enter a valid email address.'; return;
-      }
-      btn.disabled = true; errEl.textContent = '';
-      const ok = await apiBookDemo(email);
-      if (ok) {
-        state.email = email; persist();
-        transition('book_demo_sent');
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = ''; btn.disabled = true;
+      state.messages.push({ role: 'user', text });
+      msgsEl.appendChild(mkMsg(text, 'user'));
+      persist(); scrollMsgs(msgsEl);
+
+      const isEmail = text.includes('@') && text.split('@')[1]?.includes('.');
+      if (isEmail) {
+        const t = mkTyping(); msgsEl.appendChild(t); scrollMsgs(msgsEl);
+        const ok = await apiBookDemo(text.toLowerCase());
+        t.remove(); btn.disabled = false;
+        const reply = ok
+          ? `Done! 🎉 Your booking link is on its way to <strong>${escapeHtml(text)}</strong>. It's valid for 48 hours.`
+          : "Something went wrong sending the link — please try again.";
+        msgsEl.appendChild(mkMsg(reply, 'bot'));
+        state.messages.push({ role: 'bot', text: reply });
+        if (ok) { state.email = text.toLowerCase(); }
+        persist(); scrollMsgs(msgsEl);
+        if (ok && !document.getElementById('iq-soft-cta')) {
+          const s = el('p', { class: 'iq-soft', id: 'iq-soft-cta' });
+          s.innerHTML = `While you wait — <a href="${signupUrl}">start your free trial →</a>`;
+          body.appendChild(s);
+        }
       } else {
         btn.disabled = false;
-        errEl.textContent = 'Something went wrong — please try again.';
+        const reply = "That doesn't look like an email — what address should I send the link to?";
+        msgsEl.appendChild(mkMsg(reply, 'bot'));
+        state.messages.push({ role: 'bot', text: reply });
+        persist(); scrollMsgs(msgsEl);
       }
     };
     btn.addEventListener('click', send);
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
     body.appendChild(row);
-  }
-
-  function renderBookDemoSent(body) {
-    const msgsEl = el('div', { class: 'iq-msgs' });
-    msgsEl.appendChild(mkMsg(
-      `Done! 🎉 Check your inbox — your booking link is on its way to <strong>${escapeHtml(state.email)}</strong>.<br>` +
-      '<span style="font-size:12px;color:#6b7280;">The link is valid for 48 hours.</span>',
-      'bot'
-    ));
-    body.appendChild(msgsEl);
-    const s = el('p', { class: 'iq-soft' });
-    s.innerHTML = `While you wait — <a href="${signupUrl}">start your free trial →</a>`;
-    body.appendChild(s);
   }
 
   function renderGreeting(body) {
@@ -236,7 +241,7 @@
     const options = [
       { icon: '🎬', label: 'See how it works', phase: 'demo' },
       { icon: '🚀', label: 'Start free trial', fn: () => { window.location.href = signupUrl; } },
-      { icon: '📅', label: 'Book a 30-min demo', phase: 'book_demo_email', hidden: !handle },
+      { icon: '📅', label: 'Book a 30-min demo', phase: 'book_demo', hidden: !handle },
       { icon: '💬', label: 'Talk to someone', phase: 'talk_name' },
     ].filter(o => !o.hidden);
 
@@ -361,8 +366,9 @@
     talk_name: renderTalkName,
     talk_email: renderTalkEmail,
     talk_chat: renderTalkChat,
-    book_demo_email: renderBookDemoEmail,
-    book_demo_sent: renderBookDemoSent,
+    book_demo: renderBookDemo,
+    book_demo_email: renderBookDemo,   // alias for any persisted sessions
+    book_demo_sent: renderBookDemo,    // alias for any persisted sessions
   };
 
   function transition(phase) {
