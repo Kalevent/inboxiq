@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta
 
-from flask import Blueprint, render_template, request, abort, Response, jsonify, g
+from flask import Blueprint, render_template, request, abort, Response, jsonify, g, redirect, url_for
 from flask_jwt_extended import jwt_required
 
 from src.booking.tokens import verify_booking_token, token_to_hash
@@ -12,6 +12,23 @@ from src.models.core import Account
 logger = logging.getLogger(__name__)
 
 booking_bp = Blueprint("booking", __name__)
+
+
+@booking_bp.get("/book/demo/<token>")
+def book_demo_redirect(token: str):
+    """Temporary demo booking link sent by Aria. Verifies token then redirects to the permanent booking page."""
+    payload = verify_booking_token(token)
+    if not payload or payload.get("type") != "demo_request":
+        return render_template(
+            "booking/expired.html",
+            title="This link has expired",
+            message="Demo booking links are valid for 48 hours. Return to the website to request a new one.",
+            meet_link=None,
+        ), 410
+    handle = payload.get("handle", "")
+    if not handle:
+        abort(404)
+    return redirect(url_for("booking.book_me_page", handle=handle), 302)
 
 
 @booking_bp.get("/book/me/<handle>")

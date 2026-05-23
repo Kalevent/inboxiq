@@ -3,13 +3,14 @@
 
   const account = window.InboxIQ?.account || '2';
   const clientId = window.InboxIQ?.clientId || null;
+  const handle = window.InboxIQ?.handle || null;
   const primaryColor = window.InboxIQ?.config?.primaryColor || '#6366f1';
   const signupUrl = '/signup';
   const AVATAR_URL = '/static/img/aria-avatar.jpg';
   const SESSION_KEY = 'inboxiq_chat_v2';
 
   // ── State ────────────────────────────────────────────────────────────────
-  // phase: closed | greeting | demo | talk_name | talk_email | talk_chat
+  // phase: closed | greeting | demo | talk_name | talk_email | talk_chat | book_demo_email | book_demo_sent
   let state = { phase: 'closed', name: '', email: '', messages: [], dismissed: false };
   try { const s = sessionStorage.getItem(SESSION_KEY); if (s) state = JSON.parse(s); } catch (_) {}
   function persist() { try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(state)); } catch (_) {} }
@@ -158,6 +159,16 @@
     } catch (_) { return { ok: false }; }
   }
 
+  async function apiBookDemo(email) {
+    try {
+      const r = await fetch('/api/v1/chat/book-demo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, handle }),
+      });
+      return r.ok;
+    } catch (_) { return false; }
+  }
+
   async function apiCreateInquiry() {
     try {
       const r = await fetch('/api/v1/enterprise/inquiry', {
@@ -173,16 +184,63 @@
   }
 
   // ── Phase renderers ──────────────────────────────────────────────────────
+  function renderBookDemoEmail(body) {
+    const msgsEl = el('div', { class: 'iq-msgs' });
+    msgsEl.appendChild(mkMsg(
+      "Which email should I send your booking link to?<br>" +
+      "<span style=\"font-size:12px;color:#6b7280;\">I'll only use it to send the link — nothing else.</span>",
+      'bot'
+    ));
+    body.appendChild(msgsEl);
+    const errEl = el('p', { class: 'iq-err' });
+    body.appendChild(errEl);
+    const { row, inp, btn } = mkInput('Your email address', 'email');
+    const send = async () => {
+      const email = inp.value.trim().toLowerCase();
+      if (!email || !email.includes('@') || !email.split('@')[1]?.includes('.')) {
+        errEl.textContent = 'Please enter a valid email address.'; return;
+      }
+      btn.disabled = true; errEl.textContent = '';
+      const ok = await apiBookDemo(email);
+      if (ok) {
+        state.email = email; persist();
+        transition('book_demo_sent');
+      } else {
+        btn.disabled = false;
+        errEl.textContent = 'Something went wrong — please try again.';
+      }
+    };
+    btn.addEventListener('click', send);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+    body.appendChild(row);
+  }
+
+  function renderBookDemoSent(body) {
+    const msgsEl = el('div', { class: 'iq-msgs' });
+    msgsEl.appendChild(mkMsg(
+      `Done! 🎉 Check your inbox — your booking link is on its way to <strong>${escapeHtml(state.email)}</strong>.<br>` +
+      '<span style="font-size:12px;color:#6b7280;">The link is valid for 48 hours.</span>',
+      'bot'
+    ));
+    body.appendChild(msgsEl);
+    const s = el('p', { class: 'iq-soft' });
+    s.innerHTML = `While you wait — <a href="${signupUrl}">start your free trial →</a>`;
+    body.appendChild(s);
+  }
+
   function renderGreeting(body) {
     const p = el('p', { class: 'iq-greeting' });
     p.innerHTML = "Hi there 👋<br>I'm Aria, your InboxIQ guide.<br>What brings you here today?";
     body.appendChild(p);
 
-    [
+    const options = [
       { icon: '🎬', label: 'See how it works', phase: 'demo' },
       { icon: '🚀', label: 'Start free trial', fn: () => { window.location.href = signupUrl; } },
+      { icon: '📅', label: 'Book a 30-min demo', phase: 'book_demo_email', hidden: !handle },
       { icon: '💬', label: 'Talk to someone', phase: 'talk_name' },
-    ].forEach(({ icon, label, phase, fn }) => {
+    ].filter(o => !o.hidden);
+
+    options.forEach(({ icon, label, phase, fn }) => {
       const b = el('button', { class: 'iq-cta', on: { click: fn || (() => transition(phase)) } }, [
         el('span', { class: 'iq-icon' }, icon),
         el('span', {}, label),
@@ -303,6 +361,8 @@
     talk_name: renderTalkName,
     talk_email: renderTalkEmail,
     talk_chat: renderTalkChat,
+    book_demo_email: renderBookDemoEmail,
+    book_demo_sent: renderBookDemoSent,
   };
 
   function transition(phase) {

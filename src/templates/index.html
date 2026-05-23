@@ -1440,6 +1440,7 @@
     (function(w,d,s){
       w.InboxIQ=w.InboxIQ||{};
       w.InboxIQ.account='{{ g.current_account_id if g and g.current_account_id else "2" }}';
+      w.InboxIQ.handle='{{ booking_handle or "" }}';
       w.InboxIQ.config={
         welcomeMessage:'Hi! 👋 Welcome to InboxIQ. How can we help you today?',
         captureLeads:true,
