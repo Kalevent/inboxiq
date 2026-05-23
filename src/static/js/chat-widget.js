@@ -348,6 +348,7 @@
         : "To connect you with the right person on our team, what's the best email address to reach you at?";
       msgsEl.appendChild(askMsg); scrollMsgs(msgsEl);
     }
+    mainRow.style.display = 'none';  // hide main chat input while email is pending
     const section = el('div', { id: 'iq-contact-ask', style: 'margin-top:6px' });
     const errEl = el('p', { class: 'iq-err' });
     const { row: eRow, inp: eInp, btn: eBtn } = mkInput('Your email address', 'email');
@@ -358,6 +359,7 @@
       }
       eBtn.disabled = true; errEl.textContent = '';
       section.remove();
+      mainRow.style.display = '';  // restore main chat input
       state.pendingIntent = null; persist();
       if (isDemo) {
         state.email = email; persist();
