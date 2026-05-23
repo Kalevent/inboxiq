@@ -284,6 +284,12 @@ def build_chat_widget_reply(dspy: Any) -> Any:
         - Branch 'talk': visitor wants human support — first answer their question helpfully, then be warm and conversational.
         - Never say you cannot help — always give a useful answer or point to a relevant resource.
         - Do not mention you are collecting contact details — that is handled separately by the widget.
+
+        INTENT OUTPUT RULES — output exactly one value for the intent field:
+        - book_demo: visitor expresses interest in a product demo, live walkthrough, or scheduling a call/meeting
+        - needs_human: complaint, urgent issue, complex integration question, pricing negotiation, or query beyond self-serve
+        - none: general question answered by Aria or no action needed
+        Never infer intent from greetings alone. Only set non-none when the message clearly signals it.
         """
         account_name = dspy.InputField(desc="Name of the company whose chat widget this is.")
         visitor_name = dspy.InputField(desc="Name of the website visitor (may be empty).")
@@ -291,6 +297,7 @@ def build_chat_widget_reply(dspy: Any) -> Any:
         conversation_history = dspy.InputField(desc="Prior messages in this chat as a JSON array, oldest first.")
         message = dspy.InputField(desc="The visitor's latest message.")
         reply = dspy.OutputField(desc="A helpful reply of 2-4 sentences. Include a relevant HTML link (<a href='URL'>text</a>) when it adds value. No markdown.")
+        intent = dspy.OutputField(desc="Output exactly one of: none | book_demo | needs_human. Use the INTENT OUTPUT RULES above.")
 
     class ChatWidgetReplyModule(dspy.Module):
         def __init__(self) -> None:
