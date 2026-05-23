@@ -207,13 +207,18 @@
       if (isEmail) {
         const t = mkTyping(); msgsEl.appendChild(t); scrollMsgs(msgsEl);
         const ok = await apiBookDemo(text.toLowerCase());
-        t.remove(); btn.disabled = false;
+        t.remove();
         const reply = ok
           ? `Done! 🎉 Your booking link is on its way to <strong>${escapeHtml(text)}</strong>. It's valid for 48 hours.`
           : "Something went wrong sending the link — please try again.";
         msgsEl.appendChild(mkMsg(reply, 'bot'));
         state.messages.push({ role: 'bot', text: reply });
-        if (ok) { state.email = text.toLowerCase(); }
+        if (ok) {
+          state.email = text.toLowerCase();
+          row.style.display = 'none';
+        } else {
+          btn.disabled = false;
+        }
         persist(); scrollMsgs(msgsEl);
         if (ok && !document.getElementById('iq-soft-cta')) {
           const s = el('p', { class: 'iq-soft', id: 'iq-soft-cta' });
