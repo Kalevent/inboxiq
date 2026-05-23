@@ -690,6 +690,7 @@ def chat_book_demo():
             to_email=email,
             subject="Your InboxIQ demo booking link",
             html_body=html_body,
+            from_email="InboxIQ <hello@kalevent.com>",
             preheader="Your 30-min demo booking link — valid for 48 hours.",
         )
     except Exception as exc:
