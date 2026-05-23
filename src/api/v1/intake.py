@@ -512,15 +512,16 @@ def chat_submit():
             chat_history.append({"role": normalized_role, "content": content})
 
     # Generate AI reply regardless of whether Celery succeeded
-    reply = _generate_chat_reply(account_id_int, message, name, company, history=chat_history, branch=branch)
+    reply, intent = _generate_chat_reply(account_id_int, message, name, company, history=chat_history, branch=branch)
     if not reply:
         reply = "Thanks for reaching out! A member of our team will get back to you shortly."
+        intent = "needs_human"
 
-    return jsonify({"success": True, "status": "queued" if task_id else "ai_only", "task_id": task_id, "reply": reply}), 200
+    return jsonify({"success": True, "status": "queued" if task_id else "ai_only", "task_id": task_id, "reply": reply, "intent": intent}), 200
 
 
-def _generate_chat_reply(account_id_int: int, message: str, name: str, company: str, history: list | None = None, branch: str = "demo") -> str | None:
-    """Generate a contextual AI reply for the chat widget. Returns None if AI is unavailable."""
+def _generate_chat_reply(account_id_int: int, message: str, name: str, company: str, history: list | None = None, branch: str = "demo") -> tuple[str | None, str]:
+    """Generate a contextual AI reply. Returns (reply, intent) — intent is none|book_demo|needs_human."""
     import json as _json
     from src.dspy.config import _configure_dspy
     from src.dspy.signatures import build_chat_widget_reply
@@ -542,10 +543,12 @@ def _generate_chat_reply(account_id_int: int, message: str, name: str, company: 
             message=message,
         )
         reply = sanitize_html((result.reply or "").strip())
-        return reply or None
+        raw_intent = (getattr(result, 'intent', None) or 'none').strip().lower()
+        intent = raw_intent if raw_intent in ('none', 'book_demo', 'needs_human') else 'none'
+        return reply or None, intent
     except Exception as exc:
         current_app.logger.debug("Chat AI reply failed: %s", exc)
-        return None
+        return None, 'none'
 
 
 def _ensure_chat_connection(account_id: int) -> None:
