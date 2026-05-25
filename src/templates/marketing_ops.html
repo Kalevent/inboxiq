@@ -1145,7 +1145,28 @@
       if (c.status === 'completed') {
         btns.push(`<button onclick="openExtendModal('${id}',${c.max_recipients || 0})" class="rounded-lg bg-indigo-500 hover:bg-indigo-400 px-3 py-1.5 text-xs font-semibold text-white">Extend &amp; Reactivate</button>`);
       }
+      if (c.status === 'paused' || c.status === 'completed') {
+        btns.push(`<button onclick="deleteCampaign('${id}',${JSON.stringify(c.name)})" class="rounded-lg border border-red-800 px-3 py-1.5 text-xs text-red-400 hover:text-red-300 hover:border-red-600">Delete</button>`);
+      }
       return btns.join(' ');
+    }
+
+    async function deleteCampaign(id, name) {
+      if (!confirm(`Delete campaign "${name}" and all its outreach records? This cannot be undone.`)) return;
+      try {
+        const resp = await fetch(`/api/v1/outreach/campaigns/${id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          alert(err.error || `Delete failed (${resp.status})`);
+          return;
+        }
+        document.getElementById(`camp-card-${id}`)?.remove();
+      } catch (e) {
+        alert('Delete failed: ' + e.message);
+      }
     }
 
     async function loadCampaignsData() {

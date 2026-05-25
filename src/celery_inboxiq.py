@@ -267,7 +267,13 @@ def make_celery(app) -> Celery:
                             "max_results": 20,
                         },
                         "options": {"queue": "leads"},
-                    }
+                    },
+                    "enrich_lead_emails_daily": {
+                        "task": "funnel.enrich_lead_emails",
+                        "schedule": crontab(hour=lead_discovery_hour, minute=45),  # 2:45am daily
+                        "kwargs": {"batch_size": 10},
+                        "options": {"queue": "leads"},
+                    },
                 }
                 if lead_discovery_enabled
                 else {}

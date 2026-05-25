@@ -408,6 +408,82 @@ def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results
     return {"status": "ok", "niche": niche, "signal_type": signal_type}
 
 
+@shared_task(name="funnel.enrich_lead_emails", queue="leads")
+def enrich_lead_emails(batch_size: int = 10) -> dict:
+    """
+    Backfill emails on leads that were discovered without one.
+
+    Only attempts leads where we have a reliable company website domain —
+    specifically those whose linkedin_url is a non-LinkedIn website URL
+    (e.g. https://acme.com/about).  Leads whose linkedin_url is a LinkedIn
+    personal or company profile, or is absent, are skipped here; those
+    require Playwright-based email scraping (not yet built).
+
+    Groups by domain so one Hunter.io search covers multiple leads from
+    the same company.  Capped at `batch_size` Hunter searches per run
+    (default 10) to respect the free-plan 50-search monthly quota.
+    """
+    from src.models.leads import Lead
+    from src.mcp.enrichment_v2_mcp import find_email_for_domain
+    from urllib.parse import urlparse
+
+    def _extract_company_domain(url: str) -> str:
+        """Return domain from a real website URL; empty string for LinkedIn URLs."""
+        if not url:
+            return ""
+        parsed = urlparse(url)
+        hostname = parsed.hostname or ""
+        if not hostname or "linkedin.com" in hostname:
+            return ""
+        # Strip www.
+        return hostname.removeprefix("www.")
+
+    candidates = (
+        db.session.query(Lead)
+        .filter(
+            Lead.outreach_unsubscribed_at.is_(None),
+            Lead.deleted.is_(False),
+            or_(Lead.email.is_(None), Lead.email == ""),
+            Lead.linkedin_url.isnot(None),
+            Lead.linkedin_url != "",
+        )
+        .order_by(Lead.fit_score.desc().nullslast(), Lead.created_at.desc())
+        .limit(batch_size * 30)
+        .all()
+    )
+
+    # One Hunter call per unique domain, spread email to all leads sharing it
+    domain_to_email: dict = {}
+    enriched = 0
+    searched = 0
+
+    for lead in candidates:
+        if searched >= batch_size:
+            break
+
+        domain = _extract_company_domain(lead.linkedin_url or "")
+        if not domain:
+            continue
+
+        if domain not in domain_to_email:
+            result = find_email_for_domain(domain=domain, full_name=lead.name or "")
+            domain_to_email[domain] = result.get("email", "")
+            searched += 1
+
+        email = domain_to_email[domain]
+        if email:
+            lead.email = email
+            enriched += 1
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    return {"searched": searched, "enriched": enriched}
+
+
 @shared_task(name="funnel.orchestration_job")
 def funnel_orchestration_job():
     """

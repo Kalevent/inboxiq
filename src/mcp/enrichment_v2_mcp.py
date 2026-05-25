@@ -128,6 +128,93 @@ def get_conn():
 
 
 @mcp.tool()
+def find_email_for_domain(
+    domain: str,
+    full_name: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Find a contact email address for a company domain using Hunter.io.
+
+    First tries the Email Finder (name + domain → personal email) when a
+    full_name is provided, then falls back to Domain Search and returns the
+    first deliverable email found.  Returns an empty string when Hunter.io
+    has no data, the API key is missing, or credits are exhausted.
+
+    Args:
+        domain: Company domain, e.g. "acme.com"
+        full_name: Optional contact full name to try Email Finder first.
+
+    Returns:
+        Dict with:
+          - email: str  (empty string if nothing found)
+          - source: "email_finder" | "domain_search" | "none"
+          - confidence: int (Hunter confidence score, 0-100)
+    """
+    empty = {"email": "", "source": "none", "confidence": 0}
+
+    if not domain or not HUNTER_API_KEY:
+        return empty
+
+    credits = _get_hunter_credits()
+
+    # --- Strategy 1: Email Finder (costs 1 search, highest precision) ---
+    if full_name and credits.get("searches", 0) > 0:
+        parts = full_name.strip().split()
+        if len(parts) >= 2:
+            try:
+                resp = requests.get(
+                    "https://api.hunter.io/v2/email-finder",
+                    params={
+                        "domain": domain,
+                        "first_name": parts[0],
+                        "last_name": " ".join(parts[1:]),
+                        "api_key": HUNTER_API_KEY,
+                    },
+                    timeout=10,
+                )
+                if resp.status_code == 200:
+                    data = resp.json().get("data", {})
+                    email = data.get("email", "")
+                    confidence = data.get("score", 0) or 0
+                    if email and "@" in email and data.get("status") != "invalid":
+                        _hunter_credits_cache["data"] = None  # bust cache
+                        return {"email": email, "source": "email_finder", "confidence": confidence}
+            except Exception as exc:
+                logger.warning("Hunter email-finder failed for %s: %s", domain, exc)
+
+    # --- Strategy 2: Domain Search (costs 1 search, returns first deliverable) ---
+    if credits.get("searches", 0) > 0:
+        try:
+            resp = requests.get(
+                "https://api.hunter.io/v2/domain-search",
+                params={"domain": domain, "api_key": HUNTER_API_KEY, "limit": 5},
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                emails_list = resp.json().get("data", {}).get("emails", [])
+                _hunter_credits_cache["data"] = None  # bust cache
+                for entry in emails_list:
+                    if entry.get("type") == "personal" and entry.get("status") in ("valid", "accept_all"):
+                        return {
+                            "email": entry["value"],
+                            "source": "domain_search",
+                            "confidence": entry.get("confidence", 0),
+                        }
+                # Fallback: any non-invalid email
+                for entry in emails_list:
+                    if entry.get("status") != "invalid":
+                        return {
+                            "email": entry["value"],
+                            "source": "domain_search",
+                            "confidence": entry.get("confidence", 0),
+                        }
+        except Exception as exc:
+            logger.warning("Hunter domain-search failed for %s: %s", domain, exc)
+
+    return empty
+
+
+@mcp.tool()
 def enrich_company(
     domain: str,
     company_name: Optional[str] = None

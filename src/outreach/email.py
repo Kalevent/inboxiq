@@ -329,11 +329,13 @@ def process_campaign_outreach(campaign_id: str, max_emails: int = 10) -> Dict[st
         db.session.commit()
         return {"message": "Campaign completed (max recipients reached)", "sent": 0}
 
-    # Find leads to contact — skip unsubscribed
+    # Find leads to contact — require a real, non-empty email address
     query = db.session.query(Lead).filter(
         Lead.email.isnot(None),
+        Lead.email != '',
+        Lead.email.contains('@'),
         Lead.outreach_unsubscribed_at.is_(None),
-        ~Lead.email.startswith('contact@')  # Filter out generic emails at DB level
+        ~Lead.email.startswith('contact@'),
     )
 
     # Apply targeting filters
@@ -343,7 +345,7 @@ def process_campaign_outreach(campaign_id: str, max_emails: int = 10) -> Dict[st
     if campaign.target_source:
         query = query.filter(Lead.source == campaign.target_source)
 
-    # Exclude leads already contacted
+    # Exclude leads already contacted by this campaign
     contacted_lead_ids = db.session.query(EmailOutreach.lead_id).filter(
         EmailOutreach.campaign_id == campaign.id
     ).all()
@@ -352,8 +354,9 @@ def process_campaign_outreach(campaign_id: str, max_emails: int = 10) -> Dict[st
     if contacted_lead_ids:
         query = query.filter(~Lead.id.in_(contacted_lead_ids))
 
-    # Get leads (fetch extra to account for any additional filtering)
-    leads = query.limit(max_emails * 2).all()[:max_emails]
+    # Randomise order so repeated runs don't always see the same leads
+    from sqlalchemy import func
+    leads = query.order_by(func.random()).limit(max_emails * 3).all()[:max_emails]
 
     results = {
         "campaign_id": campaign_id,
