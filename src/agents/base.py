@@ -14,8 +14,11 @@ from opentelemetry import trace  # module-level for test patching via src.agents
 
 from src.extensions import db
 from src.dspy.config import _configure_dspy
+from src.monitoring.observability import get_tracer
+from src.monitoring.sanitizer import safe_span_attribute
 
 log = logging.getLogger(__name__)
+_tracer = get_tracer(__name__)
 
 
 class AgentGoalSignature(dspy.Signature):
@@ -76,23 +79,31 @@ class BaseAgent(ABC):
         result_text = ""
         error_msg = None
 
-        try:
-            self._open_mcp_clients()
-            tools = self._get_tools()
-            react_agent = dspy.ReAct(self._get_signature(dspy), tools=tools, max_iters=self.max_iters)
-            prediction = react_agent(goal=goal)
-            result_text = prediction.result or ""
-            success, failure_reason = self._evaluate_success(result_text)
-            if not success:
-                error_msg = failure_reason
-            self.log(f"Completed (success={success}): {result_text[:200]}")
+        with _tracer.start_as_current_span(f"agent.{self.agent_name}") as span:
+            safe_span_attribute(span, "agent.name", self.agent_name)
+            safe_span_attribute(span, "agent.account_id", self.account_id)
+            safe_span_attribute(span, "agent.goal_length", len(goal))
+            try:
+                self._open_mcp_clients()
+                tools = self._get_tools()
+                react_agent = dspy.ReAct(self._get_signature(dspy), tools=tools, max_iters=self.max_iters)
+                prediction = react_agent(goal=goal)
+                result_text = prediction.result or ""
+                success, failure_reason = self._evaluate_success(result_text)
+                if not success:
+                    error_msg = failure_reason
+                self.log(f"Completed (success={success}): {result_text[:200]}")
+                safe_span_attribute(span, "agent.success", success)
+                safe_span_attribute(span, "agent.tool_calls", len(self.tool_calls))
 
-        except Exception as exc:
-            error_msg = str(exc)
-            log.exception("[%s] execute failed: %s", self.agent_name, exc)
+            except Exception as exc:
+                error_msg = str(exc)
+                span.set_attribute("error", True)
+                span.record_exception(exc)
+                log.exception("[%s] execute failed: %s", self.agent_name, exc)
 
-        finally:
-            self._close_mcp_clients()
+            finally:
+                self._close_mcp_clients()
 
         latency_ms = int((time.monotonic() - _start) * 1000)
         self._store_event(

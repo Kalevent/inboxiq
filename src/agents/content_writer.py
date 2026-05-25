@@ -15,9 +15,12 @@ import markdown
 
 from src.agents.base import BaseAgent
 from src.extensions import db
+from src.monitoring.observability import get_tracer
+from src.monitoring.sanitizer import safe_span_attribute
 from src.sanitize import sanitize_html
 
 log = logging.getLogger(__name__)
+tracer = get_tracer(__name__)
 
 _MIN_WORDS = 1200
 _TARGET_WORDS = 1500
@@ -43,31 +46,50 @@ class ContentWriterAgent(BaseAgent):
         success = False
         result_text = ""
         error_msg = None
-        try:
-            params = json.loads(goal)
-            mode = params.get("mode", "auto")
-            if mode == "pitched":
-                result = self._run_pitched(params["topic_id"])
-            else:
-                result = self._run_auto(
-                    niche=params.get("niche", "B2B SaaS"),
-                    audience=params.get("audience", "Head of Support, B2B SaaS"),
-                    topic_index=int(params.get("topic_index", 0)),
-                    account_id=params.get("account_id"),
+        # BaseAgent.execute() opens the span for ReAct agents. ContentWriterAgent
+        # overrides execute() (sequential pipeline, not ReAct), so it opens its
+        # own span here to match the same convention.
+        with tracer.start_as_current_span("agent.content_writer") as span:
+            try:
+                params = json.loads(goal)
+                mode = params.get("mode", "auto")
+                safe_span_attribute(span, "agent.name", "content_writer")
+                safe_span_attribute(span, "agent.account_id", self.account_id)
+                safe_span_attribute(span, "agent.mode", mode)
+                if mode == "pitched":
+                    safe_span_attribute(span, "agent.topic_id", params.get("topic_id", ""))
+                    result = self._run_pitched(params["topic_id"])
+                else:
+                    safe_span_attribute(span, "agent.niche", params.get("niche", ""))
+                    safe_span_attribute(span, "agent.topic_index", params.get("topic_index", 0))
+                    result = self._run_auto(
+                        niche=params.get("niche", "B2B SaaS"),
+                        audience=params.get("audience", "Head of Support, B2B SaaS"),
+                        topic_index=int(params.get("topic_index", 0)),
+                        account_id=params.get("account_id"),
+                    )
+                success = True
+                result_text = (
+                    f"Generated: {result.get('title', '')} "
+                    f"({result.get('word_count', 0)} words, status={result.get('status', '')})"
                 )
-            success = True
-            result_text = (
-                f"Generated: {result.get('title', '')} "
-                f"({result.get('word_count', 0)} words, status={result.get('status', '')})"
-            )
-            return result
-        except Exception as exc:
-            error_msg = str(exc)
-            log.exception("ContentWriterAgent failed")
-            raise
-        finally:
-            latency_ms = int((time.time() - start) * 1000)
-            self._store_event(success, result_text, error_msg, latency_ms)
+                safe_span_attribute(span, "agent.post_status", result.get("status", ""))
+                safe_span_attribute(span, "agent.post_id", result.get("blog_post_id", ""))
+                safe_span_attribute(span, "agent.quality_score", result.get("quality_score", ""))
+                safe_span_attribute(span, "agent.word_count", result.get("word_count", 0))
+                safe_span_attribute(span, "agent.slug", result.get("slug", ""))
+                safe_span_attribute(span, "agent.success", True)
+                return result
+            except Exception as exc:
+                error_msg = str(exc)
+                span.set_attribute("error", True)
+                span.record_exception(exc)
+                log.exception("ContentWriterAgent failed")
+                raise
+            finally:
+                latency_ms = int((time.time() - start) * 1000)
+                safe_span_attribute(span, "agent.latency_ms", latency_ms)
+                self._store_event(success, result_text, error_msg, latency_ms)
 
     def _get_tools(self) -> List:
         return []  # sequential pipeline — ReAct not used
