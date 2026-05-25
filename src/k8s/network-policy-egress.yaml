@@ -1,0 +1,60 @@
+---
+# Egress NetworkPolicy — SSRF defence-in-depth
+#
+# Applies to all pods in the kaley namespace.
+# Blocks outbound connections to RFC-1918, link-local, and metadata ranges
+# at the kernel/CNI level, regardless of application-layer validation.
+#
+# This is the second layer of SSRF defence. The first layer is _safe_external_url()
+# in src/mcp/enrichment_v2_mcp.py. Both must hold for an SSRF attack to succeed.
+#
+# Apply: kubectl apply -f src/k8s/network-policy-egress.yaml
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: inboxiq-egress-ssrf-guard
+  namespace: kaley
+spec:
+  # Applies to all pods in namespace
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # 1. Allow DNS resolution (required before any outbound connection)
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+
+    # 2. Allow HTTP/HTTPS to public internet only
+    #    Blocks RFC-1918, link-local (169.254.x.x/AWS metadata), loopback
+    - ports:
+        - port: 80
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+      to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8        # RFC-1918 class A
+              - 172.16.0.0/12     # RFC-1918 class B
+              - 192.168.0.0/16    # RFC-1918 class C
+              - 169.254.0.0/16    # link-local / AWS instance metadata
+              - 127.0.0.0/8       # loopback
+              - 100.64.0.0/10     # carrier-grade NAT
+
+    # 3. Allow pods to reach cluster-internal services by DNS name
+    #    (Redis on :6379, RDS on :5432 resolved via cluster DNS to 10.x — allowed
+    #     because this rule targets only intra-namespace traffic)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kaley
+      ports:
+        - port: 6379   # Redis
+          protocol: TCP
+        - port: 5432   # PostgreSQL / RDS (VPC endpoint)
+          protocol: TCP
