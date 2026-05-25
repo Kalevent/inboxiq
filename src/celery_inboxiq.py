@@ -218,6 +218,11 @@ def make_celery(app) -> Celery:
                 if content_gen_enabled
                 else {}
             ),
+            "content_reset_stuck_generating": {
+                "task": "content.reset_stuck_generating_topics",
+                "schedule": crontab(minute=0, hour="*/2"),  # every 2 hours
+                "options": {"queue": "content"},
+            },
             **(
                 {
                     "funnel_orchestration_job": {
@@ -534,6 +539,7 @@ celery.autodiscover_tasks(["src.billing", "src.publishing", "src.leads", "src.fu
 # linkedin.discover_prospects / enrich_linkedin_urls / draft_messages also
 # silently unregistered).
 from src.funnel import tasks as _funnel_tasks  # noqa: F401
+from src.content import tasks as _content_tasks  # noqa: F401
 from src.tasks import linkedin as _linkedin_tasks  # noqa: F401
 from src.tasks import developer_webhooks as _developer_webhook_tasks  # noqa: F401
 from src.tasks import audit_log as _audit_log_tasks  # noqa: F401
