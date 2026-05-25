@@ -94,6 +94,53 @@ def track_email_event(outreach_id: str, event_type: str, timestamp: str = None):
         return {"error": str(e)}
 
 
+def _notify_reply(campaign: EmailCampaign, outreach: "EmailOutreach", reply: "Ticket") -> None:
+    """Send a plain-text SES notification to the account owner when a lead replies."""
+    import os
+    import boto3
+    from src.models.core import User
+
+    owner = db.session.query(User).filter_by(
+        account_id=campaign.account_id, role="owner"
+    ).first()
+    if not owner or not owner.email:
+        return
+
+    lead_email = outreach.recipient_email or ""
+    lead_name = outreach.recipient_name or lead_email
+    snippet = (reply.body_preview or "").strip()[:300]
+    subject_line = reply.subject or "(no subject)"
+
+    body = (
+        f"Hi {owner.name or 'there'},\n\n"
+        f"{lead_name} ({lead_email}) just replied to your outreach campaign "
+        f'"{campaign.name}".\n\n'
+        f"Subject: {subject_line}\n"
+        + (f'Preview:\n"{snippet}"\n\n' if snippet else "\n")
+        + "Log in to InboxIQ to respond:\nhttps://app.kalevent.com\n\n"
+        "— InboxIQ"
+    )
+
+    try:
+        ses = boto3.client(
+            "ses",
+            region_name=os.getenv("AWS_REGION", "us-west-2"),
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        )
+        ses.send_email(
+            Source="InboxIQ <hello@kalevent.com>",
+            Destination={"ToAddresses": [owner.email]},
+            Message={
+                "Subject": {"Data": f"💬 {lead_name} replied to your outreach", "Charset": "UTF-8"},
+                "Body": {"Text": {"Data": body, "Charset": "UTF-8"}},
+            },
+        )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("outreach reply notification failed: %s", exc)
+
+
 @shared_task(name="outreach.scan_for_replies", queue="leads")
 def scan_for_replies():
     """
@@ -138,6 +185,7 @@ def scan_for_replies():
         if pair not in counted_pairs:
             campaign.total_replied += 1
             counted_pairs.add(pair)
+            _notify_reply(campaign, outreach, reply)
 
         matched += 1
 
