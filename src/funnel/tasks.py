@@ -436,11 +436,16 @@ def enrich_lead_emails(batch_size: int = 10) -> dict:
     from urllib.parse import urlparse
 
     def _real_website_url(url: str) -> str:
-        """Return the URL as-is if it's a real company website, empty string for LinkedIn."""
+        """Return validated external URL, empty string for LinkedIn or unsafe hosts."""
         if not url:
             return ""
-        hostname = urlparse(url).hostname or ""
-        return "" if "linkedin.com" in hostname else url
+        from src.mcp.enrichment_v2_mcp import _safe_external_url
+        try:
+            safe = _safe_external_url(url)
+        except ValueError:
+            return ""
+        hostname = urlparse(safe).hostname or ""
+        return "" if "linkedin.com" in hostname else safe
 
     candidates = (
         db.session.query(Lead)

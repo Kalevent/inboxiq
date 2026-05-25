@@ -33,7 +33,7 @@ from typing import Any, Dict, List, Optional
 import requests
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from urllib.parse import quote
+from urllib.parse import quote, urlparse as _urlparse
 
 try:
     from mcp.server.fastmcp import FastMCP, Context, ToolError
@@ -214,6 +214,35 @@ def find_email_for_domain(
     return empty
 
 
+# Blocks SSRF to cloud metadata, RFC-1918, and localhost from DB-sourced URLs.
+_BLOCKED_HOST_RE = re.compile(
+    r"^(localhost|127\.|0\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.)",
+    re.IGNORECASE,
+)
+
+
+def _safe_external_url(url: str) -> str:
+    """
+    Validate that a URL is safe to visit externally (no SSRF targets).
+    Returns the normalised URL on success; raises ValueError on rejection.
+    Rejects: non-http(s) schemes, localhost/RFC-1918/cloud-metadata hosts,
+    file:// and other non-HTTP schemes.
+    """
+    if not url:
+        raise ValueError("empty URL")
+    if "://" not in url:
+        url = "https://" + url
+    parsed = _urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"disallowed scheme: {parsed.scheme!r}")
+    host = (parsed.hostname or "").lower()
+    if not host:
+        raise ValueError("no host in URL")
+    if _BLOCKED_HOST_RE.match(host):
+        raise ValueError(f"blocked host: {host!r}")
+    return url
+
+
 _EMAIL_REGEX = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
 _THROWAWAY_DOMAINS = {
     "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
@@ -259,12 +288,15 @@ def find_email_via_search(
     if not company_name:
         return empty
 
-    from urllib.parse import urlparse
     domain_hint = ""
     if company_url:
-        hostname = urlparse(company_url).hostname or ""
-        if hostname and "linkedin.com" not in hostname:
-            domain_hint = hostname.removeprefix("www.")
+        try:
+            safe_url = _safe_external_url(company_url)
+            hostname = _urlparse(safe_url).hostname or ""
+            if hostname and "linkedin.com" not in hostname:
+                domain_hint = hostname.removeprefix("www.")
+        except ValueError:
+            pass  # untrusted/internal URL — skip site: hint
 
     # Build search queries from most to least specific
     queries = []
@@ -315,6 +347,12 @@ def find_email_via_playwright(
     if not url:
         return empty
 
+    try:
+        url = _safe_external_url(url)
+    except ValueError as exc:
+        logger.warning("find_email_via_playwright rejected URL %r: %s", url, exc)
+        return empty
+
     from urllib.parse import urlparse, urljoin
     try:
         from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
@@ -323,8 +361,6 @@ def find_email_via_playwright(
         return empty
 
     parsed = urlparse(url)
-    if not parsed.scheme:
-        url = "https://" + url
 
     # Pages to check: landing page + common contact paths
     candidate_paths = ["/contact", "/contact-us", "/about", "/about-us", "/team", "/our-team"]

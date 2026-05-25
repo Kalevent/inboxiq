@@ -407,6 +407,13 @@ def delete_campaign(campaign_id):
     if campaign.status == "active":
         return jsonify({"error": "Cannot delete an active campaign. Pause it first."}), 409
 
+    from flask import current_app
+    if admin:
+        current_app.logger.warning(
+            "admin delete campaign: admin=%s campaign_id=%s account_id=%s name=%r",
+            get_jwt_identity(), campaign_id, campaign.account_id, campaign.name,
+        )
+
     try:
         db.session.delete(campaign)
         db.session.commit()
