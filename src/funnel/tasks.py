@@ -357,7 +357,11 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
     goal = (
         f"Discover companies matching ICP in niche '{niche}'. "
         f"Call get_icp_config first. Then call discover_companies via MCP. "
-        f"For each result not in get_existing_companies, call save_lead. "
+        f"For each result not in get_existing_companies: "
+        f"(1) try find_email_via_playwright with the company website URL if available, "
+        f"(2) if no email found, try find_email_via_search with the company name, "
+        f"(3) only then call save_lead — pass the email found or empty string. "
+        f"Do NOT save leads with an empty company_name. "
         f"Limit to {max_leads} new leads."
     )
 
@@ -395,8 +399,12 @@ def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results
     goal = (
         f"Find companies showing '{signal_type}' buying signals in niche '{niche}'. "
         f"Use find_buying_signals via MCP. For each company not already in "
-        f"get_existing_companies, call save_lead with source='buying_signal' "
-        f"and relevant notes. Limit to {max_results} signals."
+        f"get_existing_companies: "
+        f"(1) try find_email_via_playwright with the company website URL if available, "
+        f"(2) if no email found, try find_email_via_search with the company name, "
+        f"(3) call save_lead with source='buying_signal', the email found (or empty), "
+        f"and relevant notes. Do NOT save results that are job postings or article titles "
+        f"rather than real companies. Limit to {max_results} signals."
     )
 
     for row in db.session.query(Account.id).all():
@@ -413,30 +421,26 @@ def enrich_lead_emails(batch_size: int = 10) -> dict:
     """
     Backfill emails on leads that were discovered without one.
 
-    Only attempts leads where we have a reliable company website domain —
-    specifically those whose linkedin_url is a non-LinkedIn website URL
-    (e.g. https://acme.com/about).  Leads whose linkedin_url is a LinkedIn
-    personal or company profile, or is absent, are skipped here; those
-    require Playwright-based email scraping (not yet built).
+    Strategy (in order of preference):
+    1. Playwright — visit the company website (linkedin_url that is NOT a
+       linkedin.com URL) and scrape email from contact/about/team pages.
+    2. SearXNG (Ranger) — search "<company_name> email contact" and extract
+       emails from search result snippets.
 
-    Groups by domain so one Hunter.io search covers multiple leads from
-    the same company.  Capped at `batch_size` Hunter searches per run
-    (default 10) to respect the free-plan 50-search monthly quota.
+    Groups by company website URL so a single Playwright/search run covers
+    multiple leads from the same company.  Stops after `batch_size` distinct
+    company lookups per run.
     """
     from src.models.leads import Lead
-    from src.mcp.enrichment_v2_mcp import find_email_for_domain
+    from src.mcp.enrichment_v2_mcp import find_email_via_playwright, find_email_via_search
     from urllib.parse import urlparse
 
-    def _extract_company_domain(url: str) -> str:
-        """Return domain from a real website URL; empty string for LinkedIn URLs."""
+    def _real_website_url(url: str) -> str:
+        """Return the URL as-is if it's a real company website, empty string for LinkedIn."""
         if not url:
             return ""
-        parsed = urlparse(url)
-        hostname = parsed.hostname or ""
-        if not hostname or "linkedin.com" in hostname:
-            return ""
-        # Strip www.
-        return hostname.removeprefix("www.")
+        hostname = urlparse(url).hostname or ""
+        return "" if "linkedin.com" in hostname else url
 
     candidates = (
         db.session.query(Lead)
@@ -444,33 +448,49 @@ def enrich_lead_emails(batch_size: int = 10) -> dict:
             Lead.outreach_unsubscribed_at.is_(None),
             Lead.deleted.is_(False),
             or_(Lead.email.is_(None), Lead.email == ""),
-            Lead.linkedin_url.isnot(None),
-            Lead.linkedin_url != "",
+            Lead.company_name.isnot(None),
+            Lead.company_name != "",
         )
         .order_by(Lead.fit_score.desc().nullslast(), Lead.created_at.desc())
         .limit(batch_size * 30)
         .all()
     )
 
-    # One Hunter call per unique domain, spread email to all leads sharing it
-    domain_to_email: dict = {}
+    company_to_email: dict = {}
     enriched = 0
-    searched = 0
+    attempted = 0
 
     for lead in candidates:
-        if searched >= batch_size:
+        if attempted >= batch_size:
             break
 
-        domain = _extract_company_domain(lead.linkedin_url or "")
-        if not domain:
+        company_key = (lead.company_name or "").strip().lower()
+        if not company_key:
             continue
 
-        if domain not in domain_to_email:
-            result = find_email_for_domain(domain=domain, full_name=lead.name or "")
-            domain_to_email[domain] = result.get("email", "")
-            searched += 1
+        if company_key in company_to_email:
+            email = company_to_email[company_key]
+        else:
+            attempted += 1
+            website_url = _real_website_url(lead.linkedin_url or "")
+            email = ""
 
-        email = domain_to_email[domain]
+            # Strategy 1: Playwright (most accurate)
+            if website_url:
+                result = find_email_via_playwright(url=website_url)
+                email = result.get("email", "")
+
+            # Strategy 2: SearXNG search
+            if not email:
+                result = find_email_via_search(
+                    company_name=lead.company_name or "",
+                    company_url=website_url,
+                    person_name=lead.name or "",
+                )
+                email = result.get("email", "")
+
+            company_to_email[company_key] = email
+
         if email:
             lead.email = email
             enriched += 1
@@ -481,7 +501,7 @@ def enrich_lead_emails(batch_size: int = 10) -> dict:
         db.session.rollback()
         raise
 
-    return {"searched": searched, "enriched": enriched}
+    return {"attempted": attempted, "enriched": enriched}
 
 
 @shared_task(name="funnel.orchestration_job")

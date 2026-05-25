@@ -214,6 +214,159 @@ def find_email_for_domain(
     return empty
 
 
+_EMAIL_REGEX = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
+_THROWAWAY_DOMAINS = {
+    "gmail.com", "yahoo.com", "hotmail.com", "outlook.com",
+    "linkedin.com", "twitter.com", "facebook.com",
+}
+_SKIP_PREFIXES = ("noreply@", "no-reply@", "info@", "support@", "hello@", "admin@",
+                  "contact@", "press@", "legal@", "privacy@", "abuse@")
+
+
+def _is_business_email(email: str) -> bool:
+    """Return True if email looks like a real personal business address."""
+    e = email.lower()
+    domain = e.split("@")[-1] if "@" in e else ""
+    return (
+        bool(domain)
+        and domain not in _THROWAWAY_DOMAINS
+        and not any(e.startswith(p) for p in _SKIP_PREFIXES)
+    )
+
+
+@mcp.tool()
+def find_email_via_search(
+    company_name: str,
+    company_url: str = "",
+    person_name: str = "",
+) -> Dict[str, Any]:
+    """
+    Find a contact email for a company using SearXNG (Ranger) web search.
+
+    Crafts a targeted query combining company name, person name, and domain,
+    then extracts email addresses from result titles and snippets.  Returns
+    the first business (non-generic) email found.
+
+    Args:
+        company_name: Company name, e.g. "Acme Corp"
+        company_url: Company website URL (optional but improves accuracy)
+        person_name: Specific person to search for (optional)
+
+    Returns:
+        Dict with email (str), source ("search"), confidence (int 0-100)
+    """
+    empty = {"email": "", "source": "none", "confidence": 0}
+    if not company_name:
+        return empty
+
+    from urllib.parse import urlparse
+    domain_hint = ""
+    if company_url:
+        hostname = urlparse(company_url).hostname or ""
+        if hostname and "linkedin.com" not in hostname:
+            domain_hint = hostname.removeprefix("www.")
+
+    # Build search queries from most to least specific
+    queries = []
+    if person_name and domain_hint:
+        queries.append(f'"{person_name}" email site:{domain_hint}')
+    if domain_hint:
+        queries.append(f'"{company_name}" email contact site:{domain_hint}')
+        queries.append(f'site:{domain_hint} email contact')
+    if person_name:
+        queries.append(f'"{person_name}" "{company_name}" email')
+    queries.append(f'"{company_name}" email contact')
+
+    for query in queries:
+        try:
+            results = _search_web(query, max_results=5)
+            for result in results:
+                for field in (result.get("title", ""), result.get("snippet", ""), result.get("url", "")):
+                    for match in _EMAIL_REGEX.findall(field):
+                        if _is_business_email(match):
+                            return {"email": match.lower(), "source": "search", "confidence": 60}
+        except Exception as exc:
+            logger.warning("find_email_via_search failed for %s: %s", company_name, exc)
+
+    return empty
+
+
+@mcp.tool()
+def find_email_via_playwright(
+    url: str,
+    max_pages: int = 3,
+) -> Dict[str, Any]:
+    """
+    Visit a company website with Playwright and extract business email addresses.
+
+    Visits the given URL then checks /contact, /about, and /team pages for
+    email addresses embedded in the page.  Returns the first business
+    (non-generic) email found.
+
+    Args:
+        url: Company website URL, e.g. "https://acme.com"
+        max_pages: Maximum sub-pages to visit after the landing page (default 3)
+
+    Returns:
+        Dict with email (str), source ("playwright"), confidence (int 0-100),
+        page_url (str) where the email was found.
+    """
+    empty = {"email": "", "source": "none", "confidence": 0, "page_url": ""}
+    if not url:
+        return empty
+
+    from urllib.parse import urlparse, urljoin
+    try:
+        from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
+    except ImportError:
+        logger.warning("playwright not installed; skipping find_email_via_playwright")
+        return empty
+
+    parsed = urlparse(url)
+    if not parsed.scheme:
+        url = "https://" + url
+
+    # Pages to check: landing page + common contact paths
+    candidate_paths = ["/contact", "/contact-us", "/about", "/about-us", "/team", "/our-team"]
+    pages_to_visit = [url] + [urljoin(url, p) for p in candidate_paths]
+
+    def _extract_emails_from_text(text: str) -> List[str]:
+        return [e.lower() for e in _EMAIL_REGEX.findall(text) if _is_business_email(e)]
+
+    visited = 0
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.set_extra_http_headers({"User-Agent": "Mozilla/5.0 (compatible; KaleventBot/1.0)"})
+
+            for page_url in pages_to_visit:
+                if visited >= max_pages + 1:
+                    break
+                try:
+                    page.goto(page_url, wait_until="domcontentloaded", timeout=12000)
+                    content = page.content()
+                    visited += 1
+                    for email in _extract_emails_from_text(content):
+                        browser.close()
+                        return {
+                            "email": email,
+                            "source": "playwright",
+                            "confidence": 85,
+                            "page_url": page_url,
+                        }
+                except PWTimeout:
+                    logger.debug("Playwright timeout on %s", page_url)
+                except Exception as exc:
+                    logger.debug("Playwright error on %s: %s", page_url, exc)
+
+            browser.close()
+    except Exception as exc:
+        logger.warning("find_email_via_playwright failed for %s: %s", url, exc)
+
+    return empty
+
+
 @mcp.tool()
 def enrich_company(
     domain: str,
