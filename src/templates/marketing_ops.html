@@ -1187,10 +1187,10 @@
             <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
               <div>
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-base font-semibold text-slate-100">${c.name}</span>
+                  <span class="text-base font-semibold text-slate-100">${escapeHtml(c.name)}</span>
                   ${_statusBadge(c)}
                 </div>
-                <div class="text-xs text-slate-400 mt-0.5">From: ${c.from_email} · Started: ${c.started_at ? new Date(c.started_at).toLocaleDateString() : 'Not started'}</div>
+                <div class="text-xs text-slate-400 mt-0.5">From: ${escapeHtml(c.from_email)} · Started: ${c.started_at ? new Date(c.started_at).toLocaleDateString() : 'Not started'}</div>
               </div>
               <div class="flex gap-2 flex-wrap">${_campActions(c)}</div>
             </div>

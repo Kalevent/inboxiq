@@ -121,8 +121,9 @@ def _generate_hero_image(title: str, topic: dict) -> tuple[str, str]:
 
     image_url = response.data[0].url
 
-    # Download image
-    img_response = requests.get(image_url, timeout=30)
+    # Download image — validate URL before fetching (defense-in-depth against rogue API responses)
+    from src.mcp.enrichment_v2_mcp import _safe_external_url
+    img_response = requests.get(_safe_external_url(image_url), timeout=30)
     img_response.raise_for_status()
     image_bytes = img_response.content
 
