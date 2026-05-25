@@ -189,6 +189,10 @@
   <script src="{{ url_for('static', filename='js/footer_feedback.js') }}"></script>
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
   <script>
+    function escapeHtml(text) {
+      return text ? text.replace(/[<>&"']/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]) : '';
+    }
+
     // ── Sidebar navigation ────────────────────────────────────────────────
     const _sectionLabels = {
       funnel: 'Funnel v2.0',
@@ -517,7 +521,6 @@
         if (countEl) countEl.textContent = `${data.leads.length} leads`;
         document.getElementById('exportLeadsBtn').classList.remove('hidden');
 
-        const escapeHtml = (text) => text ? text.replace(/[<>&"']/g, (c) => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]) : '';
         container.innerHTML = data.leads.map(lead => {
           const url = lead.url;
           const company = lead.company_name || lead.name || 'Unknown';
