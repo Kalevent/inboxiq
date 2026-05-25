@@ -305,6 +305,12 @@ class ContentWriterAgent(BaseAgent):
             raise
 
         self.log(f"Saved: {blog_post.id} ({post_status})")
+
+        if post_status == "ready":
+            from src.marketing.content_distribution import publish_blog_post
+            publish_blog_post.delay(blog_post.id)
+            self.log(f"publish_blog_post queued for {blog_post.id}")
+
         return {
             "success": True,
             "blog_post_id": blog_post.id,
