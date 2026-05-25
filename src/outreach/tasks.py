@@ -94,6 +94,118 @@ def track_email_event(outreach_id: str, event_type: str, timestamp: str = None):
         return {"error": str(e)}
 
 
+def _advance_lead_stage(campaign: EmailCampaign, outreach: "EmailOutreach", reply: "Ticket") -> None:
+    """Advance the matching Lead to Qualified / consideration when they reply to outreach."""
+    from src.models.leads import Lead, LeadFunnelStage
+
+    lead = db.session.query(Lead).filter_by(
+        account_id=campaign.account_id,
+        email=outreach.recipient_email,
+    ).first()
+    if not lead:
+        return
+
+    now = reply.created_at or datetime.now()
+
+    # Only advance forward — never downgrade a Qualified/Closed lead
+    if lead.status in ("New Lead", "Contacted"):
+        lead.status = "Qualified"
+
+    if lead.current_funnel_stage in ("visits", "discovery"):
+        lead.current_funnel_stage = "consideration"
+        lead.stage_entered_at = now
+        db.session.add(LeadFunnelStage(
+            lead_id=lead.id,
+            stage="consideration",
+            sub_stage="outreach_replied",
+            entered_at=now,
+            notes=f"Replied to campaign: {campaign.name}",
+        ))
+
+    lead.last_engagement_at = now
+
+
+def _draft_outreach_reply(
+    campaign: EmailCampaign,
+    outreach: "EmailOutreach",
+    reply: "Ticket",
+) -> str:
+    """Use DSPy to draft a warm, context-aware reply to an outreach response. Returns empty string on failure."""
+    try:
+        from src.dspy import _configure_dspy
+        import dspy as _dspy
+        from src.dspy.signatures import build_outreach_reply_drafter
+
+        _configure_dspy()
+        drafter = build_outreach_reply_drafter(_dspy)
+        result = drafter(
+            lead_name=outreach.recipient_name or outreach.recipient_email or "there",
+            campaign_name=campaign.name or "",
+            original_subject=outreach.subject or "",
+            reply_preview=(reply.body_preview or "").strip()[:500],
+        )
+        return (result.reply_text or "").strip()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("outreach reply draft failed: %s", exc)
+        return ""
+
+
+def _notify_reply(campaign: EmailCampaign, outreach: "EmailOutreach", reply: "Ticket") -> None:
+    """Send a plain-text SES notification to the account owner when a lead replies,
+    including an AI-drafted suggested response."""
+    import os
+    import boto3
+    from src.models.core import User
+
+    owner = db.session.query(User).filter_by(
+        account_id=campaign.account_id, role="owner"
+    ).first()
+    if not owner or not owner.email:
+        return
+
+    lead_email = outreach.recipient_email or ""
+    lead_name = outreach.recipient_name or lead_email
+    snippet = (reply.body_preview or "").strip()[:300]
+    subject_line = reply.subject or "(no subject)"
+
+    draft = _draft_outreach_reply(campaign, outreach, reply)
+    draft_section = (
+        f"\n--- Suggested reply (review before sending) ---\n{draft}\n"
+        if draft else ""
+    )
+
+    body = (
+        f"Hi {owner.name or 'there'},\n\n"
+        f"{lead_name} ({lead_email}) just replied to your outreach campaign "
+        f'"{campaign.name}".\n\n'
+        f"Subject: {subject_line}\n"
+        + (f'Their message:\n"{snippet}"\n' if snippet else "")
+        + draft_section
+        + "\nLog in to InboxIQ to respond:\nhttps://app.kalevent.com\n\n"
+        "— InboxIQ"
+    )
+
+    try:
+        ses = boto3.client(
+            "ses",
+            region_name=os.getenv("AWS_REGION", "us-west-2"),
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        )
+        ses.send_email(
+            Source="InboxIQ <hello@kalevent.com>",
+            Destination={"ToAddresses": [owner.email]},
+            Message={
+                "Subject": {"Data": f"💬 {lead_name} replied to your outreach", "Charset": "UTF-8"},
+                "Body": {"Text": {"Data": body, "Charset": "UTF-8"}},
+            },
+        )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("outreach reply notification failed: %s", exc)
+
+
 @shared_task(name="outreach.scan_for_replies", queue="leads")
 def scan_for_replies():
     """
@@ -138,6 +250,8 @@ def scan_for_replies():
         if pair not in counted_pairs:
             campaign.total_replied += 1
             counted_pairs.add(pair)
+            _advance_lead_stage(campaign, outreach, reply)
+            _notify_reply(campaign, outreach, reply)
 
         matched += 1
 
