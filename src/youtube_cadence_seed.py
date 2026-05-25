@@ -51,6 +51,31 @@ PAIN_POINTS = [
         "consequence": "Margins shrink as you grow",
         "persona": "Head of Support",
     },
+    # Feature / use-case specific pain points
+    {
+        "priority": 8,
+        "pain_point": "Stripe and QuickBooks never talk — reconciling transactions is a manual copy-paste job",
+        "consequence": "Finance admin takes hours every month; errors slip through",
+        "persona": "Founder / Finance Lead",
+    },
+    {
+        "priority": 7,
+        "pain_point": "Prior authorisation requests get buried in email threads and take days to process",
+        "consequence": "Patient care is delayed and staff are overwhelmed by follow-up calls",
+        "persona": "Healthcare Operations Manager",
+    },
+    {
+        "priority": 6,
+        "pain_point": "Customers ask the same questions over and over and there's no self-serve answer",
+        "consequence": "Support agents waste time on questions a chatbot should handle",
+        "persona": "Head of Support",
+    },
+    {
+        "priority": 5,
+        "pain_point": "Lead capture forms generate enquiries that get lost in a shared inbox",
+        "consequence": "Hot leads go cold before anyone follows up",
+        "persona": "Head of Sales / Operations Lead",
+    },
 ]
 
 

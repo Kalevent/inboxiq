@@ -78,13 +78,30 @@ def _get_latest_blog_post(account_id: int, offset: int = 0) -> Optional[BlogPost
     )
 
 
-def _get_top_pain_point(account_id: int) -> Optional[ICPPainPoint]:
-    return (
+def _get_next_pain_point(account_id: int) -> Optional[ICPPainPoint]:
+    """Return the active pain point that has been used least often in videos.
+    Ties are broken by priority (desc) so new pain points start at their natural
+    rank and cycle evenly once all have been used the same number of times.
+    """
+    from sqlalchemy import func as sqlfunc, outerjoin
+    pain_points = (
         db.session.query(ICPPainPoint)
         .filter(ICPPainPoint.account_id == account_id, ICPPainPoint.active.is_(True))
-        .order_by(ICPPainPoint.priority.desc())
-        .first()
+        .all()
     )
+    if not pain_points:
+        return None
+
+    video_counts: dict[str, int] = {}
+    for pp in pain_points:
+        count = (
+            db.session.query(sqlfunc.count(YouTubeVideo.id))
+            .filter(YouTubeVideo.icp_pain_point_id == pp.id)
+            .scalar()
+        ) or 0
+        video_counts[pp.id] = count
+
+    return min(pain_points, key=lambda pp: (video_counts[pp.id], -pp.priority))
 
 
 def _build_utm_slug(video_type: str, blog_post_title: str) -> str:
@@ -210,7 +227,7 @@ def generate_scripts(account_id: int | None = None, video_style: str = "avatar")
         logger.warning("youtube.generate_scripts: no eligible blog post", extra={"account_id": account_id})
         return {"status": "skipped", "reason": "no eligible blog post"}
 
-    pain_point = _get_top_pain_point(account_id)
+    pain_point = _get_next_pain_point(account_id)
     if not pain_point:
         logger.warning("youtube.generate_scripts: no active ICPPainPoint", extra={"account_id": account_id})
         return {"status": "skipped", "reason": "no active ICPPainPoint"}
