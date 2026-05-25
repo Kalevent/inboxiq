@@ -31,6 +31,9 @@ class FunnelDiscoveryAgent(BaseAgent):
             self._tool_discover_companies,
             self._tool_find_buying_signals,
             self._tool_find_decision_makers,
+            self._tool_find_email_for_domain,
+            self._tool_find_email_via_search,
+            self._tool_find_email_via_playwright,
             self._tool_save_lead,
         ]
 
@@ -99,6 +102,36 @@ class FunnelDiscoveryAgent(BaseAgent):
         from src.mcp.lead_discovery_mcp import find_decision_makers
         self.tool_calls.append({"tool": "find_decision_makers", "input": {"company_domain": company_domain}})
         return asyncio.run(find_decision_makers(company_domain=company_domain, job_titles=job_titles, max_results=max_results))
+
+    def _tool_find_email_for_domain(
+        self,
+        domain: str,
+        full_name: str = "",
+    ) -> Dict[str, Any]:
+        """Find a contact email for a company domain via Hunter.io. Call this before save_lead when no email is known."""
+        from src.mcp.enrichment_v2_mcp import find_email_for_domain
+        self.tool_calls.append({"tool": "find_email_for_domain", "input": {"domain": domain}})
+        return find_email_for_domain(domain=domain, full_name=full_name or None)
+
+    def _tool_find_email_via_search(
+        self,
+        company_name: str,
+        company_url: str = "",
+        person_name: str = "",
+    ) -> Dict[str, Any]:
+        """Search for a company contact email using SearXNG (Ranger). Use when domain is unknown or Hunter has no data."""
+        from src.mcp.enrichment_v2_mcp import find_email_via_search
+        self.tool_calls.append({"tool": "find_email_via_search", "input": {"company_name": company_name}})
+        return find_email_via_search(company_name=company_name, company_url=company_url, person_name=person_name)
+
+    def _tool_find_email_via_playwright(
+        self,
+        url: str,
+    ) -> Dict[str, Any]:
+        """Visit a company website with Playwright and extract email addresses from contact/about/team pages."""
+        from src.mcp.enrichment_v2_mcp import find_email_via_playwright
+        self.tool_calls.append({"tool": "find_email_via_playwright", "input": {"url": url}})
+        return find_email_via_playwright(url=url)
 
     def _tool_save_lead(
         self,

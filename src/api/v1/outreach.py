@@ -391,6 +391,32 @@ def campaign_stats(campaign_id):
     }), 200
 
 
+@v1.route("/outreach/campaigns/<campaign_id>", methods=["DELETE"])
+@jwt_required()
+def delete_campaign(campaign_id):
+    """Delete a campaign and all its outreach records. Only paused or completed campaigns may be deleted."""
+    admin = _require_admin()
+    campaign = db.session.query(EmailCampaign).filter(EmailCampaign.id == campaign_id).first()
+    if not campaign:
+        return jsonify({"error": "Campaign not found"}), 404
+    if not admin:
+        user = db.session.get(User, get_jwt_identity())
+        if not user or campaign.account_id != user.account_id:
+            return jsonify({"error": "forbidden"}), 403
+
+    if campaign.status == "active":
+        return jsonify({"error": "Cannot delete an active campaign. Pause it first."}), 409
+
+    try:
+        db.session.delete(campaign)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    return jsonify({"deleted": True, "campaign_id": campaign_id}), 200
+
+
 # ============================================================================
 # Campaign Senders Management
 # ============================================================================

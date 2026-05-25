@@ -357,7 +357,11 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
     goal = (
         f"Discover companies matching ICP in niche '{niche}'. "
         f"Call get_icp_config first. Then call discover_companies via MCP. "
-        f"For each result not in get_existing_companies, call save_lead. "
+        f"For each result not in get_existing_companies: "
+        f"(1) try find_email_via_playwright with the company website URL if available, "
+        f"(2) if no email found, try find_email_via_search with the company name, "
+        f"(3) only then call save_lead — pass the email found or empty string. "
+        f"Do NOT save leads with an empty company_name. "
         f"Limit to {max_leads} new leads."
     )
 
@@ -395,8 +399,12 @@ def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results
     goal = (
         f"Find companies showing '{signal_type}' buying signals in niche '{niche}'. "
         f"Use find_buying_signals via MCP. For each company not already in "
-        f"get_existing_companies, call save_lead with source='buying_signal' "
-        f"and relevant notes. Limit to {max_results} signals."
+        f"get_existing_companies: "
+        f"(1) try find_email_via_playwright with the company website URL if available, "
+        f"(2) if no email found, try find_email_via_search with the company name, "
+        f"(3) call save_lead with source='buying_signal', the email found (or empty), "
+        f"and relevant notes. Do NOT save results that are job postings or article titles "
+        f"rather than real companies. Limit to {max_results} signals."
     )
 
     for row in db.session.query(Account.id).all():
@@ -406,6 +414,94 @@ def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results
             log.exception("discover_buying_signals failed for account_id=%s", row.id)
 
     return {"status": "ok", "niche": niche, "signal_type": signal_type}
+
+
+@shared_task(name="funnel.enrich_lead_emails", queue="leads")
+def enrich_lead_emails(batch_size: int = 10) -> dict:
+    """
+    Backfill emails on leads that were discovered without one.
+
+    Strategy (in order of preference):
+    1. Playwright — visit the company website (linkedin_url that is NOT a
+       linkedin.com URL) and scrape email from contact/about/team pages.
+    2. SearXNG (Ranger) — search "<company_name> email contact" and extract
+       emails from search result snippets.
+
+    Groups by company website URL so a single Playwright/search run covers
+    multiple leads from the same company.  Stops after `batch_size` distinct
+    company lookups per run.
+    """
+    from src.models.leads import Lead
+    from src.mcp.enrichment_v2_mcp import find_email_via_playwright, find_email_via_search
+    from urllib.parse import urlparse
+
+    def _real_website_url(url: str) -> str:
+        """Return the URL as-is if it's a real company website, empty string for LinkedIn."""
+        if not url:
+            return ""
+        hostname = urlparse(url).hostname or ""
+        return "" if "linkedin.com" in hostname else url
+
+    candidates = (
+        db.session.query(Lead)
+        .filter(
+            Lead.outreach_unsubscribed_at.is_(None),
+            Lead.deleted.is_(False),
+            or_(Lead.email.is_(None), Lead.email == ""),
+            Lead.company_name.isnot(None),
+            Lead.company_name != "",
+        )
+        .order_by(Lead.fit_score.desc().nullslast(), Lead.created_at.desc())
+        .limit(batch_size * 30)
+        .all()
+    )
+
+    company_to_email: dict = {}
+    enriched = 0
+    attempted = 0
+
+    for lead in candidates:
+        if attempted >= batch_size:
+            break
+
+        company_key = (lead.company_name or "").strip().lower()
+        if not company_key:
+            continue
+
+        if company_key in company_to_email:
+            email = company_to_email[company_key]
+        else:
+            attempted += 1
+            website_url = _real_website_url(lead.linkedin_url or "")
+            email = ""
+
+            # Strategy 1: Playwright (most accurate)
+            if website_url:
+                result = find_email_via_playwright(url=website_url)
+                email = result.get("email", "")
+
+            # Strategy 2: SearXNG search
+            if not email:
+                result = find_email_via_search(
+                    company_name=lead.company_name or "",
+                    company_url=website_url,
+                    person_name=lead.name or "",
+                )
+                email = result.get("email", "")
+
+            company_to_email[company_key] = email
+
+        if email:
+            lead.email = email
+            enriched += 1
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    return {"attempted": attempted, "enriched": enriched}
 
 
 @shared_task(name="funnel.orchestration_job")
