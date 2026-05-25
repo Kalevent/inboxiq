@@ -51,6 +51,55 @@ PAIN_POINTS = [
         "consequence": "Margins shrink as you grow",
         "persona": "Head of Support",
     },
+    # Feature / use-case specific pain points
+    {
+        "priority": 9,
+        "pain_point": "Finance teams manually process dozens of invoice and payment confirmation emails every week",
+        "consequence": "Hours lost on admin, reconciliation is always behind, and errors compound at month-end",
+        "persona": "Founder / Finance Lead",
+    },
+    {
+        "priority": 8,
+        "pain_point": "Prior authorisation requests arrive by email but the status lives in a different system",
+        "consequence": "Staff chase approvals manually, delays stack up, and patients are left waiting",
+        "persona": "Healthcare Operations Manager",
+    },
+    {
+        "priority": 8,
+        "pain_point": "Stripe and QuickBooks never talk — reconciling transactions is a manual copy-paste job",
+        "consequence": "Finance admin takes hours every month; errors slip through",
+        "persona": "Founder / Finance Lead",
+    },
+    {
+        "priority": 7,
+        "pain_point": "High-volume support inboxes have no triage — every email lands in the same pile",
+        "consequence": "Urgent issues are buried, SLAs are missed, and agents burn time on tickets that should be auto-resolved",
+        "persona": "Head of Support / Operations Manager",
+    },
+    {
+        "priority": 7,
+        "pain_point": "Prior authorisation requests get buried in email threads and take days to process",
+        "consequence": "Patient care is delayed and staff are overwhelmed by follow-up calls",
+        "persona": "Healthcare Operations Manager",
+    },
+    {
+        "priority": 6,
+        "pain_point": "Support teams manually read and categorise every inbound email before they can act",
+        "consequence": "Triage alone consumes hours a day that should go toward resolution",
+        "persona": "Head of Support",
+    },
+    {
+        "priority": 6,
+        "pain_point": "Customers ask the same questions over and over and there's no self-serve answer",
+        "consequence": "Support agents waste time on questions a chatbot should handle",
+        "persona": "Head of Support",
+    },
+    {
+        "priority": 5,
+        "pain_point": "Lead capture forms generate enquiries that get lost in a shared inbox",
+        "consequence": "Hot leads go cold before anyone follows up",
+        "persona": "Head of Sales / Operations Lead",
+    },
 ]
 
 

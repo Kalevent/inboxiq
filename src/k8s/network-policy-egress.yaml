@@ -24,8 +24,13 @@ spec:
   policyTypes:
     - Egress
   egress:
-    # 1. DNS — required before any outbound connection (kube-dns at 10.100.0.10)
-    - ports:
+    # 1. DNS — AWS VPC CNI eBPF enforcement requires an explicit namespaceSelector
+    #    to kube-system; an open port-only rule is not sufficient for kube-dns.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
         - port: 53
           protocol: UDP
         - port: 53
