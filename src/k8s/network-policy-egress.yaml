@@ -1,0 +1,74 @@
+---
+# Egress NetworkPolicy — SSRF defence-in-depth
+#
+# Applies to all pods in the kaley namespace.
+# Blocks outbound connections to RFC-1918, link-local, and metadata ranges
+# at the kernel/CNI level, regardless of application-layer validation.
+#
+# This is the second layer of SSRF defence. The first layer is _safe_external_url()
+# in src/mcp/enrichment_v2_mcp.py. Both must hold for an SSRF attack to succeed.
+#
+# NOTE: Requires a NetworkPolicy-enforcing CNI to take effect.
+# Enable on EKS with: aws eks update-addon --addon-name vpc-cni
+#   --configuration-values '{"enableNetworkPolicy": "true"}'
+#
+# Apply: kubectl apply -f src/k8s/network-policy-egress.yaml
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: inboxiq-egress-ssrf-guard
+  namespace: kaley
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    # 1. DNS — required before any outbound connection (kube-dns at 10.100.0.10)
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+
+    # 2. HTTP/HTTPS to public internet only
+    #    Blocks RFC-1918, link-local (169.254.x.x / AWS metadata), loopback
+    - ports:
+        - port: 80
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+      to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8        # RFC-1918 class A
+              - 172.16.0.0/12     # RFC-1918 class B
+              - 192.168.0.0/16    # RFC-1918 class C
+              - 169.254.0.0/16    # link-local / AWS instance metadata
+              - 127.0.0.0/8       # loopback
+              - 100.64.0.0/10     # carrier-grade NAT
+
+    # 3. Intra-namespace cluster services (pods in kaley)
+    #    Redis :6379, Phoenix OTEL :4317, SearXNG :8000
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kaley
+      ports:
+        - port: 6379    # Redis
+          protocol: TCP
+        - port: 4317    # Phoenix / OTEL gRPC receiver
+          protocol: TCP
+        - port: 8000    # SearXNG
+          protocol: TCP
+
+    # 4. RDS (AWS-managed — resolves to VPC private IP, not a cluster pod)
+    #    Port-restricted to 5432 only; 192.168.0.0/16 covers VPC subnet
+    #    even if AWS changes the RDS instance IP.
+    - to:
+        - ipBlock:
+            cidr: 192.168.0.0/16
+      ports:
+        - port: 5432
+          protocol: TCP
