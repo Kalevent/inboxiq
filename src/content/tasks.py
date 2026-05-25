@@ -336,11 +336,19 @@ def content_generation_job():
 
 @shared_task(name="content.generate_blog_from_pitched_topic", queue="content")
 def generate_blog_from_pitched_topic(topic_id: str):
-    """Generate blog post from a manually pitched topic via ContentWriterAgent."""
+    """Generate blog post from a manually pitched topic via ContentWriterAgent.
+    Auto-publishes when the post passes the quality gate (status='ready').
+    """
     from src.agents.content_writer import ContentWriterAgent  # deferred to avoid circular import risk
 
     goal = json.dumps({"mode": "pitched", "topic_id": topic_id})
-    return ContentWriterAgent(account_id=1).execute(goal)  # 1 = system account; pitched topics are admin-triggered
+    result = ContentWriterAgent(account_id=1).execute(goal)
+
+    if result.get("status") == "ready" and result.get("blog_post_id"):
+        from src.marketing.content_distribution import publish_blog_post
+        publish_blog_post.delay(result["blog_post_id"])
+
+    return result
 
 
 def enrich_blog_posts_for_geo() -> dict:
