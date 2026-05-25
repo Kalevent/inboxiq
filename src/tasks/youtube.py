@@ -374,7 +374,8 @@ def _generate_dalle_frames(prompts: list, account_id: int) -> list:
                 n=1,
             )
             image_url = response.data[0].url
-            img_bytes = http_requests.get(image_url, timeout=30).content
+            from src.mcp.enrichment_v2_mcp import _safe_external_url
+            img_bytes = http_requests.get(_safe_external_url(image_url), timeout=30).content
             key = f"youtube/frames/{account_id}/{uuid4()}.png"
             upload_bytes(key, img_bytes, "image/png", "attachment")
             urls.append(build_public_url(key))

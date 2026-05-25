@@ -72,7 +72,8 @@ def upload_video(
         import io
         from googleapiclient.http import MediaIoBaseUpload
 
-        video_resp = requests.get(file_url, timeout=120, stream=True)
+        from src.mcp.enrichment_v2_mcp import _safe_external_url
+        video_resp = requests.get(_safe_external_url(file_url), timeout=120, stream=True)
         video_resp.raise_for_status()
 
         video_bytes = io.BytesIO(video_resp.content)
