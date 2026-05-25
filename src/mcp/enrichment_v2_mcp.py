@@ -33,7 +33,9 @@ from typing import Any, Dict, List, Optional
 import requests
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from urllib.parse import quote, urlparse as _urlparse
+import ipaddress
+import socket
+from urllib.parse import quote, urljoin as _urljoin, urlparse as _urlparse
 
 try:
     from mcp.server.fastmcp import FastMCP, Context, ToolError
@@ -215,18 +217,49 @@ def find_email_for_domain(
 
 
 # Blocks SSRF to cloud metadata, RFC-1918, and localhost from DB-sourced URLs.
+# Fast-path string reject for obviously private hostnames (pre-DNS)
 _BLOCKED_HOST_RE = re.compile(
     r"^(localhost|127\.|0\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.)",
     re.IGNORECASE,
 )
 
+# All IP ranges that must never be reachable from a web fetch
+_PRIVATE_NETWORKS = (
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("127.0.0.0/8"),
+    ipaddress.ip_network("169.254.0.0/16"),   # link-local / AWS metadata
+    ipaddress.ip_network("0.0.0.0/8"),
+    ipaddress.ip_network("100.64.0.0/10"),    # carrier-grade NAT
+    ipaddress.ip_network("::1/128"),           # IPv6 loopback
+    ipaddress.ip_network("fc00::/7"),          # IPv6 ULA
+    ipaddress.ip_network("fe80::/10"),         # IPv6 link-local
+)
+
+_ALLOWED_PORTS = frozenset({80, 443})
+
+
+def _ip_is_private(ip_str: str) -> bool:
+    try:
+        addr = ipaddress.ip_address(ip_str)
+        return any(addr in net for net in _PRIVATE_NETWORKS)
+    except ValueError:
+        return True  # unparseable → fail safe
+
 
 def _safe_external_url(url: str) -> str:
     """
-    Validate that a URL is safe to visit externally (no SSRF targets).
+    Validate that a URL is safe to fetch externally (SSRF guard).
+
+    Checks (in order):
+      1. Scheme — http/https only
+      2. Port — 80, 443, or omitted (default)
+      3. String pattern — fast-reject obvious private hostnames
+      4. DNS resolution — reject if ANY resolved IP is private/link-local/metadata
+
     Returns the normalised URL on success; raises ValueError on rejection.
-    Rejects: non-http(s) schemes, localhost/RFC-1918/cloud-metadata hosts,
-    file:// and other non-HTTP schemes.
+    Use _safe_get() for actual HTTP fetches — it re-validates on every redirect.
     """
     if not url:
         raise ValueError("empty URL")
@@ -238,9 +271,46 @@ def _safe_external_url(url: str) -> str:
     host = (parsed.hostname or "").lower()
     if not host:
         raise ValueError("no host in URL")
+    # Port check — explicit non-standard ports are blocked
+    if parsed.port is not None and parsed.port not in _ALLOWED_PORTS:
+        raise ValueError(f"disallowed port: {parsed.port}")
+    # Fast string-pattern reject
     if _BLOCKED_HOST_RE.match(host):
         raise ValueError(f"blocked host: {host!r}")
+    # DNS resolution — catches evil.com → 10.0.0.1 style bypasses
+    try:
+        results = socket.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
+    except socket.gaierror as exc:
+        raise ValueError(f"DNS resolution failed for {host!r}: {exc}")
+    for _fam, _type, _proto, _canon, sockaddr in results:
+        ip = sockaddr[0]
+        if _ip_is_private(ip):
+            raise ValueError(f"host {host!r} resolves to private address {ip!r}")
     return url
+
+
+def _safe_get(url: str, *, timeout: int = 30, max_redirects: int = 5, **kwargs):
+    """
+    Drop-in for requests.get that re-validates _safe_external_url on every
+    redirect hop, preventing evil.com → 127.0.0.1 redirect attacks.
+    """
+    import requests
+
+    _safe_external_url(url)
+    session = requests.Session()
+    hops = 0
+    while True:
+        resp = session.get(url, allow_redirects=False, timeout=timeout, **kwargs)
+        if not resp.is_redirect:
+            return resp
+        hops += 1
+        if hops > max_redirects:
+            raise ValueError(f"too many redirects fetching {url!r}")
+        location = resp.headers.get("Location", "")
+        if not location.startswith("http"):
+            location = _urljoin(url, location)
+        _safe_external_url(location)   # re-validate each hop
+        url = location
 
 
 _EMAIL_REGEX = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
