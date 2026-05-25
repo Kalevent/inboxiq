@@ -94,6 +94,37 @@ def track_email_event(outreach_id: str, event_type: str, timestamp: str = None):
         return {"error": str(e)}
 
 
+def _advance_lead_stage(campaign: EmailCampaign, outreach: "EmailOutreach", reply: "Ticket") -> None:
+    """Advance the matching Lead to Qualified / consideration when they reply to outreach."""
+    from src.models.leads import Lead, LeadFunnelStage
+
+    lead = db.session.query(Lead).filter_by(
+        account_id=campaign.account_id,
+        email=outreach.recipient_email,
+    ).first()
+    if not lead:
+        return
+
+    now = reply.created_at or datetime.now()
+
+    # Only advance forward — never downgrade a Qualified/Closed lead
+    if lead.status in ("New Lead", "Contacted"):
+        lead.status = "Qualified"
+
+    if lead.current_funnel_stage in ("visits", "discovery"):
+        lead.current_funnel_stage = "consideration"
+        lead.stage_entered_at = now
+        db.session.add(LeadFunnelStage(
+            lead_id=lead.id,
+            stage="consideration",
+            sub_stage="outreach_replied",
+            entered_at=now,
+            notes=f"Replied to campaign: {campaign.name}",
+        ))
+
+    lead.last_engagement_at = now
+
+
 def _notify_reply(campaign: EmailCampaign, outreach: "EmailOutreach", reply: "Ticket") -> None:
     """Send a plain-text SES notification to the account owner when a lead replies."""
     import os
@@ -185,6 +216,7 @@ def scan_for_replies():
         if pair not in counted_pairs:
             campaign.total_replied += 1
             counted_pairs.add(pair)
+            _advance_lead_stage(campaign, outreach, reply)
             _notify_reply(campaign, outreach, reply)
 
         matched += 1
