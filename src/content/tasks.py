@@ -343,6 +343,51 @@ def generate_blog_from_pitched_topic(topic_id: str):
     return ContentWriterAgent(account_id=1).execute(goal)
 
 
+@shared_task(name="content.reset_stuck_generating_topics", queue="content")
+def reset_stuck_generating_topics(stuck_after_hours: int = 2) -> dict:
+    """Reset PitchedBlogTopics stuck in 'generating' back to 'pending'.
+
+    Topics get stuck when a Celery worker is killed mid-task (SIGKILL, OOM,
+    pod restart). The agent's own except block can't run in that case, so the
+    status stays 'generating' forever. This task runs periodically and
+    reschedules them so they are retried automatically on the next run.
+    """
+    from datetime import timezone, timedelta
+    from src.models.content import PitchedBlogTopic
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=stuck_after_hours)
+    stuck = (
+        PitchedBlogTopic.query
+        .filter(
+            PitchedBlogTopic.status == "generating",
+            PitchedBlogTopic.updated_at < cutoff,
+        )
+        .all()
+    )
+
+    if not stuck:
+        return {"reset": 0}
+
+    for topic in stuck:
+        topic.status = "pending"
+        logger.warning(
+            "content.reset_stuck_generating_topics: reset topic %s '%s' after %dh",
+            topic.id, topic.title[:60], stuck_after_hours,
+        )
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+
+    # Re-queue each reset topic immediately
+    for topic in stuck:
+        generate_blog_from_pitched_topic.delay(topic.id)
+
+    return {"reset": len(stuck)}
+
+
 def enrich_blog_posts_for_geo() -> dict:
     """
     One-time task: append a FAQ section to published blog posts that lack one.
