@@ -340,7 +340,7 @@ def generate_blog_from_pitched_topic(topic_id: str):
     from src.agents.content_writer import ContentWriterAgent  # deferred to avoid circular import risk
 
     goal = json.dumps({"mode": "pitched", "topic_id": topic_id})
-    return ContentWriterAgent(account_id=1).execute(goal)  # 1 = system account; pitched topics are admin-triggered
+    return ContentWriterAgent(account_id=1).execute(goal)
 
 
 def enrich_blog_posts_for_geo() -> dict:
