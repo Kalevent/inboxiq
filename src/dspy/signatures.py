@@ -809,6 +809,29 @@ def build_youtube_signatures(dspy: Any) -> Dict[str, Any]:
     }
 
 
+def build_outreach_reply_drafter(dspy: Any) -> Any:
+    """
+    Returns a ChainOfThought module that drafts a warm, context-aware reply
+    to a lead who has responded to a cold outreach email.
+    """
+
+    class OutreachReplyDraftSig(dspy.Signature):
+        """
+        Draft a short, warm reply to a prospect who responded to a cold outreach email.
+        The tone should be friendly and conversational — not a support ticket response.
+        Acknowledge their reply, continue the conversation naturally, and suggest a next step
+        (e.g. quick call, demo, answering their question). Keep it under 120 words.
+        Do NOT use placeholder text like [Your Name] — end with 'Kofi'.
+        """
+        lead_name: str = dspy.InputField(desc="Name of the prospect who replied")
+        campaign_name: str = dspy.InputField(desc="Name of the outreach campaign")
+        original_subject: str = dspy.InputField(desc="Subject line of the original outreach email sent to this lead")
+        reply_preview: str = dspy.InputField(desc="The prospect's reply content (may be truncated)")
+        reply_text: str = dspy.OutputField(desc="Draft reply — warm, concise, under 120 words, ends with 'Kofi'")
+
+    return dspy.ChainOfThought(OutreachReplyDraftSig)
+
+
 # Module-level references for direct import
 class YouTubeLongFormScript:
     """Placeholder — use build_youtube_signatures(dspy) for the real DSPy signature."""

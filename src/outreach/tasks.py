@@ -125,8 +125,35 @@ def _advance_lead_stage(campaign: EmailCampaign, outreach: "EmailOutreach", repl
     lead.last_engagement_at = now
 
 
+def _draft_outreach_reply(
+    campaign: EmailCampaign,
+    outreach: "EmailOutreach",
+    reply: "Ticket",
+) -> str:
+    """Use DSPy to draft a warm, context-aware reply to an outreach response. Returns empty string on failure."""
+    try:
+        from src.dspy import _configure_dspy
+        import dspy as _dspy
+        from src.dspy.signatures import build_outreach_reply_drafter
+
+        _configure_dspy()
+        drafter = build_outreach_reply_drafter(_dspy)
+        result = drafter(
+            lead_name=outreach.recipient_name or outreach.recipient_email or "there",
+            campaign_name=campaign.name or "",
+            original_subject=outreach.subject or "",
+            reply_preview=(reply.body_preview or "").strip()[:500],
+        )
+        return (result.reply_text or "").strip()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("outreach reply draft failed: %s", exc)
+        return ""
+
+
 def _notify_reply(campaign: EmailCampaign, outreach: "EmailOutreach", reply: "Ticket") -> None:
-    """Send a plain-text SES notification to the account owner when a lead replies."""
+    """Send a plain-text SES notification to the account owner when a lead replies,
+    including an AI-drafted suggested response."""
     import os
     import boto3
     from src.models.core import User
@@ -142,13 +169,20 @@ def _notify_reply(campaign: EmailCampaign, outreach: "EmailOutreach", reply: "Ti
     snippet = (reply.body_preview or "").strip()[:300]
     subject_line = reply.subject or "(no subject)"
 
+    draft = _draft_outreach_reply(campaign, outreach, reply)
+    draft_section = (
+        f"\n--- Suggested reply (review before sending) ---\n{draft}\n"
+        if draft else ""
+    )
+
     body = (
         f"Hi {owner.name or 'there'},\n\n"
         f"{lead_name} ({lead_email}) just replied to your outreach campaign "
         f'"{campaign.name}".\n\n'
         f"Subject: {subject_line}\n"
-        + (f'Preview:\n"{snippet}"\n\n' if snippet else "\n")
-        + "Log in to InboxIQ to respond:\nhttps://app.kalevent.com\n\n"
+        + (f'Their message:\n"{snippet}"\n' if snippet else "")
+        + draft_section
+        + "\nLog in to InboxIQ to respond:\nhttps://app.kalevent.com\n\n"
         "— InboxIQ"
     )
 
