@@ -79,29 +79,27 @@ def _get_latest_blog_post(account_id: int, offset: int = 0) -> Optional[BlogPost
 
 
 def _get_next_pain_point(account_id: int) -> Optional[ICPPainPoint]:
-    """Return the active pain point that has been used least often in videos.
-    Ties are broken by priority (desc) so new pain points start at their natural
-    rank and cycle evenly once all have been used the same number of times.
+    """Return the highest-priority active pain point that has never been used in a video.
+    Returns None when every pain point has at least one video — the pipeline stops naturally.
     """
-    from sqlalchemy import func as sqlfunc, outerjoin
-    pain_points = (
-        db.session.query(ICPPainPoint)
-        .filter(ICPPainPoint.account_id == account_id, ICPPainPoint.active.is_(True))
-        .all()
+    from sqlalchemy import func as sqlfunc
+
+    used_ids = (
+        db.session.query(YouTubeVideo.icp_pain_point_id)
+        .filter(YouTubeVideo.account_id == account_id)
+        .distinct()
+        .subquery()
     )
-    if not pain_points:
-        return None
-
-    video_counts: dict[str, int] = {}
-    for pp in pain_points:
-        count = (
-            db.session.query(sqlfunc.count(YouTubeVideo.id))
-            .filter(YouTubeVideo.icp_pain_point_id == pp.id)
-            .scalar()
-        ) or 0
-        video_counts[pp.id] = count
-
-    return min(pain_points, key=lambda pp: (video_counts[pp.id], -pp.priority))
+    return (
+        db.session.query(ICPPainPoint)
+        .filter(
+            ICPPainPoint.account_id == account_id,
+            ICPPainPoint.active.is_(True),
+            ~ICPPainPoint.id.in_(used_ids),
+        )
+        .order_by(ICPPainPoint.priority.desc())
+        .first()
+    )
 
 
 def _build_utm_slug(video_type: str, blog_post_title: str) -> str:
@@ -229,8 +227,11 @@ def generate_scripts(account_id: int | None = None, video_style: str = "avatar")
 
     pain_point = _get_next_pain_point(account_id)
     if not pain_point:
-        logger.warning("youtube.generate_scripts: no active ICPPainPoint", extra={"account_id": account_id})
-        return {"status": "skipped", "reason": "no active ICPPainPoint"}
+        logger.info(
+            "youtube.generate_scripts: all pain points already have videos — pipeline complete",
+            extra={"account_id": account_id},
+        )
+        return {"status": "skipped", "reason": "all pain points covered"}
 
     try:
         generated = _run_dspy_script_generation(blog_post, pain_point, video_style)
