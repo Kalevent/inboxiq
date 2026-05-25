@@ -243,6 +243,12 @@ def generate_scripts(account_id: int | None = None, video_style: str = "avatar")
     else:
         illus = None
 
+    # Fall back to avatar if illustration was requested but prompts failed to generate —
+    # avoids creating a permanently stuck record that render_videos silently skips forever.
+    if video_style == "illustration" and not illus:
+        logger.warning("youtube.generate_scripts: illustration_prompts empty — falling back to avatar style")
+        video_style = "avatar"
+
     long_render = VideoRender(
         account_id=account_id,
         programme="youtube",
