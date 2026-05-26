@@ -423,10 +423,24 @@
       } catch (err) { resultEl.innerHTML = `<span class="text-red-400">Error: ${err.message}</span>`; }
     }
 
+    function toggleSignalRow() {
+      const source = document.getElementById('discoverySource')?.value;
+      const signalRow = document.getElementById('signalRow');
+      const maxRow = document.getElementById('maxResultsRow');
+      if (!signalRow || !maxRow) return;
+      const isSocial = source === 'linkedin' || source === 'facebook';
+      signalRow.classList.toggle('hidden', isSocial);
+      maxRow.classList.toggle('hidden', !isSocial);
+    }
+
     async function discoverLeads() {
       const niche = document.getElementById('discoveryNiche').value;
+      const source = document.getElementById('discoverySource')?.value || 'web';
       const signalType = document.getElementById('discoverySignal').value;
-      const maxResults = parseInt(document.getElementById('discoveryMaxResults').value);
+      const isSocial = source === 'linkedin' || source === 'facebook';
+      const maxResults = isSocial
+        ? parseInt(document.getElementById('discoveryMaxResultsSocial').value)
+        : parseInt(document.getElementById('discoveryMaxResults').value);
       const resultEl = document.getElementById('discoveryResult');
       const btn = document.getElementById('discoverLeadsBtn');
 
@@ -440,7 +454,7 @@
         if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
         const response = await fetch('/api/v1/admin/funnel/discover-leads', {
           method: 'POST', headers, credentials: 'include',
-          body: JSON.stringify({ niche, signal_type: signalType, max_results: maxResults })
+          body: JSON.stringify({ niche, source, signal_type: signalType, max_results: maxResults })
         });
         const data = await response.json();
         if (data.success) {

@@ -209,6 +209,176 @@ async def discover_companies(
         raise Exception(f"Company discovery failed: {exc}") from exc
 
 
+async def discover_companies_from_linkedin(
+    query: str,
+    niche: str = "",
+    max_results: int = 25,
+) -> Dict[str, Any]:
+    """
+    Discover companies from LinkedIn company pages via SearXNG.
+
+    Searches LinkedIn company pages, extracts company names from URLs/titles,
+    then resolves their actual websites via a secondary search.
+
+    Args:
+        query: Search query (e.g., "B2B SaaS customer support")
+        niche: Optional niche filter
+        max_results: Maximum companies to return
+
+    Returns:
+        Dictionary with discovered companies and metadata
+    """
+    try:
+        linkedin_query = f"site:linkedin.com/company {query}"
+        if niche:
+            linkedin_query += f" {niche}"
+
+        raw = _search_web(linkedin_query, max_results=max_results * 3)
+
+        companies = []
+        seen_names: set = set()
+
+        for result in raw:
+            url = result.get("url", "")
+            if "linkedin.com/company/" not in url:
+                continue
+
+            # Extract slug: linkedin.com/company/acme-corp/... → "acme-corp"
+            slug = url.split("linkedin.com/company/")[1].split("/")[0].split("?")[0]
+            if not slug:
+                continue
+
+            # Prefer title for company name, fall back to slug
+            title = result.get("title", "")
+            if " | " in title:
+                company_name = title.split(" | ")[0].strip()
+            elif " - " in title:
+                company_name = title.split(" - ")[0].strip()
+            else:
+                company_name = slug.replace("-", " ").title()
+
+            if not company_name or company_name.lower() in seen_names:
+                continue
+            if not looks_like_real_company(company_name):
+                continue
+            seen_names.add(company_name.lower())
+
+            # Resolve actual website via secondary search
+            website_results = _search_web(f'"{company_name}" official website', max_results=3)
+            domain = ""
+            website_url = ""
+            for wr in website_results:
+                d = extract_domain(wr.get("url", ""))
+                if d and d not in _JOB_BOARD_DOMAINS and "linkedin.com" not in d:
+                    domain = d
+                    website_url = wr.get("url", "")
+                    break
+
+            if not domain:
+                continue
+
+            companies.append({
+                "name": company_name,
+                "domain": domain,
+                "url": website_url,
+                "description": result.get("snippet", "")[:200],
+                "source": "linkedin",
+                "query": query,
+            })
+
+            if len(companies) >= max_results:
+                break
+
+        logger.info("[discover_companies_from_linkedin] Found %d companies", len(companies))
+        return {"query": query, "niche": niche, "companies": companies, "total_found": len(companies), "source": "linkedin"}
+
+    except Exception as exc:
+        logger.exception("[discover_companies_from_linkedin] Error: %s", exc)
+        raise Exception(f"LinkedIn company discovery failed: {exc}") from exc
+
+
+async def discover_companies_from_facebook(
+    query: str,
+    niche: str = "",
+    max_results: int = 25,
+) -> Dict[str, Any]:
+    """
+    Discover companies mentioned in public Facebook Groups via SearXNG.
+
+    Searches public Facebook group discussions for company mentions,
+    extracts company names from post titles/snippets, then resolves
+    their actual websites via a secondary search.
+
+    Args:
+        query: Search query (e.g., "B2B SaaS email management")
+        niche: Optional niche filter
+        max_results: Maximum companies to return
+
+    Returns:
+        Dictionary with discovered companies and metadata
+    """
+    try:
+        fb_query = f"site:facebook.com/groups {query}"
+        if niche:
+            fb_query += f" {niche}"
+
+        raw = _search_web(fb_query, max_results=max_results * 3)
+
+        companies = []
+        seen_names: set = set()
+
+        for result in raw:
+            snippet = result.get("snippet", "")
+            title = result.get("title", "")
+            text = f"{title} {snippet}"
+
+            # Extract company-like tokens from the post text
+            # Look for capitalized multi-word sequences as candidate company names
+            candidates = re.findall(r'\b([A-Z][a-zA-Z0-9]+(?:\s+[A-Z][a-zA-Z0-9]+){1,3})\b', text)
+            for candidate in candidates:
+                if candidate.lower() in seen_names:
+                    continue
+                if not looks_like_real_company(candidate):
+                    continue
+
+                # Resolve via secondary search
+                website_results = _search_web(f'"{candidate}" SaaS software official website', max_results=3)
+                domain = ""
+                website_url = ""
+                for wr in website_results:
+                    d = extract_domain(wr.get("url", ""))
+                    if d and d not in _JOB_BOARD_DOMAINS and "facebook.com" not in d:
+                        domain = d
+                        website_url = wr.get("url", "")
+                        break
+
+                if not domain:
+                    continue
+
+                seen_names.add(candidate.lower())
+                companies.append({
+                    "name": candidate,
+                    "domain": domain,
+                    "url": website_url,
+                    "description": snippet[:200],
+                    "source": "facebook",
+                    "query": query,
+                })
+
+                if len(companies) >= max_results:
+                    break
+
+            if len(companies) >= max_results:
+                break
+
+        logger.info("[discover_companies_from_facebook] Found %d companies", len(companies))
+        return {"query": query, "niche": niche, "companies": companies, "total_found": len(companies), "source": "facebook"}
+
+    except Exception as exc:
+        logger.exception("[discover_companies_from_facebook] Error: %s", exc)
+        raise Exception(f"Facebook company discovery failed: {exc}") from exc
+
+
 async def find_decision_makers(
     company_domain: str,
     job_titles: Optional[List[str]] = None,

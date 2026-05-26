@@ -29,6 +29,8 @@ class FunnelDiscoveryAgent(BaseAgent):
             self._tool_get_existing_companies,
             self._tool_get_icp_config,
             self._tool_discover_companies,
+            self._tool_discover_companies_from_linkedin,
+            self._tool_discover_companies_from_facebook,
             self._tool_find_buying_signals,
             self._tool_find_decision_makers,
             self._tool_find_email_for_domain,
@@ -78,6 +80,30 @@ class FunnelDiscoveryAgent(BaseAgent):
         from src.mcp.lead_discovery_mcp import discover_companies
         self.tool_calls.append({"tool": "discover_companies", "input": {"query": query}})
         return asyncio.run(discover_companies(query=query, niche=niche, location=location, max_results=max_results))
+
+    def _tool_discover_companies_from_linkedin(
+        self,
+        query: str,
+        niche: str = "",
+        max_results: int = 25,
+    ) -> Dict[str, Any]:
+        """Search LinkedIn company pages for companies matching ICP. Extracts real company websites from LinkedIn profiles. Use instead of discover_companies when source='linkedin_discovery'."""
+        import asyncio
+        from src.mcp.lead_discovery_mcp import discover_companies_from_linkedin
+        self.tool_calls.append({"tool": "discover_companies_from_linkedin", "input": {"query": query}})
+        return asyncio.run(discover_companies_from_linkedin(query=query, niche=niche, max_results=max_results))
+
+    def _tool_discover_companies_from_facebook(
+        self,
+        query: str,
+        niche: str = "",
+        max_results: int = 25,
+    ) -> Dict[str, Any]:
+        """Search public Facebook Groups for company mentions matching ICP. Extracts real company websites from group discussions. Use instead of discover_companies when source='facebook_discovery'."""
+        import asyncio
+        from src.mcp.lead_discovery_mcp import discover_companies_from_facebook
+        self.tool_calls.append({"tool": "discover_companies_from_facebook", "input": {"query": query}})
+        return asyncio.run(discover_companies_from_facebook(query=query, niche=niche, max_results=max_results))
 
     def _tool_find_buying_signals(
         self,

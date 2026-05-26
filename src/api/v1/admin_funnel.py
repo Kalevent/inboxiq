@@ -381,26 +381,29 @@ def discover_leads():
     niche = payload.get("niche", "B2B SaaS customer support")
     signal_type = payload.get("signal_type", "hiring")
     max_results = payload.get("max_results", 30)
+    source = payload.get("source", "web")  # web | linkedin | facebook
 
     from src.celery_inboxiq import celery
 
-    # Use existing funnel.discover_buying_signals task
-    task = celery.send_task(
-        'funnel.discover_buying_signals',
-        kwargs={
-            "niche": niche,
-            "signal_type": signal_type,
-            "max_results": max_results
-        },
-        queue='leads'  # CRITICAL: Worker only listens to inbox, billing, leads queues
-    )
+    _SOURCE_TASK_MAP = {
+        "linkedin": ("funnel.discover_leads_via_linkedin", {"niche": niche, "max_leads": max_results}),
+        "facebook": ("funnel.discover_leads_via_facebook", {"niche": niche, "max_leads": max_results}),
+    }
+
+    if source in _SOURCE_TASK_MAP:
+        task_name, kwargs = _SOURCE_TASK_MAP[source]
+    else:
+        task_name = "funnel.discover_buying_signals"
+        kwargs = {"niche": niche, "signal_type": signal_type, "max_results": max_results}
+
+    task = celery.send_task(task_name, kwargs=kwargs, queue="leads")
 
     return jsonify({
         "success": True,
         "task_id": task.id,
         "niche": niche,
-        "signal_type": signal_type,
-        "message": f"Lead discovery started for {niche} (signal: {signal_type})",
+        "source": source,
+        "message": f"Lead discovery started for {niche} (source: {source})",
         "estimated_time": "2-3 minutes"
     }), 202
 

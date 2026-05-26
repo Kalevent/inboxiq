@@ -101,6 +101,10 @@ def extract_variables_from_lead(lead: Lead) -> Dict[str, Any]:
         "signal": signal.lower(),
         "URL": url,
         "Stage": lead.current_funnel_stage,
+        # Sender fields — populated by create_outreach_for_lead from inbox owner profile
+        "SenderName": "",
+        "SenderTitle": "",
+        "SenderCompany": "",
     }
 
 
@@ -188,6 +192,109 @@ def send_email_via_ses(
         }
 
 
+def _fetch_profile_from_provider(inbox) -> dict:
+    """
+    Fetch sender profile fields from the connected provider API.
+
+    Returns a dict with any of: display_name, title, company.
+    On any failure returns an empty dict — callers must handle missing keys.
+    """
+    import requests as _req
+    token = inbox.access_token
+    if not token:
+        return {}
+
+    try:
+        if inbox.provider == "outlook":
+            resp = _req.get(
+                "https://graph.microsoft.com/v1.0/me",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=5,
+            )
+            if resp.ok:
+                data = resp.json()
+                result = {}
+                if data.get("displayName"):
+                    result["display_name"] = data["displayName"]
+                if data.get("jobTitle"):
+                    result["title"] = data["jobTitle"]
+                if data.get("companyName"):
+                    result["company"] = data["companyName"]
+                return result
+
+        elif inbox.provider == "gmail":
+            # sendAs returns the "From" name the user configured in Gmail settings
+            resp = _req.get(
+                "https://gmail.googleapis.com/gmail/v1/users/me/settings/sendAs",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=5,
+            )
+            if resp.ok:
+                addresses = resp.json().get("sendAs", [])
+                primary = next(
+                    (a for a in addresses if a.get("isPrimary")),
+                    addresses[0] if addresses else None,
+                )
+                if primary and primary.get("displayName"):
+                    return {"display_name": primary["displayName"]}
+
+    except Exception:
+        pass
+
+    return {}
+
+
+def _populate_sender_variables(variables: Dict[str, Any], campaign: EmailCampaign) -> None:
+    """Fill SenderName/SenderTitle/SenderCompany from the inbox owner's profile.
+
+    Priority for each field:
+      SenderName    — provider API display name > InboxConnection.display_name > campaign.from_name
+      SenderTitle   — User.title (manual override) > provider API jobTitle (Outlook only)
+      SenderCompany — Account.name > provider API companyName (Outlook only)
+    """
+    from src.models.core import InboxConnection, Account, User
+
+    inbox = db.session.query(InboxConnection).filter_by(
+        account_id=campaign.account_id,
+        email_address=campaign.from_email,
+    ).first()
+
+    user = db.session.query(User).filter_by(
+        email=campaign.from_email,
+        account_id=campaign.account_id,
+    ).first()
+
+    account = db.session.get(Account, campaign.account_id)
+
+    # Try provider API — non-blocking, empty dict on any failure
+    provider_profile = _fetch_profile_from_provider(inbox) if inbox else {}
+
+    # Cache the provider title onto User so it persists without repeated API calls
+    if user and not user.title and provider_profile.get("title"):
+        try:
+            user.title = provider_profile["title"]
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+    variables["SenderName"] = (
+        provider_profile.get("display_name")
+        or (inbox.display_name if inbox else None)
+        or campaign.from_name
+        or ""
+    )
+    variables["SenderTitle"] = (
+        (user.title if user and user.title else None)
+        or provider_profile.get("title")
+        or ""
+    )
+    variables["SenderCompany"] = (
+        (account.name if account else None)
+        or provider_profile.get("company")
+        or ""
+    )
+
+
 def create_outreach_for_lead(
     campaign: EmailCampaign,
     lead: Lead,
@@ -215,6 +322,9 @@ def create_outreach_for_lead(
 
     # Extract personalization variables
     variables = extract_variables_from_lead(lead)
+
+    # Populate sender fields from the inbox owner's profile
+    _populate_sender_variables(variables, campaign)
 
     # Render subject and body
     subject = render_template(campaign.subject_template, variables)
@@ -488,8 +598,9 @@ Here is what one of those threads looks like: the email arrives, InboxIQ applies
 
 Would a 15-minute look make sense? I can show you it working on a real inbox.
 
-- Kofi
-Founder, InboxIQ
+- {{ SenderName }}
+{{ SenderTitle }}
+{{ SenderCompany }}
 https://kalevent.com"""
 
 ICP_COLD_EMAIL_FOLLOWUP = """Hi {{ FirstName }},
@@ -500,7 +611,8 @@ If support email is still eating into your mornings, I would be happy to show yo
 
 If the timing is not right, no problem at all.
 
-- Kofi
+- {{ SenderName }}
+{{ SenderTitle }}
 https://kalevent.com"""
 
 
