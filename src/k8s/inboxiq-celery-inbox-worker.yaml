@@ -8,8 +8,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 0
-      maxUnavailable: 1 # Terminate one old pod before creating replacement
+      maxUnavailable: 0  # Never kill old pod until new one passes readiness probe
+      maxSurge: 1        # Bring new pod up first, then drain old
   selector:
     matchLabels:
       app: inboxiq-celery-inbox-worker
