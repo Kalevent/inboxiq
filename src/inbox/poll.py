@@ -883,6 +883,51 @@ _INBOXIQ_FOOTER_HTML = (
     '</p>'
 )
 _INBOXIQ_FOOTER_TEXT = "\n\n--\nDrafted by InboxIQ · Review before sending"
+_SCHEDULE_CTA_PREFIX = "SCHEDULE_CTA:"
+
+
+def _draft_body_to_html(text: str) -> str:
+    """Convert a draft body string to HTML paragraphs.
+
+    Lines starting with SCHEDULE_CTA:<url> become a styled CTA button.
+    The URL is HTML-escaped to prevent attribute injection.
+    """
+    import html as _html_mod
+    import re as _re
+
+    parts = []
+    for line in text.splitlines():
+        if line.startswith(_SCHEDULE_CTA_PREFIX):
+            raw_url = line[len(_SCHEDULE_CTA_PREFIX):]
+            # Only allow https:// URLs — reject anything else
+            if not raw_url.startswith("https://"):
+                continue
+            safe_url = _html_mod.escape(raw_url, quote=True)
+            parts.append(
+                '<div style="margin:20px 0 8px 0;">'
+                f'<a href="{safe_url}" target="_blank" rel="noopener noreferrer" '
+                'style="display:inline-block;background:#5B5BD6;color:#ffffff;'
+                'text-decoration:none;padding:11px 22px;border-radius:8px;'
+                'font-weight:600;font-size:14px;letter-spacing:0.01em;">'
+                "Schedule a time &rarr;"
+                "</a></div>"
+            )
+        elif line.strip():
+            parts.append(f"<p>{_html_mod.escape(line)}</p>")
+        else:
+            parts.append("<br>")
+    return "".join(parts)
+
+
+def _draft_body_to_plain(text: str) -> str:
+    """Replace SCHEDULE_CTA sentinel with a plain-text equivalent."""
+    import re as _re
+    return _re.sub(
+        rf"^{_SCHEDULE_CTA_PREFIX}(https://.+)$",
+        r"Schedule a time that works for you: \1",
+        text,
+        flags=_re.MULTILINE,
+    )
 
 
 def create_gmail_draft_reply(
@@ -908,15 +953,14 @@ def create_gmail_draft_reply(
     msg["Subject"] = subject_header
 
     # Plain-text part — always included for non-HTML clients
-    plain_body = body + _INBOXIQ_FOOTER_TEXT
+    plain_body = _draft_body_to_plain(body) + _INBOXIQ_FOOTER_TEXT
     msg.attach(MIMEText(plain_body, "plain", "utf-8"))
 
-    # HTML part — preferred by Gmail; body lines → <p> blocks, attribution footer appended
-    html_paragraphs = "".join(
-        f"<p>{line}</p>" if line.strip() else "<br>"
-        for line in body.splitlines()
+    # HTML part — preferred by Gmail; CTA sentinel → button, other lines → <p>
+    html_body = (
+        f'<div style="font-family:sans-serif;font-size:14px;line-height:1.6">'
+        f"{_draft_body_to_html(body)}{_INBOXIQ_FOOTER_HTML}</div>"
     )
-    html_body = f"<div style=\"font-family:sans-serif;font-size:14px;line-height:1.6\">{html_paragraphs}{_INBOXIQ_FOOTER_HTML}</div>"
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
@@ -951,14 +995,10 @@ def create_outlook_draft_reply(
         raise ValueError(f"Outlook createReply failed: {resp.status_code} {resp.text}")
     draft_id = resp.json().get("id")
 
-    # Update the draft body — use HTML so the attribution footer renders correctly
-    html_paragraphs = "".join(
-        f"<p>{line}</p>" if line.strip() else "<br>"
-        for line in body.splitlines()
-    )
+    # Update the draft body — use HTML so the attribution footer and CTA button render correctly
     html_body = (
-        f"<div style=\"font-family:sans-serif;font-size:14px;line-height:1.6\">"
-        f"{html_paragraphs}{_INBOXIQ_FOOTER_HTML}</div>"
+        f'<div style="font-family:sans-serif;font-size:14px;line-height:1.6">'
+        f"{_draft_body_to_html(body)}{_INBOXIQ_FOOTER_HTML}</div>"
     )
     patch_resp = requests.patch(
         f"https://graph.microsoft.com/v1.0/me/messages/{draft_id}",

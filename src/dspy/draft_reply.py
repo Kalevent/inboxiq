@@ -220,15 +220,21 @@ def fetch_calendar_slots(
             return ""
 
         if ticket_id and requester_email:
-            from src.booking.service import generate_booking
-            booking_url = generate_booking(
-                account_id=account_id,
-                ticket_id=ticket_id,
-                subject=subject,
-                requester_email=requester_email,
-                requester_name=requester_name or "",
-            )
-            return f"\n\nSchedule a time that works for you: {booking_url}"
+            # Prefer the short booking_handle URL; fall back to static URL; last resort dynamic JWT
+            if flags and flags.booking_handle:
+                booking_url = f"https://kalevent.com/book/{flags.booking_handle}"
+            elif flags and flags.static_booking_url:
+                booking_url = flags.static_booking_url
+            else:
+                from src.booking.service import generate_booking
+                booking_url = generate_booking(
+                    account_id=account_id,
+                    ticket_id=ticket_id,
+                    subject=subject,
+                    requester_email=requester_email,
+                    requester_name=requester_name or "",
+                )
+            return f"\n\nSCHEDULE_CTA:{booking_url}"
 
         from src.integrations.gcal import get_available_slots_text as gcal_slots
         from src.integrations.outlook_cal import get_available_slots_text as outlook_slots
