@@ -25,7 +25,11 @@ def _get_s3() -> BaseClient:
         raise RuntimeError("boto3 is required for uploads") from _import_error
     global _s3_client
     if _s3_client is None:
-        _s3_client = boto3.client("s3")
+        import os
+        _s3_client = boto3.client(
+            "s3",
+            region_name=os.getenv("AWS_REGION", "us-west-2"),
+        )
     return _s3_client
 
 
