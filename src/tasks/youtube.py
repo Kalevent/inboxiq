@@ -381,9 +381,9 @@ def _script_passes_quality_gate(script: str) -> tuple[bool, str]:
 
 
 def _generate_dalle_frames(prompts: list, account_id: int) -> list:
-    """Generate DALL-E 3 illustration frames and upload to S3 via uploads.py."""
+    """Generate illustration frames via gpt-image-1 and upload to S3 via uploads.py."""
+    import base64
     import openai
-    import requests as http_requests
     from src.uploads import upload_bytes, build_public_url
 
     client = openai.OpenAI()
@@ -391,20 +391,18 @@ def _generate_dalle_frames(prompts: list, account_id: int) -> list:
     for i, prompt in enumerate(prompts):
         try:
             response = client.images.generate(
-                model="dall-e-3",
+                model="gpt-image-1",
                 prompt=prompt,
-                size="1792x1024",
-                quality="standard",
+                size="1536x1024",
+                quality="high",
                 n=1,
             )
-            image_url = response.data[0].url
-            from src.mcp.enrichment_v2_mcp import _safe_external_url
-            img_bytes = http_requests.get(_safe_external_url(image_url), timeout=30).content
+            img_bytes = base64.b64decode(response.data[0].b64_json)
             key = f"youtube/frames/{account_id}/{uuid4()}.png"
             upload_bytes(key, img_bytes, "image/png", "attachment")
             urls.append(build_public_url(key))
         except Exception:
-            logger.exception("youtube.render_videos: DALL-E frame %d failed", i)
+            logger.exception("youtube.render_videos: image frame %d failed", i)
     return urls
 
 
