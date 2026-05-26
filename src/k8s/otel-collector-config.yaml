@@ -58,19 +58,23 @@ data:
       otlp:
         endpoint: phoenix.kaley.svc.cluster.local:4317
         tls:
-          insecure: true  # No TLS within cluster (use TLS in production)
-
-      # Debug logging (disable in production)
-      logging:
-        loglevel: info
-        sampling_initial: 5      # Log first 5 spans
-        sampling_thereafter: 200 # Then 1 every 200 spans
+          insecure: true
+        timeout: 10s
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 60s  # Drop spans after 1 min rather than retrying forever
+        sending_queue:
+          enabled: true
+          num_consumers: 2
+          queue_size: 256        # Drop oldest when full — never block the app
 
     service:
       # Telemetry configuration
       telemetry:
         logs:
-          level: info
+          level: warn            # Suppress per-span debug noise
         metrics:
           address: 0.0.0.0:8888  # Prometheus metrics endpoint
 
@@ -78,7 +82,7 @@ data:
         traces:
           receivers: [otlp]
           processors: [memory_limiter, batch, resource]
-          exporters: [otlp, logging]
+          exporters: [otlp]
 
     # Extensions (health check, performance profiler)
     extensions:

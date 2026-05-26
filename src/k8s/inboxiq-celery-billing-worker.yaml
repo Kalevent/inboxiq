@@ -24,13 +24,13 @@ spec:
             - name: APP_ENV
               value: "production"
 
-            # OpenTelemetry configuration (send traces directly to Phoenix)
+            # OpenTelemetry configuration (route through local collector sidecar)
             - name: OTEL_ENABLED
               value: "true"
             - name: OTEL_SERVICE_NAME
               value: "inboxiq-celery-billing-worker"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: "http://phoenix.kaley.svc.cluster.local:4317"
+              value: "http://localhost:4317"
             - name: OTEL_EXPORTER_OTLP_INSECURE
               value: "true"
             - name: OTEL_TRACES_SAMPLER
@@ -72,3 +72,24 @@ spec:
             limits:
               cpu: 200m
               memory: 2Gi
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.96.0
+          args:
+            - "--config=/conf/otel-collector-config.yaml"
+          ports:
+            - containerPort: 4317
+              name: otlp-grpc
+          volumeMounts:
+            - name: otel-collector-config
+              mountPath: /conf
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      volumes:
+        - name: otel-collector-config
+          configMap:
+            name: otel-collector-config
