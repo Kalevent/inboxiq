@@ -399,7 +399,7 @@ def _generate_dalle_frames(prompts: list, account_id: int) -> list:
             )
             img_bytes = base64.b64decode(response.data[0].b64_json)
             key = f"youtube/frames/{account_id}/{uuid4()}.png"
-            upload_bytes(key, img_bytes, "image/png", "attachment")
+            upload_bytes(key, img_bytes, content_type="image/png", content_disposition="attachment")
             urls.append(build_public_url(key))
         except Exception:
             logger.exception("youtube.render_videos: image frame %d failed", i)
