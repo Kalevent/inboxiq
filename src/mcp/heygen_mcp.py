@@ -108,7 +108,6 @@ def render_illustration_video(
             else {"type": "silence", "duration": 1}
         )
         video_inputs.append({
-            "character": {"type": "none"},
             "voice": voice,
             "background": {"type": "image", "url": url},
         })
