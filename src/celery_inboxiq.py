@@ -263,6 +263,26 @@ def make_celery(app) -> Celery:
             ),
             **(
                 {
+                    "discover_leads_facebook_daily": {
+                        "task": "funnel.discover_leads_via_facebook",
+                        "schedule": crontab(hour=lead_discovery_hour + 1, minute=0),  # 3am daily
+                        "kwargs": {
+                            "niche": lead_discovery_niche,
+                            "max_leads": lead_discovery_max_leads,
+                            "account_id": lead_discovery_account_id,
+                        },
+                        "options": {"queue": "leads"},
+                    },
+                    "discover_leads_linkedin_daily": {
+                        "task": "funnel.discover_leads_via_linkedin",
+                        "schedule": crontab(hour=lead_discovery_hour + 2, minute=0),  # 4am daily
+                        "kwargs": {
+                            "niche": lead_discovery_niche,
+                            "max_leads": lead_discovery_max_leads,
+                            "account_id": lead_discovery_account_id,
+                        },
+                        "options": {"queue": "leads"},
+                    },
                     "discover_buying_signals_daily": {
                         "task": "funnel.discover_buying_signals",
                         "schedule": crontab(hour=lead_discovery_hour, minute=30),  # 2:30am daily
@@ -383,6 +403,7 @@ def make_celery(app) -> Celery:
                     "outreach_process_all_campaigns": {
                         "task": "outreach.process_all_campaigns",
                         "schedule": crontab(hour=7, minute=0),
+                        "kwargs": {"max_emails_per_campaign": 25},
                         "options": {"queue": "leads"},
                     },
                     "outreach_process_followups": {

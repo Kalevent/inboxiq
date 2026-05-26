@@ -377,6 +377,78 @@ def discover_leads_via_search(niche: str, max_leads: int = 50, account_id: str =
     return {"status": "ok", "niche": niche}
 
 
+@shared_task(name="funnel.discover_leads_via_facebook")
+def discover_leads_via_facebook(niche: str, max_leads: int = 50, account_id: str = None):
+    """
+    Discover leads from public Facebook Groups and Business Pages via SearXNG.
+
+    Searches public Facebook group discussions and business pages for companies
+    matching the ICP, then enriches via the same Hunter.io pipeline as web search.
+    """
+    from src.agents.funnel_discovery import FunnelDiscoveryAgent
+    from src.models.core import Account
+
+    # Target Facebook groups (public discussions where B2B buyers are active)
+    # and Facebook business pages. SearXNG indexes public Facebook content.
+    goal = (
+        f"Discover companies from public Facebook Groups matching ICP in niche '{niche}'. "
+        f"Call get_icp_config first. Then call discover_companies_from_facebook with query='{niche}'. "
+        f"For each result not in get_existing_companies: "
+        f"(1) try find_email_via_playwright with the company website URL if available, "
+        f"(2) if no email found, try find_email_via_search with the company name, "
+        f"(3) only then call save_lead with source='facebook_discovery' — pass the email found or empty string. "
+        f"Do NOT save facebook.com URLs as the company website. "
+        f"Do NOT save leads with an empty company_name. "
+        f"Limit to {max_leads} new leads."
+    )
+
+    if account_id:
+        FunnelDiscoveryAgent(account_id=int(account_id)).execute(goal)
+    else:
+        for row in db.session.query(Account.id).all():
+            try:
+                FunnelDiscoveryAgent(account_id=row.id).execute(goal)
+            except Exception:
+                log.exception("discover_leads_via_facebook failed for account_id=%s", row.id)
+
+    return {"status": "ok", "niche": niche, "source": "facebook"}
+
+
+@shared_task(name="funnel.discover_leads_via_linkedin")
+def discover_leads_via_linkedin(niche: str, max_leads: int = 50, account_id: str = None):
+    """
+    Discover leads from LinkedIn company pages via SearXNG.
+
+    Finds companies on LinkedIn, resolves their actual websites,
+    then enriches via the same Hunter.io pipeline as web search.
+    """
+    from src.agents.funnel_discovery import FunnelDiscoveryAgent
+    from src.models.core import Account
+
+    goal = (
+        f"Discover companies from LinkedIn company pages matching ICP in niche '{niche}'. "
+        f"Call get_icp_config first. Then call discover_companies_from_linkedin with query='{niche}'. "
+        f"For each result not in get_existing_companies: "
+        f"(1) try find_email_via_playwright with the company website URL if available, "
+        f"(2) if no email found, try find_email_via_search with the company name, "
+        f"(3) only then call save_lead with source='linkedin_discovery' — pass the email found or empty string. "
+        f"Do NOT save linkedin.com URLs as the company website. "
+        f"Do NOT save leads with an empty company_name. "
+        f"Limit to {max_leads} new leads."
+    )
+
+    if account_id:
+        FunnelDiscoveryAgent(account_id=int(account_id)).execute(goal)
+    else:
+        for row in db.session.query(Account.id).all():
+            try:
+                FunnelDiscoveryAgent(account_id=row.id).execute(goal)
+            except Exception:
+                log.exception("discover_leads_via_linkedin failed for account_id=%s", row.id)
+
+    return {"status": "ok", "niche": niche, "source": "linkedin"}
+
+
 @shared_task(name="funnel.discover_buying_signals")
 def discover_buying_signals(niche: str, signal_type: str = "hiring", max_results: int = 20):
     """

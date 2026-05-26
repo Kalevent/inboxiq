@@ -33,6 +33,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     name = db.Column(db.String(255), nullable=True)
+    title = db.Column(db.String(255), nullable=True, comment="Job title for email signatures (e.g., 'Founder and CEO')")
     password_hash = db.Column(db.String(255), nullable=True)
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.id"), nullable=False)
     role = db.Column(db.String(32), nullable=False, server_default="agent",

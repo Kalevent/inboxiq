@@ -116,7 +116,7 @@
                   </button>
                 </div>
 
-                <div class="grid md:grid-cols-3 gap-3 mb-4">
+                <div class="grid md:grid-cols-2 gap-3 mb-3">
                   <div>
                     <label class="text-xs text-slate-400">Niche/Industry</label>
                     <select id="discoveryNiche" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100">
@@ -127,6 +127,16 @@
                       <option value="Fintech customer support">Fintech</option>
                     </select>
                   </div>
+                  <div>
+                    <label class="text-xs text-slate-400">Source</label>
+                    <select id="discoverySource" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" onchange="toggleSignalRow()">
+                      <option value="web">🌐 Web Search (buying signals)</option>
+                      <option value="linkedin">💼 LinkedIn Companies</option>
+                      <option value="facebook">👥 Facebook Groups</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="signalRow" class="grid md:grid-cols-2 gap-3 mb-4">
                   <div>
                     <label class="text-xs text-slate-400">Buying Signal</label>
                     <select id="discoverySignal" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100">
@@ -140,6 +150,10 @@
                     <label class="text-xs text-slate-400">Max Results</label>
                     <input id="discoveryMaxResults" type="number" value="30" min="10" max="50" class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
                   </div>
+                </div>
+                <div id="maxResultsRow" class="hidden mb-4">
+                  <label class="text-xs text-slate-400">Max Results</label>
+                  <input id="discoveryMaxResultsSocial" type="number" value="30" min="10" max="50" class="mt-1 w-48 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100" />
                 </div>
 
                 <div class="flex items-center gap-3">

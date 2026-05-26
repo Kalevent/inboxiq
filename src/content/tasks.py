@@ -86,8 +86,8 @@ def _generate_hero_image(title: str, topic: dict) -> tuple[str, str]:
     Returns:
         Tuple of (image_url, alt_text)
     """
+    import base64
     import openai
-    import requests
     from src.uploads import upload_bytes, build_public_url
     from src.dspy import _configure_dspy
     from src.dspy.content.hero_prompt import HeroImagePromptModule
@@ -96,7 +96,7 @@ def _generate_hero_image(title: str, topic: dict) -> tuple[str, str]:
     if not openai_api_key:
         raise RuntimeError("OPENAI_API_KEY not configured")
 
-    # Use DSPy to generate an optimized DALL-E prompt
+    # Use DSPy to generate an optimized image prompt
     _configure_dspy()
     prompt_module = HeroImagePromptModule()
     prompt_result = prompt_module(
@@ -110,22 +110,16 @@ def _generate_hero_image(title: str, topic: dict) -> tuple[str, str]:
 
     client = openai.OpenAI(api_key=openai_api_key)
 
-    # Generate image with DALL-E 3 — 1792x1024 for proper 16:9 landscape hero
+    # Generate image — 1536x1024 (16:9 landscape hero, gpt-image-1 max landscape size)
     response = client.images.generate(
-        model="dall-e-3",
+        model="gpt-image-1",
         prompt=image_prompt,
-        size="1792x1024",
-        quality="hd",
+        size="1536x1024",
+        quality="high",
         n=1
     )
 
-    image_url = response.data[0].url
-
-    # Download image — validate URL before fetching (defense-in-depth against rogue API responses)
-    from src.mcp.enrichment_v2_mcp import _safe_external_url
-    img_response = requests.get(_safe_external_url(image_url), timeout=30)
-    img_response.raise_for_status()
-    image_bytes = img_response.content
+    image_bytes = base64.b64decode(response.data[0].b64_json)
 
     # Upload to S3
     from datetime import datetime
