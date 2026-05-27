@@ -184,7 +184,10 @@ def settings_page(tab):
   totp_devices = []
   account_id = getattr(g, "current_account_id", None)
   account = Account.query.get(account_id) if account_id else None
-  seats_used = User.query.filter_by(account_id=account_id).count() if account_id else 0
+  inboxes_used = InboxConnection.query.filter(
+    InboxConnection.account_id == account_id,
+    InboxConnection.provider.in_(["gmail", "outlook"]),
+  ).count() if account_id else 0
   seats_limit = account.seats_limit if account else None
 
   # Get current plan for billing tab
@@ -289,7 +292,7 @@ def settings_page(tab):
     integrations_view=None,
     passkeys=passkeys,
     totp_devices=totp_devices,
-    seats_used=seats_used,
+    seats_used=inboxes_used,
     seats_limit=seats_limit,
     account_id=account_id,
     account=account,
@@ -476,7 +479,10 @@ def billing_plan():
   """Billing plan view and update."""
   account_id = getattr(g, "current_account_id", None)
   account = Account.query.get(account_id) if account_id else None
-  seats_used = User.query.filter_by(account_id=account_id).count() if account_id else 0
+  inboxes_used = InboxConnection.query.filter(
+    InboxConnection.account_id == account_id,
+    InboxConnection.provider.in_(["gmail", "outlook"]),
+  ).count() if account_id else 0
   seats_limit = account.seats_limit if account else None
 
   # Get current plan from billing profile
@@ -544,7 +550,7 @@ def billing_plan():
     team_view=None,
     security_view=None,
     integrations_view=None,
-    seats_used=seats_used,
+    seats_used=inboxes_used,
     seats_limit=seats_limit,
     account_id=account_id,
     current_plan=current_plan,
@@ -560,7 +566,10 @@ def billing_invoices():
   """Billing invoices placeholder view."""
   account_id = getattr(g, "current_account_id", None)
   account = Account.query.get(account_id) if account_id else None
-  seats_used = User.query.filter_by(account_id=account_id).count() if account_id else 0
+  inboxes_used = InboxConnection.query.filter(
+    InboxConnection.account_id == account_id,
+    InboxConnection.provider.in_(["gmail", "outlook"]),
+  ).count() if account_id else 0
   seats_limit = account.seats_limit if account else None
   return render_template(
     "settings/index.html",
@@ -569,7 +578,7 @@ def billing_invoices():
     team_view=None,
     security_view=None,
     integrations_view=None,
-    seats_used=seats_used,
+    seats_used=inboxes_used,
     seats_limit=seats_limit,
     account_id=account_id,
   )

@@ -26,7 +26,7 @@ def mock_pain_point():
 def test_generate_scripts_creates_long_form_and_shorts(app, mock_blog_post, mock_pain_point):
     with app.app_context():
         with patch("src.tasks.youtube._get_latest_blog_post", return_value=mock_blog_post), \
-             patch("src.tasks.youtube._get_top_pain_point", return_value=mock_pain_point), \
+             patch("src.tasks.youtube._get_next_pain_point", return_value=mock_pain_point), \
              patch("src.tasks.youtube._run_dspy_script_generation") as mock_dspy, \
              patch("src.tasks.youtube.db") as mock_db:
 
@@ -158,7 +158,7 @@ def test_generate_scripts_creates_video_render(app, db):
 
     # The app fixture already pushes an app_context — use it directly (no nested push).
     with patch("src.tasks.youtube._get_latest_blog_post", return_value=mock_post), \
-         patch("src.tasks.youtube._get_top_pain_point", return_value=mock_pp), \
+         patch("src.tasks.youtube._get_next_pain_point", return_value=mock_pp), \
          patch("src.tasks.youtube._run_dspy_script_generation") as mock_dspy, \
          patch("src.tasks.youtube._build_utm_slug", side_effect=lambda vtype, title: f"slug-{vtype}"):
 
@@ -700,7 +700,7 @@ def test_generate_scripts_persists_short_seo_to_db(app, db):
         return f"slug-{vtype}-{counter['n']}"
 
     with patch("src.tasks.youtube._get_latest_blog_post", return_value=mock_post), \
-         patch("src.tasks.youtube._get_top_pain_point", return_value=mock_pp), \
+         patch("src.tasks.youtube._get_next_pain_point", return_value=mock_pp), \
          patch("src.tasks.youtube._run_dspy_script_generation") as mock_dspy, \
          patch("src.tasks.youtube._build_utm_slug", side_effect=_slug):
 

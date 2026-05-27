@@ -98,21 +98,29 @@ def test_origin_in_allowlist_is_permitted(client):
 
 
 def test_suspended_app_returns_403(client):
-    """A suspended app cannot use the chat endpoint regardless of origin."""
-    mock_app = _make_app(allowed_origins=[], status="suspended")
+    """A suspended app cannot use the chat endpoint regardless of origin.
+
+    The route queries RegisteredApp with status="active" — a suspended app
+    won't match, so .first() returns None, triggering the invalid client_id 403.
+    """
     with patch("src.api.v1.intake.RegisteredApp") as MockApp:
-        MockApp.query.filter_by.return_value.first.return_value = mock_app
+        # Suspended app: status="active" filter finds nothing
+        MockApp.query.filter_by.return_value.first.return_value = None
         resp = _post_chat(client, client_id="iq_test", origin="https://mysite.com")
     assert resp.status_code == 403
 
 
 def test_chat_product_not_approved_returns_403(client):
-    """Even if client_id is valid, chat access must be approved."""
+    """Even if client_id is valid, chat access must be approved.
+
+    The route queries AppProductAccess with status="approved" — a pending row
+    won't match, so .first() returns None, triggering the 403.
+    """
     mock_app = _make_app(allowed_origins=[])
-    mock_access = _make_access(status="pending")
     with patch("src.api.v1.intake.RegisteredApp") as MockApp, \
          patch("src.api.v1.intake.AppProductAccess") as MockAccess:
         MockApp.query.filter_by.return_value.first.return_value = mock_app
-        MockAccess.query.filter_by.return_value.first.return_value = mock_access
+        # Pending access: status="approved" filter finds nothing
+        MockAccess.query.filter_by.return_value.first.return_value = None
         resp = _post_chat(client, client_id="iq_test", origin="https://mysite.com")
     assert resp.status_code == 403
