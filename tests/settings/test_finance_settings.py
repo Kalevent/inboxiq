@@ -49,11 +49,14 @@ def test_finance_settings_upgrade_gate(client):
          patch("src.settings.get_jwt_identity", return_value="1"), \
          patch("src.settings.db") as mock_db, \
          patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.account_allows_api", return_value=True), \
          patch("src.settings.routes.Account") as MockAccount, \
+         patch("src.settings.routes.User") as MockUser, \
          patch("src.settings.routes.AccountAddOn") as MockAddon, \
          patch("src.settings.routes.WebhookProvider") as MockWP:
         mock_db.session.get.return_value = mock_user
         MockAccount.query.get.return_value = mock_account
+        MockUser.query.filter_by.return_value.first.return_value = mock_user
         MockAddon.query.filter_by.return_value.first.return_value = None
         MockWP.query.filter_by.return_value.all.return_value = []
         resp = client.get("/integrations/finance")
@@ -74,11 +77,14 @@ def test_finance_settings_active_summary(client):
          patch("src.settings.get_jwt_identity", return_value="1"), \
          patch("src.settings.db") as mock_db, \
          patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.account_allows_api", return_value=True), \
          patch("src.settings.routes.Account") as MockAccount, \
+         patch("src.settings.routes.User") as MockUser, \
          patch("src.settings.routes.AccountAddOn") as MockAddon, \
          patch("src.settings.routes.WebhookProvider") as MockWP:
         mock_db.session.get.return_value = mock_user
         MockAccount.query.get.return_value = mock_account
+        MockUser.query.filter_by.return_value.first.return_value = mock_user
         MockAddon.query.filter_by.return_value.first.return_value = mock_addon
         MockWP.query.filter_by.return_value.all.return_value = []
         resp = client.get("/integrations/finance")
@@ -103,11 +109,14 @@ def test_finance_settings_passes_providers(client):
          patch("src.settings.get_jwt_identity", return_value="1"), \
          patch("src.settings.db") as mock_db, \
          patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.account_allows_api", return_value=True), \
          patch("src.settings.routes.Account") as MockAccount, \
+         patch("src.settings.routes.User") as MockUser, \
          patch("src.settings.routes.AccountAddOn") as MockAddon, \
          patch("src.settings.routes.WebhookProvider") as MockWP:
         mock_db.session.get.return_value = mock_user
         MockAccount.query.get.return_value = mock_account
+        MockUser.query.filter_by.return_value.first.return_value = mock_user
         MockAddon.query.filter_by.return_value.first.return_value = mock_addon
         results_map = {"stripe": [stripe_prov], "quickbooks": [qb_prov]}
         def fb(**kw):

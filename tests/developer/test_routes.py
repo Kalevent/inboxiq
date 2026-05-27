@@ -42,15 +42,20 @@ def test_developer_get_passes_product_catalog_to_template(client):
          patch("src.settings.get_jwt_identity", return_value="1"), \
          patch("src.settings.db") as mock_db, \
          patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.account_allows_api", return_value=True), \
          patch("src.settings.routes.Account") as MockAccount, \
+         patch("src.settings.routes.InboxConnection") as MockIC, \
          patch("src.settings.routes.RegisteredApp") as MockApp, \
          patch("src.settings.routes.AppProductAccess") as MockAccess, \
-         patch("src.settings.routes.DeveloperAccessRequest") as MockReq:
+         patch("src.settings.routes.DeveloperAccessRequest") as MockReq, \
+         patch("src.models.ai.MCPServerCatalog") as MockMCP:
         mock_db.session.get.return_value = mock_user
         MockAccount.query.get.return_value = mock_account
+        MockIC.query.filter.return_value.count.return_value = 1
         MockApp.query.filter_by.return_value.order_by.return_value.all.return_value = [mock_app]
         MockAccess.query.filter_by.return_value.all.return_value = []
         MockReq.query.filter_by.return_value.order_by.return_value.first.return_value = None
+        MockMCP.query.filter_by.return_value.order_by.return_value.all.return_value = []
 
         resp = client.get("/settings/developer")
 
@@ -84,15 +89,20 @@ def test_developer_get_selects_first_app_when_no_app_id(client):
          patch("src.settings.get_jwt_identity", return_value="1"), \
          patch("src.settings.db") as mock_db, \
          patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.account_allows_api", return_value=True), \
          patch("src.settings.routes.Account") as MockAccount, \
+         patch("src.settings.routes.InboxConnection") as MockIC, \
          patch("src.settings.routes.RegisteredApp") as MockApp, \
          patch("src.settings.routes.AppProductAccess") as MockAccess, \
-         patch("src.settings.routes.DeveloperAccessRequest") as MockReq:
+         patch("src.settings.routes.DeveloperAccessRequest") as MockReq, \
+         patch("src.models.ai.MCPServerCatalog") as MockMCP:
         mock_db.session.get.return_value = mock_user
         MockAccount.query.get.return_value = mock_account
+        MockIC.query.filter.return_value.count.return_value = 1
         MockApp.query.filter_by.return_value.order_by.return_value.all.return_value = [mock_app]
         MockAccess.query.filter_by.return_value.all.return_value = []
         MockReq.query.filter_by.return_value.order_by.return_value.first.return_value = None
+        MockMCP.query.filter_by.return_value.order_by.return_value.all.return_value = []
 
         resp = client.get("/settings/developer")
 
@@ -351,6 +361,7 @@ def test_update_origins_saves_valid_origins(client):
          patch("src.settings.get_jwt_identity", return_value="1"), \
          patch("src.settings.db") as mock_settings_db, \
          patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.account_allows_api", return_value=True), \
          patch("src.settings.routes.Account") as MockAccount, \
          patch("src.settings.routes.RegisteredApp") as MockApp:
         mock_settings_db.session.get.return_value = mock_user
@@ -384,6 +395,7 @@ def test_update_origins_rejects_http_origins(client):
          patch("src.settings.get_jwt_identity", return_value="1"), \
          patch("src.settings.db") as mock_settings_db, \
          patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.account_allows_api", return_value=True), \
          patch("src.settings.routes.Account") as MockAccount, \
          patch("src.settings.routes.RegisteredApp") as MockApp:
         mock_settings_db.session.get.return_value = mock_user
@@ -426,6 +438,7 @@ def test_test_webhook_returns_json_with_status(client):
          patch("src.settings.get_jwt_identity", return_value="1"), \
          patch("src.settings.db") as mock_settings_db, \
          patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.account_allows_api", return_value=True), \
          patch("src.settings.routes.Account") as MockAccount, \
          patch("src.settings.routes.RegisteredApp") as MockApp, \
          patch("src.settings.routes.AppProductAccess") as MockAccess, \
@@ -464,6 +477,7 @@ def test_test_webhook_returns_error_when_no_webhook_url(client):
          patch("src.settings.get_jwt_identity", return_value="1"), \
          patch("src.settings.db") as mock_settings_db, \
          patch("src.settings.account_allows_api", return_value=True), \
+         patch("src.settings.routes.account_allows_api", return_value=True), \
          patch("src.settings.routes.Account") as MockAccount, \
          patch("src.settings.routes.RegisteredApp") as MockApp, \
          patch("src.settings.routes.AppProductAccess") as MockAccess:

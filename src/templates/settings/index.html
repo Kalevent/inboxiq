@@ -517,7 +517,7 @@
                   <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                     <div class="text-sm font-semibold text-slate-100">Current plan</div>
                     <p class="text-sm text-slate-300 mt-2">
-                      {{ plan_name or "Pro" }} · Seats used: {{ seats_used or 1 }} / {{ seats_limit or 3 }}
+                      {{ plan_name or "Pro" }} · Inboxes connected: {{ seats_used or 0 }} / {{ seats_limit or 3 }}
                     </p>
                     <a href="{{ url_for('settings.billing_plan') }}" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-indigo-200 hover:text-white">
                       Manage plan →

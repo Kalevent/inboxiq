@@ -20,6 +20,7 @@ def test_first_gmail_connection_queues_onboarding_video(app):
         with patch("src.api.v1.auth.User") as mock_user_cls, \
              patch("src.api.v1.auth.InboxConnection") as mock_ic_cls, \
              patch("src.api.v1.auth.db") as mock_db, \
+             patch("src.features.get_plan_count_limit", return_value=None), \
              patch("src.tasks.onboarding_video.queue_onboarding_video") as mock_task:
 
             # User.query.get returns our mock user
@@ -110,6 +111,7 @@ def test_first_outlook_connection_queues_onboarding_video(app):
         with patch("src.api.v1.auth.User") as mock_user_cls, \
              patch("src.api.v1.auth.InboxConnection") as mock_ic_cls, \
              patch("src.api.v1.auth.db") as mock_db, \
+             patch("src.features.get_plan_count_limit", return_value=None), \
              patch("src.tasks.onboarding_video.queue_onboarding_video") as mock_task:
 
             mock_user_cls.query.get.return_value = mock_user
