@@ -171,15 +171,27 @@ def test_celery_task_failure_signal_emits_app_logger_error_with_task_name_and_tr
     fake_einfo = MagicMock()
     fake_einfo.traceback = "Traceback (most recent call last):\n  File ...\nValueError: boom"
 
-    task_failure.send(
-        sender=fake_task,
-        task_id="task-id-abc",
-        exception=ValueError("boom"),
-        args=(2,),
-        kwargs={"account_id": 2},
-        einfo=fake_einfo,
-        traceback=None,
-    )
+    # Patch smtplib.SMTP so that any real crash-email handlers registered by
+    # other test fixtures cannot send actual emails when we fire the signal.
+    class _NoopSMTP:
+        def __init__(self, *a, **kw): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def ehlo(self): pass
+        def starttls(self, *a, **kw): pass
+        def login(self, *a, **kw): pass
+        def send_message(self, msg): pass
+
+    with patch("smtplib.SMTP", _NoopSMTP):
+        task_failure.send(
+            sender=fake_task,
+            task_id="task-id-abc",
+            exception=ValueError("boom"),
+            args=(2,),
+            kwargs={"account_id": 2},
+            einfo=fake_einfo,
+            traceback=None,
+        )
 
     assert app.logger.error.called, "app.logger.error must be invoked when a celery task fails"
     rendered = " ".join(str(a) for a in app.logger.error.call_args.args) + " " + str(app.logger.error.call_args.kwargs)

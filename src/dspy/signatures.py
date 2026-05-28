@@ -131,11 +131,28 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
         )
 
     class DraftReplySig(dspy.Signature):
-        """Generate customer-ready draft reply based on triage context, thread history, and knowledge base."""
+        """Draft a reply written BY the inbox owner TO the external sender.
+
+        CRITICAL PERSPECTIVE RULE: You are ghostwriting on behalf of the inbox owner
+        (identified by inbox_owner_email and inbox_owner_name).
+        - Address the external sender (from_email in case_json) — NOT the inbox owner.
+        - Sign off using inbox_owner_name — NOT the external sender's name.
+        - NEVER copy the external sender's name, job title, phone number, company, or
+          signature block into the reply body or sign-off.
+        - In thread_history, is_outbound=true means the inbox owner sent that message.
+        """
+        inbox_owner_email = dspy.InputField(
+            desc="Email address of the inbox owner. You are writing this reply ON BEHALF of this person. "
+                 "Address the other party in the thread, not this person."
+        )
+        inbox_owner_name = dspy.InputField(
+            desc="Full name of the inbox owner (e.g. 'Kofi Ofuafor'). Use this name in the sign-off. "
+                 "If blank, omit the name from the sign-off. Never use the external sender's name."
+        )
         case_json = dspy.InputField(desc="Customer case details including the latest email content and metadata")
         thread_history = dspy.InputField(
             desc="Prior messages in this email thread, oldest-first (JSON array). "
-                 "Each entry has: from_email, body, received_at, is_outbound (true = sent by Oliver's team). "
+                 "Each entry has: from_email, body, received_at, is_outbound (true = sent by the inbox owner). "
                  "Use this to: avoid repeating questions already asked, reference what was previously said, "
                  "understand the full context of the conversation, and continue naturally from the last reply."
         )
@@ -154,7 +171,7 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
             self.escalate = dspy.Predict(EscalationDecisionSig)
             self.draft = dspy.ChainOfThought(DraftReplySig)
 
-        def forward(self, case_json: str, draft_enabled: bool = False, kb_context: str = "[]", sender_hint: str = "", thread_history: str = "[]") -> Any:
+        def forward(self, case_json: str, draft_enabled: bool = False, kb_context: str = "[]", sender_hint: str = "", thread_history: str = "[]", inbox_owner_email: str = "", inbox_owner_name: str = "") -> Any:
             entities_json = self.extract(case_json=case_json, sender_hint=sender_hint).entities_json
             route_json = self.route(case_json=case_json, entities_json=entities_json).route_json
             workflow_json = self.select(
@@ -170,6 +187,8 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
             if draft_enabled:
                 try:
                     reply_text = self.draft(
+                        inbox_owner_email=inbox_owner_email,
+                        inbox_owner_name=inbox_owner_name,
                         case_json=case_json,
                         thread_history=thread_history,
                         entities_json=entities_json,
