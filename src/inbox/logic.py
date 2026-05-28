@@ -198,6 +198,21 @@ def run_dspy_decision(email: Dict[str, Any], account_id: int | None = None) -> T
     if not _env_bool("DSPY_ENABLED", True):
         raise RuntimeError("DSPy triage is required. Set DSPY_ENABLED=1 and configure a model.")
 
+    # Resolve inbox owner email so DraftReplySig knows whose perspective to write from.
+    # Without this, the model reads the external sender's signature and adopts their persona.
+    if account_id and not normalized.get("inbox_owner_email"):
+        try:
+            from src.models.core import InboxConnection
+            _conn = InboxConnection.query.filter_by(
+                account_id=account_id,
+                provider=normalized.get("provider"),
+                status="connected",
+            ).first()
+            if _conn and _conn.email_address:
+                normalized["inbox_owner_email"] = _conn.email_address
+        except Exception:
+            pass
+
     try:
         from src.dspy import run_dspy_triage
         from src.dspy.triage_labels import get_triage_labels

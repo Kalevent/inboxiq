@@ -246,10 +246,12 @@ def _run_dspy_triage_impl(
             })
         kb_context_json = json.dumps(kb_context_list)
 
+    inbox_owner_email = payload.get("inbox_owner_email") or ""
+
     # Run DSPy decision program
     try:
         result = _try_with_provider_failover(
-            lambda: module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json, sender_hint=sender_hint, thread_history=thread_history_json)
+            lambda: module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json, sender_hint=sender_hint, thread_history=thread_history_json, inbox_owner_email=inbox_owner_email)
         )
     except Exception as exc:
         logger.warning("DSPy decision program failed, falling back to compiled triage: %s", exc)
@@ -286,6 +288,7 @@ def _run_dspy_triage_impl(
                 from src.dspy.signatures import build_decision_program as _bdp
                 _draft_prog = _bdp(dspy, label_config)
                 _dr = _draft_prog.draft(
+                    inbox_owner_email=inbox_owner_email,
                     case_json=case_json,
                     thread_history=thread_history_json,
                     entities_json=_fallback_entities,
