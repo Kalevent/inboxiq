@@ -18,6 +18,12 @@ from src.models.leads import Lead
 def _text_to_html(text: str) -> str:
     """Convert a plain-text email body to a minimal HTML MIME part."""
     escaped = _html.escape(text)
+    # Linkify bare https:// URLs so they become clickable (and trackable).
+    escaped = re.sub(
+        r'(https?://[^\s<>"]+)',
+        r'<a href="\1" style="color:#5B5BD6;">\1</a>',
+        escaped,
+    )
     paragraphs = escaped.split('\n\n')
     parts = [
         '<p style="margin:0 0 12px 0;">' + p.replace('\n', '<br>') + '</p>'
@@ -28,6 +34,21 @@ def _text_to_html(text: str) -> str:
         + ''.join(parts)
         + '</div>'
     )
+
+
+def _wrap_links_for_tracking(html: str, outreach_id: str, app_url: str) -> str:
+    """Replace every href in the HTML with a tracked redirect URL."""
+    from urllib.parse import quote
+
+    def _replace(match):
+        original_url = match.group(1)
+        # Don't double-wrap tracking or unsubscribe links
+        if '/outreach/track/' in original_url or '/outreach/unsubscribe/' in original_url:
+            return match.group(0)
+        tracked = f"{app_url}/api/v1/outreach/track/{outreach_id}/click?url={quote(original_url, safe='')}"
+        return f'href="{tracked}"'
+
+    return re.sub(r'href="(https?://[^"]+)"', _replace, html)
 
 
 def get_ses_client():
@@ -364,8 +385,9 @@ def send_outreach_email(outreach: EmailOutreach, campaign: EmailCampaign) -> boo
     """
     app_url = os.getenv('APP_URL', 'https://api.kalevent.com')
 
-    # Build HTML body from text if not already set
+    # Build HTML body from text if not already set, then wrap all links for click tracking
     html_body = outreach.body_html or _text_to_html(outreach.body_text)
+    html_body = _wrap_links_for_tracking(html_body, outreach.id, app_url)
 
     # Generate tracking pixel URL
     tracking_pixel_url = f"{app_url}/api/v1/outreach/track/{outreach.id}/open"
@@ -596,24 +618,24 @@ InboxIQ connects to Gmail or Outlook and places a draft reply directly in the th
 
 Here is what one of those threads looks like: the email arrives, InboxIQ applies a label (Support · P2), and a draft reply referencing your help docs is waiting in the thread. For a meeting request, available calendar slots are included in the draft — no Calendly link needed.
 
-Would a 15-minute look make sense? I can show you it working on a real inbox.
+Takes 2 minutes to connect your inbox and see it live: https://kalevent.com/signup?utm_source=outreach&utm_medium=email&utm_campaign=icp_cold
+
+Or if you would rather see it on a real inbox first — happy to do a 15-minute walkthrough.
 
 - {{ SenderName }}
 {{ SenderTitle }}
-{{ SenderCompany }}
-https://kalevent.com"""
+{{ SenderCompany }}"""
 
 ICP_COLD_EMAIL_FOLLOWUP = """Hi {{ FirstName }},
 
 Following up briefly.
 
-If support email is still eating into your mornings, I would be happy to show you what InboxIQ looks like inside Gmail — takes 15 minutes and you would see it working on a real inbox.
+If support email is still eating into your mornings — connect your inbox here and see it working in under 2 minutes: https://kalevent.com/signup?utm_source=outreach&utm_medium=email&utm_campaign=icp_cold_followup
 
 If the timing is not right, no problem at all.
 
 - {{ SenderName }}
-{{ SenderTitle }}
-https://kalevent.com"""
+{{ SenderTitle }}"""
 
 
 def get_icp_cold_outreach_templates() -> dict:
