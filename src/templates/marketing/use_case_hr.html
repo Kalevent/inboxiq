@@ -43,7 +43,7 @@
         Route every HR request to the right person<br class="hidden sm:block"> before it becomes a complaint.
       </h1>
       <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
-        HR inboxes mix urgent grievances with routine queries. InboxIQ classifies sensitivity, routes confidentially to the right HR partner, and keeps a complete ownership trail — GDPR-compliant by design.
+        HR inboxes mix urgent grievances with routine queries. InboxIQ classifies sensitivity, routes confidentially to the right HR partner, and keeps a complete ownership trail — GDPR-compliant by design. Leave requests, expense approvals, and policy queries are classified automatically — employees email hr@company.com exactly as before.
       </p>
       <div class="flex flex-wrap justify-center items-center gap-4">
         <a href="{{ url_for('signup_page') }}"
@@ -205,6 +205,53 @@
               <p class="font-medium text-brand-ink text-sm">Exportable case records</p>
               <p class="text-brand-ink-soft text-sm">Case history is exportable for legal review, Acas early conciliation, and employment tribunal submissions.</p>
             </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ── Requests & Approvals ─────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Requests &amp; Approvals</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Leave requests and approvals — tracked automatically, no portal needed</h2>
+    </div>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Leave requests and expense approvals</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">Employees email hr@company.com as always — InboxIQ classifies "requesting two weeks leave from 15 July" as a leave request and routes to the line manager</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">Approval reply captured and logged with timestamp — GDPR-compliant decision record for every request</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">Late approvals escalated automatically after your configured SLA window — no manual chasing</p>
+          </li>
+        </ul>
+        <a href="{{ url_for('use_case_approvals') }}" class="inline-flex items-center text-brand-accent text-sm font-medium hover:text-brand-accent-soft transition-colors">
+          See how approvals work &rarr;
+        </a>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Policy queries and non-routine requests</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">Routine policy questions (maternity entitlement, notice period) receive AI draft replies grounded in your HR knowledge base</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">Non-routine requests route to the right HR Business Partner with full classification context</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">Every request has a named owner and close date — complete record for SAR evidence and tribunal documentation</p>
           </li>
         </ul>
       </div>
