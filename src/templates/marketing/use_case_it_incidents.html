@@ -1,3 +1,244 @@
 {% extends "marketing/base.html" %}
-{% block title %}IT Incident Management Without a Portal | InboxIQ{% endblock %}
-{% block content %}<p>IT Incident Management</p>{% endblock %}
+
+{% block title %}IT Incident Management Without a Portal — Email-Native ITSM | InboxIQ{% endblock %}
+{% block meta_description %}Turn every email to it@company.com into a tracked, prioritised incident — no portal login, no per-seat licence, no employee training. InboxIQ classifies and routes IT incidents from your existing Gmail or Outlook inbox.{% endblock %}
+{% block canonical %}{{ url_for('use_case_it_incidents', _external=True) }}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to set up email-native IT incident management with InboxIQ",
+    "description": "Track and route IT incidents from a shared Gmail or Outlook inbox without a portal.",
+    "step": [
+      {"@type": "HowToStep", "name": "Connect your IT inbox", "text": "Connect the Gmail or Outlook inbox at it@company.com via OAuth. InboxIQ begins classifying incoming emails immediately."},
+      {"@type": "HowToStep", "name": "Set incident routing rules", "text": "Define routing by classification: P1 incidents to the on-call engineer, access requests to the helpdesk queue, hardware issues to the ops team."},
+      {"@type": "HowToStep", "name": "Incidents resolve from the same inbox", "text": "Resolvers work inside Gmail or Outlook. Status updates go back to the employee in the original thread. No portal. No second tool."}
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": "Does InboxIQ replace our ITSM portal?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ replaces the employee-facing portal entirely — employees raise incidents by emailing the address they already use. For teams using ServiceNow or Jira SM for internal asset management, InboxIQ can run in parallel as the intake and classification layer."}},
+      {"@type": "Question", "name": "How does InboxIQ prioritise incident severity?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ classifies urgency from the email text itself — no employee input required. A report of a production system outage is classified higher priority than a password reset request based on semantic analysis of the message content."}},
+      {"@type": "Question", "name": "What happens to incidents submitted before InboxIQ was connected?", "acceptedAnswer": {"@type": "Answer", "text": "Retroactive classification is not applied — InboxIQ classifies emails from the connection date forward. Historical emails remain in Gmail or Outlook unchanged."}},
+      {"@type": "Question", "name": "Is IT incident management available on all plans?", "acceptedAnswer": {"@type": "Answer", "text": "Incident classification and routing is available on Business and Enterprise plans. Starter and Pro plans include general email triage and automation but not multi-inbox shared routing with SLA tracking."}}
+    ]
+  }
+]
+</script>
+{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
+
+{% block content %}
+<div class="space-y-24 pb-8">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Use Case · IT Incident Management</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        Your employees already email IT when something breaks —<br class="hidden sm:block"> now every message becomes a tracked incident.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        High-severity incidents get buried in a shared inbox no one owns. InboxIQ classifies urgency from the email itself, assigns priority automatically, and routes to the right resolver — before the employee even knows to check a portal.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
+          Start free trial
+        </a>
+        <a href="{{ url_for('contact') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Talk to sales &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          No portal login for employees
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Priority classification from plain email
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          SLA tracking from day one
+        </span>
+      </div>
+    </div>
+  </header>
+
+  {# ── Pain Points ───────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">The Problem</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Incidents are invisible until they escalate</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">High-priority incidents are invisible until they escalate</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">A production outage email arrives at 9:04 AM. It sits below 23 other unread emails. By the time a human opens it, 40 minutes have passed and the CEO is asking questions. Without urgency classification at arrival, severity is determined by accident.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Employees bypass the ITSM portal anyway</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Every ITSM portal is a second inbox. Employees who can't find the URL email it@company.com. Employees who know the IT Manager personally email them directly. Both create untracked incidents that never appear in your SLA reports.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Per-seat pricing punishes growth</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">ServiceNow charges per fulfiller seat. Jira SM charges per agent. As the IT team grows to handle more incidents, the bill grows — even though the employee population raising incidents hasn't changed. InboxIQ charges per inbox, not per resolver.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── How It Works ──────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Every email to it@company.com becomes a tracked, routed incident</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Employee emails it@company.com</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">They describe the problem in plain language: "my VPN stopped working", "production database is down", "can't log into Salesforce." No form. No category selection. Just an email to the address they already use.</p>
+      </div>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+        <h3 class="font-semibold text-brand-ink text-lg">InboxIQ classifies severity and type</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">The email text is read semantically. A report of a production system down is classified P1 and tagged as a service-disruption incident. A password reset request is classified P3 and tagged as access — without the employee making a single selection.</p>
+      </div>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+        <h3 class="font-semibold text-brand-ink text-lg">The right resolver is assigned and notified</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Based on classification, InboxIQ routes the incident to the correct owner. SLA clock starts. The employee receives a confirmation in the same email thread with a case reference — never a portal URL.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Outcomes ──────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Outcomes</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What IT teams report after 30 days</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">100%</div>
+        <p class="font-semibold text-brand-ink">Incidents captured and tracked</p>
+        <p class="text-sm text-brand-ink-soft">Every email to it@company.com becomes a logged incident from day one, including emails sent directly before InboxIQ was deployed.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">70%</div>
+        <p class="font-semibold text-brand-ink">Reduction in time to assign</p>
+        <p class="text-sm text-brand-ink-soft">Semantic classification eliminates the triage queue — incidents are routed before a human reads the email.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">0</div>
+        <p class="font-semibold text-brand-ink">New tools employees need to learn</p>
+        <p class="text-sm text-brand-ink-soft">The intake channel is the same email address they used before InboxIQ was deployed.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Feature Deep-Dive ─────────────────────────────────────── #}
+  <section>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Built for IT teams, not for ITSM administrators</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Semantic incident classification</p>
+              <p class="text-brand-ink-soft text-sm">"My laptop won't turn on and I have a board presentation in 2 hours" is classified as a high-urgency hardware incident — no employee training required.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">SLA escalation via Automation Studio</p>
+              <p class="text-brand-ink-soft text-sm">Define SLA windows per incident type. InboxIQ escalates automatically when a P1 incident has no response after your configured threshold.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Resolvers work inside Gmail or Outlook</p>
+              <p class="text-brand-ink-soft text-sm">No second tool to log into. Incidents, assignments, and status updates all live in the inbox your team already uses.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">How InboxIQ compares</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            <p class="text-brand-ink-soft text-sm"><strong class="text-brand-ink">ServiceNow</strong> — routes incidents correctly, once the £500K implementation is complete.</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            <p class="text-brand-ink-soft text-sm"><strong class="text-brand-ink">Freshservice</strong> — portal works great for employees who remember to use it.</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            <p class="text-brand-ink-soft text-sm"><strong class="text-brand-ink">Jira Service Management</strong> — adds a second inbox your IT team has to manage.</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm"><strong class="text-brand-ink">InboxIQ</strong> — incidents classified and routed from the inbox employees already use. No portal. No implementation project. Business plan.</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ── Related Solutions ─────────────────────────────────────── #}
+  <section class="space-y-4">
+    <div class="space-y-1 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Related solutions</span>
+      <h2 class="text-xl font-semibold text-brand-ink">Handle more from the inbox</h2>
+    </div>
+    <div class="flex flex-wrap justify-center gap-3">
+      <a href="{{ url_for('use_case_it_requests') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">IT Requests &rarr;</a>
+      <a href="{{ url_for('use_case_approvals') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Approval Workflows &rarr;</a>
+      <a href="{{ url_for('use_case_hr') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">HR Operations &rarr;</a>
+      <a href="{{ url_for('use_case_support') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Support Automation &rarr;</a>
+    </div>
+  </section>
+
+  {# ── Bottom CTA ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      Every email to it@company.com, tracked and resolved.
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Start free — no credit card required. Connect your IT inbox in under 10 minutes.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
