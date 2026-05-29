@@ -1,0 +1,244 @@
+{% extends "marketing/base.html" %}
+
+{% block title %}IT Service Request Management — No Portal Required | InboxIQ{% endblock %}
+{% block meta_description %}Employees email access requests, equipment orders, and software licences to it@company.com. InboxIQ classifies, routes, and tracks every request automatically — no portal login, no per-agent pricing.{% endblock %}
+{% block canonical %}{{ url_for('use_case_it_requests', _external=True) }}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to manage IT service requests from email with InboxIQ",
+    "description": "Track and route IT and ops service requests from a shared Gmail or Outlook inbox without a portal.",
+    "step": [
+      {"@type": "HowToStep", "name": "Connect your IT service inbox", "text": "Connect the Gmail or Outlook inbox that receives IT requests via OAuth. InboxIQ classifies request types automatically from day one."},
+      {"@type": "HowToStep", "name": "Define routing by request category", "text": "Route access requests to the security owner, equipment requests to IT ops, and software licences to the licence manager — using plain-English rules."},
+      {"@type": "HowToStep", "name": "Requests resolve from the inbox, not a portal", "text": "Assignees work from Gmail or Outlook. Employees receive updates in the original thread. Every request has a close date and an owner record."}
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": "Can InboxIQ handle both IT incidents and IT service requests from the same inbox?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. InboxIQ classifies incoming emails by intent — an outage report and a software access request arriving at the same inbox are classified differently and routed to the correct queue. Both are tracked under the same audit log."}},
+      {"@type": "Question", "name": "Does InboxIQ support approval steps within a service request workflow?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. On Business and Enterprise plans, service requests that require approval — such as software licence procurement or elevated system access — can trigger an approval step before the request is fulfilled. The approver receives an email and acts from their own inbox."}},
+      {"@type": "Question", "name": "How does per-inbox pricing work for IT service desks?", "acceptedAnswer": {"@type": "Answer", "text": "InboxIQ charges per connected inbox (e.g., it@company.com). The number of people resolving requests from that inbox does not affect the price. This differs from per-agent tools like Freshservice and Jira SM, where every resolver is a paid seat."}},
+      {"@type": "Question", "name": "Which plan includes IT service request management?", "acceptedAnswer": {"@type": "Answer", "text": "Multi-inbox routing, SLA tracking, and shared request queues are Business plan features. Starter and Pro are designed for individual or small team inbox automation."}}
+    ]
+  }
+]
+</script>
+{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
+
+{% block content %}
+<div class="space-y-24 pb-8">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Use Case · IT &amp; Ops Requests</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        Your employees are already emailing IT for access, equipment, and software —<br class="hidden sm:block"> now every request gets tracked and resolved.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        IT service requests arrive by email whether you have a portal or not. InboxIQ turns that email into a structured, routed, SLA-tracked request without asking employees to change a single behaviour.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
+          Start free trial
+        </a>
+        <a href="{{ url_for('contact') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Talk to sales &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Access, equipment &amp; software requests in one queue
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Per-inbox pricing — not per-agent seat
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Deployed in hours, not weeks
+        </span>
+      </div>
+    </div>
+  </header>
+
+  {# ── Pain Points ───────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">The Problem</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Every IT service request tool has the same problem: shadow requests</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Shadow requests bypass every system you build</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">The VP of Sales emails the IT Manager directly. The new hire asks on Slack. The contractor sends a WhatsApp. None appear in your request queue, your SLA report, or your audit log. No portal solves shadow requests — employees will always find a path that doesn't involve a login.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Per-agent pricing makes growing IT teams pay for every resolver</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Freshservice, Jira SM, and Zendesk all price per agent. A five-person IT team pays five licences. When you add a sixth resolver to handle growth, the bill jumps immediately. InboxIQ charges per connected inbox — adding resolvers costs nothing.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Configuration takes longer than deployment</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">JSM's project schemas and permission schemes take one to two weeks to configure. Freshservice requires categories and templates before it triages correctly. InboxIQ classifies from day one using semantic analysis of email content — no category taxonomy to build first.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── How It Works ──────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">From email to tracked, assigned request in seconds</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Employee sends a request to it@company.com</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">"I need admin access to the billing system", "my monitor stopped working", "can you add me to the Figma team licence?" Plain text, sent the way they always have. No form, no portal URL to remember.</p>
+      </div>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+        <h3 class="font-semibold text-brand-ink text-lg">InboxIQ classifies the request type and approver</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Access requests are flagged for security review. Equipment requests go to IT ops. Software licences go to the licence owner. Classification is semantic — "I can't get into Salesforce" routes the same as "Salesforce access request."</p>
+      </div>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+        <h3 class="font-semibold text-brand-ink text-lg">Request tracked until closed</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">The assignee works from their own inbox. When they reply, the thread updates. When the request is fulfilled, the record closes with an audit entry. The employee receives confirmation in the original thread. No portal check-in required.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Outcomes ──────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Outcomes</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What IT &amp; ops teams report after 30 days</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">3×</div>
+        <p class="font-semibold text-brand-ink">Faster fulfilment on access requests</p>
+        <p class="text-sm text-brand-ink-soft">Requests reach the approver before an IT team member has manually read the email.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">£0</div>
+        <p class="font-semibold text-brand-ink">Additional cost per resolver</p>
+        <p class="text-sm text-brand-ink-soft">Per-inbox pricing means the IT team can grow without a licence renewal conversation.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">100%</div>
+        <p class="font-semibold text-brand-ink">Requests with an owner</p>
+        <p class="text-sm text-brand-ink-soft">Every email to the IT inbox becomes a tracked, assigned request — including those sent directly to the IT Manager's personal address.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Feature Deep-Dive ─────────────────────────────────────── #}
+  <section>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Request handling without the overhead</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Semantic routing — no category taxonomy required</p>
+              <p class="text-brand-ink-soft text-sm">InboxIQ learns request types from email content. No admin build-out before the first request is classified correctly.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Approval steps for elevated requests</p>
+              <p class="text-brand-ink-soft text-sm">Software procurement and elevated access requests trigger an approval step before fulfilment. Approvers act from their own inbox — no account required.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Full audit trail on every request</p>
+              <p class="text-brand-ink-soft text-sm">Request received, classified, routed, acted on, and closed — all logged with timestamps. Available for compliance and access review audits.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">How InboxIQ compares</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            <p class="text-brand-ink-soft text-sm"><strong class="text-brand-ink">Freshservice</strong> — Growth plan caps automation at 5,000 transactions/month, then charges per agent for the AI that makes it useful.</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            <p class="text-brand-ink-soft text-sm"><strong class="text-brand-ink">Jira Service Management</strong> — help-centre portal works for employees who find the URL. The rest email you anyway.</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            <p class="text-brand-ink-soft text-sm"><strong class="text-brand-ink">Zendesk Employee Service</strong> — requires a second paid instance if you already use Zendesk for customer support.</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm"><strong class="text-brand-ink">InboxIQ</strong> — per connected inbox, not per agent. Classifies from day one. Resolvers work inside Gmail or Outlook. Business plan.</p>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ── Related Solutions ─────────────────────────────────────── #}
+  <section class="space-y-4">
+    <div class="space-y-1 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Related solutions</span>
+      <h2 class="text-xl font-semibold text-brand-ink">Handle more from the inbox</h2>
+    </div>
+    <div class="flex flex-wrap justify-center gap-3">
+      <a href="{{ url_for('use_case_it_incidents') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">IT Incidents &rarr;</a>
+      <a href="{{ url_for('use_case_approvals') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Approval Workflows &rarr;</a>
+      <a href="{{ url_for('use_case_hr') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">HR Operations &rarr;</a>
+      <a href="{{ url_for('use_case_support') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Support Automation &rarr;</a>
+    </div>
+  </section>
+
+  {# ── Bottom CTA ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      Every IT request tracked, routed, and resolved — from the inbox.
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Start free — no credit card required. Connect your IT inbox in under 10 minutes.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

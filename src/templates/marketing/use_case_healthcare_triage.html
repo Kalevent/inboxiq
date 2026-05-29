@@ -43,7 +43,7 @@
         Stop your clinical team<br class="hidden sm:block"> triaging referral emails.
       </h1>
       <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
-        Referrals arrive by fax-to-email, patient portal, and CRM. InboxIQ reads urgency, routes to the right department, and logs every decision — before a clinician touches the queue.
+        Referrals arrive by fax-to-email, patient portal, and CRM. InboxIQ reads urgency, routes to the right department, and logs every decision — before a clinician touches the queue. Prior authorisation requests, referral approvals, and staff access requests follow the same inbox-native workflow — classified, routed, and resolved without a separate portal login.
       </p>
       <div class="flex flex-wrap justify-center items-center gap-4">
         <a href="{{ url_for('signup_page') }}"
@@ -124,6 +124,57 @@
         <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
         <h3 class="font-semibold text-brand-ink text-lg">HIPAA-ready audit log</h3>
         <p class="text-brand-ink-soft text-sm leading-relaxed">Every triage decision — who accessed what, when, and why — is logged with a timestamped rationale. Exportable for compliance reviews and CQC inspection readiness.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Clinical Requests & Approvals ───────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Requests &amp; Approvals in Clinical Operations</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Prior authorisation, referrals, and access requests — handled from the inbox</h2>
+    </div>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Prior authorisation as an approval workflow</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">PA requests arrive by email from referring physicians and payers — InboxIQ classifies and routes to the correct clinical reviewer</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">Reviewer responds from their existing inbox — decision is logged with timestamp and clinical classification</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">SLA escalation triggers if no response within the configured window — default 24 hours for urgent PA requests (Business plan)</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">Audit trail supports CMS and HIPAA compliance documentation requirements</p>
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Staff access requests and referral intake</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">System access requests for clinical staff are classified as IT/admin requests and routed to the appropriate approver</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">Referral intake emails are classified by specialty and urgency, routed to the relevant department</p>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <p class="text-brand-ink-soft text-sm">All decision records are stored with classification basis for compliance audit — no portal login required for referring physicians</p>
+          </li>
+        </ul>
+        <a href="{{ url_for('use_case_approvals') }}" class="inline-flex items-center text-brand-accent text-sm font-medium hover:text-brand-accent-soft transition-colors">
+          How approval workflows work &rarr;
+        </a>
       </div>
     </div>
   </section>

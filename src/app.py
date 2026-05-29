@@ -457,6 +457,18 @@ def create_app() -> Flask:
   def use_case_ecommerce():
     return render_template("marketing/use_case_ecommerce.html")
 
+  @app.get("/use-cases/it-incidents")
+  def use_case_it_incidents():
+    return render_template("marketing/use_case_it_incidents.html")
+
+  @app.get("/use-cases/it-requests")
+  def use_case_it_requests():
+    return render_template("marketing/use_case_it_requests.html")
+
+  @app.get("/use-cases/approvals")
+  def use_case_approvals():
+    return render_template("marketing/use_case_approvals.html")
+
   # Solutions (decision-centric + unified intake — redirected)
   @app.get("/solutions/unified-intake")
   def solutions_unified_intake():

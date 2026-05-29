@@ -72,6 +72,30 @@
     </div>
   </header>
 
+  {# ── PO Approvals callout ─────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-10 sm:px-12">
+    <div class="max-w-2xl space-y-4">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Before invoices sync to QuickBooks</span>
+      <h2 class="text-2xl font-semibold text-brand-ink tracking-tight leading-[1.04]">They need to be approved.</h2>
+      <p class="text-brand-ink-soft leading-[1.38]">
+        InboxIQ classifies incoming purchase order requests and invoice approval emails, routes them to the correct approver, and records the decision — all from the inbox your finance team already uses. The approval is logged before the transaction is synced.
+      </p>
+      <ul class="space-y-2 text-sm text-brand-ink-soft">
+        <li class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+          Business plan: PO approval routing with full audit trail
+        </li>
+        <li class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+          Enterprise: ApprovalPolicy auto-approves routine vendor invoices below threshold
+        </li>
+      </ul>
+      <a href="{{ url_for('use_case_approvals') }}" class="inline-flex items-center text-brand-accent text-sm font-medium hover:text-brand-accent-soft transition-colors">
+        See how approvals work &rarr;
+      </a>
+    </div>
+  </section>
+
   {# ── Pain Points ───────────────────────────────────────────── #}
   <section>
     <div class="space-y-3 mb-10 text-center">
