@@ -1,3 +1,249 @@
 {% extends "marketing/base.html" %}
-{% block title %}Email Approval Workflows | InboxIQ{% endblock %}
-{% block content %}<p>Approval Workflows</p>{% endblock %}
+
+{% block title %}Email Approval Workflows — No Portal, No New Login | InboxIQ{% endblock %}
+{% block meta_description %}Your team already approves by email. InboxIQ classifies approval requests, routes them to the right approver, tracks decisions, and creates an audit trail — all from inboxes your team already uses.{% endblock %}
+{% block canonical %}{{ url_for('use_case_approvals', _external=True) }}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to track email approval workflows with InboxIQ",
+    "description": "Route, track, and audit approval requests from a shared Gmail or Outlook inbox without a portal.",
+    "step": [
+      {"@type": "HowToStep", "name": "Connect your approvals inbox", "text": "Connect the Gmail or Outlook inbox that receives approval requests (e.g., approvals@company.com or finance@company.com) via OAuth. InboxIQ begins classifying requests immediately."},
+      {"@type": "HowToStep", "name": "Define approvers by request type", "text": "Route PO approvals to the CFO, leave requests to line managers, and access grants to the security lead — using plain-English routing rules, no form builder required."},
+      {"@type": "HowToStep", "name": "Decisions are recorded automatically", "text": "Approvers reply from their inbox. InboxIQ captures the decision, creates an audit entry, and notifies the requestor in the original thread."}
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": "Do approvers need an InboxIQ account?", "acceptedAnswer": {"@type": "Answer", "text": "No. Approvers receive routed requests in their existing Gmail or Outlook inbox and reply from there. InboxIQ captures the reply as the decision. Only the inbox administrator needs an InboxIQ account."}},
+      {"@type": "Question", "name": "How does InboxIQ create an audit trail for approvals?", "acceptedAnswer": {"@type": "Answer", "text": "Every inbound request, routing action, and reply is logged with a timestamp and the identity of the actor. The approval record stores who requested, who approved or rejected, when, and the original email content. This log is exportable and available for audit or compliance review."}},
+      {"@type": "Question", "name": "Can InboxIQ auto-approve routine requests without human review?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, on Enterprise plans. The ApprovalPolicy feature allows you to define conditions — request type, value threshold, requestor role — and a confidence threshold. When both are met, InboxIQ sends the approval confirmation automatically and logs it as a policy-triggered auto-approval."}},
+      {"@type": "Question", "name": "Is there a minimum contract or seat count?", "acceptedAnswer": {"@type": "Answer", "text": "No minimum seat count. InboxIQ charges per connected inbox. A single approvals@company.com inbox on the Business plan covers unlimited approvers acting from their own inboxes."}}
+    ]
+  }
+]
+</script>
+{% endblock %}
+{% block body_class %}marketing-body-light{% endblock %}
+
+{% block content %}
+<div class="space-y-24 pb-8">
+
+  {# ── Hero ──────────────────────────────────────────────────── #}
+  <header class="text-center pt-12 pb-4">
+    <div class="max-w-3xl mx-auto space-y-7">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Use Case · Approval Workflows</span>
+      <h1 class="text-4xl sm:text-5xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+        Your team already approves by email —<br class="hidden sm:block"> InboxIQ makes every approval tracked, routed, and auditable.
+      </h1>
+      <p class="text-lg text-brand-ink-soft leading-[1.38] max-w-2xl mx-auto">
+        PO approvals, leave requests, access grants, and expense sign-offs all arrive as plain emails. InboxIQ classifies the request, routes it to the right approver, and records the decision — without any approver creating an account in a new tool.
+      </p>
+      <div class="flex flex-wrap justify-center items-center gap-4">
+        <a href="{{ url_for('signup_page') }}"
+           class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
+          Start free trial
+        </a>
+        <a href="{{ url_for('contact') }}"
+           class="text-brand-accent font-semibold hover:text-brand-accent-soft transition-colors">
+          Talk to sales &#8594;
+        </a>
+      </div>
+      <div class="flex flex-wrap justify-center items-center gap-6 pt-2 text-sm text-brand-ink-soft">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Approvers act from their existing inbox
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          Complete decision audit trail
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-success shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+          vs £2,500/month Kissflow minimum
+        </span>
+      </div>
+    </div>
+  </header>
+
+  {# ── Pain Points ───────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">The Problem</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">Approvals disappear, decisions aren't recorded, auditors ask questions</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Approval requests disappear into email threads no one owns</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">A PO request sent Tuesday gets a "looks fine" reply on Friday — but no one captured the approver's name, the approved amount, or the timestamp. When the auditor asks for evidence, the thread is buried in someone's personal inbox.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Every approver needs a portal account</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Kissflow, ApprovalMax, and Nintex all require approvers to create accounts and log in to act on requests. A finance director who approves three POs a month is expected to maintain a Kissflow login for those three clicks. Portal friction causes approvals to stall.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </div>
+        <h3 class="font-semibold text-brand-ink">Approval tool pricing assumes every approver is a power user</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">Kissflow's £2,500/month floor is for the whole platform — including features an approval-only team will never use. ApprovalMax bundles features you don't need. InboxIQ charges per inbox, not per approver.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── How It Works ──────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-12 sm:px-12">
+    <div class="space-y-3 mb-10">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">How It Works</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">From request email to auditable decision — without anyone leaving their inbox</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">1</div>
+        <h3 class="font-semibold text-brand-ink text-lg">A request arrives as a plain email</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">"I need sign-off on a £4,200 vendor invoice." "Requesting two weeks' leave from 15 July." "Need admin access to the production database." No form. No portal. The email is the request.</p>
+      </div>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">2</div>
+        <h3 class="font-semibold text-brand-ink text-lg">InboxIQ identifies the request type and approver</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">The semantic layer identifies this as a financial approval, a leave request, or an access grant. Routing rules determine the correct approver — CFO for invoices above £1,000, line manager for leave, security lead for elevated access. The approver receives a notification in their own inbox.</p>
+      </div>
+      <div class="space-y-4">
+        <div class="w-10 h-10 rounded-xl bg-brand-accent text-white flex items-center justify-center font-bold text-lg shrink-0">3</div>
+        <h3 class="font-semibold text-brand-ink text-lg">The approver replies and the decision is recorded</h3>
+        <p class="text-brand-ink-soft text-sm leading-relaxed">The approver replies approve or decline from Gmail or Outlook. InboxIQ captures the decision, timestamps it, links it to the original request, and creates an immutable audit entry. The requestor receives confirmation in the original thread.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Outcomes ──────────────────────────────────────────────── #}
+  <section>
+    <div class="space-y-3 mb-10 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Outcomes</span>
+      <h2 class="text-3xl font-semibold text-brand-ink tracking-tight leading-[1.04]">What teams managing approvals by email report after 30 days</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">80%</div>
+        <p class="font-semibold text-brand-ink">Faster approval turnaround</p>
+        <p class="text-sm text-brand-ink-soft">Requests reach the correct approver before anyone manually reads and forwards the email.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">100%</div>
+        <p class="font-semibold text-brand-ink">Approvals with a timestamped decision record</p>
+        <p class="text-sm text-brand-ink-soft">Every approval or rejection is logged with the approver's identity, decision, and timestamp — automatically.</p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 space-y-3 text-center">
+        <div class="text-4xl font-bold text-brand-accent">0</div>
+        <p class="font-semibold text-brand-ink">New accounts for approvers to create</p>
+        <p class="text-sm text-brand-ink-soft">Approvers act from Gmail or Outlook. No platform onboarding required.</p>
+      </div>
+    </div>
+  </section>
+
+  {# ── Feature Deep-Dive ─────────────────────────────────────── #}
+  <section>
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Built for the approval chain, not the approval tool administrator</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">No form builder required</p>
+              <p class="text-brand-ink-soft text-sm">Approval categories are learned from email intent. No admin taxonomy to build before the first request routes correctly.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Multi-stage approvals</p>
+              <p class="text-brand-ink-soft text-sm">Route to a secondary approver if the primary is unresponsive after a configured window. Business plan.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">ApprovalPolicy auto-approval <span class="ml-1 text-xs font-semibold uppercase tracking-widest text-brand-accent">Enterprise</span></p>
+              <p class="text-brand-ink-soft text-sm">Define conditions and a confidence threshold. Routine low-risk requests are approved automatically and logged as policy-triggered — no human step required.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 space-y-5">
+        <h3 class="font-semibold text-brand-ink">Audit-ready by design</h3>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Complete approval chain logged</p>
+              <p class="text-brand-ink-soft text-sm">Every request, routing decision, and approval logged with timestamp. Who requested, who approved, when, on what basis.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">Evidence export for compliance</p>
+              <p class="text-brand-ink-soft text-sm">Approval records are exportable for SOX, internal audit, or GDPR subject access requests. Sensitive HR and finance approvals are classified and access-scoped.</p>
+            </div>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-brand-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            <div>
+              <p class="font-medium text-brand-ink text-sm">No minimum approver seat count</p>
+              <p class="text-brand-ink-soft text-sm">InboxIQ charges per connected inbox. Adding five more approvers to the routing rules costs nothing — unlike Kissflow or ApprovalMax.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ── Related Solutions ─────────────────────────────────────── #}
+  <section class="space-y-4">
+    <div class="space-y-1 text-center">
+      <span class="text-xs font-semibold uppercase tracking-widest text-brand-accent">Related solutions</span>
+      <h2 class="text-xl font-semibold text-brand-ink">Handle more from the inbox</h2>
+    </div>
+    <div class="flex flex-wrap justify-center gap-3">
+      <a href="{{ url_for('use_case_it_incidents') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">IT Incidents &rarr;</a>
+      <a href="{{ url_for('use_case_it_requests') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">IT Requests &rarr;</a>
+      <a href="{{ url_for('use_case_hr') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">HR Operations &rarr;</a>
+      <a href="{{ url_for('use_case_finance') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-brand-accent/20 bg-white text-brand-accent text-sm font-medium hover:bg-brand-accent/5 transition-colors shadow-sm">Finance &rarr;</a>
+    </div>
+  </section>
+
+  {# ── Bottom CTA ────────────────────────────────────────────── #}
+  <section class="bg-brand-lavender rounded-3xl px-8 py-16 sm:px-16 text-center space-y-6">
+    <h2 class="text-3xl sm:text-4xl font-semibold text-brand-ink tracking-tight leading-[1.04]">
+      Every approval tracked, every decision recorded — from the inbox your team already uses.
+    </h2>
+    <p class="text-brand-ink-soft leading-[1.38] max-w-xl mx-auto">
+      Start free — no credit card required. Connect your approvals inbox in under 10 minutes.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ url_for('signup_page') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl bg-brand-accent text-white font-semibold hover:bg-brand-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-lavender">
+        Start free trial
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="inline-flex items-center px-6 py-3 rounded-xl border border-brand-accent/30 text-brand-accent font-semibold hover:bg-brand-accent/5 transition-colors">
+        Talk to sales
+      </a>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
