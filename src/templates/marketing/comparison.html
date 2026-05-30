@@ -101,6 +101,34 @@
             <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">Coming soon</td>
             <td class="px-4 py-3 text-center text-slate-500">{% if competitor.self_hosted %}✓ Yes{% else %}✗ No{% endif %}</td>
           </tr>
+          {% if competitor.threaded_draft_replies_note is defined %}
+          <tr>
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Threaded draft replies (not new email)</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">✓ Gmail &amp; Outlook</td>
+            <td class="px-4 py-3 text-center text-slate-500">{{ competitor.threaded_draft_replies_note }}</td>
+          </tr>
+          {% endif %}
+          {% if competitor.shared_team_inbox_note is defined %}
+          <tr class="bg-slate-50/50 dark:bg-slate-900/30">
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Shared team inbox routing</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">✓ Built in</td>
+            <td class="px-4 py-3 text-center text-slate-500">{{ competitor.shared_team_inbox_note }}</td>
+          </tr>
+          {% endif %}
+          {% if competitor.natural_language_rules_note is defined %}
+          <tr>
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Natural language automation rules</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">✓ Included</td>
+            <td class="px-4 py-3 text-center text-slate-500">{{ competitor.natural_language_rules_note }}</td>
+          </tr>
+          {% endif %}
+          {% if competitor.approval_workflows_note is defined %}
+          <tr class="bg-slate-50/50 dark:bg-slate-900/30">
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Approval workflows with audit trail</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">✓ Included</td>
+            <td class="px-4 py-3 text-center text-slate-500">{{ competitor.approval_workflows_note }}</td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>

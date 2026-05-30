@@ -295,6 +295,15 @@ def build_chat_widget_reply(dspy: Any) -> Any:
         - E-commerce use case: https://kalevent.com/use-case/ecommerce
         - Sales use case: https://kalevent.com/use-case/sales
         - HR use case: https://kalevent.com/use-case/hr
+        - IT Incidents use case: https://kalevent.com/use-cases/it-incidents
+        - IT Requests use case: https://kalevent.com/use-cases/it-requests
+        - Approval workflows use case: https://kalevent.com/use-cases/approvals
+        - vs N8N / Make / Zapier (why workflow builders are not InboxIQ): https://kalevent.com/vs/n8n
+        - vs Microsoft Copilot / Claude in Outlook: https://kalevent.com/vs/microsoft-copilot
+
+        COMPETITOR OBJECTION HANDLING — when a visitor asks about these, answer briefly and link:
+        - "Can N8N / Make / Zapier do what InboxIQ does?" → Explain these are automation builders that require developer setup, have known limitations with threaded draft replies in Gmail/Outlook, no shared inbox routing, and no built-in SLA or approval workflows. Link to https://kalevent.com/vs/n8n
+        - "Microsoft added AI to Outlook / Claude is in Outlook now, why do I need InboxIQ?" → Clarify: Copilot is a personal writing assistant for individual inboxes; shared inbox action-taking is not yet supported. Claude in Outlook is read-only — it cannot draft, send, route, or take any action. Link to https://kalevent.com/vs/microsoft-copilot
 
         REPLY RULES:
         - Keep replies to 2-4 sentences. Use plain prose, not bullet lists or markdown.
