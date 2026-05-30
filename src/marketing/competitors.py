@@ -311,6 +311,125 @@ COMPETITORS: dict[str, dict] = {
     },
 }
 
+COMPETITORS["n8n"] = {
+    "name": "N8N / Make / Zapier",
+    "slug": "n8n",
+    "tagline": "No-code workflow automation platforms that developers use to build custom email pipelines",
+    "verdict": "N8N, Make, and Zapier are excellent automation platforms for developers who want maximum flexibility. InboxIQ is the finished product those platforms are asking you to build — purpose-built for shared team inboxes, with AI triage, threaded draft replies, approval workflows, and SLA tracking that work out of the box in under an hour.",
+    "pricing_model": "Per execution (N8N ~€20–667/mo depending on volume; Make/Zapier similar)",
+    "works_in_gmail_outlook": False,
+    "ai_triage": True,
+    "ai_triage_note": "Requires LLM API key + custom prompt engineering per deployment",
+    "setup_time": "Days to weeks (developer project)",
+    "helpdesk_replacement": False,
+    "meeting_scheduling": False,
+    "free_trial": "Free tier with strict execution limits",
+    "self_hosted": True,
+    "threaded_draft_replies_note": "✗ Known open bug — N8N Gmail node cannot set In-Reply-To headers; Outlook node cannot create drafts at all",
+    "shared_team_inbox_note": "✗ No built-in shared queue, round-robin assignment, or team routing layer",
+    "natural_language_rules_note": "✗ Rules are JSON nodes wired by a developer, not plain-English descriptions",
+    "approval_workflows_note": "✗ No native inbox-thread approval primitive — requires third-party tools",
+    "buyer_journey": "Developers and automation engineers who want custom control",
+    "description": "InboxIQ vs N8N, Make, and Zapier: why workflow builders are not email triage products. InboxIQ ships threaded draft replies, team routing, SLA tracking, and approval workflows out of the box. N8N requires a developer, LLM API keys, and weeks of custom build time — with known limitations in Gmail and Outlook draft creation.",
+    "competitor_wins": [
+        "Maximum flexibility — can automate almost any multi-step process across hundreds of apps",
+        "Self-hostable with no execution caps on the open-source version",
+        "Large community of pre-built workflow templates for non-email use cases",
+    ],
+    "inboxiq_wins": [
+        "Ships as a complete product — no prompt engineering, no node building, no LLM API keys required",
+        "Threaded draft replies work inside Gmail and Outlook natively — N8N has a known open bug preventing proper in-thread drafting in Gmail, and no draft-reply capability in Outlook at all",
+        "Team inbox routing built in — assign to team members, shared queue management, and SLA tracking without writing a single node",
+        "Natural language automation rules — describe what you want in plain English ('when a billing complaint arrives, route to the billing team and create a P1 ticket'); N8N requires JSON node configuration by a developer",
+        "Prior authorization workflows — approve or reject requests directly from your inbox; the decision is logged with a timestamped audit trail automatically",
+        "Booking links in replies — when a meeting request is detected, InboxIQ includes a calendar slot link in the draft reply automatically; no Calendly integration to wire up",
+        "Multi-channel unified intake — email, forms, chat, voice, and social media all flow through the same triage engine; each channel in N8N/Make is a separate workflow to build and maintain",
+        "Per-inbox pricing with no execution caps — N8N cloud at 2,500 executions/month is exhausted by a single Gmail polling workflow in 3.5× overage",
+    ],
+    "faqs": [
+        {
+            "q": "Can N8N do what InboxIQ does for email triage?",
+            "a": "N8N can be wired up to approximate some InboxIQ features, but it is a developer project, not a finished product. A production email triage workflow in N8N requires configuring an LLM API, writing classification prompts, building routing branches, and maintaining the workflow over time. N8N also has a known open bug preventing threaded draft replies in Gmail, and no native draft-reply capability in Outlook. InboxIQ ships all of this pre-built and connects via OAuth in under an hour.",
+        },
+        {
+            "q": "What is the difference between N8N and InboxIQ?",
+            "a": "N8N is an automation builder — it is plumbing you assemble yourself. InboxIQ is the finished product that plumbing would be trying to recreate. InboxIQ delivers AI email triage that works inside Gmail and Outlook with no new dashboard — support managers, IT admins, and ops teams connect via OAuth and are live in under an hour. N8N gives developers maximum flexibility but requires LLM API keys, custom prompt engineering, and ongoing maintenance before the first email is classified.",
+        },
+        {
+            "q": "Can Make or Zapier replace InboxIQ for email triage?",
+            "a": "Make and Zapier face the same fundamental limitation as N8N for email triage: they are automation platforms, not email intelligence products. Creating a draft reply inside a Gmail or Outlook thread, routing emails to team members based on semantic content, tracking SLA response times, and running approval workflows from the inbox all require significant custom build time on Make or Zapier — and still may not work natively inside the inbox. InboxIQ ships all of these as default capabilities.",
+        },
+        {
+            "q": "Is N8N cheaper than InboxIQ?",
+            "a": "At face value N8N's entry price is lower, but the total cost of ownership is not. A production N8N email triage deployment requires developer time (setup and ongoing maintenance), LLM API costs (OpenAI/Anthropic per-token charges), and N8N cloud execution costs that scale with email volume — a single Gmail polling workflow on N8N Starter exhausts the monthly quota in under four days. InboxIQ prices per inbox with no execution caps, no API keys to manage, and no developer required.",
+        },
+        {
+            "q": "Does InboxIQ work with N8N or Zapier?",
+            "a": "Yes. InboxIQ provides a webhook and API (Developer Portal) that can be used as a trigger or action step inside N8N, Make, or Zapier workflows. Teams that already use these platforms can use InboxIQ as the inbox intelligence layer — handling triage, classification, and draft replies — while N8N/Make handles downstream automation like CRM updates, Slack notifications, or ticketing system sync.",
+        },
+    ],
+}
+
+COMPETITORS["microsoft-copilot"] = {
+    "name": "Microsoft Copilot / Claude in Outlook",
+    "slug": "microsoft-copilot",
+    "tagline": "AI writing assistants embedded in individual Outlook inboxes",
+    "verdict": "Microsoft Copilot and Claude in Outlook make individual knowledge workers faster in their own inbox. InboxIQ automates shared team inboxes — routing, SLA tracking, approval workflows, and multi-channel intake that neither Copilot nor Claude in Outlook was designed to handle.",
+    "pricing_model": "Copilot: $18–30/user/month on top of M365 subscription",
+    "works_in_gmail_outlook": True,
+    "ai_triage": True,
+    "ai_triage_note": "Personal inbox summarisation only — no shared inbox classification",
+    "setup_time": "Immediate (included in M365 Copilot licence)",
+    "helpdesk_replacement": False,
+    "meeting_scheduling": False,
+    "free_trial": "Included in M365 Business / Enterprise plans",
+    "self_hosted": False,
+    "threaded_draft_replies_note": "✓ Copilot drafts replies — but only for the individual user's inbox, not a shared team inbox",
+    "shared_team_inbox_note": "⚠ Copilot shared inbox action-taking marked 'not supported, coming soon' in Microsoft docs as of mid-2026",
+    "natural_language_rules_note": "✗ No automation rules — Copilot assists on demand, does not act automatically on incoming email",
+    "approval_workflows_note": "✗ Claude in Outlook is read-only — it cannot draft, send, route, or take any action inside Outlook",
+    "buyer_journey": "Microsoft 365 customers evaluating whether Copilot replaces dedicated inbox tools",
+    "description": "InboxIQ vs Microsoft Copilot and Claude in Outlook: why AI writing assistants are not shared inbox automation tools. Copilot helps individual users draft faster. InboxIQ operates on shared team inboxes — routing, SLA, approval workflows, and multi-channel intake that Copilot was not designed to handle.",
+    "competitor_wins": [
+        "Included with existing M365 subscriptions — no new vendor to evaluate for existing Microsoft customers",
+        "Deep integration with Teams, SharePoint, and the full M365 ecosystem",
+        "Personal productivity gains for individual knowledge workers across all Microsoft apps",
+    ],
+    "inboxiq_wins": [
+        "Built for shared team inboxes (support@, hr@, it@) — Copilot's shared inbox capabilities are still marked 'coming soon' in Microsoft's own documentation",
+        "Acts automatically on every inbound email without a human prompt — Copilot waits for a user to open a message and ask; InboxIQ classifies, routes, and drafts before anyone opens the email",
+        "Claude in Outlook is read-only — Anthropic's Microsoft 365 connector can search and read threads to answer questions in Claude.ai, but it cannot draft, send, route, or take any action inside Outlook whatsoever",
+        "Team routing and assignment — InboxIQ routes emails to the right team member based on content, not just the person whose inbox received it",
+        "Prior authorization and approval workflows — employees email a request, the approver replies from their own inbox, the decision is logged with an audit trail; Copilot has no approval workflow primitive",
+        "Booking links in draft replies — InboxIQ detects meeting requests and includes a calendar slot link automatically; no Outlook add-in configuration required",
+        "Natural language automation rules — describe what should happen when a certain email arrives ('route all billing complaints to Sarah and mark P1'); Copilot cannot create automation rules",
+        "Per-inbox pricing vs per-user — a 10-person team using one shared support@ inbox pays for one inbox with InboxIQ, vs 10 Copilot licences at $18–30/user",
+        "Multi-channel intake — email, forms, chat, voice, and social media through one triage engine; Copilot only handles Outlook",
+    ],
+    "faqs": [
+        {
+            "q": "Does Microsoft Copilot work in shared team inboxes?",
+            "a": "As of mid-2026, Microsoft's own documentation marks Copilot action-taking in shared and delegated mailboxes as 'not supported, coming soon.' Thread summarisation reached shared mailboxes in GA only recently, and routing, assignment, or SLA tracking in shared inboxes is not on the current roadmap. InboxIQ is purpose-built for shared team inboxes as its primary use case.",
+        },
+        {
+            "q": "What is Claude in Outlook — can it replace InboxIQ?",
+            "a": "Anthropic's Claude connector for Microsoft 365 is a read-only research tool. It can search and read your Outlook threads, Teams messages, and SharePoint content to answer questions in the Claude.ai interface. It cannot draft replies, send emails, route messages, create tickets, or take any action inside Outlook. It is useful for information retrieval — it is not an inbox automation tool.",
+        },
+        {
+            "q": "Can Copilot route emails to team members automatically?",
+            "a": "No. Microsoft Copilot in Outlook is a personal writing assistant — it helps the person whose inbox it is draft and summarise faster. It does not classify inbound emails, route them to team members, assign ownership, or track whether a response was sent within SLA. These are the core operations that InboxIQ handles automatically before any human opens the email.",
+        },
+        {
+            "q": "Is InboxIQ a Copilot alternative for Outlook?",
+            "a": "For personal inbox productivity, Copilot and InboxIQ serve different purposes and are complementary. For shared team inbox operations — routing, SLA tracking, approval workflows, and automatic triage across support@, hr@, or it@ — InboxIQ does what Copilot was not designed to do. Many teams use both: Copilot for personal productivity in their individual inbox, InboxIQ for the shared operational inboxes their team manages.",
+        },
+        {
+            "q": "Does InboxIQ work in Outlook as well as Gmail?",
+            "a": "Yes. InboxIQ delivers AI email triage that works inside Gmail and Outlook with no new dashboard — your team connects via OAuth and continues using the inbox they already know. Triage labels, draft replies, routing, and approval workflows all appear directly inside the email client.",
+        },
+    ],
+}
+
 VALID_SLUGS = set(COMPETITORS.keys())
 
 

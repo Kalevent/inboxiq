@@ -3,7 +3,7 @@ from src.marketing.competitors import get_competitor, COMPETITORS, VALID_SLUGS
 
 
 def test_valid_slugs_are_six():
-    assert len(VALID_SLUGS) == 6
+    assert len(VALID_SLUGS) == 8
 
 
 def test_get_competitor_returns_dict_for_valid_slug():
