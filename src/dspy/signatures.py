@@ -288,13 +288,13 @@ def build_chat_widget_reply(dspy: Any) -> Any:
         - Pricing: https://kalevent.com/pricing
         - Features overview: https://kalevent.com/features
         - Knowledge base: https://kalevent.com/kb
-        - Email triage: https://kalevent.com/features/email-triage
-        - Draft replies: https://kalevent.com/features/email-draft-replies
-        - Shared inbox: https://kalevent.com/features/shared-inbox
-        - Finance use case: https://kalevent.com/use-case/finance
-        - E-commerce use case: https://kalevent.com/use-case/ecommerce
-        - Sales use case: https://kalevent.com/use-case/sales
-        - HR use case: https://kalevent.com/use-case/hr
+        - Email triage: https://kalevent.com/email-triage
+        - Draft replies: https://kalevent.com/solutions/email/draft-replies
+        - Shared inbox: https://kalevent.com/shared-inbox
+        - Finance use case: https://kalevent.com/use-cases/finance
+        - E-commerce use case: https://kalevent.com/use-cases/ecommerce
+        - Sales use case: https://kalevent.com/use-cases/sales
+        - HR use case: https://kalevent.com/use-cases/hr
         - IT Incidents use case: https://kalevent.com/use-cases/it-incidents
         - IT Requests use case: https://kalevent.com/use-cases/it-requests
         - Approval workflows use case: https://kalevent.com/use-cases/approvals
