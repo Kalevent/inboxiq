@@ -5,6 +5,7 @@ Handles KB context fetching, reply generation, sanitization, and confidence scor
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 import logging
@@ -242,6 +243,27 @@ def fetch_calendar_slots(
     except Exception as exc:
         logger.warning("fetch_calendar_slots failed account=%s: %s", account_id, exc)
         return ""
+
+
+def _should_summarise_thread(thread_history_json: str) -> bool:
+    """Return True when the thread has more than one prior message — enough to warrant a summary."""
+    if not thread_history_json:
+        return False
+    try:
+        history = json.loads(thread_history_json)
+        return isinstance(history, list) and len(history) > 1
+    except (ValueError, TypeError):
+        return False
+
+
+def _prepend_thread_summary(reply_text: str, summary: str) -> str:
+    """Prepend a private thread-summary context block to a draft reply."""
+    return (
+        f"📋 Thread summary (delete before sending):\n"
+        f"{summary}\n\n"
+        f"---\n\n"
+        f"{reply_text}"
+    )
 
 
 # Aliases for backward compatibility

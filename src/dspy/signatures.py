@@ -162,6 +162,22 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
         kb_context = dspy.InputField(desc="Relevant knowledge base articles for context (JSON array)")
         reply_text = dspy.OutputField(desc="Draft reply for human review. Be helpful, concise, and professional. Reference KB articles when applicable. Continue naturally from the thread history — do not repeat questions already asked.")
 
+    class ThreadSummarySig(dspy.Signature):
+        """Summarise a prior email thread in 2-3 sentences for the inbox owner to review privately before sending a reply.
+
+        This summary is a PRIVATE CONTEXT NOTE — not part of the reply sent to the customer.
+        Focus on: what was asked or reported, any commitments already made, current state of the conversation.
+        Write in third person. Be concise. Plain text only, no bullet points."""
+        thread_history = dspy.InputField(
+            desc="Prior messages oldest-first (JSON array). Each has from_email, body, received_at, is_outbound."
+        )
+        inbox_owner_email = dspy.InputField(
+            desc="Email of the inbox owner. is_outbound=true messages were sent by them."
+        )
+        summary = dspy.OutputField(
+            desc="2-3 sentence plain-text summary for private review. Do not address anyone directly."
+        )
+
     class DecisionProgram(dspy.Module):
         def __init__(self) -> None:
             super().__init__()
@@ -170,6 +186,7 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
             self.select = dspy.Predict(SelectWorkflowSig)
             self.escalate = dspy.Predict(EscalationDecisionSig)
             self.draft = dspy.ChainOfThought(DraftReplySig)
+            self.summarise = dspy.Predict(ThreadSummarySig)
 
         def forward(self, case_json: str, draft_enabled: bool = False, kb_context: str = "[]", sender_hint: str = "", thread_history: str = "[]", inbox_owner_email: str = "", inbox_owner_name: str = "") -> Any:
             entities_json = self.extract(case_json=case_json, sender_hint=sender_hint).entities_json
@@ -201,6 +218,18 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
                         "DraftReplySig succeeded: reply_text_len=%s",
                         len(reply_text) if reply_text else 0,
                     )
+                    # Prepend thread summary when conversation has back-and-forth history
+                    from src.dspy.draft_reply import _should_summarise_thread, _prepend_thread_summary
+                    if reply_text and _should_summarise_thread(thread_history):
+                        try:
+                            _summary = self.summarise(
+                                thread_history=thread_history,
+                                inbox_owner_email=inbox_owner_email,
+                            ).summary
+                            if _summary:
+                                reply_text = _prepend_thread_summary(reply_text, _summary)
+                        except Exception as _sum_exc:
+                            _log.getLogger(__name__).warning("ThreadSummarySig failed (non-fatal): %s", _sum_exc)
                 except Exception as _draft_exc:
                     import logging as _log
                     _log.getLogger(__name__).warning("DraftReplySig failed (non-fatal): %s", _draft_exc, exc_info=True)

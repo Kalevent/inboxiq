@@ -388,6 +388,7 @@ COMPETITORS["microsoft-copilot"] = {
     "shared_team_inbox_note": "⚠ Copilot shared inbox action-taking marked 'not supported, coming soon' in Microsoft docs as of mid-2026",
     "natural_language_rules_note": "✗ No automation rules — Copilot assists on demand, does not act automatically on incoming email",
     "approval_workflows_note": "✗ Claude in Outlook is read-only — it cannot draft, send, route, or take any action inside Outlook",
+    "search_note": "✓ Keyword search via Graph API across your personal mailbox — cannot search shared ticket history",
     "buyer_journey": "Microsoft 365 customers evaluating whether Copilot replaces dedicated inbox tools",
     "description": "InboxIQ vs Microsoft Copilot and Claude in Outlook: why AI writing assistants are not shared inbox automation tools. Copilot helps individual users draft faster. InboxIQ operates on shared team inboxes — routing, SLA, approval workflows, and multi-channel intake that Copilot was not designed to handle.",
     "competitor_wins": [
@@ -403,8 +404,9 @@ COMPETITORS["microsoft-copilot"] = {
         "Prior authorization and approval workflows — employees email a request, the approver replies from their own inbox, the decision is logged with an audit trail; Copilot has no approval workflow primitive",
         "Booking links in draft replies — InboxIQ detects meeting requests and includes a calendar slot link automatically; no Outlook add-in configuration required",
         "Natural language automation rules — describe what should happen when a certain email arrives ('route all billing complaints to Sarah and mark P1'); Copilot cannot create automation rules",
+        "Semantic ticket search — InboxIQ's ticket history is searchable by meaning, not just keyword; find 'all complaints about slow delivery' even when those exact words aren't used. Copilot searches your personal mailbox by keyword via Graph API.",
         "Per-inbox pricing vs per-user — a 10-person team using one shared support@ inbox pays for one inbox with InboxIQ, vs 10 Copilot licences at $18–30/user",
-        "Multi-channel intake — email, forms, chat, voice, and social media through one triage engine; Copilot only handles Outlook",
+        "Multi-channel intake — email, forms, IVR transcripts, chat, and social media through one triage engine; Copilot only handles Outlook",
     ],
     "faqs": [
         {
@@ -426,6 +428,10 @@ COMPETITORS["microsoft-copilot"] = {
         {
             "q": "Does InboxIQ work in Outlook as well as Gmail?",
             "a": "Yes. InboxIQ delivers AI email triage that works inside Gmail and Outlook with no new dashboard — your team connects via OAuth and continues using the inbox they already know. Triage labels, draft replies, routing, and approval workflows all appear directly inside the email client.",
+        },
+        {
+            "q": "Can Copilot summarise threads and extract action items — does InboxIQ do that?",
+            "a": "Copilot is excellent at helping individuals read their personal inbox faster — summarising threads and pulling out action items on demand. InboxIQ's focus is different: it converts every incoming email into a structured ticket before anyone reads it, classifying intent, urgency, and required action automatically. InboxIQ's ticket search is semantic — find all related tickets by meaning, not just keyword. For attachment analysis (Word, Excel, CSV files), Copilot has a genuine advantage; InboxIQ does not currently parse attachments for users. Many teams use both: Copilot for personal reading efficiency, InboxIQ for shared inbox operations.",
         },
     ],
 }
