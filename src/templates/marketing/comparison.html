@@ -129,6 +129,13 @@
             <td class="px-4 py-3 text-center text-slate-500">{{ competitor.approval_workflows_note }}</td>
           </tr>
           {% endif %}
+          {% if competitor.search_note is defined %}
+          <tr>
+            <td class="px-4 py-3 text-slate-700 dark:text-slate-300">Ticket / email search</td>
+            <td class="px-4 py-3 text-center text-emerald-600 dark:text-emerald-400 font-semibold">✓ Semantic search across all tickets</td>
+            <td class="px-4 py-3 text-center text-slate-500">{{ competitor.search_note }}</td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
