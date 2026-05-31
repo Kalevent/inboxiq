@@ -249,10 +249,13 @@ def _run_dspy_triage_impl(
     inbox_owner_email = payload.get("inbox_owner_email") or ""
     inbox_owner_name = payload.get("inbox_owner_name") or ""
 
+    # Thread summary is a Business-plan feature gated alongside KB drafts
+    summary_enabled = kb_allowed if draft_enabled else False
+
     # Run DSPy decision program
     try:
         result = _try_with_provider_failover(
-            lambda: module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json, sender_hint=sender_hint, thread_history=thread_history_json, inbox_owner_email=inbox_owner_email, inbox_owner_name=inbox_owner_name)
+            lambda: module(case_json=case_json, draft_enabled=draft_enabled, kb_context=kb_context_json, sender_hint=sender_hint, thread_history=thread_history_json, inbox_owner_email=inbox_owner_email, inbox_owner_name=inbox_owner_name, summary_enabled=summary_enabled)
         )
     except Exception as exc:
         logger.warning("DSPy decision program failed, falling back to compiled triage: %s", exc)

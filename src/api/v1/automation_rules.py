@@ -184,6 +184,13 @@ def create_rule_from_nl():
     if role not in _MANAGE_ROLES:
         return jsonify({"error": "forbidden"}), 403
     account_id = get_jwt_identity()
+
+    # Plain-English rule creation is a Business plan feature (Automation Studio)
+    from src.features import get_plan_count_limit
+    nl_limit = get_plan_count_limit("automation_rules_limit", account_id)
+    if nl_limit is not None and nl_limit < 100:
+        return jsonify({"error": "Natural language rule creation requires the Business plan. Upgrade to describe rules in plain English."}), 403
+
     data = request.get_json()
 
     if "description" not in data:

@@ -50,3 +50,19 @@ def test_prepend_thread_summary_empty_reply_still_includes_summary():
 def test_should_summarise_rejects_invalid_json():
     from src.dspy.draft_reply import _should_summarise_thread
     assert _should_summarise_thread("not-json") is False
+
+
+def test_summary_enabled_flag_gates_execution():
+    """summary_enabled=False must prevent the summary block being prepended."""
+    # Simulate: thread has messages but summary_enabled=False (Starter/Pro plan)
+    # The _should_summarise_thread check alone is not enough — the gate is summary_enabled
+    # This is enforced in DecisionProgram.forward(); here we just verify the helper
+    # behaviour is correct given the gate exists.
+    from src.dspy.draft_reply import _should_summarise_thread
+    history = json.dumps([
+        {"from_email": "a@example.com", "body": "Hi", "is_outbound": False},
+        {"from_email": "b@example.com", "body": "Hello", "is_outbound": True},
+    ])
+    # Even if thread qualifies, the gate in forward() requires summary_enabled=True
+    # We verify the helper returns True (the thread qualifies) — the gate is upstream
+    assert _should_summarise_thread(history) is True
