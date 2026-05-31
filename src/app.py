@@ -411,6 +411,36 @@ def create_app() -> Flask:
     return render_template("security.html")
 
 
+  # Legacy /features/* redirects — Aria previously linked to these paths
+  @app.get("/features/email-triage")
+  def redirect_features_email_triage():
+    return redirect(url_for('email_triage'), 301)
+
+  @app.get("/features/email-draft-replies")
+  def redirect_features_draft_replies():
+    return redirect(url_for('solutions_email_draft_replies'), 301)
+
+  @app.get("/features/shared-inbox")
+  def redirect_features_shared_inbox():
+    return redirect(url_for('shared_inbox'), 301)
+
+  # Legacy /use-case/* (singular) redirects
+  @app.get("/use-case/finance")
+  def redirect_use_case_finance():
+    return redirect(url_for('use_case_finance'), 301)
+
+  @app.get("/use-case/hr")
+  def redirect_use_case_hr():
+    return redirect(url_for('use_case_hr'), 301)
+
+  @app.get("/use-case/sales")
+  def redirect_use_case_sales():
+    return redirect(url_for('use_case_sales'), 301)
+
+  @app.get("/use-case/ecommerce")
+  def redirect_use_case_ecommerce():
+    return redirect(url_for('use_case_ecommerce'), 301)
+
   # Marketing endpoints
   @app.get("/email-triage")
   def email_triage():
