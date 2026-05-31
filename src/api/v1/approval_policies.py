@@ -55,6 +55,12 @@ def list_policies():
 @jwt_required()
 def create_policy():
     account_id = get_jwt_identity()
+
+    # Auto-send approval policies are a Business plan feature
+    from src.features import feature_enabled
+    if not feature_enabled("audit_log", int(account_id)):
+        return jsonify({"error": "Approval policies require the Business plan. Upgrade to enable auto-send workflows."}), 403
+
     data = request.get_json(silent=True) or {}
 
     name = (data.get("name") or "").strip()

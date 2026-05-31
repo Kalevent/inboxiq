@@ -188,7 +188,7 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
             self.draft = dspy.ChainOfThought(DraftReplySig)
             self.summarise = dspy.Predict(ThreadSummarySig)
 
-        def forward(self, case_json: str, draft_enabled: bool = False, kb_context: str = "[]", sender_hint: str = "", thread_history: str = "[]", inbox_owner_email: str = "", inbox_owner_name: str = "") -> Any:
+        def forward(self, case_json: str, draft_enabled: bool = False, kb_context: str = "[]", sender_hint: str = "", thread_history: str = "[]", inbox_owner_email: str = "", inbox_owner_name: str = "", summary_enabled: bool = False) -> Any:
             entities_json = self.extract(case_json=case_json, sender_hint=sender_hint).entities_json
             route_json = self.route(case_json=case_json, entities_json=entities_json).route_json
             workflow_json = self.select(
@@ -218,9 +218,9 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
                         "DraftReplySig succeeded: reply_text_len=%s",
                         len(reply_text) if reply_text else 0,
                     )
-                    # Prepend thread summary when conversation has back-and-forth history
+                    # Prepend thread summary — Business plan only (summary_enabled=True)
                     from src.dspy.draft_reply import _should_summarise_thread, _prepend_thread_summary
-                    if reply_text and _should_summarise_thread(thread_history):
+                    if summary_enabled and reply_text and _should_summarise_thread(thread_history):
                         try:
                             _summary = self.summarise(
                                 thread_history=thread_history,
