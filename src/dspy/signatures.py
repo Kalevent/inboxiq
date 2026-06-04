@@ -220,6 +220,15 @@ def build_decision_program(dspy: Any, label_config: Dict[str, Any]) -> Any:
                     )
                     # Prepend thread summary — Business plan only (summary_enabled=True)
                     from src.dspy.draft_reply import _should_summarise_thread, _prepend_thread_summary
+                    import json as _json
+                    try:
+                        _th_len = len(_json.loads(thread_history)) if thread_history and thread_history != "[]" else 0
+                    except Exception:
+                        _th_len = 0
+                    _log.getLogger(__name__).info(
+                        "ThreadSummary gate: summary_enabled=%s thread_history_len=%s should_summarise=%s",
+                        summary_enabled, _th_len, _should_summarise_thread(thread_history)
+                    )
                     if summary_enabled and reply_text and _should_summarise_thread(thread_history):
                         try:
                             _summary = self.summarise(
