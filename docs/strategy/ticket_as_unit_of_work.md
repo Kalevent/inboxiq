@@ -6,6 +6,26 @@
 
 ---
 
+## The Genuinely Novel Piece
+
+Every existing tool — OTRS, Zammad, Mattermost, ServiceNow — assumes the same thing:
+
+> A human describes the organisation. The system executes what the human described.
+
+Someone builds the playbook. Someone defines the process. Someone configures the workflow. The system then runs it faithfully.
+
+CaseDesk inverts this:
+
+> Work arrives. The system observes. The system proposes. The human approves.
+
+Nobody builds the playbook. Nobody configures the workflow. The organisation does not model itself. The system learns the organisation from observed work — and proposes process back to the humans who do that work.
+
+That is not a better ticketing system. That is a different category.
+
+This is the section of the document worth refining most. Everything else — tickets, workflows, templates, lifecycle, APIs — is implementation. This is the reason CaseDesk exists.
+
+---
+
 ## What CaseDesk Is
 
 Operational work arrives through multiple entry points and gets lost because there is no consistent lifecycle for managing it.
@@ -196,13 +216,17 @@ This is what makes CaseDesk more valuable the longer it is used — and progress
 
 ServiceNow is built on a **Configuration Management Database (CMDB)** — a complete map of every asset, role, approval chain, and workflow in the organisation. Before ServiceNow can help, a human must build this map. That is why implementations take months and cost six figures.
 
-CaseDesk builds its knowledge base from observation, not configuration.
+CaseDesk does not ask the organisation to describe itself. It observes the organisation through the work it processes.
 
-The organisation does not describe itself upfront. CaseDesk watches what happens:
+The inversion in practice:
 
 - HR emails about a new employee → CaseDesk observes how the team responds
-- The same pattern repeats three times → CaseDesk suggests: *"This looks like a workflow. Should I automate it?"*
-- The team says yes → the workflow is defined from behaviour, not a visual editor
+- IT creates an account → CaseDesk records that as a step
+- Manager approves access → CaseDesk records that as a dependency
+- The pattern repeats → CaseDesk proposes: *"This looks like a workflow. Should I save it as a template?"*
+- The human approves → the workflow is defined from observed behaviour, not a visual editor
+
+Nobody configured that workflow. Nobody even knew it was a workflow until CaseDesk surfaced it. The organisation did not model itself — the system learned the organisation from the work.
 
 Over time, CaseDesk builds a living map of the organisation:
 
