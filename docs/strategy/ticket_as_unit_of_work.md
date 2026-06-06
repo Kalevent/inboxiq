@@ -693,9 +693,17 @@ docs.getcasedesk.com       Docusaurus static site → Cloudflare Pages (free)
                            └── MCP Integration
 ```
 
-The Swagger/OpenAPI spec is served from the Flask app at `/api/docs`. Docusaurus embeds it. MCP integration gets its own section — CaseDesk will expose MCP servers for connector registration and ticket operations, the same way PolicyNumbers has `/mcp/overview`.
+**One docs URL. Everything lives at `docs.getcasedesk.com`. No exceptions.**
 
-`docs.getcasedesk.com` is the primary docs domain — same pattern as `docs.policynumbers.com`. `kalevent.com` is the app domain only.
+PolicyNumbers has a hard lesson here: `/api/docs` on the app and `docs.policynumbers.com` ended up as two separate, disconnected documentation surfaces. Developers find one, miss the other, and neither is complete. CaseDesk must not repeat this.
+
+The rule:
+- Flask serves `/openapi.json` — raw JSON spec only, no UI
+- Docusaurus fetches that spec and embeds Swagger UI at `docs.getcasedesk.com/api-reference`
+- There is no `/api/docs` route on the Flask app
+- Anyone needing API docs goes to `docs.getcasedesk.com` — one URL, one source of truth
+
+MCP integration gets its own section at `docs.getcasedesk.com/mcp/overview`. `kalevent.com` is the app domain only — no documentation lives there.
 
 **OpenAPI generation — phased plan:**
 
