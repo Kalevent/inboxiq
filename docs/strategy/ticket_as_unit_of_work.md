@@ -1244,3 +1244,39 @@ The lifecycle is the mechanism. The pain is what they pay to solve.
 If discovery surfaces a specific, costly, recurring thing that falls through the cracks — build the mechanism that stops it. If discovery surfaces only vague frustration with email volume — the current product is closer to right than this document suggests.
 
 The discovery form is ready. The meeting is imminent. Build nothing until the evidence arrives.
+
+---
+
+## Lessons from PolicyNumbers — What CaseDesk Must Not Repeat
+
+PolicyNumbers is a live production product on the same infrastructure stack. A full audit of the site before building CaseDesk surfaced patterns that are architectural decisions in development but production incidents after launch.
+
+**Critical — fix before launch is impossible without breaking things:**
+
+- **No `/pricing` page.** PolicyNumbers returns 404 at `/pricing`. Pricing information is scattered across the homepage, the docs site, and the verify page — users cannot find it in one place. CaseDesk must have a single `/pricing` page linked from the main navigation from day one. A missing pricing page at launch is a conversion leak that cannot be quietly patched.
+
+- **Dead links in docs.** The PolicyNumbers docs link to `/pricing` — which 404s. Dead links in developer documentation signal abandonment and erode trust immediately. CaseDesk must audit every internal link before the docs go live, and again after every significant change.
+
+- **Two documentation surfaces.** `policynumbers.com/api/docs` and `docs.policynumbers.com` are separate, disconnected sites serving overlapping content. Documented and enforced for CaseDesk: everything at `docs.getcasedesk.com`, Flask serves only `/openapi.json` with no UI.
+
+**Structural — hard to change once users are oriented:**
+
+- **Two products on one domain fighting for attention.** PolicyNumbers serves both an Insurance Verification API (paid B2B product) and a Public Data Platform (free economic data catalog) from the same homepage with equal weight in the navigation. Neither is clearly the primary product. CaseDesk does one thing — operational work management for small teams. Nothing on the homepage competes with that message.
+
+- **Ambiguous navigation labels.** "API" on PolicyNumbers could mean the API overview, the API docs, or API key management — it is unclear. Every CaseDesk navigation label must have exactly one destination and one meaning. If a label could be interpreted two ways, rewrite it.
+
+**Lower priority — worth noting for when these pages are built:**
+
+- **About page is a product description.** PolicyNumbers' `/about` describes the data catalog, not the company or its founders. If CaseDesk adds an `/about` page, it tells the company story — who built it, why it exists, where it is going. Product descriptions belong on product pages.
+
+- **Footer duplicates the header.** PolicyNumbers' footer repeats the primary navigation. CaseDesk's footer is for company information, legal links, and secondary resources — not a second copy of the top nav.
+
+**What PolicyNumbers does well — carry forward:**
+
+- **MCP integration is well structured.** The `/mcp/overview` section in the docs is self-contained and not scattered across other pages. CaseDesk's `docs.getcasedesk.com/mcp/overview` follows this pattern.
+
+- **Consistent branding across domains.** Design language, colours, and tone are consistent across `policynumbers.com` and `docs.policynumbers.com`. CaseDesk must maintain the same visual consistency between `getcasedesk.com` and `docs.getcasedesk.com`.
+
+**The general principle:**
+
+Navigation structure, URL architecture, and documentation topology are not UI decisions — they are infrastructure decisions. They are trivial to get right before launch and expensive to fix after users, search engines, and developer integrations have formed expectations around them.
