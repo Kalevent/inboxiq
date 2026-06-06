@@ -30,16 +30,25 @@ This is the section of the document worth refining most. Everything else — tic
 
 Operational work arrives through multiple entry points and gets lost because there is no consistent lifecycle for managing it.
 
-The entry point might be:
+Entry points fall into two categories — **human-initiated** and **system-initiated**. The ticket lifecycle is identical for both. What differs is how the classifier handles them and how much of the workflow runs without human involvement.
+
+**Human-initiated — a person sends or submits something:**
 
 - Email or shared inbox
 - Website contact form or customer portal
 - Internal request form or referral form
-- API submission or webhook
 - Social media message
 - Voice — phone call, voicemail, IVR response, recorded meeting
 - Video — uploaded footage, match recordings, meeting replays, training content
 - Manual creation
+
+**System-initiated — a machine pushes an event:**
+
+- Webhook — payment notification (Stripe), delivery update, integration trigger
+- API submission — partner system pushes a record, CRM sync, data feed
+- Scheduled trigger — deadline reached, SLA breach, calendar event, recurring job
+
+Human-initiated work often needs a reply drafted, sentiment assessed, and a person assigned. System-initiated work almost always closes automatically — a record is created, an API is called, the ticket closes. Exceptions in system-initiated workflows surface to humans only when something fails.
 
 Regardless of where work arrives, it needs the same thing: an owner, a status, a history, and a resolution.
 
@@ -100,14 +109,20 @@ CaseDesk does not require any specific entry point. Each organisation connects w
 The intelligence layer operates per entry point:
 
 ```
+── Human-initiated ──────────────────────────────────────────────────────
 Email connected      → triage classifies messages          → work? → ticket
 Form connected       → every submission is work             → ticket always
 Social connected     → triage classifies messages          → work? → ticket
 Voice connected      → transcribed, then classified        → work? → ticket
 Video connected      → transcribed + analysed, classified  → work? → ticket
-Webhook/API          → every submission is work             → ticket always
 Manual               → created directly                     → ticket always
+
+── System-initiated ─────────────────────────────────────────────────────
+Webhook/API          → event type determines action         → ticket always
+Scheduled trigger    → job fires, condition met             → ticket always
 ```
+
+Human-initiated tickets may need a reply, a sentiment assessment, and a person assigned. System-initiated tickets run the workflow automatically and close unless an exception occurs — then and only then does a human appear.
 
 The ticket is entry-point-agnostic. What matters is: something arrived, it may or may not be work, and if it is — track it to resolution.
 
