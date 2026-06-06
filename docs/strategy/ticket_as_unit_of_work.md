@@ -716,6 +716,157 @@ If the answer to those questions is visible on the ticket record without opening
 
 ---
 
+## Template 2 — Payment Reconciliation
+
+**What this is:**
+
+A fully automated workflow triggered by a Stripe payment webhook. No human initiates it. No human needs to act on it unless something goes wrong. Every payment that arrives becomes a ticket, is processed, and closes automatically — leaving a clean record in whatever spreadsheet or accounting system the business uses.
+
+This is the first template where the incoming work is **system-initiated, not human-initiated**. The ticket lifecycle is identical to Lead Management. The difference is that the classifier must recognise it as a system event and not waste a model drafting a response to it.
+
+**The two types of incoming work CaseDesk handles:**
+
+```
+Human-initiated                  System-initiated
+───────────────                  ────────────────
+Enquiry, request, complaint      Stripe payment webhook
+Form submission                  Scheduled job trigger
+Email reply                      API push from partner system
+Manual creation                  Calendar or deadline event
+```
+
+System-initiated events never need a reply drafted. They need data extracted, an action taken, and a record created. The classifier handles the distinction.
+
+**The lifecycle:**
+
+```
+received → extracting → posting → closed
+                                → exception (if posting fails)
+```
+
+Most payments close in seconds without human involvement. Exceptions stay open and are assigned to a human.
+
+**Entry point:**
+
+Stripe sends a POST request to CaseDesk's webhook intake endpoint on every payment event:
+
+- `payment_intent.succeeded` — a payment completed
+- `invoice.paid` — a subscription or invoice was paid
+- `refund.created` — a refund was issued
+- `charge.dispute.created` — a chargeback was opened
+
+`intake/webhook.py` receives the request, validates the Stripe webhook signature, and creates a ticket for each event that requires action.
+
+**The workflow — what happens on every payment:**
+
+```
+Step 1 — Extract payment data
+         amount, currency, customer name and email,
+         description, Stripe payment ID, timestamp
+
+Step 2 — Check for duplicate
+         Has this Stripe payment ID been processed before?
+         If yes → skip, close ticket as duplicate
+         If no → continue
+
+Step 3 — Post to execution connector
+         Google Sheets  → append row to transaction log
+         Microsoft Excel → append row via OneDrive API
+         QuickBooks     → create payment entry via API
+         Sage           → create payment entry via API
+         Custom webhook → POST to registered endpoint
+
+Step 4 — Record outcome
+         Success → TicketEvent: entry_created → ticket closes automatically
+         Failure → ticket stays open → escalated to human
+```
+
+**The execution connector is the user's choice — not CaseDesk's:**
+
+Most small businesses do not have accounting software. They have a spreadsheet. The execution connector is registered in CaseDesk's connector registry — CaseDesk calls whatever is there:
+
+For a Google Sheets connector, the output row is:
+
+```
+Date | Amount | Currency | Customer | Description | Stripe ID | Status
+```
+
+The bookkeeper or accountant gets read access to the sheet. At month end they have a clean, automatically populated transaction log instead of hunting through Stripe's dashboard or email receipts.
+
+**Events recorded on every payment ticket:**
+
+| Activity | TicketEvent |
+|---|---|
+| Webhook received | `webhook_received` — event type, Stripe ID, timestamp |
+| Duplicate detected | `duplicate_skipped` — original ticket reference |
+| Data extracted | `data_extracted` — amount, currency, customer, description |
+| Entry posted | `entry_created` — connector used, row reference or record ID |
+| Posting failed | `posting_failed` — reason, connector response |
+| Retry attempted | `retry_attempted` — attempt number |
+| Escalated to human | `escalated` — reason, assigned to |
+| Human resolved | `resolved_manually` — action taken, by whom |
+
+**Exceptions and how they are handled:**
+
+| Exception | What CaseDesk does |
+|---|---|
+| Duplicate Stripe ID | Skip — close ticket as duplicate, log reference to original |
+| API authentication expired | Refresh OAuth token automatically — retry once |
+| Sheet or record not found | Escalate — connector is misconfigured, human must fix |
+| Refund issued | Route to finance team — requires human review before credit note |
+| Chargeback opened | `high_risk` route — human review required immediately |
+| Connector API down | Retry with exponential backoff — escalate after 3 failures |
+
+Exceptions represent under 10% of payment events for a healthy Stripe account. The rest close automatically.
+
+**What the automation vs human boundary looks like here:**
+
+```
+Automated (system does it)          Human (only on exception)
+──────────────────────────          ─────────────────────────
+Receive and validate webhook        Fix misconfigured connector
+Extract payment data                Review and approve refunds
+Check for duplicates                Handle chargebacks and disputes
+Post to spreadsheet or API          Resolve failed postings
+Close ticket on success             Correct wrongly posted entries
+Retry on transient failures
+Escalate on persistent failures
+```
+
+**Connectors required:**
+
+```
+Input connector      → Stripe webhook (registered in connector registry)
+Knowledge connector  → Customer data (optional — to enrich payment records
+                        with additional context from CRM or contact list)
+Execution connector  → Google Sheets, Microsoft Excel, QuickBooks, Sage,
+                        or any custom API endpoint the account registers
+```
+
+**Minimum core needed to run this template:**
+
+1. `intake/webhook.py` — validate Stripe signature, parse payload, create ticket
+2. `models/tickets.py` — `Ticket` and `TicketEvent`
+3. `services/ticket_service.py` — `create`, `transition`, `append_event`
+4. `services/connector_service.py` — call registered execution connector
+5. `models/connections.py` — connector registry (which connector is active for this account)
+6. `jobs/escalation.py` — retry logic and escalation on persistent failures
+
+No AI routing is required for standard payments — the webhook type determines the workflow. DSPy is only needed for ambiguous or high-risk events (disputes, unusual amounts).
+
+**Validation:**
+
+Connect a Stripe test webhook. Fire ten test payment events. Verify:
+
+- Did every payment create a ticket?
+- Did every ticket close automatically after the sheet row was appended?
+- Did the duplicate check prevent double-posting?
+- Did a simulated failure escalate correctly?
+
+If all four pass in test mode — the template is ready for a live connection.
+
+---
+
 ## Future Intelligence Layer — Non-MVP
 
 > *Not in the first release. But the foundation must be laid now so this can grow from it.*
