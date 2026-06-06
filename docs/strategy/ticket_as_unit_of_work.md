@@ -577,6 +577,56 @@ Once a pipeline is ported and tested in CaseDesk, mark it done. When all six are
 
 ---
 
+## InboxIQ Migration and Teardown
+
+**Target:** CaseDesk replaces InboxIQ within one month. Infrastructure is torn down after customer migration is confirmed complete.
+
+**Do not delete the InboxIQ GitHub repository. Archive it.**
+
+CASA Tier 2 / SOC 2 audits require evidence of prior codebase history — deleting the repository creates a gap in the audit trail. Archiving costs nothing. The full git history, commit messages, and security evidence remain intact and accessible.
+
+```
+GitHub → Settings → Danger Zone → Archive this repository
+```
+
+Archived repositories are read-only. They cannot be pushed to or have issues opened. They remain searchable and clonable. This is the correct end state — not deletion.
+
+**Teardown sequence — in order, after customer migration is confirmed:**
+
+```
+1. Verify all customers are live on CaseDesk (same kalevent.com domain, no re-login required)
+2. Verify data migration complete: accounts, InboxConnections, tickets, billing records
+3. Verify OAuth tokens (Gmail/Outlook) valid in CaseDesk for all connected accounts
+4. Scale EKS node group to 0  ← stops node compute cost immediately
+5. Delete EKS cluster         ← kubectl or eksctl delete cluster
+6. Delete InboxIQ RDS         ← after confirming data is in CaseDesk's RDS (eu-west-2)
+7. Delete InboxIQ ElastiCache
+8. Delete InboxIQ ALB
+9. Archive InboxIQ GitHub repository  ← never delete
+10. Remove reference/ from CaseDesk repo  ← final cleanup
+```
+
+**Data migration approach:**
+
+InboxIQ (us-west-2 RDS) → CaseDesk (eu-west-2 RDS). Same AWS account, different regions.
+
+```bash
+# Dump from InboxIQ's RDS
+pg_dump -h <inboxiq-rds-host> -U postgres inboxiq > inboxiq_backup.sql
+
+# Restore into CaseDesk's RDS with schema mapping
+# (tables are renamed and restructured — not a direct restore)
+# Port account, InboxConnection, Ticket, billing records explicitly
+```
+
+A direct `pg_restore` will not work — CaseDesk has a different schema. Each model is ported explicitly as part of the pipeline migration. The `pg_dump` is a safety backup, not the migration mechanism.
+
+**Infrastructure cost during the build period:**
+
+Both systems run in parallel for approximately one month. InboxIQ's EKS cluster continues serving live customers. CaseDesk's ECS cluster is built alongside it. Once migration is confirmed, the EKS teardown eliminates the cost overlap entirely. The one-month overlap is the known, bounded cost of a clean migration — not an ongoing expense.
+
+---
+
 ## CaseDesk Deployment Architecture
 
 **Domain and compliance:**
