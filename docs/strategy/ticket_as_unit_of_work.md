@@ -37,10 +37,13 @@ The entry point might be:
 - Internal request form or referral form
 - API submission or webhook
 - Social media message
-- Phone call transcript
+- Voice — phone call, voicemail, IVR response, recorded meeting
+- Video — uploaded footage, match recordings, meeting replays, training content
 - Manual creation
 
-Regardless of where work arrives, it needs the same thing: an owner, a status, a history, and a resolution. CaseDesk provides that — for every entry point, in one place.
+Regardless of where work arrives, it needs the same thing: an owner, a status, a history, and a resolution.
+
+**Voice and video are premium entry points.** Processing them requires transcription and frame analysis, which carry real inference and infrastructure cost. They belong in the architecture — every business uses the phone, and industries like sports, legal, media, and professional services generate significant work from recorded content — but they are positioned as upsell rather than base tier. A sports analyst reviewing match footage to extract decisions, flag patterns, and assign tasks to coaches is the same ticket lifecycle as every other entry point. The volume and cost profile is just different. CaseDesk provides that — for every entry point, in one place.
 
 CaseDesk is a lightweight operations platform for small teams. It receives work from any entry point and tracks each piece through a defined lifecycle until it is resolved. It routes to humans or calls APIs depending on what each task requires.
 
@@ -91,20 +94,90 @@ CaseDesk does not require any specific entry point. Each organisation connects w
 | SaaS team | Gmail only | Classified emails |
 | Operations team | Gmail + form + social | All three, unified |
 | MSP | Webhook + email + portal | All three, unified |
+| Sports analyst team | Video upload + email | Classified footage + correspondence |
 | New user | Nothing yet | Manual ticket creation |
 
 The intelligence layer operates per entry point:
 
 ```
-Email connected      → triage classifies messages   → work? → ticket
-Form connected       → every submission is work      → ticket always
-Social connected     → triage classifies messages    → work? → ticket
-Voice connected      → transcript classified         → work? → ticket
-Webhook/API          → every submission is work      → ticket always
-Manual               → created directly              → ticket always
+Email connected      → triage classifies messages          → work? → ticket
+Form connected       → every submission is work             → ticket always
+Social connected     → triage classifies messages          → work? → ticket
+Voice connected      → transcribed, then classified        → work? → ticket
+Video connected      → transcribed + analysed, classified  → work? → ticket
+Webhook/API          → every submission is work             → ticket always
+Manual               → created directly                     → ticket always
 ```
 
 The ticket is entry-point-agnostic. What matters is: something arrived, it may or may not be work, and if it is — track it to resolution.
+
+---
+
+## The Routing Layer — Work to the Most Appropriate Resource
+
+Every ticket, once classified as work, is routed to the most appropriate resource. That resource might be an AI model, a human, an API, or a workflow template. CaseDesk treats this as a single question — not three separate mechanisms bolted together.
+
+> *Route work to the most appropriate resource — whether that resource is a model, a person, an API, or a workflow.*
+
+**All resource types in one view:**
+
+| Complexity | Resource | Example |
+|---|---|---|
+| simple | AI: small model | "Where is my invoice?" |
+| medium | AI: mid-tier model | "I need to reschedule my appointment" |
+| complex | AI: strongest model | "Customer claims breach of contract and demands refund" |
+| high_risk | Human: review queue | "Patient safeguarding concern involving vulnerable child" |
+| structured | Workflow: template | New employee onboarding — spawns child tickets |
+| executable | API: external or internal | Stripe charge, device provisioning, internal webhook |
+
+**The two-stage handoff — no conflict:**
+
+The routing decision involves two distinct judgements, handled by two files that operate in sequence:
+
+```
+Stage 1 — model_router.py
+  Question: can this be handled automatically, and at what cost?
+  Output:   small / medium / large / human_review
+
+Stage 2 — router.py
+  Question: given that decision, which specific resource handles it?
+  Output:   model ID, person, team, API endpoint, or workflow template
+```
+
+When `model_router.py` returns `human_review`, AI processing is skipped entirely. `router.py` receives the signal and assigns directly to the appropriate human review queue — no AI draft is generated, no model is called. This is the clean handoff that removes the conflict.
+
+When `model_router.py` returns a model tier (`small`, `medium`, `large`), AI processes the ticket. `router.py` still runs — it assigns a human owner to review, approve, or follow up on the AI output. Human ownership is present in all paths. The difference is whether AI acts first or the human acts first.
+
+**Why DSPy, not keyword rules:**
+
+A keyword router works as a first pass — `if "password reset" in text: return SMALL_MODEL` — but it becomes brittle immediately. It cannot generalise, it misses edge cases, and it requires constant manual updates. DSPy replaces this with a structured reasoning signature that outputs the complexity tier and a reason for the decision.
+
+A rule-based pre-filter still runs before DSPy for obvious cases — short messages under 50 tokens, out-of-office replies, automated receipts. These route directly to `small` with no inference cost. DSPy handles the ambiguous cases where complexity genuinely needs to be assessed.
+
+The tier names map to actual model IDs and queue names in `config.py`, not in the router. Models can be swapped without touching routing logic.
+
+**The full triage pipeline:**
+
+```
+classifier.py     → is this work?
+model_router.py   → which AI tier, or route straight to human_review?
+router.py         → which specific resource (model ID, person, team, API, workflow)?
+observer.py       → record outcome (resource used, cost, resolution)
+```
+
+Each file has one responsibility. The output of each stage is the input to the next. `router.py` always runs — it assigns ownership regardless of whether AI processed the ticket first.
+
+**The optimisation flywheel:**
+
+Every routing decision recorded by `observer.py` becomes a training example:
+
+```
+ticket → complexity → resource_used → outcome → cost
+```
+
+DSPy is optimised against this dataset. The router learns — from actual CaseDesk usage — which requests genuinely require expensive resources and which can safely use cheaper ones. No synthetic labels. No manual tuning. The improvement comes from the work itself.
+
+This is the "system learns from observed work" principle applied directly to cost and quality. The longer CaseDesk runs, the more accurate and efficient the routing becomes.
 
 ---
 
@@ -305,6 +378,107 @@ What is missing:
 
 ---
 
+## CaseDesk Codebase Architecture
+
+CaseDesk lives at the repo root as a sibling to `src/` — completely separate from InboxIQ, sharing only infrastructure.
+
+```
+inboxiq/
+├── src/                          # InboxIQ — untouched
+└── casedesk/
+    ├── app.py
+    ├── config.py
+    ├── extensions.py
+    ├── celery_casedesk.py
+    │
+    ├── models/
+    │   ├── __init__.py
+    │   ├── tickets.py            # Ticket, TicketEvent
+    │   ├── workflows.py          # WorkflowTemplate, WorkflowInstance
+    │   ├── workflow_tasks.py     # WorkflowTask, TaskDependency
+    │   └── connections.py        # Entry point + connector registry
+    │
+    ├── api/
+    │   ├── __init__.py
+    │   └── v1/
+    │       ├── __init__.py
+    │       ├── tickets.py
+    │       ├── workflows.py
+    │       ├── connections.py
+    │       └── intake.py
+    │
+    ├── intake/
+    │   ├── __init__.py
+    │   ├── email.py
+    │   ├── form.py
+    │   ├── webhook.py
+    │   └── voice.py
+    │
+    ├── triage/
+    │   ├── __init__.py
+    │   ├── classifier.py         # is this work?
+    │   ├── model_router.py       # which AI tier, or human_review?
+    │   ├── router.py             # which person, team, workflow, or API?
+    │   └── observer.py           # record outcome for optimisation
+    │
+    ├── services/
+    │   ├── __init__.py
+    │   ├── ticket_service.py     # create, transition, append_event
+    │   ├── workflow_service.py   # start workflow, child tickets, dependencies
+    │   └── connector_service.py  # call external/internal APIs
+    │
+    ├── jobs/
+    │   ├── __init__.py
+    │   ├── intake.py
+    │   ├── escalation.py
+    │   └── observer.py
+    │
+    ├── dspy/
+    │   ├── __init__.py
+    │   ├── signatures.py
+    │   └── triage.py
+    │
+    ├── templates/
+    │   ├── base.html
+    │   ├── inbox.html
+    │   ├── ticket.html
+    │   ├── workflows.html
+    │   └── portal.html
+    │
+    ├── static/
+    │   ├── css/
+    │   └── js/
+    │
+    ├── migrations/
+    │   └── versions/
+    │
+    └── tests/
+        ├── __init__.py
+        ├── test_tickets.py
+        ├── test_workflows.py
+        └── test_intake.py
+```
+
+`schemas/` is deferred — added when external customers consume the API, versioning is needed, or request validation becomes repetitive. Not before.
+
+**CaseDesk is a replacement for InboxIQ, not an extension.**
+
+Once CaseDesk is complete, the `src/` directory will be deleted. Every pipeline that matters — triage, email intake, DSPy classification, lead enrichment, billing — will have been moved into `casedesk/`. The result is a single, lean application with no legacy surface area.
+
+During development, CaseDesk temporarily shares InboxIQ infrastructure to avoid rebuilding things that already work:
+
+| Temporary shared dependency | Migrates to CaseDesk when |
+|---|---|
+| `src/extensions.py` — `db`, `jwt`, `celery` | CaseDesk has its own `extensions.py` |
+| `src/models/core.py` — `Account`, `User` | CaseDesk auth model is defined |
+| `src/billing/` — plan enforcement | CaseDesk billing is wired |
+| `src/uploads.py` — S3 + CloudFront | CaseDesk upload module is extracted |
+| Kubernetes, CI/CD, Postgres, Redis | Infrastructure stays — it is not InboxIQ-specific |
+
+The sharing is a pragmatic shortcut during the build, not an architectural commitment. Every shared dependency has a clean extraction path. Kubernetes, Postgres, and Redis are infrastructure — they belong to neither product and will outlast both.
+
+---
+
 ## Target Market — Who Pays First
 
 The customers most likely to pay quickly share three characteristics:
@@ -390,6 +564,208 @@ Discard from open source:
 - UI patterns — built for dashboards, not inbox-native operations
 
 If a pattern requires the user to leave their inbox, configure a workflow manually, or think in terms of messages rather than work items — rewrite it before it becomes a CaseDesk template. The ticket remains the unit of work in every template without exception.
+
+---
+
+## Template 1 — Lead Management
+
+**Why this is first:**
+
+The founder uses CaseDesk before customers do. The existing InboxIQ outreach pipeline — email sequences, lead scoring, follow-ups — is functional but disjointed because each piece was built to solve one problem at a time with no consistent lifecycle connecting them. The Lead Management template imposes that lifecycle. If it fixes the problem for the founder, it works for a property management firm, a recruitment agency, or an accountancy practice with the same problem.
+
+This is the fastest validation loop available: build it, use it, know within 30 days whether the concept holds.
+
+**What it replaces:**
+
+- Manual follow-up tracking across email threads
+- Spreadsheet or mental pipeline visibility
+- Disconnected outreach sequences with no unified ticket record
+- No clear answer to "where does this lead stand right now?"
+
+**The lifecycle:**
+
+```
+new → contacted → qualified → proposal_sent → negotiating → closed_won
+                                                           → closed_lost
+                                                           → nurture
+```
+
+Every stage transition is a `TicketEvent`. Nothing is overwritten. The full history — every email sent, every reply received, every stage change with reason — is visible on the ticket.
+
+**Entry points — how leads arrive:**
+
+| Entry point | Handling |
+|---|---|
+| Web contact form | Every submission is a lead ticket — no classification needed |
+| Email to shared inbox | Classifier identifies as a lead → ticket created |
+| Manual creation | Salesperson creates ticket directly |
+| API / webhook | Partner referral or CRM integration pushes lead record |
+
+**Sales activities and their events — the full taxonomy:**
+
+There is no card to move. Every activity creates a `TicketEvent`. The stage transitions emerge from the events — they are not set manually.
+
+*1. Communication activities — system records automatically:*
+
+| Activity | TicketEvent |
+|---|---|
+| First outreach sent | `outreach_sent` — channel, subject, timestamp |
+| Lead replies | `reply_received` — content, sentiment, channel |
+| Follow-up sent (no reply) | `followup_sent` — attempt number, delay |
+| No response after N days | `lead_cold` — triggers escalation job |
+| Meeting or call scheduled | `meeting_scheduled` — date, medium |
+| Meeting or call completed | `meeting_held` — notes, outcome |
+
+*2. Qualification activities — system surfaces the moment, human decides:*
+
+| Activity | TicketEvent |
+|---|---|
+| Discovery questions sent | `discovery_sent` |
+| Budget confirmed | `budget_confirmed` — value, currency |
+| Decision maker identified | `decision_maker_confirmed` — name, role |
+| Need validated | `need_validated` — notes |
+| Timeline established | `timeline_confirmed` |
+| **Qualification decision** | `qualified` or `disqualified` — reason required |
+
+The qualification decision is the only gate that requires explicit human input. It is significant and must be deliberate — not implied by moving a card. Everything before it can be automated or AI-assisted. Everything after it depends on it.
+
+*3. Proposal activities:*
+
+| Activity | TicketEvent |
+|---|---|
+| Proposal drafted | `proposal_drafted` — by whom, version |
+| Proposal sent | `proposal_sent` — document reference, timestamp |
+| Proposal viewed | `proposal_viewed` — if document tracking is available |
+| Objection raised | `objection_received` — content, type |
+| Objection addressed | `objection_addressed` — response sent |
+| Negotiation started | `negotiation_open` |
+| Terms agreed | `terms_agreed` — summary |
+
+*4. Close activities:*
+
+| Activity | TicketEvent |
+|---|---|
+| Contract sent | `contract_sent` |
+| Contract signed | `contract_signed` — timestamp, value |
+| Closed won | `closed_won` — value, source attribution |
+| Closed lost | `closed_lost` — reason required |
+| Moved to nurture | `nurture` — reason, reactivation date |
+
+**What CaseDesk automates vs what stays human:**
+
+```
+Automated (system does it)          Human (explicit decision required)
+──────────────────────────          ──────────────────────────────────
+Classify incoming message           Qualification decision
+Draft first response                Proposal review before sending
+Follow-up if no reply               Objection response
+Escalate cold leads                 Close decision — won / lost / nurture
+Record every event                  Reason for lost (required field)
+Surface the qualification gate
+```
+
+The system handles the volume. The human handles the judgment.
+
+**Fields on the lead ticket:**
+
+- Company name, contact name, email address
+- Source (which entry point, which campaign)
+- Estimated value
+- Assigned owner (salesperson or team)
+- Current stage
+- Next action + due date
+
+**Routing decisions:**
+
+- New lead arrives → `classifier.py` confirms it is a lead → `model_router.py` assesses complexity → `router.py` assigns to owner
+- Simple enquiry (short, clear intent) → small model drafts initial response → human reviews before sending
+- Complex or high-value lead → large model → routed to senior owner
+- Lead goes cold (no contact in 5 days) → `jobs/escalation.py` fires → reminder ticket assigned to owner
+- Lead goes cold for 30 days → status moved to `nurture` → removed from active pipeline
+
+**Minimum core needed to run this template:**
+
+This is the smallest set of components the codebase must have before this template can operate:
+
+1. `models/tickets.py` — `Ticket` and `TicketEvent`
+2. `models/workflows.py` — `WorkflowTemplate` and `WorkflowInstance`
+3. `intake/form.py` — form submission → ticket created
+4. `services/ticket_service.py` — `create`, `transition`, `append_event`
+5. `jobs/escalation.py` — cold lead reminder
+
+No AI routing is required for the first version. Manual assignment is sufficient to validate the lifecycle concept. DSPy routing is layered in once the lifecycle proves its value.
+
+**Open source patterns to draw from:**
+
+- **SuiteCRM** — complete lead lifecycle with stage definitions, qualification criteria, and escalation rules. Extract the stage sequence and required-fields-per-stage logic.
+- **EspoCRM** — simpler lead management model, closer to what a small team needs. Cleaner reference for the data model.
+- **n8n community templates** — lead notification and follow-up workflows covering trigger → steps → outcome patterns.
+
+Extract stage sequences, transition logic, and escalation rules. Discard the data models (record-centric, not ticket-centric) and the UI patterns (dashboard-first, not inbox-native).
+
+**Validation:**
+
+Use the template yourself for 30 days before offering it to any customer. Track:
+
+- Did every lead get a `first_contact_sent` event within 24 hours?
+- Did every qualified lead get a `proposal_sent` event?
+- How many leads reached `closed_won` vs `closed_lost` vs `nurture`?
+- Did the escalation job surface leads that would otherwise have gone cold silently?
+
+If the answer to those questions is visible on the ticket record without opening an email thread or checking a spreadsheet — the template works. If it is not visible — the event model or the escalation logic needs fixing before this ships to customers.
+
+---
+
+## Future Intelligence Layer — Non-MVP
+
+> *Not in the first release. But the foundation must be laid now so this can grow from it.*
+
+CaseDesk processes every piece of operational work that passes through an organisation. As a byproduct of doing that work, it accumulates structured data: routing decisions, lifecycle transitions, step timing, escalation counts, resolution outcomes, model costs. That data exhaust is the raw material for business intelligence — not because a BI product was built, but because the operational work produced it naturally.
+
+**The expansion path:**
+
+```
+Today      →  CaseDesk observes work         →  proposes workflows
+
+Near-term  →  CaseDesk observes patterns     →  surfaces operational health
+               "Complaint volume up 40%.
+                62% relate to billing."
+
+Future     →  CaseDesk observes trends       →  flags decision points
+               "Your contract renewal workflow
+                stalls at approval 80% of the
+                time — average delay: 4.2 days."
+
+Long-term  →  CaseDesk observes outcomes     →  advises on cost and quality
+               "23% of tickets route to the large
+                model. Based on outcomes, 18% could
+                safely use the medium tier."
+```
+
+This is the same "system observes → system proposes → human approves" principle extended from workflow proposals to operational decisions.
+
+**What the MVP must not do:**
+
+Bake analytics into the transactional tables. The ticket, event, and workflow tables must stay clean for operational use. The intelligence layer reads from them — it does not write back into them. That separation is what allows a BI layer to be added later without a schema rewrite.
+
+**What the MVP must do — the three non-negotiable foundations:**
+
+1. `observer.py` records rich structured data per routing decision — complexity, model tier used, resolution time, escalation count, outcome
+2. `TicketEvent` is indexed and query-friendly — the append-only audit log doubles as the analytics source
+3. Workflow instances record step-level timing — when each step started, how long it waited, where it stalled
+
+None of this requires building a BI product in the first release. It requires designing the data model so a BI layer can be added without a rewrite. The work to collect the data is small. The work to analyse it comes later.
+
+**Industries where the intelligence layer is a product in its own right:**
+
+Once CaseDesk has accumulated sufficient ticket volume per account, the intelligence layer becomes a separate selling point — particularly in:
+
+- **Sports** — analysts reviewing match footage, extracting decisions, tracking patterns across opponents and seasons
+- **Legal** — matter lifecycle analytics, deadline compliance rates, partner utilisation
+- **Professional services** — project delivery patterns, approval bottlenecks, client request trends
+- **Healthcare operations** — referral pathway timing, administrative request volumes, SLA compliance
+
+In these verticals, the operational data CaseDesk collects is itself valuable — not just as a byproduct of ticketing, but as a source of insight that informs decisions. That is a different product category from ticketing. It is also a natural upsell once the operational layer is trusted.
 
 ---
 
