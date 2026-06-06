@@ -545,6 +545,25 @@ Total                                        ~£72/month
 
 **Key difference from PolicyNumbers:** the worker task runs continuously (Celery consumes a Redis queue). PolicyNumbers jobs run and exit. The task definition pattern is the same — the `command` for the worker task is `celery -A celery_casedesk worker` rather than a one-off CLI command.
 
+**Documentation — Docusaurus + Swagger, hosted free on Cloudflare Pages:**
+
+Same toolchain as PolicyNumbers (`docs.policynumbers.com`). No additional hosting cost.
+
+```
+docs.kalevent.com          Docusaurus static site → Cloudflare Pages (free)
+                           ├── Getting Started
+                           ├── Authentication
+                           ├── Quickstart
+                           ├── API Reference (Swagger UI embed)
+                           ├── Workflow Templates
+                           ├── Connector Registry
+                           └── MCP Integration
+```
+
+The Swagger/OpenAPI spec is served from the Flask app at `/api/docs`. Docusaurus embeds it. MCP integration gets its own section — CaseDesk will expose MCP servers for connector registration and ticket operations, the same way PolicyNumbers has `/mcp/overview`.
+
+`docs.getcasedesk.com` is a Cloudflare redirect to `docs.kalevent.com` — same domain strategy as the main app.
+
 ---
 
 ## Target Market — Who Pays First
