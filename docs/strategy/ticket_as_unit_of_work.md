@@ -342,6 +342,21 @@ This is a real differentiator against tools that hide AI costs inside a subscrip
 
 **The settings screen this requires:** one page per tier — provider type, endpoint URL or API key, and model ID. Three rows, no developer required. Adding a new provider or swapping a model is a settings change, not a code change.
 
+**Every provider row has a Test Connection button.** When clicked, CaseDesk makes a lightweight inference call to the configured endpoint — a single prompt, minimal tokens — and returns instant feedback:
+
+```text
+✓  Connected  (latency: 340ms)         → green, endpoint reachable and responding
+✗  Unreachable                         → red, URL not reachable from CaseDesk server
+✗  Authentication failed               → red, endpoint responded but rejected the key
+⚠  Slow response (4.2s)               → yellow, working but may affect ticket processing time
+```
+
+The test distinguishes between "can't reach the URL" and "reached it but auth failed" — these require different fixes and the user needs to know which problem they have. For local endpoints behind Cloudflare Tunnel, Tailscale, or an internal URL, the test result is the immediate answer to "is my tunnel working from here?" without guessing.
+
+The backend endpoint is `POST /api/v1/settings/ai-provider/test` — payload is `{endpoint_url, api_key, model_id}`, response is `{status, latency_ms, error_detail}`. No page reload. The user sees the result inline next to the row they just configured.
+
+This test runs on save as well as on demand — a provider row cannot be activated if its last test result is unreachable or auth-failed. The user must fix the configuration before the tier goes live. This prevents silent routing failures where tickets are assigned a tier that cannot actually process them.
+
 **Input connectors** determine what triggers a ticket. **Knowledge connectors** determine how intelligently that ticket is classified, routed, and enriched. **Execution connectors** determine how much of the resulting work can be completed without human intervention.
 
 A CaseDesk instance with one Gmail connection and no knowledge or execution connectors is a basic ticket tracker. A CaseDesk instance with a full connection set is an operational intelligence platform. The intelligence scales linearly with the richness of connections.
