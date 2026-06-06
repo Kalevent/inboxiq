@@ -395,102 +395,155 @@ What is missing:
 
 ## CaseDesk Codebase Architecture
 
-CaseDesk lives at the repo root as a sibling to `src/` — completely separate from InboxIQ, sharing only infrastructure.
+**CaseDesk is a standalone repo — not a subfolder of InboxIQ.**
+
+A separate repository (`casedesk`) is created with a read-only reference copy of InboxIQ inside it. The reference copy is for porting pipelines and understanding patterns during development — it is never deployed, never executed. When CaseDesk is complete and every important pipeline has been migrated, the reference copy is deleted. What remains is a clean, lean application with no legacy surface area.
 
 ```
-inboxiq/
-├── src/                          # InboxIQ — untouched
-└── casedesk/
-    ├── app.py
-    ├── config.py
-    ├── extensions.py
-    ├── celery_casedesk.py
-    │
-    ├── models/
-    │   ├── __init__.py
-    │   ├── tickets.py            # Ticket, TicketEvent
-    │   ├── workflows.py          # WorkflowTemplate, WorkflowInstance
-    │   ├── workflow_tasks.py     # WorkflowTask, TaskDependency
-    │   └── connections.py        # Entry point + connector registry
-    │
-    ├── api/
-    │   ├── __init__.py
-    │   └── v1/
-    │       ├── __init__.py
-    │       ├── tickets.py
-    │       ├── workflows.py
-    │       ├── connections.py
-    │       └── intake.py
-    │
-    ├── intake/
-    │   ├── __init__.py
-    │   ├── email.py
-    │   ├── form.py
-    │   ├── webhook.py
-    │   └── voice.py
-    │
-    ├── triage/
-    │   ├── __init__.py
-    │   ├── classifier.py         # is this work?
-    │   ├── model_router.py       # which AI tier, or human_review?
-    │   ├── router.py             # which person, team, workflow, or API?
-    │   └── observer.py           # record outcome for optimisation
-    │
-    ├── services/
-    │   ├── __init__.py
-    │   ├── ticket_service.py     # create, transition, append_event
-    │   ├── workflow_service.py   # start workflow, child tickets, dependencies
-    │   └── connector_service.py  # call external/internal APIs
-    │
-    ├── jobs/
-    │   ├── __init__.py
-    │   ├── intake.py
-    │   ├── escalation.py
-    │   └── observer.py
-    │
-    ├── dspy/
-    │   ├── __init__.py
-    │   ├── signatures.py
-    │   └── triage.py
-    │
-    ├── templates/
-    │   ├── base.html
-    │   ├── inbox.html
-    │   ├── ticket.html
-    │   ├── workflows.html
-    │   └── portal.html
-    │
-    ├── static/
-    │   ├── css/
-    │   └── js/
-    │
-    ├── migrations/
-    │   └── versions/
-    │
-    └── tests/
-        ├── __init__.py
-        ├── test_tickets.py
-        ├── test_workflows.py
-        └── test_intake.py
+casedesk/                         # Standalone repo — root
+├── app.py
+├── config.py
+├── extensions.py
+├── celery_casedesk.py
+│
+├── models/
+│   ├── __init__.py
+│   ├── tickets.py                # Ticket, TicketEvent
+│   ├── workflows.py              # WorkflowTemplate, WorkflowInstance
+│   ├── workflow_tasks.py         # WorkflowTask, TaskDependency
+│   └── connections.py            # Entry point + connector registry
+│
+├── api/
+│   ├── __init__.py
+│   └── v1/
+│       ├── __init__.py
+│       ├── tickets.py
+│       ├── workflows.py
+│       ├── connections.py
+│       └── intake.py
+│
+├── intake/
+│   ├── __init__.py
+│   ├── email.py
+│   ├── form.py
+│   ├── webhook.py
+│   └── voice.py
+│
+├── triage/
+│   ├── __init__.py
+│   ├── classifier.py             # is this work?
+│   ├── model_router.py           # which AI tier, or human_review?
+│   ├── router.py                 # which person, team, workflow, or API?
+│   └── observer.py               # record outcome for optimisation
+│
+├── services/
+│   ├── __init__.py
+│   ├── ticket_service.py         # create, transition, append_event
+│   ├── workflow_service.py       # start workflow, child tickets, dependencies
+│   └── connector_service.py      # call external/internal APIs
+│
+├── jobs/
+│   ├── __init__.py
+│   ├── intake.py
+│   ├── escalation.py
+│   └── observer.py
+│
+├── dspy/
+│   ├── __init__.py
+│   ├── signatures.py
+│   └── triage.py
+│
+├── templates/
+│   ├── base.html
+│   ├── inbox.html
+│   ├── ticket.html
+│   ├── workflows.html
+│   └── portal.html
+│
+├── static/
+│   ├── css/
+│   └── js/
+│
+├── migrations/
+│   └── versions/
+│
+├── tests/
+│   ├── __init__.py
+│   ├── test_tickets.py
+│   ├── test_workflows.py
+│   └── test_intake.py
+│
+└── reference/                    # InboxIQ source — read-only, deleted when done
+    └── src/                      # Port from here, never run from here
 ```
 
 `schemas/` is deferred — added when external customers consume the API, versioning is needed, or request validation becomes repetitive. Not before.
 
-**CaseDesk is a replacement for InboxIQ, not an extension.**
+**Pipelines to port from reference — in order:**
 
-Once CaseDesk is complete, the `src/` directory will be deleted. Every pipeline that matters — triage, email intake, DSPy classification, lead enrichment, billing — will have been moved into `casedesk/`. The result is a single, lean application with no legacy surface area.
+| Pipeline | Reference location | Priority |
+|---|---|---|
+| DSPy triage + signatures | `reference/src/dspy/` | 1 — core intelligence |
+| Email intake + Gmail/Outlook | `reference/src/api/v1/inboxiq.py` | 2 — primary entry point |
+| Lead enrichment (MCP) | `reference/src/tasks/` | 3 — enrichment layer |
+| Billing + Stripe webhooks | `reference/src/billing/` | 4 — monetisation |
+| Auth (JWT, Account, User) | `reference/src/models/core.py` | 5 — identity layer |
+| Upload infrastructure | `reference/src/uploads.py` | 6 — file handling |
 
-During development, CaseDesk temporarily shares InboxIQ infrastructure to avoid rebuilding things that already work:
+Once a pipeline is ported and tested in CaseDesk, mark it done. When all six are marked done, `reference/` is deleted and InboxIQ is retired.
 
-| Temporary shared dependency | Migrates to CaseDesk when |
-|---|---|
-| `src/extensions.py` — `db`, `jwt`, `celery` | CaseDesk has its own `extensions.py` |
-| `src/models/core.py` — `Account`, `User` | CaseDesk auth model is defined |
-| `src/billing/` — plan enforcement | CaseDesk billing is wired |
-| `src/uploads.py` — S3 + CloudFront | CaseDesk upload module is extracted |
-| Kubernetes, CI/CD, Postgres, Redis | Infrastructure stays — it is not InboxIQ-specific |
+---
 
-The sharing is a pragmatic shortcut during the build, not an architectural commitment. Every shared dependency has a clean extraction path. Kubernetes, Postgres, and Redis are infrastructure — they belong to neither product and will outlast both.
+## CaseDesk Deployment Architecture
+
+**Domain and compliance:**
+
+```
+getcasedesk.com     → 301 redirect to kalevent.com (GoDaddy, marketing only)
+kalevent.com        → CaseDesk app, OAuth, all authenticated flows
+```
+
+`kalevent.com` remains the app domain. The CASA Tier 2 / SOC 2 assessment scope does not change — it covers `kalevent.com` and the AWS account behind it. No new assessment is required.
+
+**Infrastructure — ECS Fargate (eu-west-2), same AWS account as InboxIQ:**
+
+```
+                        kalevent.com
+                             │
+                      Application Load Balancer
+                             │
+               ┌─────────────┴────────────┐
+               │                          │
+        ECS Service: web            ECS Service: worker
+        (casedesk-web)              (casedesk-worker)
+        0.25 vCPU / 2GB             0.25 vCPU / 1GB
+        Flask app                   Celery worker
+        Port 8080                   Long-running, no port
+               │                          │
+               └─────────────┬────────────┘
+                             │
+                    ┌────────┴────────┐
+                    │                 │
+              RDS Postgres      ElastiCache Redis
+              (eu-west-2)       cache.t3.micro
+                                Celery broker
+```
+
+**Same pattern as PolicyNumbers** — ECS task definitions, `REPLACED_BY_GITHUB_ACTION` image tag, Secrets Manager for credentials, CloudWatch for logs.
+
+**Monthly cost estimate (eu-west-2):**
+
+```
+Web task      (0.25 vCPU, 2GB, always-on)    ~£14/month
+Worker task   (0.25 vCPU, 1GB, always-on)    ~£10/month
+RDS Postgres  (db.t3.micro)                  ~£15/month
+ElastiCache   (cache.t3.micro)               ~£15/month
+ALB                                          ~£18/month
+────────────────────────────────────────────────────────
+Total                                        ~£72/month
+```
+
+**Key difference from PolicyNumbers:** the worker task runs continuously (Celery consumes a Redis queue). PolicyNumbers jobs run and exit. The task definition pattern is the same — the `command` for the worker task is `celery -A celery_casedesk worker` rather than a one-off CLI command.
 
 ---
 
