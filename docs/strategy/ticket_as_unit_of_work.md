@@ -261,18 +261,61 @@ Without connections, CaseDesk can observe that HR emailed about a new employee b
 
 The observation is useless without context. The context comes from connections.
 
-**Three layers of connectivity:**
+**Four layers of connectivity — the LLM provider comes first:**
 
 ```
-Input connectors      — how work arrives into CaseDesk
-(Gmail, Outlook, web forms, social, voice, webhooks, API)
+0. AI provider connector   — the foundational connector; nothing intelligent happens without it
+   (OpenAI, Anthropic, local Ollama endpoint, or any OpenAI-compatible API)
 
-Knowledge connectors  — what CaseDesk understands about context
-(CRM, ERP, FHIR, HR systems, directories, internal databases)
+1. Input connectors        — how work arrives into CaseDesk
+   (Gmail, Outlook, web forms, social, voice, webhooks, API)
 
-Execution connectors  — what CaseDesk can act on
-(Microsoft 365, Google Workspace, Stripe, QuickBooks, internal APIs)
+2. Knowledge connectors    — what CaseDesk understands about context
+   (CRM, ERP, FHIR, HR systems, directories, internal databases)
+
+3. Execution connectors    — what CaseDesk can act on
+   (Microsoft 365, Google Workspace, Stripe, QuickBooks, internal APIs)
 ```
+
+**The AI provider is the first connection every new account must make.** It is also the most important differentiator in CaseDesk's pricing model.
+
+**BYOAK — Bring Your Own API Key (or local endpoint):**
+
+CaseDesk does not bundle AI cost into its subscription. It calls whatever LLM endpoint the account configures. The tier names (`small`, `medium`, `large`) are abstract — they map to actual model IDs in the account's settings, not in CaseDesk's infrastructure.
+
+| Tier | Example: cloud API | Example: local GPU | Example: dedicated cloud GPU |
+|---|---|---|---|
+| small | `gpt-4o-mini` | `ollama/llama3.1:8b` | self-hosted, same model |
+| medium | `claude-haiku-4-5` | `ollama/qwen2.5:32b` | self-hosted, same model |
+| large | `claude-sonnet-4-5` | `claude-sonnet-4-5` (API fallback) | self-hosted or API |
+
+DSPy handles the abstraction cleanly. The account configures its provider once:
+
+```python
+dspy.configure(lm=dspy.LM("openai/gpt-4o-mini", api_key=account.ai_api_key))
+# or
+dspy.configure(lm=dspy.LM("ollama/llama3.1:8b", api_base=account.local_endpoint))
+# or
+dspy.configure(lm=dspy.LM("anthropic/claude-haiku-4-5", api_key=account.ai_api_key))
+```
+
+The routing tier then maps to whatever the account registered. CaseDesk does not know or care which model fills the `small` slot — it calls the tier, the tier resolves to the model.
+
+**This unlocks three cost profiles for different customers:**
+
+```
+Cloud API (pay-per-use)    → OpenAI or Anthropic key; no hardware; cost scales with volume
+Local GPU (zero ongoing)   → Ollama on dedicated machine; upfront cost only; no API bill
+Dedicated cloud GPU        → User's own GPU instance; their cost, their control
+```
+
+For most small teams, cloud API is the right choice — `gpt-4o-mini` routing costs fractions of a penny per ticket, and the `observer.py` flywheel learns to use the small tier for the majority of work over time.
+
+> *"AI is not a cost we mark up. You connect your own provider — OpenAI, Anthropic, or a model on your own hardware. CaseDesk pricing is pure software."*
+
+This is a real differentiator against tools that hide AI costs inside a subscription. An organisation that buys its own GPU gets full benefit — CaseDesk simply calls the endpoint they register.
+
+**The settings screen this requires:** one page where the account pastes an API key or enters a local endpoint URL, and selects which model fills each tier slot. That is the entire AI provider configuration. It does not require a developer.
 
 **Input connectors** determine what triggers a ticket. **Knowledge connectors** determine how intelligently that ticket is classified, routed, and enriched. **Execution connectors** determine how much of the resulting work can be completed without human intervention.
 
