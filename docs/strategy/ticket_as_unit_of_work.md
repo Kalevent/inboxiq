@@ -683,7 +683,7 @@ Total                                        ~£72/month
 Same toolchain as PolicyNumbers (`docs.policynumbers.com`). No additional hosting cost.
 
 ```
-docs.kalevent.com          Docusaurus static site → Cloudflare Pages (free)
+docs.getcasedesk.com       Docusaurus static site → Cloudflare Pages (free)
                            ├── Getting Started
                            ├── Authentication
                            ├── Quickstart
@@ -695,7 +695,7 @@ docs.kalevent.com          Docusaurus static site → Cloudflare Pages (free)
 
 The Swagger/OpenAPI spec is served from the Flask app at `/api/docs`. Docusaurus embeds it. MCP integration gets its own section — CaseDesk will expose MCP servers for connector registration and ticket operations, the same way PolicyNumbers has `/mcp/overview`.
 
-`docs.getcasedesk.com` is a Cloudflare redirect to `docs.kalevent.com` — same domain strategy as the main app.
+`docs.getcasedesk.com` is the primary docs domain — same pattern as `docs.policynumbers.com`. `kalevent.com` is the app domain only.
 
 ---
 
