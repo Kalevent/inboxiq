@@ -281,41 +281,66 @@ The observation is useless without context. The context comes from connections.
 
 **BYOAK — Bring Your Own API Key (or local endpoint):**
 
-CaseDesk does not bundle AI cost into its subscription. It calls whatever LLM endpoint the account configures. The tier names (`small`, `medium`, `large`) are abstract — they map to actual model IDs in the account's settings, not in CaseDesk's infrastructure.
+CaseDesk does not bundle AI cost into its subscription. It calls whatever LLM endpoint the account configures. The tier names (`small`, `medium`, `large`) are abstract — each tier is configured independently and can point to a completely different provider. A mixture of cloud and local is not only supported, it is often the optimal setup.
 
-| Tier | Example: cloud API | Example: local GPU | Example: dedicated cloud GPU |
+**Per-tier provider configuration — the recommended pattern:**
+
+| Tier | Provider | Model | Cost |
 |---|---|---|---|
-| small | `gpt-4o-mini` | `ollama/llama3.1:8b` | self-hosted, same model |
-| medium | `claude-haiku-4-5` | `ollama/qwen2.5:32b` | self-hosted, same model |
-| large | `claude-sonnet-4-5` | `claude-sonnet-4-5` (API fallback) | self-hosted or API |
+| small | Docker Model Runner (local) | `ai/phi4-mini` | free |
+| medium | OpenAI API | `gpt-4o-mini` | fractions of a penny per ticket |
+| large | Anthropic API | `claude-sonnet-4-5` | reserved for complex/high-risk only |
 
-DSPy handles the abstraction cleanly. The account configures its provider once:
+Each tier resolves independently at routing time. DSPy configures a per-tier LM:
 
 ```python
-dspy.configure(lm=dspy.LM("openai/gpt-4o-mini", api_key=account.ai_api_key))
-# or
-dspy.configure(lm=dspy.LM("ollama/llama3.1:8b", api_base=account.local_endpoint))
-# or
-dspy.configure(lm=dspy.LM("anthropic/claude-haiku-4-5", api_key=account.ai_api_key))
+SMALL  = dspy.LM("openai/ai/phi4-mini",      api_base=account.local_endpoint)
+MEDIUM = dspy.LM("openai/gpt-4o-mini",       api_key=account.openai_key)
+LARGE  = dspy.LM("anthropic/claude-sonnet-4-5", api_key=account.anthropic_key)
 ```
 
-The routing tier then maps to whatever the account registered. CaseDesk does not know or care which model fills the `small` slot — it calls the tier, the tier resolves to the model.
+`model_router.py` returns a tier name. `router.py` resolves it to the configured LM. CaseDesk does not know or care what fills each slot — it calls the tier, the tier resolves to the model.
 
-**This unlocks three cost profiles for different customers:**
+**Supported provider types:**
 
 ```
-Cloud API (pay-per-use)    → OpenAI or Anthropic key; no hardware; cost scales with volume
-Local GPU (zero ongoing)   → Ollama on dedicated machine; upfront cost only; no API bill
-Dedicated cloud GPU        → User's own GPU instance; their cost, their control
+Cloud API              → OpenAI, Anthropic, Google Gemini, Azure OpenAI
+                         Any provider with an OpenAI-compatible endpoint
+
+Local runtime          → Docker Model Runner (Docker Desktop 4.40+)
+                         Ollama
+                         LM Studio
+                         Any process exposing an OpenAI-compatible API at a URL
+
+Dedicated cloud GPU    → User's own GPU instance running any of the above runtimes
+                         Their cost, their control, fully supported
 ```
 
-For most small teams, cloud API is the right choice — `gpt-4o-mini` routing costs fractions of a penny per ticket, and the `observer.py` flywheel learns to use the small tier for the majority of work over time.
+**Docker Model Runner is a first-class local option.** It ships with Docker Desktop 4.40+ — no separate installation. Models are pulled like Docker images (`docker model pull ai/phi4-mini`). It exposes an OpenAI-compatible endpoint, so the connection is identical to any other provider:
+
+```python
+dspy.LM("openai/ai/phi4-mini", api_base="http://localhost:12434/engines/v1", api_key="unused")
+```
+
+Available models include `ai/llama3.2`, `ai/phi4-mini`, `ai/mistral-7b` and others from Docker Hub. For teams that already run Docker, this is zero additional infrastructure.
+
+**One constraint on local endpoints:** the endpoint must be reachable from the CaseDesk server. For cloud-hosted CaseDesk (kalevent.com), a model on a developer's laptop is not reachable — but a model on an internal server exposed via URL (Cloudflare Tunnel, Tailscale, an internal IP) is. The settings field is always just a URL. CaseDesk does not manage the runtime.
+
+**The optimal cost structure for most small teams:**
+
+```
+80% of tickets     → small tier → local model → free
+15% of tickets     → medium tier → gpt-4o-mini → ~$0.001 per ticket
+5% of tickets      → large tier → claude-sonnet → ~$0.01 per ticket
+```
+
+The `observer.py` flywheel learns this distribution from real usage and pushes more work toward the cheaper tier over time. The cloud bill shrinks as the system learns.
 
 > *"AI is not a cost we mark up. You connect your own provider — OpenAI, Anthropic, or a model on your own hardware. CaseDesk pricing is pure software."*
 
-This is a real differentiator against tools that hide AI costs inside a subscription. An organisation that buys its own GPU gets full benefit — CaseDesk simply calls the endpoint they register.
+This is a real differentiator against tools that hide AI costs inside a subscription. An organisation that runs Docker Model Runner or Ollama locally handles the majority of its work at zero AI cost. CaseDesk simply calls the endpoints they register.
 
-**The settings screen this requires:** one page where the account pastes an API key or enters a local endpoint URL, and selects which model fills each tier slot. That is the entire AI provider configuration. It does not require a developer.
+**The settings screen this requires:** one page per tier — provider type, endpoint URL or API key, and model ID. Three rows, no developer required. Adding a new provider or swapping a model is a settings change, not a code change.
 
 **Input connectors** determine what triggers a ticket. **Knowledge connectors** determine how intelligently that ticket is classified, routed, and enriched. **Execution connectors** determine how much of the resulting work can be completed without human intervention.
 
