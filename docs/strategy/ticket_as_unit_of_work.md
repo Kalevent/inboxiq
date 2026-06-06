@@ -697,6 +697,22 @@ The Swagger/OpenAPI spec is served from the Flask app at `/api/docs`. Docusaurus
 
 `docs.getcasedesk.com` is the primary docs domain — same pattern as `docs.policynumbers.com`. `kalevent.com` is the app domain only.
 
+**OpenAPI generation — phased plan:**
+
+```text
+MVP              → static swagger.json served from Flask
+                   matches PolicyNumbers; zero maintenance overhead at low endpoint count
+
+Post-MVP         → add flask-smorest when endpoint count exceeds ~20
+                   auto-generates spec from route definitions; docs stay in sync with code
+
+Developer portal → auto-generation is non-negotiable
+                   external developers rely on the spec being accurate;
+                   a drifted static file is a trust problem, not just a maintenance burden
+```
+
+No OpenAPI library is needed at launch. The trigger to add `flask-smorest` is endpoint count (~20), not time. The trigger to treat it as non-negotiable is the developer portal going live.
+
 ---
 
 ## Target Market — Who Pays First
