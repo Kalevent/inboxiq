@@ -310,22 +310,28 @@ book_slot(booking_id, slot_datetime, attendee_email)
 
 create_calendar_invite(booking_id)
     → adds event to sender's Gmail / Outlook calendar via existing OAuth token
-
-send_confirmation(booking_id)
-    → confirmation email to attendee with slot details
 ```
 
-### Phase 2b — Video confirmation (future upsell on top of booking)
-
-Personalised HeyGen video per booking confirmation. Expensive per-call — positioned as a further upsell above the booking tier. Not designed here. Designed when Phase 2a (core booking) is stable.
+No video. No confirmation email beyond what the calendar invite provides. The MCP's job is exactly: generate link → slot confirmed → invite in calendar.
 
 ### Positioning
 
 - Base Ranger: find leads → send outreach → track replies
-- Booking add-on: reply → insert booking link → slot confirmed → calendar invite created
-- Video add-on: booking confirmation includes a personalised video
+- Booking add-on (upsell): reply → insert booking link → lead books a slot → invite lands in the sender's calendar automatically
 
-Calendly charges £8-12/month for the calendar piece alone. Ranger bundles it into the outreach flow as an upgrade, not a separate tool.
+Calendly charges £8-12/month for this alone. Ranger bundles it into the outreach flow as an upgrade — no separate tool, no context switching.
+
+### Marketplace distribution (independent revenue stream)
+
+The booking MCP server is self-contained — it takes a connection token, generates a link, creates a calendar invite. Nothing about it is specific to Ranger.
+
+It can be published to MCP marketplaces (Anthropic, Smithery, others) for any agent or AI product to call — for a fee per call or per month. A developer building a sales agent in Claude, GPT, or any other framework could plug in `booking_mcp` without building calendar integration themselves.
+
+This makes the booking MCP a standalone product in addition to a Ranger feature. Build it once, distribute it twice:
+- Inside Ranger as an upsell tier
+- In the MCP marketplace as a paid tool for third-party agents
+
+Distribution does not require any changes to the MCP server itself. The server accepts a connection token — callers supply their own OAuth credentials regardless of where they're calling from.
 
 ---
 
