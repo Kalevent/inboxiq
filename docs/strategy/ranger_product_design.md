@@ -267,6 +267,68 @@ Same teardown sequence as documented in `docs/strategy/ticket_as_unit_of_work.md
 
 ---
 
+## Phase 2 — Booking MCP (Post-Launch Upsell)
+
+Not in v1. Designed now so the architecture accommodates it cleanly.
+
+### What it does
+
+When a lead replies to an outreach sequence, Ranger can insert a personalised, expiring booking link into the follow-up email. When the lead books a slot, the MCP server creates a calendar invite in the sender's Gmail or Outlook and sends a confirmation email to the attendee.
+
+### Connection reuse — no separate credential
+
+The user's Gmail or Outlook OAuth token is already registered in Ranger's `Connection` model for sending. The booking MCP reuses that same connection — the `access_token` on the active sending connection is the calendar credential. No new connection screen. No separate OAuth flow.
+
+### Load pattern — context-driven, not always-on
+
+The MCP subprocess only starts when the context demands it:
+
+```
+Sequence step configured as "book_meeting"?
+        ↓
+Account has booking feature access?     ← plan gate
+        ↓
+Active sending connection present?      ← OAuth token already there
+        ↓
+booking_mcp subprocess starts
+        ↓
+Tool call executes
+        ↓
+Subprocess exits
+```
+
+No idle process. No memory cost for accounts on the base plan. The `PersistentMCPClient` pattern from InboxIQ handles instantiation — the plan gate is checked before the client is created.
+
+### MCP tools exposed
+
+```
+generate_booking_link(lead_id, context, ttl_hours)
+    → short-lived URL with lead context embedded
+
+book_slot(booking_id, slot_datetime, attendee_email)
+    → confirms the selected slot
+
+create_calendar_invite(booking_id)
+    → adds event to sender's Gmail / Outlook calendar via existing OAuth token
+
+send_confirmation(booking_id)
+    → confirmation email to attendee with slot details
+```
+
+### Phase 2b — Video confirmation (future upsell on top of booking)
+
+Personalised HeyGen video per booking confirmation. Expensive per-call — positioned as a further upsell above the booking tier. Not designed here. Designed when Phase 2a (core booking) is stable.
+
+### Positioning
+
+- Base Ranger: find leads → send outreach → track replies
+- Booking add-on: reply → insert booking link → slot confirmed → calendar invite created
+- Video add-on: booking confirmation includes a personalised video
+
+Calendly charges £8-12/month for the calendar piece alone. Ranger bundles it into the outreach flow as an upgrade, not a separate tool.
+
+---
+
 ## Open Decisions (resolve before implementation plan)
 
 1. **Infrastructure:** Kubernetes (EKS) vs ECS Fargate
