@@ -6,7 +6,6 @@ from __future__ import annotations
 import subprocess
 import json
 import selectors
-import sys
 from threading import Lock
 from typing import Any, List, Dict
 

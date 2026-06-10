@@ -7,7 +7,6 @@ Actions that manipulate emails: tagging, moving to folders, creating notes, send
 from typing import Dict, Any
 from opentelemetry import trace
 
-from src.extensions import db
 from src.sanitize import sanitize_html
 
 

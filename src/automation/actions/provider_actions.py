@@ -85,7 +85,7 @@ def _validate_message_id(message_id: str) -> str:
         raise ValueError("message_id exceeds maximum length")
     # Reject path traversal and whitespace
     if re.search(r'[\s\x00-\x1f\x7f]', clean) or '..' in clean or clean.startswith('/'):
-        raise ValueError(f"message_id contains invalid characters")
+        raise ValueError("message_id contains invalid characters")
     return clean
 
 

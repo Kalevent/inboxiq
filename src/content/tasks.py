@@ -15,7 +15,7 @@ from celery import shared_task
 import markdown
 
 from src.extensions import db
-from src.models.content import BlogPost, GeneratedContent
+from src.models.content import BlogPost
 
 logger = logging.getLogger(__name__)
 

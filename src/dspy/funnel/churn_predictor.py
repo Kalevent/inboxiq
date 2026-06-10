@@ -7,7 +7,6 @@ Outputs churn probability (0-1) and recommended retention actions.
 Training data: Historical churned vs retained customers with engagement patterns.
 """
 import dspy
-from typing import Optional
 
 
 class ChurnPredictorSignature(dspy.Signature):

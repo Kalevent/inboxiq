@@ -28,7 +28,6 @@ from src.monitoring.sanitizer import (
     safe_span_attribute,
     sanitize_trigger_context,
     sanitize_value,
-    hash_sensitive_value,
 )
 
 logger = logging.getLogger(__name__)
@@ -463,7 +462,7 @@ def execute_workflow_actions(
                     if workflow.stop_on_error:
                         actions_span.set_attribute("workflow.stopped_on_error", True)
                         actions_span.set_attribute("failed_action_index", idx)
-                        logger.warning(f"Workflow stopped due to action failure (stop_on_error=True)")
+                        logger.warning("Workflow stopped due to action failure (stop_on_error=True)")
                         break
 
         actions_span.set_attribute("actions.executed", len(results))

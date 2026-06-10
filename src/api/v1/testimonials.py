@@ -1,5 +1,5 @@
 from datetime import datetime
-from datetime import datetime, timedelta
+from datetime import timedelta
 from flask import jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from itsdangerous import URLSafeSerializer, BadSignature

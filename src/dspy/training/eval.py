@@ -12,7 +12,6 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from src.app import create_app
-from src.extensions import db
 from src.models.tickets import Ticket
 from src.dspy import run_dspy_triage
 from src.dspy.triage_labels import get_triage_labels

@@ -190,7 +190,7 @@ def get_gsc_client() -> Optional[GoogleSearchConsole]:
         return _gsc_client
 
     # Check if GSC is enabled
-    if not os.getenv('GSC_ENABLED', '').lower() in ('true', '1', 'yes'):
+    if os.getenv('GSC_ENABLED', '').lower() not in ('true', '1', 'yes'):
         return None
 
     try:

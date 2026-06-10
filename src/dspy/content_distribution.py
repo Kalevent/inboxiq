@@ -10,7 +10,7 @@ Provides AI-powered decision-making for:
 from __future__ import annotations
 
 import dspy
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
 

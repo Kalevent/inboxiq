@@ -23,7 +23,7 @@ Env:
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -32,7 +32,7 @@ import math
 try:
     from mcp.server.fastmcp import FastMCP, Context, ToolError
 except ImportError:
-    from mcp.server.fastmcp import FastMCP, Context
+    from mcp.server.fastmcp import FastMCP
     try:
         from mcp.types import ToolError
     except ImportError:

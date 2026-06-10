@@ -247,7 +247,6 @@ def configure_dspy(
 
 def _configure_dspy_byol(dspy: Any, byol_config: Dict[str, Any]) -> tuple[str, str, Any]:
     """Configure DSPy using a customer's own LLM endpoint."""
-    from typing import Dict as _Dict, Any as _Any
 
     provider = byol_config["provider"]
     model = byol_config["model"]

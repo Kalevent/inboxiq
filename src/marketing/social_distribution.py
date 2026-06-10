@@ -17,9 +17,6 @@ from src.models.content import BlogPost
 from src.models.core import InboxConnection
 from src.marketing.content_distribution import (
     generate_social_content,
-    _post_to_linkedin,
-    _post_to_twitter,
-    _post_to_facebook,
 )
 
 logger = logging.getLogger(__name__)

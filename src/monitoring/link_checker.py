@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 import time
 from collections import deque
 from html.parser import HTMLParser

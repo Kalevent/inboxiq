@@ -26,7 +26,7 @@ Usage:
 import re
 import hashlib
 import logging
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

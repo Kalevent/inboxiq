@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from threading import RLock
-from typing import Dict, Optional
+from typing import Optional
 from uuid import uuid4
 
 from src.models.ai import AgentModel

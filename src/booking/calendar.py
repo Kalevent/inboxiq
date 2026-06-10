@@ -1,7 +1,6 @@
 import logging
 import time as time_module
 from datetime import datetime, timedelta, time
-from typing import Any
 from uuid import uuid4
 
 from src.integrations.gcal import get_gcal_service

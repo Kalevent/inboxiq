@@ -12,15 +12,15 @@ Endpoints:
 - GET /api/v1/funnel/velocity - Average time spent in each stage
 - GET /api/v1/funnel/cohorts - Cohort retention analysis
 """
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import func, case
+from sqlalchemy import func
 
 from src.api.v1 import v1
 from src.extensions import db
 from src.funnel.stages import VISITS
-from src.models.leads import Lead, LeadFunnelStage, LeadEngagementEvent, LeadAttribution, FunnelMetricsDaily
+from src.models.leads import Lead, LeadFunnelStage, FunnelMetricsDaily
 
 
 @v1.route("/funnel/metrics", methods=["GET"])

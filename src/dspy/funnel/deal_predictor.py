@@ -7,7 +7,6 @@ Outputs conversion probability (0-1) and expected close date.
 Training data: Historical deals (closed-won + closed-lost) with full engagement history.
 """
 import dspy
-from typing import Optional
 
 
 class DealPredictorSignature(dspy.Signature):

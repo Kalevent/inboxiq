@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import logging
 import markdown
-from flask import render_template, abort, request, url_for
+from flask import render_template, abort, request
 from markupsafe import Markup
 
 from src.kb import bp

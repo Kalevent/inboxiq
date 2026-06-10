@@ -1,7 +1,6 @@
 """Tests for the Tickets settings tab — query helper and route logic."""
 from __future__ import annotations
-from unittest.mock import MagicMock, patch, call
-import pytest
+from unittest.mock import MagicMock, patch
 
 
 # ---------------------------------------------------------------------------

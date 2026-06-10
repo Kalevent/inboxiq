@@ -33,7 +33,7 @@ def _init():
     if _task_duration is not None:
         return
     try:
-        from prometheus_client import Histogram, Counter, REGISTRY
+        from prometheus_client import Histogram, Counter
         _task_duration = Histogram(
             "inboxiq_task_duration_seconds",
             "Celery task duration in seconds",

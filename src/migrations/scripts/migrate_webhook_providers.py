@@ -9,7 +9,6 @@ Usage:
 """
 
 import json
-from datetime import datetime
 from uuid import uuid4
 
 from src.extensions import db
@@ -135,25 +134,25 @@ def migrate_webhook_providers(dry_run=True):
 
         if not dry_run:
             db.session.add(webhook_provider)
-            print(f"    ✅ MIGRATED: Created WebhookProvider record")
+            print("    ✅ MIGRATED: Created WebhookProvider record")
         else:
-            print(f"    [DRY RUN] Would create WebhookProvider record")
+            print("    [DRY RUN] Would create WebhookProvider record")
 
         migrated_count += 1
 
     if not dry_run:
         db.session.commit()
-        print(f"\n✅ Migration complete!")
+        print("\n✅ Migration complete!")
     else:
-        print(f"\n[DRY RUN] No changes committed")
+        print("\n[DRY RUN] No changes committed")
 
-    print(f"\nSummary:")
+    print("\nSummary:")
     print(f"  - Migrated: {migrated_count}")
     print(f"  - Skipped: {skipped_count}")
     print(f"  - Total: {len(webhook_connections)}")
 
     if dry_run:
-        print(f"\nRun with dry_run=False to apply changes")
+        print("\nRun with dry_run=False to apply changes")
 
 
 def rollback_migration():

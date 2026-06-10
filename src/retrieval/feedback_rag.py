@@ -2,9 +2,8 @@ import math
 import re
 from typing import List, Dict, Any
 
-from sqlalchemy import func
 
-from src.embeddings import embed_text, DEFAULT_DIM
+from src.embeddings import embed_text
 
 
 def _tokenize(text: str) -> List[str]:

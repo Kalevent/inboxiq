@@ -10,7 +10,7 @@ import urllib.parse
 from datetime import datetime, timedelta, timezone
 
 import requests
-from flask import Blueprint, current_app, jsonify, redirect, request, url_for
+from flask import current_app, jsonify, redirect, request, url_for
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,

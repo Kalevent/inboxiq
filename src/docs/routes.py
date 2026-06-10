@@ -4,7 +4,7 @@ Documentation controllers (migrated from legacy MCP blueprint).
 import os
 import logging
 import markdown
-from flask import render_template, abort, current_app, send_from_directory, g, request, redirect, url_for
+from flask import render_template, abort, current_app, g, request, redirect, url_for
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 from markupsafe import Markup
 

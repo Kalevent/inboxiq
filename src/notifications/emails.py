@@ -1,7 +1,6 @@
 import html
 import smtplib
 from email.message import EmailMessage
-from typing import Optional
 
 from flask import current_app
 

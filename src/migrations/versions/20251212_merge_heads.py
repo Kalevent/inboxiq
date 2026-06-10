@@ -1,6 +1,5 @@
 """Merge heads for billing and inboxiq branches."""
 
-from alembic import op
 import sqlalchemy as sa  # noqa: F401
 
 # revision identifiers, used by Alembic.

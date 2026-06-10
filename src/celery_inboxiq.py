@@ -12,13 +12,14 @@ from src.app import create_app
 from src.inbox.logic import normalize_email_payload, run_dspy_decision, compute_due_at
 from src.inbox.merger import merge_decisions, should_skip_triage
 from src.extensions import db
-from src.models.core import InboxConnection, Account
+from src.models.core import InboxConnection
 from src.models.tickets import Ticket
 from src.dspy.triage_labels import get_triage_labels
 from src.dspy.training.train import train_from_overrides
 from src.dspy import _configure_dspy
 import logging
 from celery.signals import task_prerun, task_postrun
+
 from src.monitoring.metrics import record_task_cost
 
 # Default body preview limit (can be overridden per-account via TriageConfig)
@@ -1324,7 +1325,7 @@ def crawl_kb_source_task(self, account_id: int, base_url: str) -> dict:
     """
     from src.integrations.kb import crawl_kb_source
     result = crawl_kb_source(account_id, base_url)
-    logger.info(
+    _log.info(
         "crawl_kb_source_task done account=%s base=%s indexed=%d skipped=%d errors=%d",
         account_id, base_url,
         result.get("indexed", 0), result.get("skipped", 0), len(result.get("errors", [])),

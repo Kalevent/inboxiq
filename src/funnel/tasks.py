@@ -9,7 +9,6 @@ Automated tasks for:
 - Churn risk analysis
 """
 import logging
-import os
 import json
 from datetime import datetime, timedelta
 from celery import shared_task
