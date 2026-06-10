@@ -194,21 +194,41 @@ Premium UI is non-negotiable regardless of the approach chosen.
 
 ## Infrastructure
 
-**Open decision — not blocking the spec.**
+**Decision (confirmed 2026-06-10):** Kubernetes — share the existing `inboxiq-eks` cluster (us-west-2).
 
-Two options:
+Ranger runs in a new `ranger` namespace on `inboxiq-eks` alongside InboxIQ while InboxIQ winds down. When InboxIQ is fully retired (Phase 4), the cluster is retasked as Ranger's cluster — InboxIQ's namespace and pods are removed, the node group is right-sized, and the cluster continues running for Ranger only.
 
-| | Kubernetes (EKS) | ECS Fargate |
+**What this means for cost:**
+
+| Item | Cost | Note |
 | --- | --- | --- |
-| Control plane cost | ~£73/month | £0 |
-| Compute (web + worker) | ~£100-150/month (min node group) | ~£25-35/month |
-| Operational overhead | Higher (kubectl, node management) | Lower |
-| Existing expertise | Yes (InboxIQ runs on EKS today) | Yes (PolicyNumbers, CaseDesk on Fargate) |
-| Same AWS account | Yes | Yes |
+| EKS control plane | Already paid | Shared with InboxIQ during transition |
+| Node group | Marginal increase | Ranger pods fit in existing nodes initially |
+| Ranger RDS (`db.t4g.micro`) | ~£15-20/month | Separate DB — never share across products |
+| Redis pod | £0 | Runs in `ranger` namespace on existing nodes |
+| ALB | Already paid | Share InboxIQ's ALB with host-based routing |
 
-Fargate is cheaper at this scale. EKS is already understood. Decision to be made before repo initialisation — it determines what goes in `infra/`.
+**Infra folder structure (`ranger/infra/k8s/`):**
 
-Region: eu-west-2 (same as CaseDesk).
+```
+infra/k8s/
+├── deployment.yaml       # web pod
+├── celery-worker.yaml    # discovery + sending workers
+├── celery-beat.yaml      # scheduled tasks
+├── redis.yaml            # Redis pod (mirror InboxIQ pattern)
+├── config.yaml           # ConfigMap (env vars)
+├── secrets.yaml          # Secrets (DB URL, Redis pw, API keys)
+├── ingress.yaml          # getrangerapp.com → ALB
+└── service.yaml
+```
+
+**At InboxIQ teardown:**
+- Remove `kaley` namespace and all InboxIQ pods
+- Delete InboxIQ RDS instance
+- Right-size node group for Ranger only
+- Retain: EKS cluster, kalevent.com domain + ACM certs, files.kalevent.com CDN
+
+Region: us-west-2 (inherits InboxIQ's cluster — eu-west-2 migration deferred unless data residency becomes a requirement).
 
 ---
 
