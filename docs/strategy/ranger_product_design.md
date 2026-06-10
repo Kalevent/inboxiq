@@ -321,17 +321,15 @@ No video. No confirmation email beyond what the calendar invite provides. The MC
 
 Calendly charges £8-12/month for this alone. Ranger bundles it into the outreach flow as an upgrade — no separate tool, no context switching.
 
-### Marketplace distribution (independent revenue stream)
+### Marketplace distribution (deferred — post-Ranger validation)
 
 The booking MCP server is self-contained — it takes a connection token, generates a link, creates a calendar invite. Nothing about it is specific to Ranger.
 
-It can be published to MCP marketplaces (Anthropic, Smithery, others) for any agent or AI product to call — for a fee per call or per month. A developer building a sales agent in Claude, GPT, or any other framework could plug in `booking_mcp` without building calendar integration themselves.
+It can be published to MCP marketplaces (Anthropic, Smithery, others) for any agent or AI product to call. A developer building a sales agent in Claude, GPT, or any other framework could plug in `booking_mcp` without building calendar integration themselves.
 
-This makes the booking MCP a standalone product in addition to a Ranger feature. Build it once, distribute it twice:
-- Inside Ranger as an upsell tier
-- In the MCP marketplace as a paid tool for third-party agents
+**Sequencing decision (confirmed 2026-06-10):** Build for Ranger first. Run in production for 30–60 days. Once the integration is stable and the security posture around OAuth token handling is proven, publish to marketplace as a separate initiative. The server requires no changes — the only difference is who calls it and how external billing is handled.
 
-Distribution does not require any changes to the MCP server itself. The server accepts a connection token — callers supply their own OAuth credentials regardless of where they're calling from.
+Do not publish before Ranger's booking feature is production-validated. Paid marketplace distribution also requires per-call metering infrastructure (Stripe) that is not yet built.
 
 ---
 
