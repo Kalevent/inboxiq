@@ -223,10 +223,25 @@ Region: eu-west-2 (same as CaseDesk).
 - `src/models/campaigns.py` (EmailCampaign, EmailOutreach, CampaignSender)
 - `src/models/leads.py`
 - `src/dspy/email_personalization.py`
+- `src/kb/` — Knowledge base infrastructure (models, retrieval, embeddings)
+- `src/retrieval/` — pgvector semantic search
+
+**Knowledge base — ported with new content:**
+
+The KB is retained but repurposed. In InboxIQ it supported inbox triage. In Ranger it feeds the email personalisation pipeline — DSPy draws on KB articles when composing and personalising outreach emails.
+
+Each account's KB holds:
+- Company messaging and value propositions
+- Product or service descriptions
+- ICP-specific pain points and objections
+- Campaign playbooks and proven subject line patterns
+
+The KB content from InboxIQ (inbox triage articles, Gmail/Outlook guides) is not migrated. Ranger starts with a blank KB per account. Users populate it — or Ranger pre-fills it based on their website URL during onboarding.
+
+The embeddings infrastructure (`src/retrieval/`, pgvector) is ported unchanged. The content is new.
 
 **Left in InboxIQ / not ported:**
 - Inbox management (Gmail/Outlook triage, AI reply drafting)
-- Knowledge base
 - Content / blog / publishing
 - LinkedIn / YouTube / HeyGen
 - Booking
