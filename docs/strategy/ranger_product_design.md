@@ -184,11 +184,16 @@ The current InboxIQ marketing ops screen is functional internal tooling. Ranger'
 
 5. **Connections** — sending account + AI provider setup. Test Connection button inline. Clear status: connected / unhealthy / missing.
 
-**Frontend approach (open — to decide before build):**
-- React SPA (cleaner for interactive ICP builder and real-time discovery feed)
-- Jinja2 + Alpine.js + HTMX (simpler stack, consistent with existing InboxIQ/CaseDesk patterns)
+**Frontend approach (confirmed 2026-06-10):** React SPA — Vite + React, no Next.js.
 
-Premium UI is non-negotiable regardless of the approach chosen.
+Flask is a pure API (JWT auth, JSON endpoints, no Jinja2 for app screens). The ICP Builder and Lead Discovery feed require complex interactive state and real-time streaming that pushes Jinja2 + Alpine.js beyond its natural fit.
+
+Stack:
+- `shadcn/ui` + Tailwind — component quality of Linear/Instantly without building from scratch
+- TanStack Query — data fetching and caching
+- Vite — build tool (no SSR needed — Ranger is fully behind auth)
+
+Premium UI is non-negotiable.
 
 ---
 
