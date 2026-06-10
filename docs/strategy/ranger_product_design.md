@@ -361,6 +361,6 @@ Do not publish before Ranger's booking feature is production-validated. Paid mar
 
 1. **Infrastructure:** Kubernetes (EKS) vs ECS Fargate
 2. **Frontend approach:** React SPA vs Jinja2 + Alpine.js + HTMX
-3. **Domain:** getrangerapp.com or similar — to be registered
+3. **Domain:** `getprowl.ai` — registered 2026-06-10 on GoDaddy
 4. **Billing:** Stripe — pricing tiers to be defined (competing at £37-39/month entry point)
 5. **LinkedIn outreach:** future roadmap — not in scope for v1
