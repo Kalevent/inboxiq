@@ -194,41 +194,40 @@ Premium UI is non-negotiable regardless of the approach chosen.
 
 ## Infrastructure
 
-**Decision (confirmed 2026-06-10):** Kubernetes — share the existing `inboxiq-eks` cluster (us-west-2).
+**Decision (confirmed 2026-06-10):** ECS Fargate — eu-west-2, mirroring CaseDesk's infra setup.
 
-Ranger runs in a new `ranger` namespace on `inboxiq-eks` alongside InboxIQ while InboxIQ winds down. When InboxIQ is fully retired (Phase 4), the cluster is retasked as Ranger's cluster — InboxIQ's namespace and pods are removed, the node group is right-sized, and the cluster continues running for Ranger only.
+Ranger does not share the InboxIQ EKS cluster. It runs independently on Fargate in eu-west-2 from day one. CaseDesk already runs on Fargate in eu-west-2 — the task definitions, IAM roles, and deployment patterns transfer directly.
 
-**What this means for cost:**
+**Why Fargate over EKS:**
+- £0 control plane (a new EKS cluster would cost ~£73/month)
+- eu-west-2 is the right region for a UK/EU B2B SaaS — lower latency, cleaner data residency story
+- CaseDesk expertise already in place — no new ops patterns to learn
+
+**Cost:**
 
 | Item | Cost | Note |
 | --- | --- | --- |
-| EKS control plane | Already paid | Shared with InboxIQ during transition |
-| Node group | Marginal increase | Ranger pods fit in existing nodes initially |
-| Ranger RDS (`db.t4g.micro`) | ~£15-20/month | Separate DB — never share across products |
-| Redis pod | £0 | Runs in `ranger` namespace on existing nodes |
-| ALB | Already paid | Share InboxIQ's ALB with host-based routing |
+| ECS Fargate control plane | £0 | No cluster to manage |
+| Web + worker tasks | ~£25-35/month | Scales to zero when idle |
+| RDS `db.t4g.micro` | ~£15-20/month | Ranger-only, never shared |
+| Redis (Fargate sidecar or ElastiCache `t4g.micro`) | ~£0-15/month | Start with sidecar, upgrade if needed |
+| ALB | ~£15/month | Ranger-dedicated |
 
-**Infra folder structure (`ranger/infra/k8s/`):**
+**Infra folder structure (`ranger/infra/`):**
 
 ```
-infra/k8s/
-├── deployment.yaml       # web pod
-├── celery-worker.yaml    # discovery + sending workers
-├── celery-beat.yaml      # scheduled tasks
-├── redis.yaml            # Redis pod (mirror InboxIQ pattern)
-├── config.yaml           # ConfigMap (env vars)
-├── secrets.yaml          # Secrets (DB URL, Redis pw, API keys)
-├── ingress.yaml          # getrangerapp.com → ALB
-└── service.yaml
+infra/
+├── ecs-web.json           # web task definition
+├── ecs-worker.json        # Celery worker task definition
+├── ecs-beat.json          # Celery beat task definition
+├── alb.tf / alb.json      # ALB + target groups
+├── rds.tf                 # RDS instance
+└── iam.tf                 # task execution roles
 ```
 
-**At InboxIQ teardown:**
-- Remove `kaley` namespace and all InboxIQ pods
-- Delete InboxIQ RDS instance
-- Right-size node group for Ranger only
-- Retain: EKS cluster, kalevent.com domain + ACM certs, files.kalevent.com CDN
+Mirror CaseDesk's `infra/` structure exactly. Same GitHub Actions deployment pattern.
 
-Region: us-west-2 (inherits InboxIQ's cluster — eu-west-2 migration deferred unless data residency becomes a requirement).
+Region: eu-west-2. Same AWS account as CaseDesk and InboxIQ.
 
 ---
 
