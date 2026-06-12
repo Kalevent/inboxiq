@@ -620,7 +620,7 @@ def passkey_authenticate_verify():
     if not account or (account.deleted_at is not None):
         return jsonify({"error": "account not available"}), 403
 
-    additional_claims = {"account_id": str(user.account_id)}
+    additional_claims = {"account_id": str(user.account_id), "mfa_verified": True}
     access_token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
     refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
     _whitelist_refresh(jwt_token=refresh_token)
