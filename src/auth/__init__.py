@@ -370,7 +370,7 @@ def totp_challenge():
                            user_id=user.id, reason="bad totp code")
         return jsonify({"error": "invalid code"}), 400
 
-    additional_claims = {"account_id": str(user.account_id)}
+    additional_claims = {"account_id": str(user.account_id), "mfa_verified": True}
     token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
     refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
     _whitelist_refresh(jwt_token=refresh_token)
