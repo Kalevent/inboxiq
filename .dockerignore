@@ -42,7 +42,6 @@ tests/
 # src/ subdirectories not needed at runtime
 src/k8s/
 src/tests/
-src/docs/
 
 # Build/dev files inside src/
 src/docker-compose.yml
