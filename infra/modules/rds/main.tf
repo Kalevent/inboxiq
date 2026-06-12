@@ -1,11 +1,12 @@
 resource "aws_db_instance" "inboxiq" {
-  identifier        = "inboxiq-db"
+  identifier        = "inboxiq-db-encrypted"
   engine            = "postgres"
-  engine_version    = "18.1"
+  engine_version    = "18.3"
   instance_class    = var.instance_class
   allocated_storage = 20
   storage_type      = "gp2"
-  storage_encrypted = false   # Existing DB was created without encryption — cannot change without replacement
+  storage_encrypted = true
+  kms_key_id        = "arn:aws:kms:us-west-2:094985084741:key/3b49ecba-9f10-47ae-9778-5db938868bd2"
   multi_az          = false
 
   db_name  = "inboxiq"
@@ -20,9 +21,9 @@ resource "aws_db_instance" "inboxiq" {
   backup_retention_period   = 7
   deletion_protection       = true
   skip_final_snapshot       = false
-  final_snapshot_identifier = "inboxiq-db-final"
+  final_snapshot_identifier = "inboxiq-db-encrypted-final"
 
-  tags = { Name = "inboxiq-db" }
+  tags = { Name = "inboxiq-db-encrypted" }
 
   lifecycle {
     # Prevent accidental replacement — password changes are allowed but not applied in-place
