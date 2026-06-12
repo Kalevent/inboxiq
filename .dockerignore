@@ -26,6 +26,10 @@ archive/
 
 # Node.js build tooling — Tailwind CSS is pre-compiled; node_modules not needed at runtime
 src/node_modules/
+src/package.json
+src/package-lock.json
+src/tailwind.config.js
+src/postcss.config.js
 
 # Project root directories not needed in the image
 data/
@@ -33,6 +37,19 @@ scripts/
 postman/
 InboxIQ_DesignSystem_Kit/
 docs/
+tests/
+
+# src/ subdirectories not needed at runtime
+src/k8s/
+src/tests/
+src/docs/
+
+# Build/dev files inside src/
+src/docker-compose.yml
+src/Dockerfile.inboxiq
+src/README.md
+src/requirements-inboxiq.txt
+src/youtube_cadence_seed.py
 
 # Planning docs
 inboxiq_project_architecture_update.md
@@ -40,6 +57,7 @@ CLAUDE.md
 
 # Claude Code local data — session transcripts, memory, skills (never include in images)
 .claude/
+src/.claude/
 
 # Google Service Account credentials (never include in images)
 gsc-service-account.json
@@ -48,4 +66,7 @@ google-*.json
 
 # VSCode settings
 .vscode/
+
+# Infra code — not needed at runtime
+infra/
 
