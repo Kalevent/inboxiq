@@ -13,28 +13,21 @@ import sys
 import json
 import pickle
 import argparse
-from typing import List, Dict, Any
+from typing import List
 
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../..'))
 
 import dspy
-from dspy.teleprompt import BootstrapFewShot, MIPRO
+from dspy.teleprompt import BootstrapFewShot
 
 from src.dspy.funnel import (
     VisitorQualificationModule,
-    InterestScoringModule,
-    BuyingIntentModule,
-    DealPredictorModule,
-    ChurnPredictorModule
+    InterestScoringModule
 )
 
 from src.dspy.content import (
-    TopicGeneratorModule,
-    OutlineCreatorModule,
-    ContentWriterModule,
-    EditorModule,
-    SEOOptimizerModule
+    TopicGeneratorModule
 )
 
 

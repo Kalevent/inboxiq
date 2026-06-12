@@ -7,10 +7,9 @@ Endpoints:
 - GET /api/v1/admin/trial/metrics - Get trial onboarding metrics
 - POST /api/v1/admin/trial/send-test - Send test onboarding email
 """
-from datetime import datetime, timedelta, timezone
-from flask import jsonify, request, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import func, case
+from datetime import datetime, timezone
+from flask import jsonify, request
+from flask_jwt_extended import jwt_required
 
 from src.api.v1 import v1
 from src.api.v1.admin import _require_admin

@@ -7,7 +7,6 @@ Outputs intent score (0-12) and recommended nurture sequence.
 Training data: Engagement patterns of converted customers vs churned leads.
 """
 import dspy
-from typing import Optional
 
 
 class InterestScoringSignature(dspy.Signature):

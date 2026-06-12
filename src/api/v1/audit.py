@@ -15,10 +15,9 @@ from __future__ import annotations
 import csv
 import io
 
-from flask import Blueprint, g, jsonify, request, Response
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from flask import Blueprint, jsonify, request, Response
+from flask_jwt_extended import jwt_required, get_jwt
 
-from src.extensions import db
 from src.models.auth import AuditLog
 from src.models.core import User
 

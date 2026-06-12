@@ -32,8 +32,8 @@ from src.extensions import db
 from src.funnel.stages import CONVERSION_STAGES
 from src.models.campaigns import NurtureEmailSend
 from src.models.core import Account, User
-from src.models.leads import Lead, LeadAttribution
-from src.models.marketing import EnterpriseInquiry, InAppMessage, InAppMessageDismissal, LandingPage, Referral
+from src.models.leads import Lead
+from src.models.marketing import EnterpriseInquiry, InAppMessage, LandingPage, Referral
 from src.sanitize import sanitize_html
 import logging
 import math

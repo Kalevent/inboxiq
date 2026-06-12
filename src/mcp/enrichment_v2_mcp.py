@@ -40,7 +40,7 @@ from urllib.parse import quote, urljoin as _urljoin, urlparse as _urlparse
 try:
     from mcp.server.fastmcp import FastMCP, Context, ToolError
 except ImportError:
-    from mcp.server.fastmcp import FastMCP, Context
+    from mcp.server.fastmcp import FastMCP
     try:
         from mcp.types import ToolError
     except ImportError:

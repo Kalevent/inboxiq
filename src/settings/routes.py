@@ -15,7 +15,7 @@ from src.models.core import User, Account, InboxConnection, AccountLLMConfig, AL
 from src.models.developer import RegisteredApp, DeveloperAccessRequest, AppProductAccess, AppWebhookDelivery
 from src.developer.products import PRODUCT_CATALOG
 from src.models.tickets import Ticket
-from src.crypto import encrypt_value, decrypt_value
+from src.crypto import encrypt_value
 from src.api.v1.access_control import account_allows_api
 from src.settings import bp, login_required_settings
 
@@ -1312,7 +1312,7 @@ def integrations_webhooks():
                   continue  # Skip this field
                 # Limit URL length
                 value = value[:2000]
-              except Exception as e:
+              except Exception:
                 current_app.logger.warning(f"Invalid URL provided: {value}")
                 continue  # Skip invalid URLs
 
@@ -1844,7 +1844,6 @@ def rule_analytics(rule_id):
   """Individual automation rule analytics page."""
   from src.models import AutomationRule
   from src.automation.roi_calculator import calculate_rule_roi
-  import json
 
   account_id = getattr(g, "current_account_id", None)
 
@@ -2123,7 +2122,6 @@ ALLOWED_SCOPES = {"intake:write", "tickets:read", "decisions:read"}
 @login_required_settings
 def developer_post():
   """Handle Developer tab form submissions: access request, app registration, revoke."""
-  import hashlib
 
   account_id = getattr(g, "current_account_id", None)
   account = Account.query.get(account_id) if account_id else None

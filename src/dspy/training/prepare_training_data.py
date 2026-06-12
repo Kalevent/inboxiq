@@ -13,7 +13,6 @@ import sys
 import json
 import argparse
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
 
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../..'))
@@ -93,7 +92,7 @@ def export_visitor_qualification_data(output_dir: str) -> str:
             # Labels
             "fit_score": str(lead.fit_score or 3),  # Assume low fit for stalled leads
             "qualification_status": "disqualified",
-            "reasoning": f"Lead stalled in visits stage for >30 days"
+            "reasoning": "Lead stalled in visits stage for >30 days"
         })
 
     output_path = os.path.join(output_dir, "visitor_qualification_training.jsonl")
@@ -244,7 +243,7 @@ def prepare_all_training_data(output_dir: str = "./training_data"):
         print(f"✗ Failed to export content topic data: {e}")
 
     print("\n" + "="*60)
-    print(f"Training data preparation complete!")
+    print("Training data preparation complete!")
     print(f"Files saved to: {output_dir}")
     print("="*60 + "\n")
 

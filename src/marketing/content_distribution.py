@@ -14,8 +14,8 @@ from typing import Dict, List, Any, Optional, Tuple
 
 from src.celery_inboxiq import celery
 from src.extensions import db
-from src.models.content import BlogPost, GeneratedContent
-from src.models.core import Account, InboxConnection
+from src.models.content import BlogPost
+from src.models.core import InboxConnection
 from src.sanitize import sanitize_html
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ def publish_blog_post(blog_post_id: str) -> Dict[str, Any]:
                 db.session.commit()
             except Exception:
                 db.session.rollback()
-        except Exception as exc:
+        except Exception:
             logger.exception("Failed to enqueue blog post %s for social distribution", post.id)
 
         # Newsletter + search-engine submission stay event-driven.

@@ -18,7 +18,6 @@ from __future__ import annotations
 import re
 import logging
 from datetime import datetime, timezone
-from typing import Optional
 
 from src.extensions import db
 

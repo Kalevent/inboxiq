@@ -1,4 +1,4 @@
-from typing import Protocol, Optional, Tuple, Dict, Any
+from typing import Protocol, Tuple, Dict, Any
 
 
 class PaymentProvider(Protocol):

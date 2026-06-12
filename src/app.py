@@ -1,10 +1,9 @@
 import os
 from functools import wraps
-from uuid import uuid4
 
 from flask import Flask, jsonify, render_template, current_app, request, redirect, url_for, g, abort
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, get_jwt
-from src.config import Config, DevelopmentConfig, ProductionConfig, TestConfig
+from src.config import DevelopmentConfig, ProductionConfig, TestConfig
 from src.extensions import db, migrate, jwt, cache, limiter
 from src.monitoring.crash_report import configure_crash_email
 from flask_cors import CORS
@@ -32,7 +31,6 @@ from src.api.v1.access_control import account_allows_api
 from src.api.v1.approval_policies import bp as approval_policies_bp
 
 from src.notifications.emails import send_test_email as send_test_email_util, send_onboarding_reminder
-from src.monitoring.crash_report import configure_crash_email
 from datetime import datetime, timezone, timedelta
 
 

@@ -1,6 +1,5 @@
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
 from src.models.tickets import Ticket
 
 

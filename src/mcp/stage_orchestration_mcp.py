@@ -25,7 +25,7 @@ from psycopg2.extras import RealDictCursor
 try:
     from mcp.server.fastmcp import FastMCP, Context, ToolError
 except ImportError:
-    from mcp.server.fastmcp import FastMCP, Context
+    from mcp.server.fastmcp import FastMCP
     try:
         from mcp.types import ToolError
     except ImportError:

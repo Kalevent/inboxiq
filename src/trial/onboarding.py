@@ -5,7 +5,7 @@ Sends a 4-email sequence to trial users on Days 1, 3, 5, and 7 after signup.
 """
 import os
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from jinja2 import Template
 

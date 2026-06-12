@@ -18,14 +18,14 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 try:
     from mcp.server.fastmcp import FastMCP, Context, ToolError
 except ImportError:
-    from mcp.server.fastmcp import FastMCP, Context
+    from mcp.server.fastmcp import FastMCP
     try:
         from mcp.types import ToolError
     except ImportError:

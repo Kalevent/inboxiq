@@ -1,7 +1,5 @@
-from datetime import datetime
 from uuid import uuid4
 from sqlalchemy.sql import func
-from sqlalchemy.dialects.postgresql import TSVECTOR
 from src.extensions import db
 
 try:  # Optional pgvector support

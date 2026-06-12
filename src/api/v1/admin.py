@@ -1,13 +1,12 @@
 from datetime import datetime, timedelta, timezone
 
-from flask import request, jsonify, url_for, current_app, g
+from flask import request, jsonify, url_for, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import func, desc, or_, cast, text
+from sqlalchemy import func, desc, cast, text
 
 from src.api.v1 import v1
 from src.extensions import db
 from src.models.core import User, Account, InboxConnection
-from src.models.leads import Lead
 from src.models.tickets import Ticket, TriageLabelConfig
 from src.models.developer import AppProductAccess, RegisteredApp
 from src.api.v1.testimonials import generate_testimonial_token
@@ -1110,7 +1109,6 @@ def admin_account_purge(account_id: int):
     Admin-only. Irreversible.
     """
     from src.models.auth import AuditLog
-    from sqlalchemy import text
 
     admin = _require_admin()
     if not admin:

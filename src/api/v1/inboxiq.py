@@ -2,7 +2,7 @@ import os
 import re
 from functools import lru_cache
 from datetime import datetime, timezone, timedelta
-from flask import Blueprint, jsonify, request, url_for, redirect, current_app
+from flask import jsonify, request, url_for, redirect, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from celery import Celery
 from sqlalchemy import func, or_, case, desc
@@ -47,7 +47,7 @@ def _build_body_preview(text: str) -> str:
     return _redact_body_preview(text or "")[:BODY_PREVIEW_LIMIT]
 
 def _get_account_id(user_id: int | None) -> int | None:
-    from src.models import User, Account  # local import to avoid cycles
+    from src.models import User  # local import to avoid cycles
     if not user_id:
         return None
     user = User.query.get(user_id)
@@ -1556,7 +1556,7 @@ def _poll_inbox_internal(connection_id: str, user_id: int | None = None):
     for raw_email in messages:
         try:
             normalized = normalize_email_payload(raw_email)
-        except ValueError as exc:
+        except ValueError:
             errors += 1
             continue
         existing = Ticket.query.filter_by(
@@ -2120,7 +2120,6 @@ def training_status():
 @jwt_required()
 def get_llm_config():
     """Return the current BYOL config for the account (no api_key in response)."""
-    from src.models.tickets import Ticket as _  # ensure app context
     user_id = get_jwt_identity()
     from src.models.core import User
     user = User.query.get(user_id)
@@ -2222,7 +2221,7 @@ def test_llm_config():
     Fire a minimal test prompt against the supplied LLM config.
     Does NOT require a saved config — tests the posted credentials directly.
     """
-    from src.crypto import encrypt_value, decrypt_value
+    from src.crypto import decrypt_value
     from src.models.core import User
     from src.ai.client import call_byol
 

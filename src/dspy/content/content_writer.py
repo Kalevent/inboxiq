@@ -7,7 +7,6 @@ Outputs complete markdown blog post with proper structure.
 Training data: High-quality published blog posts.
 """
 import dspy
-from typing import Optional
 
 
 class ContentWriterSignature(dspy.Signature):

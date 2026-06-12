@@ -12,15 +12,14 @@ Endpoints:
 - POST /api/v1/admin/content/approve - Approve and publish content
 - POST /api/v1/admin/content/reject - Reject generated content
 """
-from flask import jsonify, request, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import jsonify, request
+from flask_jwt_extended import jwt_required
 from datetime import datetime
 
 from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
 from src.extensions import db
 from src.models.content import GeneratedContent, BlogPost, PitchedBlogTopic
-from src.models.core import User
 from src.content.tasks import (
     generate_blog_post,
     generate_weekly_posts,

@@ -12,7 +12,7 @@ Endpoints:
 - GET  /api/v1/admin/funnel/metrics - Get funnel metrics
 - POST /api/v1/admin/funnel/orchestrate - Run full orchestration job
 """
-from flask import jsonify, request, current_app
+from flask import jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from src.api.v1 import v1

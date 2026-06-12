@@ -8,14 +8,11 @@ Provides metrics and insights about:
 - Sentiment trends
 - Roadmap recommendations
 """
-from datetime import datetime, timedelta, timezone
-from flask import jsonify, request, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import jsonify, request
+from flask_jwt_extended import jwt_required
 
 from src.api.v1 import v1
 from src.api.v1.admin import _require_admin
-from src.extensions import db
-from src.models.core import User
 import logging
 
 logger = logging.getLogger(__name__)

@@ -82,7 +82,6 @@ def _get_next_pain_point(account_id: int) -> Optional[ICPPainPoint]:
     """Return the highest-priority active pain point that has never been used in a video.
     Returns None when every pain point has at least one video — the pipeline stops naturally.
     """
-    from sqlalchemy import func as sqlfunc
 
     used_ids = (
         db.session.query(YouTubeVideo.icp_pain_point_id)

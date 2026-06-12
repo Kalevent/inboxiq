@@ -5,7 +5,6 @@ import os
 import smtplib
 import socket
 from email.message import EmailMessage
-from typing import Optional
 
 
 class HtmlSMTPHandler(logging.handlers.SMTPHandler):

@@ -5,14 +5,12 @@ Uses AI/OCR to extract structured data from invoices, receipts, and expense docu
 Leverages OpenAI GPT-4 Vision for document understanding.
 """
 
-import base64
 import json as _json
 import logging
 import os
 from typing import Dict, Any, List, Optional
 from opentelemetry import trace
 
-from src.sanitize import sanitize_html
 from src.dspy.config import _configure_dspy
 from src.dspy.signatures import build_document_extractor
 

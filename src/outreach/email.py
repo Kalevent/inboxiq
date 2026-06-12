@@ -7,7 +7,7 @@ import re
 import html as _html
 import boto3
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from uuid import uuid4
 from jinja2 import Template
 from src.extensions import db

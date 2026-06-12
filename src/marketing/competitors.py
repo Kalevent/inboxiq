@@ -436,6 +436,73 @@ COMPETITORS["microsoft-copilot"] = {
     ],
 }
 
+COMPETITORS["gmail-ai"] = {
+    "name": "Gmail AI (Gemini)",
+    "slug": "gmail-ai",
+    "tagline": "AI writing and summarisation features built into individual Gmail inboxes",
+    "verdict": "Gmail's Gemini AI helps individual users write and read faster in their personal inbox. InboxIQ automates shared team inboxes — classifying every email before anyone opens it, routing to the right person, drafting replies grounded in your docs, and running approval workflows. These are different problems. Gemini in Gmail is not a shared inbox tool.",
+    "pricing_model": "Included with Google Workspace Business Standard and above (from ~£9.20/user/month); Gemini AI separately ~$20/user/month on lower tiers",
+    "works_in_gmail_outlook": True,
+    "ai_triage": True,
+    "ai_triage_note": "Personal inbox summarisation on demand — no automatic triage of incoming email",
+    "setup_time": "Immediate (included in qualifying Google Workspace licence)",
+    "helpdesk_replacement": False,
+    "meeting_scheduling": False,
+    "free_trial": "Included in Google Workspace trial",
+    "self_hosted": False,
+    "threaded_draft_replies_note": "✓ Gemini drafts replies inside Gmail — but only for the individual user's personal inbox, never a shared inbox",
+    "shared_team_inbox_note": "✗ Gemini in Gmail operates on a single user's personal mailbox — it has no concept of a shared team inbox, routing rules, or multi-agent assignment",
+    "natural_language_rules_note": "✗ Gemini in Gmail cannot create automation rules — it assists on demand when prompted by the user, it does not act automatically on incoming email",
+    "approval_workflows_note": "✗ No approval workflow capability — Gemini cannot route an email to an approver, record a decision, or maintain an audit trail",
+    "search_note": "✓ Gemini can search your personal Gmail history and summarise threads on demand — cannot search shared inbox history or return structured ticket data",
+    "buyer_journey": "Google Workspace customers evaluating whether Gemini in Gmail covers their inbox automation needs",
+    "description": "InboxIQ vs Gmail AI (Gemini): why AI writing features built into Gmail are not shared inbox automation. Gemini helps individuals draft and summarise faster. InboxIQ classifies every email before it is read, routes it to the right team member, and drafts KB-grounded replies — for shared operational inboxes that Google Workspace AI was not designed to handle.",
+    "competitor_wins": [
+        "Included with most Google Workspace Business plans — no additional procurement for existing Google customers",
+        "Deep Google ecosystem integration — Docs, Drive, Meet, Calendar, Chat all connected",
+        "Excellent personal productivity gains for individual knowledge workers across all Google apps",
+        "No additional setup — always-on for qualifying Workspace licences",
+    ],
+    "inboxiq_wins": [
+        "Built for shared team inboxes (support@, hr@, ops@) — Gemini in Gmail operates only on a single user's personal mailbox",
+        "Acts automatically on every inbound email before anyone opens it — Gemini waits for a user to open a message and ask; InboxIQ classifies, routes, and drafts before the first human reads the email",
+        "Shared inbox routing and assignment — InboxIQ assigns incoming email to the correct team member based on content and workload; Gemini has no routing capability",
+        "Draft replies grounded in your KB docs — InboxIQ's drafts cite your actual pricing page, policy docs, or knowledge base, not a generic completion",
+        "Natural language automation rules — describe what should happen ('route all billing complaints to Sarah and mark urgent'); Gemini cannot create automation rules",
+        "Approval workflows with audit trail — employees email a request, the approver replies from their inbox, the decision is logged; no equivalent in Gmail AI",
+        "Meeting scheduling in draft replies — InboxIQ detects booking requests and includes a calendar slot link automatically; no configuration required",
+        "Per-inbox pricing vs per-user — a 10-person team sharing one support@ inbox pays for one inbox with InboxIQ; Gemini requires a licence per user",
+        "Multi-channel intake — email, forms, IVR transcripts, chat, and social through one triage engine; Gemini in Gmail handles only Gmail",
+        "CASA Tier 2 assessed — independently verified security posture for teams with compliance requirements; Google Workspace AI features are not separately certified at this level",
+    ],
+    "faqs": [
+        {
+            "q": "Does Gemini in Gmail work on shared team inboxes?",
+            "a": "No. As of mid-2026, Gemini in Gmail operates on a single user's personal mailbox only. It cannot classify, route, or take action on email in a shared mailbox (support@, ops@, hr@). InboxIQ is built specifically for shared team inboxes as its primary use case.",
+        },
+        {
+            "q": "Is Gmail AI the same as InboxIQ? Can it replace shared inbox automation?",
+            "a": "No — they solve different problems. Gmail's Gemini AI is a personal productivity tool: it helps the individual whose inbox it is write replies and summarise threads faster. InboxIQ is a shared inbox automation platform: it classifies every inbound email before anyone reads it, routes it to the right team member, drafts a reply grounded in your knowledge base, and tracks the response against an SLA. Gmail AI does not do any of these things automatically.",
+        },
+        {
+            "q": "Can Gemini draft replies automatically, or does it require a human prompt each time?",
+            "a": "Gemini in Gmail requires a human to open an email and explicitly ask for help. It does not act on email automatically. InboxIQ acts on every inbound email the moment it arrives — classifying intent, assigning urgency, and placing a KB-grounded draft in Gmail or Outlook drafts before your team opens the queue.",
+        },
+        {
+            "q": "Does InboxIQ work inside Gmail like Gemini does?",
+            "a": "Yes. InboxIQ delivers AI triage, draft replies, routing labels, and meeting scheduling directly inside Gmail (and Outlook) with no new dashboard. Your team connects via OAuth and continues using the Gmail interface they already know — InboxIQ adds the automation layer on top.",
+        },
+        {
+            "q": "Is InboxIQ compatible with Google Workspace?",
+            "a": "Yes. InboxIQ connects to Gmail via OAuth (Google Workspace compatible) and works inside the Gmail interface. It operates alongside Gemini in Gmail — teams often use both: Gemini for personal inbox productivity and InboxIQ for the shared operational inboxes their team manages.",
+        },
+        {
+            "q": "What is the difference between Gemini in Gmail and InboxIQ for customer support teams?",
+            "a": "For a customer support team using a shared support@ inbox: Gemini in Gmail does not support shared inboxes at all. InboxIQ connects the shared inbox, classifies every incoming ticket by type and urgency before any agent opens it, routes each ticket to the right agent, drafts a reply grounded in your help docs, and tracks SLA compliance. The result is that agents open Gmail to find pre-sorted, pre-drafted tickets ready to review and send.",
+        },
+    ],
+}
+
 VALID_SLUGS = set(COMPETITORS.keys())
 
 

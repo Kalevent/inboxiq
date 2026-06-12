@@ -21,7 +21,7 @@ from typing import Dict, List, Any, Optional
 import dspy
 
 from src.extensions import db
-from src.models.core import User, Account
+from src.models.core import Account
 from src.models.leads import Lead
 from src.models.tickets import Ticket
 

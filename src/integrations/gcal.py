@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime, timedelta, time
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

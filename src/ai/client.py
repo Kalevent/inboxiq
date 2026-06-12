@@ -239,7 +239,7 @@ def invoke_llm(
         messages.append({"role": "system", "content": f"Context: {context}"})
     try:
         fallback = call_ollama(messages)
-        fallback["warning"] = f"DSPy failed, used Ollama"
+        fallback["warning"] = "DSPy failed, used Ollama"
         return fallback
     except Exception as exc_ollama:
         raise RuntimeError(f"LLM invocation failed (DSPy and Ollama): {exc_ollama}") from exc_ollama

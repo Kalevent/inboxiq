@@ -5,7 +5,6 @@ Send data to external APIs (Sage, QuickBooks, Slack, Microsoft Teams, custom web
 Handles authentication, payload rendering, and error handling.
 """
 
-import os
 import json
 import requests
 from typing import Dict, Any

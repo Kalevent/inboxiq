@@ -7,7 +7,6 @@ Outputs edited version with improvements summary.
 Training data: Draft vs final published versions.
 """
 import dspy
-from typing import Optional
 
 
 class EditorSignature(dspy.Signature):

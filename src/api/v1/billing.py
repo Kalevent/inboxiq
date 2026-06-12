@@ -9,7 +9,7 @@ from src.billing.providers.barclay import BarclayHostedProvider
 
 
 def _get_account_id(user_id: int | None) -> int | None:
-    from src.models import User, Account  # local to avoid cycles
+    from src.models import User  # local to avoid cycles
     if not user_id:
         return None
     user = User.query.get(user_id)

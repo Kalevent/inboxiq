@@ -19,7 +19,6 @@ from src.extensions import db, limiter
 from src.sanitize import sanitize_html
 from datetime import datetime, timezone
 from src.api.v1.inboxiq import _get_account_id
-from src.api.v1.access_control import account_allows_api
 from src.api.v1.app_auth import _require_registered_app, _NO_BASIC_AUTH
 from src.models.developer import RegisteredApp, AppProductAccess
 
