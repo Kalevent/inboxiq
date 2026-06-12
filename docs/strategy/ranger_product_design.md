@@ -232,6 +232,16 @@ infra/
 
 Mirror CaseDesk's `infra/` structure exactly. Same GitHub Actions deployment pattern.
 
+**PostgreSQL scaling — mirror CaseDesk exactly:**
+
+| Measure | Detail |
+| --- | --- |
+| PgBouncer sidecar | `edoburu/pgbouncer` runs as a sidecar container in every ECS task (web + worker). App connects to `localhost:6432`, never to RDS directly. Prevents connection exhaustion when Fargate scales out. |
+| Pool config | `DEFAULT_POOL_SIZE=20`, `MIN_POOL_SIZE=5` |
+| SQLAlchemy pool | `pool_size=5`, `max_overflow=10` — kept small because PgBouncer does the real pooling |
+| Stale connection handling | `pool_pre_ping=True` drops dead connections before reuse; `pool_recycle=1800` recycles connections older than 30 minutes (guards against RDS idle timeouts) |
+| Dynamic URL rewrite | `config.py` rewrites `DATABASE_URL` to point at `localhost:6432` when `PGBOUNCER_HOST` is set — dev connects directly to Postgres, prod routes through PgBouncer transparently |
+
 Region: eu-west-2. Same AWS account as CaseDesk and InboxIQ.
 
 ---
