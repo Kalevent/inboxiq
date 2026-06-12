@@ -21,7 +21,7 @@ spec:
       priorityClassName: inboxiq-low   # evicted before web pods and inbox workers under memory pressure
       containers:
         - name: content-worker
-          image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
+          image: 094985084741.dkr.ecr.eu-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
           imagePullPolicy: IfNotPresent
           command: ["celery"]
           args: ["-A", "src.celery_inboxiq.celery", "worker", "--queues=content", "--loglevel=info", "-E", "--concurrency=1"]

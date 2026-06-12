@@ -30,7 +30,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
       containers:
         - name: inboxiq
-          image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
+          image: 094985084741.dkr.ecr.eu-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000

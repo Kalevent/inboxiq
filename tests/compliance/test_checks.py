@@ -89,7 +89,7 @@ def test_aws_s3_public_access_pass():
 
 def test_aws_cloudtrail_pass():
     ct = MagicMock()
-    ct.describe_trails.return_value = {"trailList": [{"Name": "main", "HomeRegion": "us-west-2"}]}
+    ct.describe_trails.return_value = {"trailList": [{"Name": "main", "HomeRegion": "eu-west-2"}]}
     ct.get_trail_status.return_value = {"IsLogging": True}
     from src.compliance.checks.aws import check_cloudtrail
     result = check_cloudtrail(ct)
@@ -98,7 +98,7 @@ def test_aws_cloudtrail_pass():
 
 def test_aws_cloudtrail_fail_not_logging():
     ct = MagicMock()
-    ct.describe_trails.return_value = {"trailList": [{"Name": "main", "HomeRegion": "us-west-2"}]}
+    ct.describe_trails.return_value = {"trailList": [{"Name": "main", "HomeRegion": "eu-west-2"}]}
     ct.get_trail_status.return_value = {"IsLogging": False}
     from src.compliance.checks.aws import check_cloudtrail
     result = check_cloudtrail(ct)

@@ -4,7 +4,7 @@
 # Run ONCE after bootstrap.sh + terraform init.
 # Safe to re-run — already-imported resources are skipped.
 #
-# SCOPE: InboxIQ / kalevent.com only (us-west-2, account 094985084741)
+# SCOPE: InboxIQ / kalevent.com only (eu-west-2, account 094985084741)
 # NOT IN SCOPE: policynumbers.com (App Runner, separate region/account)
 
 set -euo pipefail

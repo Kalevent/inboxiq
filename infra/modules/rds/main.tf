@@ -6,7 +6,9 @@ resource "aws_db_instance" "inboxiq" {
   allocated_storage = 20
   storage_type      = "gp2"
   storage_encrypted = true
-  kms_key_id        = "arn:aws:kms:us-west-2:094985084741:key/3b49ecba-9f10-47ae-9778-5db938868bd2"
+  # TODO(eu-west-2-migration): replace with new KMS key ARN after running Step 1 of migration runbook
+  # Command: aws kms create-key --description "RDS encryption key" --region eu-west-2
+  kms_key_id        = "arn:aws:kms:eu-west-2:094985084741:key/REPLACE_AFTER_KMS_PROVISION"
   multi_az          = false
 
   db_name  = "inboxiq"

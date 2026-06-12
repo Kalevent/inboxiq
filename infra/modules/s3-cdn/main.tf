@@ -39,12 +39,12 @@ resource "aws_cloudfront_distribution" "uploads" {
 
   origin {
     domain_name              = aws_s3_bucket.uploads.bucket_regional_domain_name
-    origin_id                = "kalevent-uploads.s3.us-west-2.amazonaws.com-mjg3wnlkurm"
+    origin_id                = "kalevent-uploads.s3.eu-west-2.amazonaws.com-mjg3wnlkurm"
     origin_access_control_id = var.existing_oac_id   # Use existing OAC — do not recreate
   }
 
   default_cache_behavior {
-    target_origin_id       = "kalevent-uploads.s3.us-west-2.amazonaws.com-mjg3wnlkurm"
+    target_origin_id       = "kalevent-uploads.s3.eu-west-2.amazonaws.com-mjg3wnlkurm"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]

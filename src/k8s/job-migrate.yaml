@@ -9,7 +9,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: migrate
-        image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:20251222-193241-85a2caca9
+        image: 094985084741.dkr.ecr.eu-west-2.amazonaws.com/inboxiq:20251222-193241-85a2caca9
         envFrom:
         - secretRef:
             name: inboxiq-env

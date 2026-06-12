@@ -3,7 +3,7 @@
 ### 1) Cluster (eksctl)
 ```bash
 eksctl create cluster -f src/infrastructure/eks-cluster.yaml
-aws eks update-kubeconfig --name inboxiq-eks --region us-west-2
+aws eks update-kubeconfig --name inboxiq-eks --region eu-west-2
 ```
 
 ### 2) Secrets (from local .env)

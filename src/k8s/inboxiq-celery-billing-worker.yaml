@@ -21,7 +21,7 @@ spec:
       priorityClassName: inboxiq-high
       containers:
         - name: billing-worker
-          image: 094985084741.dkr.ecr.us-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
+          image: 094985084741.dkr.ecr.eu-west-2.amazonaws.com/inboxiq:${TAG_VALUE}
           imagePullPolicy: IfNotPresent
           command: ["celery"]
           args: ["-A", "src.celery_inboxiq.celery", "worker", "-Q", "billing,inbox", "-l", "info", "-E"]
