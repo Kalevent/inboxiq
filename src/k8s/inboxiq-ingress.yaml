@@ -8,8 +8,7 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: '443'
-    # TODO(eu-west-2-migration): replace with new ACM cert ARN after running Step 2 of migration runbook
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-2:094985084741:certificate/REPLACE_AFTER_ACM_PROVISION
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-2:094985084741:certificate/33585d8b-e448-4a5f-88bb-b5d463febf1a
 spec:
   ingressClassName: alb
   rules:
