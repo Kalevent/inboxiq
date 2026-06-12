@@ -27,12 +27,17 @@ module "eks" {
   node_max     = 4
 }
 
+data "aws_security_group" "rds" {
+  name   = "inboxiq-rds-sg"
+  vpc_id = module.networking.vpc_id
+}
+
 module "rds" {
   source = "../../modules/rds"
 
   db_password          = var.db_password
   db_subnet_group_name = module.networking.db_subnet_group_name
-  security_group_ids   = ["sg-08279dbe2c9bca819"]
+  security_group_ids   = [data.aws_security_group.rds.id]
 }
 
 module "ecr" {
