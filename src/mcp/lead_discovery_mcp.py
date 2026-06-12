@@ -487,9 +487,9 @@ async def find_buying_signals(
         # Hiring query deliberately avoids job boards — we want the company's own
         # site or news coverage so we get the actual company domain.
         #
-        # first_support_hire is the strongest ICP trigger: a founder-led SaaS posting
-        # their very first customer support role signals they have inbox pain today and
-        # haven't yet bought a support tool. This is the primary signal for InboxIQ.
+        # first_support_hire is the strongest ICP trigger: a B2B SaaS or ops team
+        # (50-500 people) actively growing their support/CS function signals inbox
+        # volume pain — they need better tooling, not just more headcount.
         _exclude_job_boards = (
             " -site:linkedin.com -site:greenhouse.io -site:indeed.com"
             " -site:glassdoor.com -site:lever.co -site:ziprecruiter.com"
@@ -497,8 +497,9 @@ async def find_buying_signals(
         )
         queries = {
             "first_support_hire": (
-                f'"{niche}" "customer support" OR "customer success" "hiring" OR "join us"'
-                ' "first" OR "founding" OR "early" -"senior" -"manager" -"lead" -"head of"'
+                f'"{niche}" "customer support" OR "customer success" OR "customer experience"'
+                ' "hiring" OR "join us" OR "growing team"'
+                ' -"director" -"VP" -"head of" -"first" -"founding"'
                 + _exclude_job_boards
             ),
             "hiring": (

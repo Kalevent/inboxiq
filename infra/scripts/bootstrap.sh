@@ -3,7 +3,7 @@
 # Safe to re-run (all commands are idempotent).
 set -euo pipefail
 
-REGION="us-west-2"
+REGION="eu-west-2"
 BUCKET="kalevent-terraform-state"
 LOCK_TABLE="terraform-state-lock"
 

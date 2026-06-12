@@ -28,7 +28,7 @@ def _get_s3() -> BaseClient:
         import os
         _s3_client = boto3.client(
             "s3",
-            region_name=os.getenv("AWS_REGION", "us-west-2"),
+            region_name=os.getenv("AWS_REGION", "eu-west-2"),
         )
     return _s3_client
 

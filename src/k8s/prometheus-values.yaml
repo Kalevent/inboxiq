@@ -113,7 +113,7 @@ alertmanager:
         email_configs:
           - to: 'security@kalevent.com'
             from: 'noreply@kalevent.com'
-            smarthost: 'email-smtp.us-west-2.amazonaws.com:587'
+            smarthost: 'email-smtp.eu-west-2.amazonaws.com:587'
             require_tls: true
             auth_username: '$SMTP_AUTH_USERNAME'
             auth_password_file: '/etc/alertmanager/secrets/alertmanager-smtp-creds/smtp_auth_password'

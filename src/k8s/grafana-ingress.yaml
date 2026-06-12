@@ -8,7 +8,7 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: '443'
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:094985084741:certificate/ee7fc181-8210-42c4-9697-99f456a1358d
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-2:094985084741:certificate/33585d8b-e448-4a5f-88bb-b5d463febf1a
     alb.ingress.kubernetes.io/group.name: inboxiq
 spec:
   ingressClassName: alb
