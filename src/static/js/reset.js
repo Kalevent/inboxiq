@@ -83,7 +83,6 @@
       if (!resp.ok) {
         throw new Error(data.error || 'Unable to reset password.');
       }
-      if (data.access_token) localStorage.setItem('inboxiqAccessToken', data.access_token);
       if (data.account_id !== undefined) localStorage.setItem('inboxiqAccountId', data.account_id);
       if (data.user_id !== undefined) localStorage.setItem('inboxiqUserId', data.user_id);
       setStatus('success', 'Password reset. Redirecting to dashboard...');

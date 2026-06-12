@@ -267,7 +267,9 @@ def totp_start():
     user, account_id = _current_user()
     if not user:
         return jsonify({"error": "unauthorized"}), 401
-    secret = pyotp.random_base32()
+    # Exclude O and I — visually ambiguous with 0 and 1 in some authenticator apps
+    _B32_SAFE = 'ABCDEFGHJKLMNPQRSTUVWXYZ234567'
+    secret = ''.join(__import__('secrets').choice(_B32_SAFE) for _ in range(32))
     device = TOTPDevice(user_id=user.id, secret=secret, verified_at=None)
     db.session.add(device)
     db.session.commit()
@@ -370,7 +372,7 @@ def totp_challenge():
                            user_id=user.id, reason="bad totp code")
         return jsonify({"error": "invalid code"}), 400
 
-    additional_claims = {"account_id": str(user.account_id)}
+    additional_claims = {"account_id": str(user.account_id), "mfa_verified": True}
     token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
     refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
     _whitelist_refresh(jwt_token=refresh_token)
@@ -618,7 +620,7 @@ def passkey_authenticate_verify():
     if not account or (account.deleted_at is not None):
         return jsonify({"error": "account not available"}), 403
 
-    additional_claims = {"account_id": str(user.account_id)}
+    additional_claims = {"account_id": str(user.account_id), "mfa_verified": True}
     access_token = create_access_token(identity=str(user.id), additional_claims=additional_claims)
     refresh_token = create_refresh_token(identity=str(user.id), additional_claims=additional_claims)
     _whitelist_refresh(jwt_token=refresh_token)

@@ -29,7 +29,8 @@ def _parse_dates(default_days: int = 7):
 
 
 def _require_admin():
-    """Simple admin gate based on email allowlist."""
+    """Admin gate: email allowlist + MFA verified in current session (ASVS V4.3.1)."""
+    from flask_jwt_extended import get_jwt
     user_id = get_jwt_identity()
     user = db.session.get(User, user_id) if user_id else None
     default_admin = "kofi@kalevent.com"
@@ -39,6 +40,9 @@ def _require_admin():
         if e.strip()
     )
     if not user or (allowed and user.email.lower() not in allowed):
+        return None
+    claims = get_jwt()
+    if not claims.get("mfa_verified"):
         return None
     return user
 

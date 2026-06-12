@@ -56,9 +56,6 @@
         throw new Error(data.error || 'Unable to log in right now.');
       }
 
-      if (data.access_token) {
-        localStorage.setItem('inboxiqAccessToken', data.access_token);
-      }
       if (data.account_id !== undefined) {
         localStorage.setItem('inboxiqAccountId', data.account_id);
       }
@@ -77,7 +74,6 @@
         return;
       }
 
-      if (data.access_token) localStorage.setItem('inboxiqAccessToken', data.access_token);
       if (data.account_id !== undefined) localStorage.setItem('inboxiqAccountId', data.account_id);
       if (data.user_id !== undefined) localStorage.setItem('inboxiqUserId', data.user_id);
 
@@ -121,7 +117,6 @@
         });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || 'Invalid code.');
-        if (data.access_token) localStorage.setItem('inboxiqAccessToken', data.access_token);
         if (data.account_id !== undefined) localStorage.setItem('inboxiqAccountId', data.account_id);
         if (data.user_id !== undefined) localStorage.setItem('inboxiqUserId', data.user_id);
         setStatus('success', 'Signed in. Redirecting…');
@@ -200,7 +195,6 @@
       const data = await verResp.json();
       if (!verResp.ok) throw new Error(data.error || 'Passkey verification failed.');
 
-      if (data.access_token) localStorage.setItem('inboxiqAccessToken', data.access_token);
       if (data.account_id !== undefined) localStorage.setItem('inboxiqAccountId', data.account_id);
       if (data.user_id !== undefined) localStorage.setItem('inboxiqUserId', data.user_id);
 
