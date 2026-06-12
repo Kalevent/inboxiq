@@ -199,50 +199,56 @@ Premium UI is non-negotiable.
 
 ## Infrastructure
 
-**Decision (confirmed 2026-06-10):** ECS Fargate — eu-west-2, mirroring CaseDesk's infra setup.
+**Decision (revised 2026-06-12):** Shared EKS cluster in eu-west-2, after InboxIQ migrates from us-west-2.
 
-Ranger does not share the InboxIQ EKS cluster. It runs independently on Fargate in eu-west-2 from day one. CaseDesk already runs on Fargate in eu-west-2 — the task definitions, IAM roles, and deployment patterns transfer directly.
+The original Fargate decision (2026-06-10) assumed a new standalone stack was cheaper than EKS. That held while InboxIQ was in us-west-2 — a separate region. The premise changed when the InboxIQ eu-west-2 migration was confirmed: once InboxIQ moves to eu-west-2, Ranger runs as a namespace on the same cluster at ~£40-65/month less than Fargate.
 
-**Why Fargate over EKS:**
-- £0 control plane (a new EKS cluster would cost ~£73/month)
-- eu-west-2 is the right region for a UK/EU B2B SaaS — lower latency, cleaner data residency story
-- CaseDesk expertise already in place — no new ops patterns to learn
+**Why shared EKS over Fargate (revised):**
+- EKS control plane already paid by InboxIQ — £0 marginal for Ranger
+- ALB shared via Ingress rules — saves £15/month vs Ranger-dedicated ALB
+- Redis shared — saves £5-15/month
+- Only hard cost Ranger adds is its own RDS instance (databases are never shared between products)
+- eu-west-2 satisfies the latency and GDPR data residency requirement for both products
 
-**Cost:**
+**Cost comparison:**
 
-| Item | Cost | Note |
+| Item | Fargate (original) | Shared EKS (revised) |
 | --- | --- | --- |
-| ECS Fargate control plane | £0 | No cluster to manage |
-| Web + worker tasks | ~£25-35/month | Scales to zero when idle |
-| RDS `db.t4g.micro` | ~£15-20/month | Ranger-only, never shared |
-| Redis (Fargate sidecar or ElastiCache `t4g.micro`) | ~£0-15/month | Start with sidecar, upgrade if needed |
-| ALB | ~£15/month | Ranger-dedicated |
+| Control plane / cluster | £0 | £0 (shared) |
+| Web + worker compute | ~£25-35/month | ~£0 marginal (fits existing nodes) |
+| RDS `db.t4g.micro` (Ranger-only) | ~£15-20/month | ~£15-20/month |
+| ALB | ~£15/month | £0 (shared with InboxIQ) |
+| Redis | ~£5-15/month | £0 (shared with InboxIQ) |
+| **Total** | **~£60-85/month** | **~£15-20/month** |
+
+**Saving: ~£40-65/month (~£500-780/year)**
 
 **Infra folder structure (`ranger/infra/`):**
 
 ```
 infra/
-├── ecs-web.json           # web task definition
-├── ecs-worker.json        # Celery worker task definition
-├── ecs-beat.json          # Celery beat task definition
-├── alb.tf / alb.json      # ALB + target groups
-├── rds.tf                 # RDS instance
-└── iam.tf                 # task execution roles
+├── k8s/
+│   ├── deployment.yaml        # Ranger web deployment (kaley-ranger namespace)
+│   ├── worker.yaml            # Celery worker deployment
+│   ├── beat.yaml              # Celery beat deployment
+│   ├── service.yaml           # ClusterIP service
+│   ├── ingress.yaml           # ALB Ingress — getprowl.ai hostname rule
+│   └── secrets.yaml           # External Secrets or kubectl secret refs
+└── rds.tf                     # Ranger-only RDS instance
 ```
 
-Mirror CaseDesk's `infra/` structure exactly. Same GitHub Actions deployment pattern.
+**Namespace:** `kaley-ranger` — isolated from InboxIQ (`kaley` namespace). Separate K8s secrets, separate RDS, separate service accounts.
 
-**PostgreSQL scaling — mirror CaseDesk exactly:**
+**Prerequisite:** InboxIQ EKS migration to eu-west-2 must complete before Ranger deploys to the cluster. Ranger does not deploy to the us-west-2 cluster.
+
+**PostgreSQL scaling — mirror InboxIQ exactly:**
 
 | Measure | Detail |
 | --- | --- |
-| PgBouncer sidecar | `edoburu/pgbouncer` runs as a sidecar container in every ECS task (web + worker). App connects to `localhost:6432`, never to RDS directly. Prevents connection exhaustion when Fargate scales out. |
-| Pool config | `DEFAULT_POOL_SIZE=20`, `MIN_POOL_SIZE=5` |
-| SQLAlchemy pool | `pool_size=5`, `max_overflow=10` — kept small because PgBouncer does the real pooling |
-| Stale connection handling | `pool_pre_ping=True` drops dead connections before reuse; `pool_recycle=1800` recycles connections older than 30 minutes (guards against RDS idle timeouts) |
-| Dynamic URL rewrite | `config.py` rewrites `DATABASE_URL` to point at `localhost:6432` when `PGBOUNCER_HOST` is set — dev connects directly to Postgres, prod routes through PgBouncer transparently |
+| Connection pooling | PgBouncer sidecar or SQLAlchemy pool — match InboxIQ's `pool_size=5`, `max_overflow=10`, `pool_pre_ping=True`, `pool_recycle=1800` |
+| Stale connection handling | `pool_pre_ping=True` drops dead connections before reuse; `pool_recycle=1800` recycles connections older than 30 minutes |
 
-Region: eu-west-2. Same AWS account as CaseDesk and InboxIQ.
+Region: eu-west-2. Same AWS account, same EKS cluster as InboxIQ (post-migration).
 
 ---
 
