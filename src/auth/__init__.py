@@ -267,7 +267,9 @@ def totp_start():
     user, account_id = _current_user()
     if not user:
         return jsonify({"error": "unauthorized"}), 401
-    secret = pyotp.random_base32()
+    # Exclude O and I — visually ambiguous with 0 and 1 in some authenticator apps
+    _B32_SAFE = 'ABCDEFGHJKLMNPQRSTUVWXYZ234567'
+    secret = ''.join(__import__('secrets').choice(_B32_SAFE) for _ in range(32))
     device = TOTPDevice(user_id=user.id, secret=secret, verified_at=None)
     db.session.add(device)
     db.session.commit()

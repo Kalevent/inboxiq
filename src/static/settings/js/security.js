@@ -154,7 +154,13 @@
     if (totpDeviceIdEl) totpDeviceIdEl.value = data.device_id;
     if (totpUriEl) totpUriEl.value = data.otpauth_url || '';
     if (totpLinkEl && data.otpauth_url) totpLinkEl.href = data.otpauth_url;
-    setTotpStatus('info', 'Enter the code from your authenticator app and verify.');
+    const qrEl = document.getElementById('totpQr');
+    if (qrEl && data.otpauth_url && window.QRCode) {
+      qrEl.innerHTML = '';
+      new window.QRCode(qrEl, { text: data.otpauth_url, width: 180, height: 180 });
+      qrEl.classList.remove('hidden');
+    }
+    setTotpStatus('info', 'Scan the QR code or enter the secret manually, then verify.');
   }
 
   async function verifyTotp() {

@@ -642,6 +642,7 @@
                       <div class="text-sm text-indigo-100 font-mono bg-slate-950/60 border border-slate-800 rounded-lg px-3 py-2" id="totpSecret">
                         {% if totp_devices and totp_devices[0].is_verified() %}Enabled{% endif %}
                       </div>
+                      <div id="totpQr" class="hidden py-2 flex justify-center"></div>
                       <div class="flex items-center gap-3 flex-wrap text-xs text-slate-300">
                         <input type="hidden" id="totpDeviceId" value="">
                         <input type="hidden" id="totpUri" value="">
@@ -3287,6 +3288,7 @@
 
   {% if integrations_view == 'automation_analytics' %}
   <!-- Chart.js for Analytics — only loaded on analytics view -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     // Render execution history chart if on analytics page
