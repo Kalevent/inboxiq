@@ -21,7 +21,7 @@
   const passkeyStatus = document.getElementById('passkeyStatus');
   const passkeyList = document.getElementById('passkeyList');
 
-  function setPasskeyStatus(type, message) {
+  const setPasskeyStatus = function(type, message) {
     if (!passkeyStatus) return;
     const colors = {
       success: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100',
@@ -31,9 +31,9 @@
     passkeyStatus.className = `text-xs px-3 py-2 rounded-xl border ${colors[type] || colors.info}`;
     passkeyStatus.textContent = message;
     passkeyStatus.classList.remove('hidden');
-  }
+  };
 
-  async function refreshPasskeyList() {
+  const refreshPasskeyList = async function() {
     if (!passkeyList) return;
     try {
       const resp = await fetch('/auth/passkeys/list', { credentials: 'include' });
@@ -51,10 +51,9 @@
     } catch (err) {
       setPasskeyStatus('error', err.message || 'Unable to refresh passkeys');
     }
-  }
+  };
 
-
-  async function registerPasskey() {
+  const registerPasskey = async function() {
     if (!window.PublicKeyCredential) {
       setPasskeyStatus('error', 'Passkeys not supported in this browser.');
       return;
@@ -107,7 +106,7 @@
     setPasskeyStatus('success', 'Passkey registered.');
     refreshPasskeyList();
     await _notifyMfaCompleteIfRequired();
-  }
+  };
 
   if (passkeyButton) {
     passkeyButton.addEventListener('click', () => {
@@ -127,7 +126,7 @@
   const totpCodeInput = document.getElementById('totpCode');
   const totpStatus = document.getElementById('totpStatus');
 
-  function setTotpStatus(type, message) {
+  const setTotpStatus = function(type, message) {
     if (!totpStatus) return;
     const colors = {
       success: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100',
@@ -137,9 +136,9 @@
     totpStatus.className = `text-xs px-3 py-2 rounded-xl border ${colors[type] || colors.info}`;
     totpStatus.textContent = message;
     totpStatus.classList.remove('hidden');
-  }
+  };
 
-  async function startTotp() {
+  const startTotp = async function() {
     const resp = await fetch('/auth/2fa/totp/start', {
       method: 'POST',
       credentials: 'include',
@@ -161,9 +160,9 @@
       qrEl.classList.remove('hidden');
     }
     setTotpStatus('info', 'Scan the QR code or enter the secret manually, then verify.');
-  }
+  };
 
-  async function verifyTotp() {
+  const verifyTotp = async function() {
     const code = totpCodeInput?.value?.trim();
     const deviceId = totpDeviceIdEl?.value;
     if (!code || !deviceId) {
@@ -186,9 +185,9 @@
     }
     setTotpStatus('success', '2FA enabled.');
     await _notifyMfaCompleteIfRequired();
-  }
+  };
 
-  async function disableTotp() {
+  const disableTotp = async function() {
     const resp = await fetch('/auth/2fa/totp/disable', {
       method: 'POST',
       credentials: 'include',
@@ -203,7 +202,7 @@
     if (totpSecretEl) totpSecretEl.textContent = '';
     if (totpDeviceIdEl) totpDeviceIdEl.value = '';
     if (totpCodeInput) totpCodeInput.value = '';
-  }
+  };
 
   // MFA setup completion — called after passkey or TOTP is registered when redirected from activation
   const _mfaRequired = new URLSearchParams(window.location.search).get('mfa_required') === '1';
@@ -216,7 +215,7 @@
       || document.body.prepend(banner);
   }
 
-  async function _notifyMfaCompleteIfRequired() {
+  const _notifyMfaCompleteIfRequired = async function() {
     if (!_mfaRequired) return;
     try {
       await fetch('/auth/mfa/setup-complete', {
@@ -226,7 +225,7 @@
       });
     } catch (_) { /* non-blocking */ }
     window.location.href = '/dashboard';
-  }
+  };
 
   if (totpStartBtn) totpStartBtn.addEventListener('click', () => startTotp().catch((err) => setTotpStatus('error', err.message || 'Error')));
   if (totpVerifyBtn) totpVerifyBtn.addEventListener('click', () => verifyTotp().catch((err) => setTotpStatus('error', err.message || 'Error')));

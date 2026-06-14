@@ -63,7 +63,7 @@
       .find((c) => c.startsWith(name + '='))?.split('=')[1];
   };
 
-  function setStatus(type, message) {
+  const setStatus = function(type, message) {
     if (!statusEl) return;
     const map = {
       success: 'border-emerald-400/50 bg-emerald-500/10 text-emerald-100',
@@ -73,9 +73,9 @@
     statusEl.className = `mt-3 text-xs rounded-xl border px-3 py-2 ${map[type] || map.info}`;
     statusEl.textContent = message;
     statusEl.classList.remove('hidden');
-  }
+  };
 
-  function setConnectSourcesStatus(type, message) {
+  const setConnectSourcesStatus = function(type, message) {
     if (!connectSourcesStatus) return;
     const map = {
       success: 'text-emerald-300',
@@ -85,9 +85,9 @@
     connectSourcesStatus.className = `mt-2 text-xs ${map[type] || map.info}`;
     connectSourcesStatus.textContent = message;
     connectSourcesStatus.classList.remove('hidden');
-  }
+  };
 
-  function openFormsModal(triggerBtn) {
+  const openFormsModal = function(triggerBtn) {
     if (!formsConnectModal) return;
     formsConnectTriggerBtn = triggerBtn || null;
     formsConnectStatusModal && (formsConnectStatusModal.textContent = '');
@@ -110,9 +110,9 @@
 
     formsConnectModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-  }
+  };
 
-  function closeFormsModal() {
+  const closeFormsModal = function() {
     if (!formsConnectModal) return;
     formsConnectModal.classList.add('hidden');
     document.body.style.overflow = '';
@@ -126,9 +126,9 @@
     if (headerEl) {
       headerEl.style.visibility = '';
     }
-  }
+  };
 
-  function openTwilioModal(triggerBtn) {
+  const openTwilioModal = function(triggerBtn) {
     if (!twilioConnectModal) return;
     twilioConnectTriggerBtn = triggerBtn || null;
     if (twilioConnectStatus) twilioConnectStatus.textContent = '';
@@ -151,9 +151,9 @@
 
     twilioConnectModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-  }
+  };
 
-  function closeTwilioModal() {
+  const closeTwilioModal = function() {
     if (!twilioConnectModal) return;
     twilioConnectModal.classList.add('hidden');
     document.body.style.overflow = '';
@@ -175,9 +175,9 @@
     if (twilioConnectStatus) {
       twilioConnectStatus.classList.add('hidden');
     }
-  }
+  };
 
-  function setTwilioStatus(type, message) {
+  const setTwilioStatus = function(type, message) {
     if (!twilioConnectStatus) return;
     const map = {
       success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
@@ -189,7 +189,7 @@
     twilioConnectStatus.classList.remove('hidden');
   }
 
-  async function handleTwilioSubmit(event) {
+  const handleTwilioSubmit = async function(event) {
     event.preventDefault();
 
     const formData = new FormData(twilioConnectionForm);
@@ -234,9 +234,9 @@
         submitBtn.textContent = 'Save & Connect';
       }
     }
-  }
+  };
 
-  function openSocialModal(triggerBtn) {
+  const openSocialModal = function(triggerBtn) {
     if (!socialConnectModal) return;
     socialConnectTriggerBtn = triggerBtn || null;
     if (socialConnectStatus) socialConnectStatus.textContent = '';
@@ -255,9 +255,9 @@
 
     socialConnectModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-  }
+  };
 
-  function closeSocialModal() {
+  const closeSocialModal = function() {
     if (!socialConnectModal) return;
     socialConnectModal.classList.add('hidden');
     document.body.style.overflow = '';
@@ -274,9 +274,9 @@
 
     // Reset to default view
     updateSocialLabels('whatsapp', 'meta_cloud_api');
-  }
+  };
 
-  function setSocialStatus(type, message) {
+  const setSocialStatus = function(type, message) {
     if (!socialConnectStatus) return;
     const map = {
       success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
@@ -286,9 +286,9 @@
     socialConnectStatus.className = `text-xs px-4 py-3 rounded-xl border ${map[type] || map.info}`;
     socialConnectStatus.textContent = message;
     socialConnectStatus.classList.remove('hidden');
-  }
+  };
 
-  function updateSocialLabels(platform, gateway) {
+  const updateSocialLabels = function(platform, gateway) {
     const apiKeyLabel = document.getElementById('socialApiKeyLabel');
     const apiSecretLabel = document.getElementById('socialApiSecretLabel');
     const apiKeyHelp = document.getElementById('socialApiKeyHelp');
@@ -382,9 +382,9 @@
       if (setupTitle) setupTitle.textContent = platformConfig.setupTitle;
       if (setupDesc) setupDesc.textContent = platformConfig.setupDesc;
     }
-  }
+  };
 
-  async function handleSocialSubmit(event) {
+  const handleSocialSubmit = async function(event) {
     event.preventDefault();
 
     const platform = document.getElementById('socialPlatform')?.value || 'whatsapp';
@@ -434,9 +434,9 @@
         submitBtn.textContent = 'Save & Connect';
       }
     }
-  }
+  };
 
-  function openChatModal(triggerBtn) {
+  const openChatModal = function(triggerBtn) {
     if (!chatConnectModal) return;
     chatConnectTriggerBtn = triggerBtn || null;
     if (chatConnectStatus) chatConnectStatus.textContent = '';
@@ -455,9 +455,9 @@
 
     chatConnectModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-  }
+  };
 
-  function closeChatModal() {
+  const closeChatModal = function() {
     if (!chatConnectModal) return;
     chatConnectModal.classList.add('hidden');
     document.body.style.overflow = '';
@@ -479,9 +479,9 @@
     if (platformSelect) platformSelect.value = 'inboxiq';
     if (inboxiqSection) inboxiqSection.style.display = 'block';
     if (externalSection) externalSection.classList.add('hidden');
-  }
+  };
 
-  function setChatStatus(type, message) {
+  const setChatStatus = function(type, message) {
     if (!chatConnectStatus) return;
     const map = {
       success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
@@ -491,9 +491,9 @@
     chatConnectStatus.className = `text-xs px-4 py-3 rounded-xl border ${map[type] || map.info}`;
     chatConnectStatus.textContent = message;
     chatConnectStatus.classList.remove('hidden');
-  }
+  };
 
-  function updateChatLabels(platform) {
+  const updateChatLabels = function(platform) {
     const inboxiqSection = document.getElementById('inboxiqChatSection');
     const externalSection = document.getElementById('externalChatSection');
     const apiKeyLabel = document.getElementById('chatApiKeyLabel');
@@ -593,9 +593,9 @@
       if (setupTitle) setupTitle.textContent = platformConfig.setupTitle;
       if (setupDesc) setupDesc.textContent = platformConfig.setupDesc;
     }
-  }
+  };
 
-  async function handleChatSubmit(event) {
+  const handleChatSubmit = async function(event) {
     event.preventDefault();
 
     const platform = document.getElementById('chatPlatform')?.value || 'inboxiq';
@@ -644,9 +644,9 @@
         submitBtn.textContent = 'Save & Connect';
       }
     }
-  }
+  };
 
-  async function postJSON(url, body) {
+  const postJSON = async function(url, body) {
     const csrf = getCookie('csrf_access_token') || getCookie('csrf_refresh_token');
     const headers = { 'Content-Type': 'application/json' };
     if (csrf) headers['X-CSRF-TOKEN'] = csrf;
@@ -656,16 +656,16 @@
       headers,
       body: JSON.stringify(body || {}),
     });
-  }
+  };
 
-  async function getJSON(url) {
+  const getJSON = async function(url) {
     return fetch(url, {
       method: 'GET',
       credentials: 'include',
     });
-  }
+  };
 
-  async function handleSourceConnect(channel, btn) {
+  const handleSourceConnect = async function(channel, btn) {
     if (!channel) return;
     if (btn) {
       btn.disabled = true;
@@ -692,9 +692,9 @@
         btn.textContent = 'Connect';
       }
     }
-  }
+  };
 
-  async function handleSourceTest(channel, btn) {
+  const handleSourceTest = async function(channel, btn) {
     if (!channel) return;
     if (btn) {
       btn.disabled = true;
@@ -724,9 +724,9 @@
         btn.textContent = 'Test';
       }
     }
-  }
+  };
 
-  async function handleSend() {
+  const handleSend = async function() {
     if (!sendBtn) return;
     const toEmail = (emailInput?.value || '').trim();
     if (!toEmail) {
@@ -756,9 +756,9 @@
       sendBtn.disabled = false;
       sendBtn.textContent = 'Send test email →';
     }
-  }
+  };
 
-  function renderTriage(items) {
+  const renderTriage = function(items) {
     if (!triageResults || !triageList) return;
     triageList.innerHTML = '';
     items.forEach((item) => {
@@ -779,7 +779,7 @@
       triageList.appendChild(card);
     });
     triageResults.classList.remove('hidden');
-  }
+  };
 
   if (sendBtn) {
     sendBtn.addEventListener('click', handleSend);
@@ -840,7 +840,7 @@
   // Auto-refresh recent triage every 10 seconds
   let refreshInterval = null;
 
-  function updateTwilioLabels(provider) {
+  const updateTwilioLabels = function(provider) {
     const accountIdLabel = document.getElementById('accountIdLabel');
     const authTokenLabel = document.getElementById('authTokenLabel');
     const accountIdHelp = document.getElementById('accountIdHelp');
@@ -910,9 +910,9 @@
       if (webhookSetupTitle) webhookSetupTitle.textContent = config.webhookTitle;
       if (webhookSetupDesc) webhookSetupDesc.textContent = config.webhookDesc;
     }
-  }
+  };
 
-  function bindTwilioModalHandlers() {
+  const bindTwilioModalHandlers = function() {
     // Close modal button
     if (closeTwilioModalBtn) {
       closeTwilioModalBtn.addEventListener('click', closeTwilioModal);
@@ -945,9 +945,9 @@
       // Initialize with current selection
       updateTwilioLabels(providerSelect.value);
     }
-  }
+  };
 
-  function bindFormsModalHandlers() {
+  const bindFormsModalHandlers = function() {
     // Close modal button
     if (closeFormsModalBtn) {
       closeFormsModalBtn.addEventListener('click', closeFormsModal);
@@ -1005,9 +1005,9 @@
         setTimeout(closeFormsModal, 1500);
       });
     }
-  }
+  };
 
-  function bindSocialModalHandlers() {
+  const bindSocialModalHandlers = function() {
     // Close modal button
     if (closeSocialModalBtn) {
       closeSocialModalBtn.addEventListener('click', closeSocialModal);
@@ -1053,9 +1053,9 @@
     if (platformSelect && gatewaySelect) {
       updateSocialLabels(platformSelect.value, gatewaySelect.value);
     }
-  }
+  };
 
-  function bindChatModalHandlers() {
+  const bindChatModalHandlers = function() {
     // Close modal button
     if (closeChatModalBtn) {
       closeChatModalBtn.addEventListener('click', closeChatModal);
@@ -1106,14 +1106,14 @@
         }
       });
     }
-  }
+  };
 
   bindFormsModalHandlers();
   bindTwilioModalHandlers();
   bindSocialModalHandlers();
   bindChatModalHandlers();
 
-  async function refreshTickets() {
+  const refreshTickets = async function() {
     try {
       const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -1134,17 +1134,17 @@
     } catch (err) {
       // silent
     }
-  }
+  };
   refreshInterval = setInterval(refreshTickets, 10000);
   refreshTickets();
 
-  async function startConnect(provider) {
+  const startConnect = async function(provider) {
     const url = provider === 'gmail' ? '/api/v1/auth/google/inbox/start' : '/api/v1/auth/outlook/inbox/start';
     connectStatus.textContent = `Connecting to ${provider}...`;
     window.location = url;
-  }
+  };
 
-  function applyPollMeta(lp, health) {
+  const applyPollMeta = function(lp, health) {
     if (!lastPollLine) return;
     if (lp?.last_poll_at) {
       lastKnownPollAt = lp.last_poll_at;
@@ -1177,10 +1177,10 @@
       else if (status === 'stale') badge.className = 'text-amber-300';
       else if (status === 'error') badge.className = 'text-rose-300';
     }
-  }
+  };
 
   // One-time poll trigger when a connection exists
-  async function pollInboxOnce() {
+  const pollInboxOnce = async function() {
     const connectionId = getConnectionId();
     if (!connectionId) return;
     try {
@@ -1199,11 +1199,11 @@
     } catch (err) {
       if (connectStatus) connectStatus.textContent = 'Connected — polling in the background.';
     }
-  }
+  };
   pollInboxOnce();
 
   // Refresh last poll info from server metadata
-  async function refreshLastPoll() {
+  const refreshLastPoll = async function() {
     if (!lastPollLine) return;
     try {
       const resp = await fetch('/api/v1/inboxiq/connections/mine', { credentials: 'include' });
@@ -1226,10 +1226,10 @@
     } catch (err) {
       // silent
     }
-  }
+  };
   refreshLastPoll();
 
-  function setActiveDashboardTab(target) {
+  const setActiveDashboardTab = function(target) {
     dashboardTabs.forEach((btn) => {
       const isActive = btn.dataset.dashboardSection === target;
       btn.classList.toggle('bg-indigo-500/20', isActive);
@@ -1259,7 +1259,7 @@
     });
   }
 
-  function setActiveFeedbackTab(target) {
+  const setActiveFeedbackTab = function(target) {
     feedbackTabs.forEach((btn) => {
       const isActive = btn.dataset.feedbackSection === target;
       btn.classList.toggle('bg-indigo-500/20', isActive);
@@ -1272,7 +1272,7 @@
     feedbackPanels.forEach((panel) => {
       panel.classList.toggle('hidden', panel.dataset.feedbackPanel !== target);
     });
-  }
+  };
 
   if (feedbackTabs.length && feedbackPanels.length) {
     const defaultFeedback = 'testimonial';
@@ -1338,7 +1338,7 @@
   let trainingLoaded = false;
   let activeUseCase = 'all';
 
-  function setTicketStatus(kind, msg) {
+  const setTicketStatus = function(kind, msg) {
     if (!ticketStatus) return;
     const map = {
       success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
@@ -1348,9 +1348,9 @@
     ticketStatus.className = `text-xs rounded-xl px-3 py-2 border ${map[kind] || map.info}`;
     ticketStatus.textContent = msg;
     ticketStatus.classList.remove('hidden');
-  }
+  };
 
-  function setTrainingStatus(kind, msg) {
+  const setTrainingStatus = function(kind, msg) {
     if (!trainingStatus) return;
     const map = {
       success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
@@ -1360,9 +1360,9 @@
     trainingStatus.className = `text-xs rounded-xl px-3 py-2 border ${map[kind] || map.info}`;
     trainingStatus.textContent = msg;
     trainingStatus.classList.remove('hidden');
-  }
+  };
 
-  function renderTrainingTable(rows = []) {
+  const renderTrainingTable = function(rows = []) {
     if (!trainingTable) return;
     if (!rows.length) {
       trainingTable.innerHTML = '<div class="px-4 py-3 text-slate-400">No training runs yet.</div>';
@@ -1385,9 +1385,9 @@
         `;
       })
       .join('');
-  }
+  };
 
-  async function loadTrainingMetrics() {
+  const loadTrainingMetrics = async function() {
     if (trainingLoaded) return;
     if (!trainingTable) return;
     try {
@@ -1406,9 +1406,9 @@
     } catch (err) {
       setTrainingStatus('error', err.message || 'Failed to load training metrics.');
     }
-  }
+  };
 
-  async function loadTrainingStatus() {
+  const loadTrainingStatus = async function() {
     if (!runTrainingBtn) return;
     try {
       const resp = await fetch('/api/v1/inboxiq/training/status', { credentials: 'include' });
@@ -1436,9 +1436,9 @@
       runTrainingBtn.disabled = true;
       if (trainingReadiness) trainingReadiness.textContent = 'Status unavailable';
     }
-  }
+  };
 
-  async function triggerTraining() {
+  const triggerTraining = async function() {
     if (!runTrainingBtn) return;
 
     runTrainingBtn.disabled = true;
@@ -1476,20 +1476,20 @@
     } finally {
       if (runTrainingSpinner) runTrainingSpinner.classList.add('hidden');
     }
-  }
+  };
 
   if (runTrainingBtn) {
     runTrainingBtn.addEventListener('click', triggerTraining);
   }
 
-  function applyActionFilters() {
+  const applyActionFilters = function() {
     loadDashboardData();
-  }
+  };
 
-  function updateActionOnlyHint() {
+  const updateActionOnlyHint = function() {
     if (!actionOnlyHint || !showActionOnlyToggle) return;
     actionOnlyHint.classList.toggle('hidden', !showActionOnlyToggle.checked);
-  }
+  };
 
   if (actionSearchInput) {
     actionSearchInput.addEventListener('input', () => {
@@ -1536,7 +1536,7 @@
     setActiveUseCase('all', false);
   }
 
-  function updateMetrics(counts = {}) {
+  const updateMetrics = function(counts = {}) {
     if (metricActionRequired) metricActionRequired.textContent = counts.action_required ?? 0;
     if (metricOptional) metricOptional.textContent = counts.optional ?? 0;
     if (metricAutoHandledQueue) metricAutoHandledQueue.textContent = counts.auto_handled ?? 0;
@@ -1552,13 +1552,13 @@
     if (metricDecisionTime) metricDecisionTime.textContent = `${counts.decision_time_avg_minutes ?? 0}m`;
     if (metricSlaRisk) metricSlaRisk.textContent = counts.sla_risk_count ?? 0;
     if (actionCountSpan) actionCountSpan.textContent = `(${counts.action_required ?? 0})`;
-  }
+  };
 
-  function normalizeValue(val, fallback) {
+  const normalizeValue = function(val, fallback) {
     return (val || fallback || '').toString().toLowerCase();
-  }
+  };
 
-  function buildQueueCard(item, kind = 'action') {
+  const buildQueueCard = function(item, kind = 'action') {
     const useCase = normalizeValue(item.use_case, 'support');
     const channel = normalizeValue(item.channel, 'email');
     const decisionType = item.decision_type || 'triage';
@@ -1692,9 +1692,9 @@
         </div>
       </div>
     `;
-  }
+  };
 
-  function renderList(listEl, items, kind) {
+  const renderList = function(listEl, items, kind) {
     if (!listEl) return;
     if (!items || !items.length) {
       listEl.innerHTML =
@@ -1707,9 +1707,9 @@
     if (kind === 'action') {
       actionCards = Array.from(listEl.querySelectorAll('.action-card'));
     }
-  }
+  };
 
-  async function loadDashboardData() {
+  const loadDashboardData = async function() {
     const params = new URLSearchParams();
     if (impactScope?.value) params.set('scope', impactScope.value);
     if (actionPriorityFilter?.value) params.set('priority', actionPriorityFilter.value);
@@ -1743,11 +1743,11 @@
     } catch (err) {
       console.warn('dashboard data fetch failed', err);
     }
-  }
+  };
 
   updateActionOnlyHint();
 
-  function renderTicketCards(items) {
+  const renderTicketCards = function(items) {
     if (!ticketResults) return;
     ticketResults.innerHTML = '';
     if (!items || !items.length) {
@@ -1870,9 +1870,9 @@
         }
       });
     });
-  }
+  };
 
-  async function performTicketSearch(event) {
+  const performTicketSearch = async function(event) {
     if (event) event.preventDefault();
     const params = new URLSearchParams();
     params.set('page_size', '10');
@@ -1897,13 +1897,13 @@
     } catch (err) {
       setTicketStatus('error', err.message || 'Unable to load tickets');
     }
-  }
+  };
 
   if (searchForm) {
     searchForm.addEventListener('submit', performTicketSearch);
   }
 
-  async function submitTestimonial() {
+  const submitTestimonial = async function() {
     if (!submitTestimonialBtn) return;
     const message = (testimonialMsg?.value || '').trim();
     const rating = testimonialRating?.value || '5';
@@ -1961,7 +1961,7 @@
     } finally {
       submitTestimonialBtn.disabled = false;
     }
-  }
+  };
 
   if (connectGmailBtn) {
     connectGmailBtn.addEventListener('click', () => startConnect('gmail'));

@@ -78,7 +78,7 @@ class BillingService:
             provider=provider_name,
             provider_subscription_id=sub.get("id"),
             status=sub.get("status") or "active",
-            current_period_end=datetime.utcnow() + timedelta(days=30),
+            current_period_end=datetime.now(timezone.utc) + timedelta(days=30),
         )
         db.session.add(db_sub)
 
@@ -125,7 +125,7 @@ class BillingService:
         result = provider.pay_invoice(invoice.provider_invoice_id or invoice.id)
         status = result.get("status") or "processing"
         invoice.status = "paid" if status in ("paid", "succeeded") else invoice.status
-        invoice.last_attempt_at = datetime.utcnow()
+        invoice.last_attempt_at = datetime.now(timezone.utc)
         attempt = models.ChargeAttempt(
             invoice_id=invoice.id,
             provider=provider_name,
@@ -344,7 +344,7 @@ class BillingService:
 
     def retry_past_due(self, now: Optional[datetime] = None) -> Dict[str, int]:
         self._table_guard()
-        now = now or datetime.utcnow()
+        now = now or datetime.now(timezone.utc)
         past_due = models.Invoice.query.filter(models.Invoice.status == "open", (models.Invoice.last_attempt_at == None) | (models.Invoice.last_attempt_at <= now - timedelta(hours=12))).all()  # noqa: E711
         attempted = 0
         for inv in past_due:

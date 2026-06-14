@@ -6,7 +6,7 @@
   const selects = Array.from(document.querySelectorAll("[data-role-select]"));
   const statusEl = document.getElementById("roleStatus");
 
-  function setStatus(type, message) {
+  const setStatus = function(type, message) {
     if (!statusEl) return;
     const colors = {
       success: "border-emerald-500/40 bg-emerald-500/10 text-emerald-100",
@@ -16,9 +16,9 @@
     statusEl.className = `text-xs px-3 py-2 rounded-xl border ${colors[type] || colors.info}`;
     statusEl.textContent = message;
     statusEl.classList.remove("hidden");
-  }
+  };
 
-  async function updateRole(selectEl) {
+  const updateRole = async function(selectEl) {
     const userId = selectEl?.dataset?.userId;
     const email = selectEl?.dataset?.email;
     const previous = selectEl?.dataset?.currentRole || selectEl?.value;
@@ -49,7 +49,7 @@
     } finally {
       selectEl.disabled = false;
     }
-  }
+  };
 
   selects.forEach((selectEl) => {
     selectEl.addEventListener("change", () => updateRole(selectEl));

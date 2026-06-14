@@ -937,7 +937,7 @@ def process_incoming_email_task(self, payload: dict) -> dict:
     except Exception as exc:
         db.session.rollback()
         logging.getLogger(__name__).exception("failed to persist inbound email ticket: %s", exc)
-        raise self.retry(exc=exc)
+        raise self.retry(exc=exc) from exc
 
     logging.getLogger(__name__).info(
         "ticket created: id=%s status=%s action_required=%s email_type=%s",

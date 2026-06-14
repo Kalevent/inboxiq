@@ -1008,7 +1008,7 @@ def _log_login_attempt(*, outcome: str, email: str, account_id=None, user_id=Non
 
 
 @jwt.token_in_blocklist_loader
-def _is_token_revoked(jwt_header, jwt_payload):
+def _is_token_revoked(_jwt_header, jwt_payload):
     """Check revocation for both access and refresh tokens, enforce refresh allowlist."""
     jti = jwt_payload.get("jti")
     token_type = jwt_payload.get("type")

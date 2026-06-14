@@ -16,9 +16,12 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from src.extensions import cache, db
+
+if TYPE_CHECKING:
+    from src.models import TriageConfig
 
 logger = logging.getLogger(__name__)
 

@@ -7,6 +7,7 @@ on:
     paths:
       - 'src/**'
       - '.github/workflows/inbox-ci.yml'
+      - 'ruff.toml'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
@@ -15,6 +16,7 @@ on:
       - 'src/**'
       - '.github/workflows/inbox-ci.yml'
       - 'renovate.json'
+      - 'ruff.toml'
   workflow_dispatch:
     inputs:
       run_migrations:
@@ -81,6 +83,24 @@ jobs:
           # This catches missing/yanked packages without hitting pip's depth limit.
           pip install --quiet --no-deps -r src/requirements-inboxiq.lock.txt
           echo "All dependencies resolved successfully"
+
+  lint:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
+        with:
+          python-version: '3.11'
+
+      - name: Install ruff
+        run: pip install --quiet ruff
+
+      - name: Lint
+        run: ruff check src/
 
   build-and-deploy:
     needs: [secret-scan]

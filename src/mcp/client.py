@@ -47,7 +47,7 @@ class PersistentMCPClient:
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc, tb):
+    def __exit__(self, _exc_type, exc, tb):
         self.close()
 
     def start(self):

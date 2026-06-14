@@ -1,11 +1,18 @@
 """
 Celery tasks for automated email outreach campaigns.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from celery import shared_task
 from src.outreach.email import process_campaign_outreach, process_followup_emails
 from src.models.campaigns import EmailCampaign, EmailOutreach
 from src.extensions import db
 from datetime import datetime, timedelta
+
+if TYPE_CHECKING:
+    from src.models.tickets import Ticket
 
 
 @shared_task(name="outreach.process_all_campaigns", queue="leads")
@@ -35,7 +42,7 @@ def send_campaign_emails(self, campaign_id: str, max_emails: int = 6):
         return results
     except Exception as e:
         if self.request.retries < self.max_retries:
-            raise self.retry(exc=e, countdown=300)
+            raise self.retry(exc=e, countdown=300) from e
         return {"error": str(e), "sent": 0}
 
 

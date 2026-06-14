@@ -600,7 +600,7 @@ def _generate_newsletter_html(post: BlogPost, unsubscribe_url: str = "") -> str:
 </html>"""
 
 
-def _send_newsletter_email(to_email: str, user_name: str, post: BlogPost, html_content: str) -> bool:
+def _send_newsletter_email(to_email: str, _user_name: str, post: BlogPost, html_content: str) -> bool:
     """
     Send newsletter email via AWS SES.
 

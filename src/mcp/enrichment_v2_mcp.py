@@ -125,7 +125,7 @@ def get_conn():
         try:
             return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         except Exception as e:
-            raise ToolError(f"Failed to connect to database: {e}")
+            raise ToolError(f"Failed to connect to database: {e}") from e
     return None
 
 
@@ -281,7 +281,7 @@ def _safe_external_url(url: str) -> str:
     try:
         results = socket.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
     except socket.gaierror as exc:
-        raise ValueError(f"DNS resolution failed for {host!r}: {exc}")
+        raise ValueError(f"DNS resolution failed for {host!r}: {exc}") from exc
     for _fam, _type, _proto, _canon, sockaddr in results:
         ip = sockaddr[0]
         if _ip_is_private(ip):
@@ -698,7 +698,7 @@ def verify_contact(
             result["email_valid"] = True
             result["email_status"] = "valid"
             result["verification_method"] = "mx_check"
-        except:
+        except Exception:
             result["email_valid"] = False
             result["email_status"] = "risky"
 

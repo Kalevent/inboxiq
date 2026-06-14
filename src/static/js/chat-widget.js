@@ -13,7 +13,7 @@
   // phase: closed | greeting | demo | talk_name | talk_email | talk_chat | book_demo
   let state = { phase: 'closed', name: '', email: '', messages: [], dismissed: false, emailCaptured: false, pendingIntent: null };
   try { const s = sessionStorage.getItem(SESSION_KEY); if (s) state = JSON.parse(s); } catch (_) {}
-  function persist() { try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(state)); } catch (_) {} }
+  const persist = function() { try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(state)); } catch (_) {} };
 
   // ── CSS ──────────────────────────────────────────────────────────────────
   const CSS = `
@@ -83,7 +83,7 @@
   `;
 
   // ── DOM helpers ──────────────────────────────────────────────────────────
-  function el(tag, attrs, children) {
+  const el = function(tag, attrs, children) {
     const e = document.createElement(tag);
     if (attrs) {
       for (const [k, v] of Object.entries(attrs)) {
@@ -96,9 +96,9 @@
       e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
     });
     return e;
-  }
+  };
 
-  function mkMsg(text, role) {
+  const mkMsg = function(text, role) {
     const m = el('div', { class: `iq-msg ${role}` });
     if (role === 'user') {
       m.textContent = text;
@@ -106,20 +106,20 @@
       m.innerHTML = text;
     }
     return m;
-  }
+  };
 
-  function mkTyping() {
+  const mkTyping = function() {
     return mkMsg('<span style="letter-spacing:.3em">···</span>', 'bot');
-  }
+  };
 
-  function mkInput(placeholder, type) {
+  const mkInput = function(placeholder, type) {
     const inp = el('input', { class: 'iq-inp', type: type || 'text', placeholder: placeholder || '' });
     const btn = el('button', { class: 'iq-send', type: 'button' }, 'Send');
     const row = el('div', { class: 'iq-row' }, [inp, btn]);
     return { row, inp, btn };
-  }
+  };
 
-  function buildHeader(onClose) {
+  const buildHeader = function(onClose) {
     return el('div', { class: 'iq-hdr' }, [
       el('img', { src: AVATAR_URL, alt: 'Aria' }),
       el('div', { class: 'iq-hdr-txt' }, [
@@ -128,16 +128,16 @@
       ]),
       el('button', { class: 'iq-close', 'aria-label': 'Close', on: { click: onClose } }, '×'),
     ]);
-  }
+  };
 
-  function escapeHtml(s) {
+  const escapeHtml = function(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
+  };
 
-  function scrollMsgs(msgsEl) { msgsEl.scrollTop = msgsEl.scrollHeight; }
+  const scrollMsgs = function(msgsEl) { msgsEl.scrollTop = msgsEl.scrollHeight; };
 
   // ── API ──────────────────────────────────────────────────────────────────
-  async function apiChat(text, branch) {
+  const apiChat = async function(text, branch) {
     const payload = {
       body: text,
       message_id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -157,9 +157,9 @@
       const d = await r.json();
       return { ok: true, reply: d.reply || null, intent: d.intent || 'none' };
     } catch (_) { return { ok: false }; }
-  }
+  };
 
-  function apiSaveSession(intent) {
+  const apiSaveSession = function(intent) {
     try {
       fetch('/api/v1/chat/save-session', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -173,9 +173,9 @@
         }),
       });
     } catch (_) {}
-  }
+  };
 
-  async function apiBookDemo(email) {
+  const apiBookDemo = async function(email) {
     try {
       const r = await fetch('/api/v1/chat/book-demo', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -183,9 +183,9 @@
       });
       return r.ok;
     } catch (_) { return false; }
-  }
+  };
 
-  async function apiCreateInquiry() {
+  const apiCreateInquiry = async function() {
     const lines = state.messages.map(m => {
       const speaker = m.role === 'user' ? (state.name || 'Visitor') : 'Aria';
       const text = m.role === 'bot' ? m.text.replace(/<[^>]+>/g, '') : m.text;
@@ -203,10 +203,10 @@
       });
       return r.ok || r.status === 201;
     } catch (_) { return false; }
-  }
+  };
 
   // ── Phase renderers ──────────────────────────────────────────────────────
-  function renderBookDemo(body) {
+  const renderBookDemo = function(body) {
     const msgsEl = el('div', { class: 'iq-msgs' });
     msgsEl.appendChild(mkMsg(
       "Happy to set that up! 📅<br>Which email should I send your booking link to?<br>" +
@@ -258,9 +258,9 @@
     btn.addEventListener('click', send);
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
     body.appendChild(row);
-  }
+  };
 
-  function renderGreeting(body) {
+  const renderGreeting = function(body) {
     const p = el('p', { class: 'iq-greeting' });
     p.innerHTML = "Hi there 👋<br>I'm Aria, your InboxIQ guide.<br>What brings you here today?";
     body.appendChild(p);
@@ -279,9 +279,9 @@
       ]);
       body.appendChild(b);
     });
-  }
+  };
 
-  function renderDemo(body) {
+  const renderDemo = function(body) {
     const msgsEl = el('div', { class: 'iq-msgs' });
     msgsEl.appendChild(mkMsg(
       "InboxIQ triages emails automatically so your support team only sees what needs a human. " +
@@ -321,9 +321,9 @@
       s.innerHTML = `Want to try it yourself? <a href="${signupUrl}">Start free trial →</a>`;
       body.appendChild(s);
     }
-  }
+  };
 
-  function renderTalkName(body) {
+  const renderTalkName = function(body) {
     const msgsEl = el('div', { class: 'iq-msgs' });
     msgsEl.appendChild(mkMsg("Hi there! I'm Aria 👋 What's your name?", 'bot'));
     body.appendChild(msgsEl);
@@ -338,9 +338,9 @@
     btn.addEventListener('click', send);
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
     body.appendChild(row);
-  }
+  };
 
-  function _executeDemoBooking(email, msgsEl) {
+  const _executeDemoBooking = function(email, msgsEl) {
     if (!handle) return;
     apiSaveSession('book_demo');
     apiBookDemo(email).then(ok => {
@@ -350,9 +350,9 @@
         : `Something went wrong sending the link. <a href="mailto:hello@kalevent.com">Contact us directly →</a>`;
       msgsEl.appendChild(conf); scrollMsgs(msgsEl);
     });
-  }
+  };
 
-  function _executeHumanHandoff(email, msgsEl) {
+  const _executeHumanHandoff = function(email, msgsEl) {
     state.email = email; state.emailCaptured = true; persist();
     apiSaveSession('needs_human');
     apiCreateInquiry().then(() => {
@@ -360,9 +360,9 @@
       conf.innerHTML = `Done! I've notified the team — someone will follow up at <strong>${escapeHtml(email)}</strong> soon. Feel free to keep chatting in the meantime.`;
       msgsEl.appendChild(conf); scrollMsgs(msgsEl);
     });
-  }
+  };
 
-  function _buildContactCapture(body, msgsEl, mainRow, intent, addBotMsg) {
+  const _buildContactCapture = function(body, msgsEl, mainRow, intent, addBotMsg) {
     if (document.getElementById('iq-contact-ask')) return;
     const isDemo = intent === 'book_demo' && !!handle;
     if (addBotMsg) {
@@ -397,9 +397,9 @@
     section.appendChild(errEl);
     section.appendChild(eRow);
     body.insertBefore(section, mainRow);
-  }
+  };
 
-  function _handleIntent(intent, body, msgsEl, mainRow) {
+  const _handleIntent = function(intent, body, msgsEl, mainRow) {
     if (!intent || intent === 'none') return;
     const isDemo = intent === 'book_demo' && !!handle;
     if (intent === 'needs_human' && state.emailCaptured) return;
@@ -410,9 +410,9 @@
     // Need email — show capture form
     state.pendingIntent = intent; persist();
     _buildContactCapture(body, msgsEl, mainRow, intent, true);
-  }
+  };
 
-  function renderTalkChat(body) {
+  const renderTalkChat = function(body) {
     const msgsEl = el('div', { class: 'iq-msgs' });
     if (state.messages.length === 0) {
       const greeting = mkMsg('', 'bot');
@@ -456,7 +456,7 @@
     } else if (state.pendingIntent) {
       _buildContactCapture(body, msgsEl, row, state.pendingIntent, false);
     }
-  }
+  };
 
   // ── State machine ────────────────────────────────────────────────────────
   const RENDERERS = {
@@ -470,7 +470,7 @@
     talk_email: renderTalkChat,        // legacy alias — redirect to conversation
   };
 
-  function transition(phase) {
+  const transition = function(phase) {
     state.phase = phase; persist();
     const panel = document.getElementById('iq-panel');
     panel.innerHTML = ''; panel.classList.add('open');
@@ -482,10 +482,10 @@
     const body = el('div', { class: 'iq-body' });
     panel.appendChild(body);
     if (RENDERERS[phase]) RENDERERS[phase](body);
-  }
+  };
 
   // ── Init ─────────────────────────────────────────────────────────────────
-  function init() {
+  const init = function() {
     const style = document.createElement('style');
     style.textContent = CSS;
     document.head.appendChild(style);
@@ -528,7 +528,7 @@
         }, 1500);
       }, 5000);
     }
-  }
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

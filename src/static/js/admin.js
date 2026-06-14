@@ -470,7 +470,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const trainingTable      = document.getElementById('trainingTable');
   let trainingLoaded = false;
 
-  function setTrainingStatus(kind, msg) {
+  const setTrainingStatus = function(kind, msg) {
     if (!trainingStatus) return;
     const map = {
       success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
@@ -480,9 +480,9 @@ document.addEventListener("DOMContentLoaded", () => {
     trainingStatus.className = `text-xs rounded-xl px-3 py-2 border ${map[kind] || map.info}`;
     trainingStatus.textContent = msg;
     trainingStatus.classList.remove('hidden');
-  }
+  };
 
-  function renderTrainingTable(rows = []) {
+  const renderTrainingTable = function(rows = []) {
     if (!trainingTable) return;
     if (!rows.length) {
       trainingTable.innerHTML = '<div class="px-4 py-3 text-slate-400">No training runs yet.</div>';
@@ -501,7 +501,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div>Eval: <span class="text-slate-200">${evalAcc}</span></div>
       </div>`;
     }).join('');
-  }
+  };
 
   window.loadTrainingMetrics = async function () {
     if (trainingLoaded || !trainingTable) return;
@@ -552,7 +552,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  async function triggerTraining() {
+  const triggerTraining = async function() {
     if (!runTrainingBtn) return;
     runTrainingBtn.disabled = true;
     if (runTrainingBtnText) runTrainingBtnText.textContent = 'Queuing...';
@@ -583,7 +583,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       if (runTrainingSpinner) runTrainingSpinner.classList.add('hidden');
     }
-  }
+  };
 
   if (runTrainingBtn) runTrainingBtn.addEventListener('click', triggerTraining);
 })();
@@ -602,7 +602,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!searchForm) return;
 
-  function setTicketStatus(kind, msg) {
+  const setTicketStatus = function(kind, msg) {
     if (!ticketStatus) return;
     const map = {
       success: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
@@ -612,9 +612,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ticketStatus.className = `text-xs rounded-xl px-3 py-2 border ${map[kind] || map.info}`;
     ticketStatus.textContent = msg;
     ticketStatus.classList.remove('hidden');
-  }
+  };
 
-  function renderTicketCards(items) {
+  const renderTicketCards = function(items) {
     if (!ticketResults) return;
     ticketResults.innerHTML = '';
     if (!items || !items.length) {
@@ -641,9 +641,9 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       ticketResults.appendChild(card);
     });
-  }
+  };
 
-  async function performTicketSearch(event) {
+  const performTicketSearch = async function(event) {
     if (event) event.preventDefault();
     const params = new URLSearchParams();
     params.set('page_size', '20');
@@ -663,7 +663,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       setTicketStatus('error', err.message || 'Search failed');
     }
-  }
+  };
 
   searchForm.addEventListener('submit', performTicketSearch);
 })();

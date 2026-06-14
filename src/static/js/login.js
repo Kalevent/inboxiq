@@ -2,14 +2,14 @@
   const form = document.getElementById('loginForm');
   const button = document.getElementById('loginButton');
   const statusEl = document.getElementById('loginStatus');
-  function clearFields() {
+  const clearFields = function() {
     if (form?.email) form.email.value = '';
     if (form?.password) form.password.value = '';
-  }
+  };
   // Nudge browsers to drop any stale autofill (e.g., removed accounts).
   clearFields();
 
-  function setStatus(type, message) {
+  const setStatus = function(type, message) {
     if (!statusEl) return;
     const colorMap = {
       success: 'text-emerald-200 bg-emerald-500/10 border-emerald-500/30',
@@ -21,7 +21,7 @@
     statusEl.classList.remove('hidden');
   }
 
-  async function handleLogin(event) {
+  const handleLogin = async function(event) {
     event.preventDefault();
     if (!form || !button) return;
 
@@ -85,9 +85,9 @@
       button.disabled = false;
       button.textContent = 'Sign in';
     }
-  }
+  };
 
-  function _showTotpStep(partialToken) {
+  const _showTotpStep = function(partialToken) {
     const formEl = document.getElementById('loginForm');
     if (!formEl) return;
     formEl.innerHTML = `
@@ -127,26 +127,26 @@
       }
     });
     setStatus('info', 'Two-factor authentication required.');
-  }
+  };
 
   if (form) {
     form.addEventListener('submit', handleLogin);
   }
 
   // ── Passkey login ──────────────────────────────────────────────────────
-  function b64urlToBuffer(b64) {
+  const b64urlToBuffer = function(b64) {
     const pad = 4 - (b64.length % 4);
     const padded = b64 + (pad < 4 ? '='.repeat(pad) : '');
     const bin = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
     return Uint8Array.from(bin, (c) => c.charCodeAt(0)).buffer;
-  }
+  };
 
-  function bufferToB64url(buf) {
+  const bufferToB64url = function(buf) {
     return btoa(String.fromCharCode(...new Uint8Array(buf)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  }
+  };
 
-  async function handlePasskeyLogin() {
+  const handlePasskeyLogin = async function() {
     const pkBtn = document.getElementById('passkeyLoginButton');
     if (!window.PublicKeyCredential) {
       setStatus('error', 'Passkeys are not supported in this browser.');
@@ -209,7 +209,7 @@
     } finally {
       if (pkBtn) { pkBtn.disabled = false; pkBtn.textContent = 'Sign in with passkey'; }
     }
-  }
+  };
 
   const passkeyBtn = document.getElementById('passkeyLoginButton');
   if (passkeyBtn) passkeyBtn.addEventListener('click', handlePasskeyLogin);

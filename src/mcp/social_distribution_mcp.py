@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def post_to_linkedin(
     text: str,
     url: Optional[str] = None,
-    image_url: Optional[str] = None,
+    _image_url: Optional[str] = None,
     account_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
@@ -112,7 +112,7 @@ def post_to_twitter(
     text: Optional[str] = None,
     thread: Optional[List[str]] = None,
     reply_to_id: Optional[str] = None,
-    media_urls: Optional[List[str]] = None
+    _media_urls: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Post to Twitter/X (single tweet or thread).

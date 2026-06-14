@@ -14,7 +14,7 @@
     tokenInput.value = tokenFromQuery;
   }
 
-  function setStatus(type, message) {
+  const setStatus = function(type, message) {
     if (!statusEl) return;
     const colorMap = {
       success: 'text-emerald-200 bg-emerald-500/10 border-emerald-500/30',
@@ -24,9 +24,9 @@
     statusEl.className = `mt-6 text-sm px-3 py-3 rounded-xl border ${colorMap[type] || colorMap.info}`;
     statusEl.textContent = message;
     statusEl.classList.remove('hidden');
-  }
+  };
 
-  async function handleRequest(event) {
+  const handleRequest = async function(event) {
     event.preventDefault();
     if (!requestForm || !requestButton) return;
     const email = (requestForm.resetEmail?.value || '').trim().toLowerCase();
@@ -58,9 +58,9 @@
       requestButton.disabled = false;
       requestButton.textContent = 'Send reset link';
     }
-  }
+  };
 
-  async function handleComplete(event) {
+  const handleComplete = async function(event) {
     event.preventDefault();
     if (!completeForm || !completeButton) return;
     const token = (completeForm.resetToken?.value || '').trim();
@@ -95,7 +95,7 @@
       completeButton.disabled = false;
       completeButton.textContent = 'Reset password';
     }
-  }
+  };
 
   if (requestForm) requestForm.addEventListener('submit', handleRequest);
   if (completeForm) completeForm.addEventListener('submit', handleComplete);

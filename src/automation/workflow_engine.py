@@ -242,7 +242,7 @@ def execute_automation_workflow(
 def evaluate_workflow_conditions(
     workflow: AutomationRule,
     trigger_context: Dict[str, Any],
-    parent_span
+    _parent_span
 ) -> tuple[bool, List[Dict[str, Any]]]:
     """
     Evaluate all workflow conditions with tracing.
@@ -253,7 +253,7 @@ def evaluate_workflow_conditions(
     Args:
         workflow: AutomationRule instance
         trigger_context: Trigger data
-        parent_span: Parent OpenTelemetry span
+        _parent_span: Parent OpenTelemetry span
 
     Returns:
         Tuple of (conditions_met: bool, conditions_detail: list)
@@ -340,7 +340,7 @@ def evaluate_workflow_conditions(
 def execute_workflow_actions(
     workflow: AutomationRule,
     trigger_context: Dict[str, Any],
-    parent_span
+    _parent_span
 ) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Execute all workflow actions with tracing.
@@ -351,7 +351,7 @@ def execute_workflow_actions(
     Args:
         workflow: AutomationRule instance
         trigger_context: Trigger data
-        parent_span: Parent OpenTelemetry span
+        _parent_span: Parent OpenTelemetry span
 
     Returns:
         Tuple of (results: list, actions_detail: list)

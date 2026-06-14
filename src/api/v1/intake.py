@@ -772,5 +772,3 @@ def chat_save_session():
         db.session.rollback()
         current_app.logger.error("chat save-session failed: %s", exc)
         return jsonify({"ok": False}), 500
-
-    return jsonify({"ok": True}), 200

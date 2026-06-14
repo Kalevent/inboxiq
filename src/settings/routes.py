@@ -1683,7 +1683,7 @@ def edit_automation_rule(rule_id):
       conditions_json = request.form.get("conditions_json", "[]")
       try:
         rule.conditions = json.loads(conditions_json)
-      except:
+      except json.JSONDecodeError:
         flash("Invalid conditions format", "error")
         return redirect(url_for("settings.edit_automation_rule", rule_id=rule_id))
 
@@ -1691,7 +1691,7 @@ def edit_automation_rule(rule_id):
       actions_json = request.form.get("actions_json", "[]")
       try:
         rule.actions = json.loads(actions_json)
-      except:
+      except json.JSONDecodeError:
         flash("Invalid actions format", "error")
         return redirect(url_for("settings.edit_automation_rule", rule_id=rule_id))
 

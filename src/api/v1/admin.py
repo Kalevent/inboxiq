@@ -17,9 +17,13 @@ def _parse_dates(default_days: int = 7):
     """Return (start, end) datetimes based on optional ?start=&end= ISO params."""
     try:
         end_raw = request.args.get("end")
-        end = datetime.fromisoformat(end_raw) if end_raw else datetime.utcnow()
+        end = (
+            datetime.fromisoformat(end_raw)
+            if end_raw
+            else datetime.now(timezone.utc)
+        )
     except Exception:
-        end = datetime.utcnow()
+        end = datetime.now(timezone.utc)
     try:
         start_raw = request.args.get("start")
         start = datetime.fromisoformat(start_raw) if start_raw else end - timedelta(days=default_days)
@@ -63,13 +67,16 @@ def admin_adoption():
         )
         active_users_24h = (
             db.session.query(func.count(func.distinct(Ticket.user_id)))
-            .filter(Ticket.created_at >= datetime.utcnow() - timedelta(days=1))
+            .filter(
+                Ticket.created_at
+                >= datetime.now(timezone.utc) - timedelta(days=1)
+            )
             .scalar()
             or 0
         )
         active_users_7d = (
             db.session.query(func.count(func.distinct(Ticket.user_id)))
-            .filter(Ticket.created_at >= datetime.utcnow() - timedelta(days=7))
+            .filter(Ticket.created_at >= datetime.now(timezone.utc) - timedelta(days=7))
             .scalar()
             or 0
         )
@@ -209,7 +216,7 @@ def admin_agent_health():
         return jsonify({"error": "forbidden"}), 403
     try:
         from src.models import AgentEvent
-        window_start = datetime.utcnow() - timedelta(days=30)
+        window_start = datetime.now(timezone.utc) - timedelta(days=30)
         total_invokes = db.session.query(func.count(AgentEvent.id)).filter(AgentEvent.event == "invoke").scalar() or 0
         successes = (
             db.session.query(func.count(AgentEvent.id))
@@ -277,7 +284,7 @@ def admin_billing():
         return jsonify({"error": "forbidden"}), 403
     from src.models.billing import CustomerBillingProfile, Subscription, Plan, ChargeAttempt, table_exists
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         plan_mix = []
         trials_expiring = []
         failed_payments = []
@@ -343,7 +350,7 @@ def admin_security():
     try:
         from src.models import AuthEvent
         users_total = db.session.query(func.count(User.id)).scalar() or 0
-        window_start = datetime.utcnow() - timedelta(days=30)
+        window_start = datetime.now(timezone.utc) - timedelta(days=30)
         login_fails = (
             db.session.query(func.count(AuthEvent.id))
             .filter(AuthEvent.event == "login", AuthEvent.outcome == "fail", AuthEvent.created_at >= window_start)

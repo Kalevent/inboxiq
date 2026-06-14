@@ -70,4 +70,4 @@ def send_booking_confirmation_reply(self, booking_id: str) -> None:
             logger.info("Booking confirmation reply sent to %s (booking=%s)", booking.booked_by_email, booking_id)
         except Exception as exc:
             logger.error("Booking confirmation reply failed (booking=%s): %s", booking_id, exc)
-            raise self.retry(exc=exc)
+            raise self.retry(exc=exc) from exc

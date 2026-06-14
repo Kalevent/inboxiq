@@ -8,7 +8,7 @@
   const resendButton = document.getElementById('resendButton');
   const resendStatus = document.getElementById('resendStatus');
 
-  function setStatus(type, message) {
+  const setStatus = function(type, message) {
     if (!statusEl) return;
     const colorMap = {
       success: 'border border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200',
@@ -18,9 +18,9 @@
     statusEl.className = `mt-4 text-sm rounded-xl px-3 py-3 ${colorMap[type] || colorMap.info}`;
     statusEl.textContent = message;
     statusEl.classList.remove('hidden');
-  }
+  };
 
-  async function handleActivate(event) {
+  const handleActivate = async function(event) {
     event.preventDefault();
     if (!form || !button || !tokenInput) return;
 
@@ -70,13 +70,13 @@
       button.disabled = false;
       button.textContent = 'Activate and Sign In';
     }
-  }
+  };
 
   if (form) {
     form.addEventListener('submit', handleActivate);
   }
 
-  function setResendStatus(type, message) {
+  const setResendStatus = function(type, message) {
     if (!resendStatus) return;
     const colorMap = {
       success: 'border border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200',
@@ -86,18 +86,18 @@
     resendStatus.className = `text-sm rounded-xl px-3 py-3 ${colorMap[type] || colorMap.info}`;
     resendStatus.textContent = message;
     resendStatus.classList.remove('hidden');
-  }
+  };
 
-  function extractTokenFromLink(link) {
+  const extractTokenFromLink = function(link) {
     try {
       const url = new URL(link);
       return url.searchParams.get('token');
     } catch (e) {
       return null;
     }
-  }
+  };
 
-  async function handleResend(event) {
+  const handleResend = async function(event) {
     event.preventDefault();
     if (!resendEmail || !resendButton) return;
     const email = (resendEmail.value || '').trim().toLowerCase();
@@ -135,7 +135,7 @@
       resendButton.disabled = false;
       resendButton.textContent = 'Resend activation link';
     }
-  }
+  };
 
   if (resendForm) {
     resendForm.addEventListener('submit', handleResend);

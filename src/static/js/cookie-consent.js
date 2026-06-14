@@ -17,14 +17,14 @@
     closeLabel: 'Close'
   };
 
-  function setCookie(name, value, days) {
+  const setCookie = function(name, value, days) {
     const expiresDate = new Date();
     expiresDate.setTime(expiresDate.getTime() + days * 24 * 60 * 60 * 1000);
     const expires = `expires=${expiresDate.toUTCString()}`;
     document.cookie = `${name}=${value};${expires};path=/;SameSite=Lax`;
-  }
+  };
 
-  function getCookie(name) {
+  const getCookie = function(name) {
     const needle = `${name}=`;
     return document.cookie
       .split(';')
@@ -34,18 +34,18 @@
         if (acc) return acc;
         return segment.startsWith(needle) ? segment.substring(needle.length) : '';
       }, '');
-  }
+  };
 
-  function deleteCookie(name) {
+  const deleteCookie = function(name) {
     document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path=/;SameSite=Lax`;
-  }
+  };
 
-  function removeCookieBanner() {
+  const removeCookieBanner = function() {
     const banner = document.getElementById('cookie-consent-banner');
     if (banner) banner.remove();
-  }
+  };
 
-  function createCookieBanner() {
+  const createCookieBanner = function() {
     if (document.getElementById('cookie-consent-banner')) return;
 
     const banner = document.createElement('div');
@@ -85,9 +85,9 @@
     banner.appendChild(message);
     banner.appendChild(buttons);
     document.body.appendChild(banner);
-  }
+  };
 
-  function createSettingsButton() {
+  const createSettingsButton = function() {
     if (document.getElementById('cookie-settings-button')) return;
 
     const button = document.createElement('button');
@@ -103,9 +103,9 @@
     });
 
     document.body.appendChild(button);
-  }
+  };
 
-  function buildAnalyticsOption(checkboxId) {
+  const buildAnalyticsOption = function(checkboxId) {
     const option = document.createElement('div');
     option.className = 'cookie-settings-option';
 
@@ -131,9 +131,9 @@
     option.appendChild(description);
 
     return option;
-  }
+  };
 
-  function showCookieSettings() {
+  const showCookieSettings = function() {
     const existingModal = document.getElementById('cookie-settings-modal');
     if (existingModal) existingModal.remove();
 
@@ -200,21 +200,21 @@
     document.body.appendChild(modal);
 
     saveButton.focus();
-  }
+  };
 
-  function acceptCookies() {
+  const acceptCookies = function() {
     setCookie(cookieName, 'accepted', cookieDurationDays);
     createSettingsButton();
-  }
+  };
 
-  function rejectCookies() {
+  const rejectCookies = function() {
     setCookie(cookieName, 'rejected', cookieDurationDays);
     deleteCookie('_ga');
     deleteCookie('_gid');
     createSettingsButton();
-  }
+  };
 
-  function initialise() {
+  const initialise = function() {
     const consent = getCookie(cookieName);
     if (consent === 'accepted') {
       createSettingsButton();
@@ -227,7 +227,7 @@
     }
 
     createCookieBanner();
-  }
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialise);
