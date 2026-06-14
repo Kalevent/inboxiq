@@ -42,7 +42,7 @@ def send_campaign_emails(self, campaign_id: str, max_emails: int = 6):
         return results
     except Exception as e:
         if self.request.retries < self.max_retries:
-            raise self.retry(exc=e, countdown=300)
+            raise self.retry(exc=e, countdown=300) from e
         return {"error": str(e), "sent": 0}
 
 

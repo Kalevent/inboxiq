@@ -379,7 +379,7 @@ def enrich_lead(self, lead_id: str) -> Dict[str, Any]:
         db.session.rollback()
         # Retry on failure
         if self.request.retries < self.max_retries:
-            raise self.retry(exc=e, countdown=60 * (self.request.retries + 1))
+            raise self.retry(exc=e, countdown=60 * (self.request.retries + 1)) from e
         return {"error": str(e), "lead_id": lead_id}
 
 

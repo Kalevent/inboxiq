@@ -39,28 +39,28 @@
   const STORAGE_TRIAGE = 'inboxiqTriageDone';
   const STORAGE_DRAFT_REPLY = 'inboxiqDraftReplyEnabled';
 
-  function showLayer(el) {
+  const showLayer = function(el) {
     if (!el) return;
     el.classList.add('modal-visible', 'flex');
     el.classList.remove('modal-hidden');
     el.setAttribute('aria-hidden', 'false');
     console.debug('[dashboard] show layer', el.id, window.getComputedStyle(el).display);
-  }
-  function hideLayer(el) {
+  };
+  const hideLayer = function(el) {
     if (!el) return;
     el.classList.remove('modal-visible', 'flex');
     el.classList.add('modal-hidden');
     el.setAttribute('aria-hidden', 'true');
     console.debug('[dashboard] hide layer', el.id);
-  }
-  function openModal() {
+  };
+  const openModal = function() {
     showLayer(modal);
-  }
-  function closeModal() {
+  };
+  const closeModal = function() {
     hideLayer(modal);
-  }
+  };
 
-  function setStatus(type, message) {
+  const setStatus = function(type, message) {
     if (!statusEl) return;
     const map = {
       success: 'border border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
@@ -70,9 +70,9 @@
     statusEl.className = `text-sm rounded-xl px-3 py-2 ${map[type] || map.info}`;
     statusEl.textContent = message;
     statusEl.classList.remove('hidden');
-  }
+  };
 
-  function updateStepsAsConnected() {
+  const updateStepsAsConnected = function() {
     try {
       localStorage.setItem(STORAGE_KEY, 'true');
     } catch (e) {
@@ -95,9 +95,9 @@
       draftReplySection.classList.remove('hidden');
       fetchDraftReplyStatus();
     }
-  }
+  };
 
-  function maybeRestoreConnected() {
+  const maybeRestoreConnected = function() {
     try {
       const flag = localStorage.getItem(STORAGE_KEY);
       if (flag === 'true') {
@@ -106,9 +106,9 @@
     } catch (e) {
       // ignore storage failures
     }
-  }
+  };
 
-  function updateCategoriesSaved(selected) {
+  const updateCategoriesSaved = function(selected) {
     try {
       localStorage.setItem(STORAGE_CATEGORIES, JSON.stringify(selected || []));
     } catch (e) {
@@ -121,13 +121,13 @@
       runTriageBtn.classList.remove('cursor-not-allowed', 'opacity-60');
       runTriageBtn.disabled = false;
     }
-  }
+  };
 
-  function normalizeCategoryLabel(label) {
+  const normalizeCategoryLabel = function(label) {
     return (label || '').trim().replace(/\s+/g, ' ');
-  }
+  };
 
-  function hasCategory(label) {
+  const hasCategory = function(label) {
     const normalized = normalizeCategoryLabel(label).toLowerCase();
     if (!normalized) return true;
     const existing = categoriesForm?.querySelectorAll('input[name="categories"]') || [];
@@ -135,9 +135,9 @@
       if ((input.value || '').trim().toLowerCase() === normalized) return true;
     }
     return false;
-  }
+  };
 
-  function addCustomCategory(label, checked = true) {
+  const addCustomCategory = function(label, checked = true) {
     const normalized = normalizeCategoryLabel(label);
     if (!normalized) return false;
     if (hasCategory(normalized)) {
@@ -154,9 +154,9 @@
     `;
     customCategoriesContainer.appendChild(wrap);
     return true;
-  }
+  };
 
-  function maybeRestoreCategories() {
+  const maybeRestoreCategories = function() {
     try {
       const raw = localStorage.getItem(STORAGE_CATEGORIES);
       if (raw) {
@@ -174,9 +174,9 @@
     } catch (e) {
       // ignore
     }
-  }
+  };
 
-  function markTriageDone() {
+  const markTriageDone = function() {
     try {
       localStorage.setItem(STORAGE_TRIAGE, 'true');
     } catch (e) {
@@ -185,9 +185,9 @@
     if (step3Status) step3Status.classList.remove('hidden');
     if (step3Badge) step3Badge.classList.remove('hidden');
     if (goDashboardBtn) goDashboardBtn.classList.remove('hidden');
-  }
+  };
 
-  function maybeRestoreTriage() {
+  const maybeRestoreTriage = function() {
     try {
       const flag = localStorage.getItem(STORAGE_TRIAGE);
       if (flag === 'true') {
@@ -196,9 +196,9 @@
     } catch (e) {
       // ignore
     }
-  }
+  };
 
-  async function fetchDraftReplyStatus() {
+  const fetchDraftReplyStatus = async function() {
     if (!enableDraftReplyCheckbox) return;
 
     try {
@@ -241,9 +241,9 @@
     } catch (err) {
       console.error('[dashboard] error fetching draft reply status', err);
     }
-  }
+  };
 
-  async function handleDraftReplyToggle(event) {
+  const handleDraftReplyToggle = async function(event) {
     const enabled = event.target.checked;
 
     try {
@@ -295,9 +295,9 @@
       event.target.checked = !enabled;
       console.error('[dashboard] error updating draft reply', err);
     }
-  }
+  };
 
-  function getAccessToken() {
+  const getAccessToken = function() {
     // Get JWT token from cookie or localStorage
     const cookies = document.cookie.split(';');
     for (const cookie of cookies) {
@@ -308,9 +308,9 @@
     }
     // Fallback to localStorage if used
     return localStorage.getItem('access_token') || '';
-  }
+  };
 
-  function maybeRestoreDraftReply() {
+  const maybeRestoreDraftReply = function() {
     try {
       const flag = localStorage.getItem(STORAGE_DRAFT_REPLY);
       const inboxConnected = localStorage.getItem(STORAGE_KEY);
@@ -323,11 +323,11 @@
     } catch (e) {
       // ignore
     }
-  }
+  };
 
   // Fallback: if the DOM already shows completed badges (e.g., after refresh without localStorage),
   // infer completion so CTA buttons are usable.
-  function reconcileFromDom() {
+  const reconcileFromDom = function() {
     const step1Done = step1Badge && !step1Badge.classList.contains('hidden');
     const step2Done = step2Badge && !step2Badge.classList.contains('hidden');
     const step3Done = step3Badge && !step3Badge.classList.contains('hidden');
@@ -340,9 +340,9 @@
     if (step3Done) {
       markTriageDone();
     }
-  }
+  };
 
-  function handleProviderChange(event) {
+  const handleProviderChange = function(event) {
     if (!imapFields) return;
     const val = event.target.value;
     if (val === 'imap') {
@@ -350,17 +350,17 @@
     } else {
       imapFields.classList.add('hidden');
     }
-  }
+  };
 
-  function bindProviderRadios() {
+  const bindProviderRadios = function() {
     if (!form) return;
     const radios = form.querySelectorAll('input[name="provider"]');
     radios.forEach((radio) => {
       radio.addEventListener('change', handleProviderChange);
     });
-  }
+  };
 
-  async function handleConnect(event) {
+  const handleConnect = async function(event) {
     event.preventDefault();
     if (!form) return;
     const data = new FormData(form);
@@ -387,7 +387,7 @@
     } catch (err) {
       setStatus('error', 'Unable to connect right now. Please try again.');
     }
-  }
+  };
 
   if (connectBtn) {
     connectBtn.addEventListener('click', (e) => {
@@ -445,12 +445,12 @@
     });
   }
 
-  function handleAddCustomCategory() {
+  const handleAddCustomCategory = function() {
     const label = normalizeCategoryLabel(customCategoryInput?.value || '');
     if (!label) return;
     const added = addCustomCategory(label, true);
     if (added && customCategoryInput) customCategoryInput.value = '';
-  }
+  };
 
   if (customCategoryAdd) {
     customCategoryAdd.addEventListener('click', handleAddCustomCategory);

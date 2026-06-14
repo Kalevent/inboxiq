@@ -786,7 +786,7 @@ def override(ticket_id: str):
     ticket.manual_override = True
     ticket.override_metadata = {
         "by_user": user_id,
-        "at": datetime.utcnow().isoformat(),
+        "at": datetime.now(timezone.utc).isoformat(),
         "previous": previous,
         "reason": data.get("reason"),
     }
@@ -818,7 +818,7 @@ def ticket_feedback(ticket_id: str):
         "category": category,
         "priority": priority,
         "note": note,
-        "at": datetime.utcnow().isoformat(),
+        "at": datetime.now(timezone.utc).isoformat(),
     }
     ticket.override_metadata = feedback
     if not correct:

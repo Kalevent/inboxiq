@@ -58,7 +58,7 @@ def get_conn():
     try:
         return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     except Exception as e:
-        raise ToolError(f"Failed to connect to database: {e}")
+        raise ToolError(f"Failed to connect to database: {e}") from e
 
 
 @mcp.tool()

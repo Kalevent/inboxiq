@@ -52,7 +52,7 @@ def _post(path: str, json_body: Dict[str, Any]) -> Dict[str, Any]:
     try:
         resp = requests.post(url, headers=_headers(), json=json_body, timeout=HTTP_TIMEOUT)
     except Exception as exc:
-        raise ToolError(f"HTTP request failed: {exc}")
+        raise ToolError(f"HTTP request failed: {exc}") from exc
     if resp.status_code >= 400:
         raise ToolError(f"HTTP {resp.status_code}: {resp.text}")
     try:

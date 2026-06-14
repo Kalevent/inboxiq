@@ -5,7 +5,7 @@
   const statusEl = document.getElementById('inviteStatus');
   const linkEl = document.getElementById('activationLink');
 
-  function setStatus(type, message) {
+  const setStatus = function(type, message) {
     if (!statusEl) return;
     const colorMap = {
       success: 'text-emerald-200 bg-emerald-500/10 border-emerald-500/30',
@@ -15,9 +15,9 @@
     statusEl.className = `mt-4 text-sm px-3 py-3 rounded-xl border ${colorMap[type] || colorMap.info}`;
     statusEl.textContent = message;
     statusEl.classList.remove('hidden');
-  }
+  };
 
-  function setLink(link) {
+  const setLink = function(link) {
     if (!linkEl) return;
     if (!link) {
       linkEl.classList.add('hidden');
@@ -26,9 +26,9 @@
     }
     linkEl.textContent = `Activation link: ${link}`;
     linkEl.classList.remove('hidden');
-  }
+  };
 
-  async function handleInvite(event) {
+  const handleInvite = async function(event) {
     event.preventDefault();
     if (!form || !button) return;
 
@@ -74,7 +74,7 @@
       button.disabled = false;
       button.textContent = 'Send invite';
     }
-  }
+  };
 
   if (form) form.addEventListener('submit', handleInvite);
 })();

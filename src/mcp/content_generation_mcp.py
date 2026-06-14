@@ -142,7 +142,7 @@ def generate_topics(
             "reasoning": result.reasoning
         }
     except Exception as e:
-        raise ToolError(f"Failed to generate topics: {e}")
+        raise ToolError(f"Failed to generate topics: {e}") from e
 
 
 @mcp.tool()
@@ -176,7 +176,7 @@ def create_outline(
             "research_sources": result.research_sources
         }
     except Exception as e:
-        raise ToolError(f"Failed to create outline: {e}")
+        raise ToolError(f"Failed to create outline: {e}") from e
 
 
 @mcp.tool()
@@ -211,7 +211,7 @@ def write_content(
             "sections_written": result.sections_written
         }
     except Exception as e:
-        raise ToolError(f"Failed to write content: {e}")
+        raise ToolError(f"Failed to write content: {e}") from e
 
 
 @mcp.tool()
@@ -246,7 +246,7 @@ def edit_content(
             "remaining_issues": result.remaining_issues
         }
     except Exception as e:
-        raise ToolError(f"Failed to edit content: {e}")
+        raise ToolError(f"Failed to edit content: {e}") from e
 
 
 @mcp.tool()
@@ -281,7 +281,7 @@ def optimize_seo(
             "optimization_notes": result.optimization_notes
         }
     except Exception as e:
-        raise ToolError(f"Failed to optimize SEO: {e}")
+        raise ToolError(f"Failed to optimize SEO: {e}") from e
 
 
 @mcp.tool()
@@ -353,7 +353,7 @@ def generate_full_blog_post(
             }
         }
     except Exception as e:
-        raise ToolError(f"Failed to generate full blog post: {e}")
+        raise ToolError(f"Failed to generate full blog post: {e}") from e
 
 
 if __name__ == "__main__":

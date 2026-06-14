@@ -32,7 +32,7 @@ def sync_gmail_filters_task(self, connection_id: str) -> None:
             sync_gmail_filters(conn)
 
         except Exception as exc:
-            raise self.retry(exc=exc)
+            raise self.retry(exc=exc) from exc
 
 
 @shared_task(name="inbox.sync_outlook_rules", bind=True, max_retries=3, default_retry_delay=60)
@@ -59,7 +59,7 @@ def sync_outlook_rules_task(self, connection_id: str) -> None:
             sync_outlook_rules(conn)
 
         except Exception as exc:
-            raise self.retry(exc=exc)
+            raise self.retry(exc=exc) from exc
 
 
 @shared_task(name="inbox.send_demo_emails", bind=True, max_retries=2, default_retry_delay=30, queue="inbox")
@@ -81,7 +81,7 @@ def send_demo_emails_task(self, connection_id: str, inbox_email: str) -> None:
                 # 30s countdown — gives SES → Gmail/Outlook delivery time before poll
                 trigger_demo_poll_task.apply_async(args=[connection_id], countdown=30)
         except Exception as exc:
-            raise self.retry(exc=exc)
+            raise self.retry(exc=exc) from exc
 
 
 @shared_task(name="inbox.trigger_demo_poll", bind=True, max_retries=2, default_retry_delay=60, queue="inbox")
@@ -98,4 +98,4 @@ def trigger_demo_poll_task(self, connection_id: str) -> None:
             from src.api.v1.inboxiq import poll_inbox_service
             poll_inbox_service(connection_id)
         except Exception as exc:
-            raise self.retry(exc=exc)
+            raise self.retry(exc=exc) from exc

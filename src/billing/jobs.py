@@ -16,7 +16,7 @@ def run_retry_processor(billing: BillingService, now: Optional[datetime] = None)
 
 def run_dunning_sender(billing: BillingService, now: Optional[datetime] = None):
     billing._table_guard()
-    now = now or datetime.utcnow()
+    now = now or datetime.now(timezone.utc)
     retry_cutoff = now - timedelta(hours=24)
 
     overdue_invoices = models.Invoice.query.filter(

@@ -94,7 +94,7 @@ def get_calendar_service():
         service = build('calendar', 'v3', credentials=credentials)
         return service
     except Exception as e:
-        raise ToolError(f"Failed to initialize Google Calendar service: {e}")
+        raise ToolError(f"Failed to initialize Google Calendar service: {e}") from e
 
 
 @mcp.tool()
@@ -189,9 +189,9 @@ def get_available_slots(
         }
 
     except HttpError as e:
-        raise ToolError(f"Google Calendar API error: {e}")
+        raise ToolError(f"Google Calendar API error: {e}") from e
     except Exception as e:
-        raise ToolError(f"Failed to get available slots: {e}")
+        raise ToolError(f"Failed to get available slots: {e}") from e
 
 
 @mcp.tool()
@@ -270,9 +270,9 @@ def create_meeting(
         }
 
     except HttpError as e:
-        raise ToolError(f"Google Calendar API error: {e}")
+        raise ToolError(f"Google Calendar API error: {e}") from e
     except Exception as e:
-        raise ToolError(f"Failed to create meeting: {e}")
+        raise ToolError(f"Failed to create meeting: {e}") from e
 
 
 @mcp.tool()
@@ -326,9 +326,9 @@ def list_upcoming_meetings(
         }
 
     except HttpError as e:
-        raise ToolError(f"Google Calendar API error: {e}")
+        raise ToolError(f"Google Calendar API error: {e}") from e
     except Exception as e:
-        raise ToolError(f"Failed to list meetings: {e}")
+        raise ToolError(f"Failed to list meetings: {e}") from e
 
 
 @mcp.tool()
@@ -363,9 +363,9 @@ def cancel_meeting(
         }
 
     except HttpError as e:
-        raise ToolError(f"Google Calendar API error: {e}")
+        raise ToolError(f"Google Calendar API error: {e}") from e
     except Exception as e:
-        raise ToolError(f"Failed to cancel meeting: {e}")
+        raise ToolError(f"Failed to cancel meeting: {e}") from e
 
 
 @mcp.tool()
@@ -410,9 +410,9 @@ def get_meeting_details(event_id: str) -> Dict[str, Any]:
         }
 
     except HttpError as e:
-        raise ToolError(f"Google Calendar API error: {e}")
+        raise ToolError(f"Google Calendar API error: {e}") from e
     except Exception as e:
-        raise ToolError(f"Failed to get meeting details: {e}")
+        raise ToolError(f"Failed to get meeting details: {e}") from e
 
 
 @mcp.tool()
@@ -479,9 +479,9 @@ def update_meeting(
         }
 
     except HttpError as e:
-        raise ToolError(f"Google Calendar API error: {e}")
+        raise ToolError(f"Google Calendar API error: {e}") from e
     except Exception as e:
-        raise ToolError(f"Failed to update meeting: {e}")
+        raise ToolError(f"Failed to update meeting: {e}") from e
 
 
 if __name__ == "__main__":

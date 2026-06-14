@@ -83,7 +83,7 @@
     yearSpan.textContent = new Date().getFullYear();
   }
 
-  function calculateROI() {
+  const calculateROI = function() {
     const emailsPerWeek = parseFloat(emailsInput?.value) || 80;
     const minutesPerEmail = parseFloat(minutesInput?.value) || 4;
     const hourlyRate = parseFloat(hourlyInput?.value) || 25;
@@ -115,7 +115,7 @@
         <p class="mt-2">${conclusion}</p>
       `;
     }
-  }
+  };
 
   const roiButton = document.getElementById('roiButton');
   if (roiButton) {
@@ -126,7 +126,7 @@
     if (el) el.addEventListener('input', calculateROI);
   });
 
-  function setCtaStatus(type, message, options = {}) {
+  const setCtaStatus = function(type, message, options = {}) {
     if (!ctaStatus) return;
     const { activationLink, helper, persistLink = false } = options;
     const color = type === 'success' ? 'border-emerald-300 text-emerald-50 bg-emerald-500/15' : 'border-white/30 text-white bg-white/10';
@@ -186,9 +186,9 @@
     }
 
     ctaStatus.classList.remove('hidden');
-  }
+  };
 
-  async function handleCtaSubmit(event) {
+  const handleCtaSubmit = async function(event) {
     event.preventDefault();
     if (!ctaEmail || !ctaButton) return;
     const email = (ctaEmail.value || '').trim().toLowerCase();
@@ -224,7 +224,7 @@
       ctaButton.disabled = false;
       ctaButton.textContent = 'Talk to sales →';
     }
-  }
+  };
 
   if (ctaForm) {
     ctaForm.addEventListener('submit', handleCtaSubmit);
@@ -233,15 +233,15 @@
 
 // ── Demo Gate ─────────────────────────────────────────────────────────────
 (function () {
-  var modal    = document.getElementById('demoGateModal');
-  var closeBtn = document.getElementById('demoGateClose');
+  const modal    = document.getElementById('demoGateModal');
+  const closeBtn = document.getElementById('demoGateClose');
 
   if (!modal) return;
 
-  function playVideoInModal() {
-    var src    = modal.dataset.videoSrc   || '/static/demo/InboxIQ.mp4';
-    var poster = modal.dataset.posterSrc  || '/static/demo/inboxiq-dashboard.png';
-    var inner  = modal.querySelector('div');
+  const playVideoInModal = function() {
+    const src    = modal.dataset.videoSrc   || '/static/demo/InboxIQ.mp4';
+    const poster = modal.dataset.posterSrc  || '/static/demo/inboxiq-dashboard.png';
+    const inner  = modal.querySelector('div');
     inner.style.maxWidth = '860px';
     inner.innerHTML =
       '<button id="demoGateClose2" style="float:right;font-size:1.2rem;color:#94a3b8;background:none;border:none;cursor:pointer;margin-bottom:8px">✕</button>' +
@@ -250,12 +250,12 @@
     document.getElementById('demoGateClose2').addEventListener('click', function () {
       modal.style.display = 'none';
     });
-  }
+  };
 
-  function openModal() {
+  const openModal = function() {
     modal.style.display = 'flex';
     playVideoInModal();
-  }
+  };
 
   if (closeBtn) {
     closeBtn.addEventListener('click', function () { modal.style.display = 'none'; });
@@ -279,32 +279,32 @@
 
 // ── Free Trial Modal ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
-  var tmModal    = document.getElementById('trialModal');
-  var tmForm     = document.getElementById('tmForm');
-  var tmStatus   = document.getElementById('tmStatus');
-  var tmButton   = document.getElementById('tmButton');
-  var tmEmail    = document.getElementById('tmEmail');
-  var tmAccount  = document.getElementById('tmAccountName');
-  var tmTrigger  = document.getElementById('trialModalTrigger');
-  var tmClose    = document.getElementById('tmClose');
-  var tmBackdrop = document.getElementById('tmBackdrop');
+  const tmModal    = document.getElementById('trialModal');
+  const tmForm     = document.getElementById('tmForm');
+  const tmStatus   = document.getElementById('tmStatus');
+  const tmButton   = document.getElementById('tmButton');
+  const tmEmail    = document.getElementById('tmEmail');
+  const tmAccount  = document.getElementById('tmAccountName');
+  const tmTrigger  = document.getElementById('trialModalTrigger');
+  const tmClose    = document.getElementById('tmClose');
+  const tmBackdrop = document.getElementById('tmBackdrop');
 
-  function openTrialModal() {
+  const openTrialModal = function() {
     if (!tmModal) return;
     tmModal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     if (tmEmail) tmEmail.focus();
-  }
+  };
 
-  function closeTrialModal() {
+  const closeTrialModal = function() {
     if (!tmModal) return;
     tmModal.style.display = 'none';
     document.body.style.overflow = '';
-  }
+  };
 
-  function setTmStatus(type, message) {
+  const setTmStatus = function(type, message) {
     if (!tmStatus) return;
-    var cls = type === 'success'
+    const cls = type === 'success'
       ? 'rounded-lg px-3 py-2 text-xs bg-emerald-900/60 border border-emerald-700 text-emerald-200'
       : type === 'error'
         ? 'rounded-lg px-3 py-2 text-xs bg-red-900/60 border border-red-700 text-red-200'
@@ -312,13 +312,13 @@ document.addEventListener('DOMContentLoaded', function () {
     tmStatus.className = cls;
     tmStatus.textContent = message;
     tmStatus.style.display = 'block';
-  }
+  };
 
-  async function handleTmSubmit(event) {
+  const handleTmSubmit = async function(event) {
     event.preventDefault();
     if (!tmEmail || !tmButton) return;
-    var email       = (tmEmail.value || '').trim().toLowerCase();
-    var accountName = (tmAccount ? tmAccount.value || '' : '').trim();
+    const email       = (tmEmail.value || '').trim().toLowerCase();
+    const accountName = (tmAccount ? tmAccount.value || '' : '').trim();
 
     if (!email)       { setTmStatus('error', 'Please provide your work email.'); return; }
     if (!accountName) { setTmStatus('error', 'Please provide an account name.'); return; }
@@ -328,25 +328,25 @@ document.addEventListener('DOMContentLoaded', function () {
     setTmStatus('info', 'Creating your workspace…');
 
     try {
-      var response = await fetch('/auth/signup', {
+      const response = await fetch('/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ email: email, account_name: accountName }),
       });
-      var contentType = response.headers.get('content-type') || '';
-      var isJson = contentType.includes('application/json');
-      var data = isJson ? await response.json() : await response.text();
+      const contentType = response.headers.get('content-type') || '';
+      const isJson = contentType.includes('application/json');
+      const data = isJson ? await response.json() : await response.text();
       if (!response.ok) {
         throw new Error((isJson && data && data.error) || data || ('Request failed (' + response.status + ')'));
       }
       if (isJson && data && data.account_id !== undefined) {
         localStorage.setItem('inboxiqAccountId', data.account_id);
       }
-      var activationLink = isJson ? (data && data.activation_link) : null;
+      const activationLink = isJson ? (data && data.activation_link) : null;
       if (activationLink) {
         try { localStorage.setItem('inboxiqActivationLink', activationLink); } catch (e) {}
       }
-      var msg = 'Workspace created! Check ' + email + ' for your activation link.';
+      let msg = 'Workspace created! Check ' + email + ' for your activation link.';
       if (activationLink) msg += ' Or open: ' + activationLink;
       setTmStatus('success', msg);
       tmButton.textContent = 'Done!';
@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function () {
       tmButton.disabled = false;
       tmButton.textContent = 'Start Free Trial →';
     }
-  }
+  };
 
   if (tmTrigger)  tmTrigger.addEventListener('click', openTrialModal);
   if (tmClose)    tmClose.addEventListener('click', closeTrialModal);
@@ -376,34 +376,34 @@ document.addEventListener('DOMContentLoaded', function () {
 // ── Enterprise Inquiry Modal ───────────────────────────────────────────────
 // Wrapped in DOMContentLoaded: modal HTML sits after this script tag in index.html.
 document.addEventListener('DOMContentLoaded', function () {
-  var modal     = document.getElementById('enterpriseModal');
-  var form      = document.getElementById('eiInquiryForm');
-  var statusEl  = document.getElementById('eiFormStatus');
-  var submitBtn = document.getElementById('eiSubmitBtn');
+  const modal     = document.getElementById('enterpriseModal');
+  const form      = document.getElementById('eiInquiryForm');
+  const statusEl  = document.getElementById('eiFormStatus');
+  const submitBtn = document.getElementById('eiSubmitBtn');
 
-  function openEnterpriseModal() {
+  const openEnterpriseModal = function() {
     if (!modal) return;
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    var first = document.getElementById('eiName');
+    const first = document.getElementById('eiName');
     if (first) setTimeout(function () { first.focus(); }, 50);
-  }
+  };
 
-  function closeEnterpriseModal() {
+  const closeEnterpriseModal = function() {
     if (!modal) return;
     modal.style.display = 'none';
     document.body.style.overflow = '';
-  }
+  };
 
   window.openEnterpriseModal  = openEnterpriseModal;
   window.closeEnterpriseModal = closeEnterpriseModal;
 
   // Backdrop click
-  var backdrop = document.getElementById('eiModalBackdrop');
+  const backdrop = document.getElementById('eiModalBackdrop');
   if (backdrop) backdrop.addEventListener('click', closeEnterpriseModal);
 
   // Close button
-  var closeBtn = document.getElementById('eiModalClose');
+  const closeBtn = document.getElementById('eiModalClose');
   if (closeBtn) closeBtn.addEventListener('click', closeEnterpriseModal);
 
   // Escape key
@@ -419,13 +419,13 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // Wire "Contact us for Enterprise pricing." span below pricing cards
-  var enterpriseSpan = document.querySelector('span.text-indigo-300.underline');
+  const enterpriseSpan = document.querySelector('span.text-indigo-300.underline');
   if (enterpriseSpan) {
     enterpriseSpan.style.cursor = 'pointer';
     enterpriseSpan.addEventListener('click', openEnterpriseModal);
   }
 
-  function setStatus(type, msg) {
+  const setStatus = function(type, msg) {
     if (!statusEl) return;
     statusEl.textContent = msg; // textContent — never innerHTML — prevents XSS
     if (!msg) { statusEl.style.display = 'none'; return; }
@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function () {
         : 'bg-red-950 text-red-300 border-red-800'
     );
     statusEl.style.display = 'block';
-  }
+  };
 
   if (form) {
     form.addEventListener('submit', function (e) {
@@ -444,14 +444,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  async function handleSubmit() {
-    var name      = (document.getElementById('eiName').value || '').trim();
-    var email     = (document.getElementById('eiEmailInput').value || '').trim();
-    var company   = (document.getElementById('eiCompany').value || '').trim();
-    var phone     = (document.getElementById('eiPhone').value || '').trim();
-    var employees = parseInt(document.getElementById('eiEmployees').value, 10) || null;
-    var message   = (document.getElementById('eiMessage').value || '').trim();
-    var website   = (document.getElementById('eiWebsite')?.value || '').trim();
+  const handleSubmit = async function() {
+    const name      = (document.getElementById('eiName').value || '').trim();
+    const email     = (document.getElementById('eiEmailInput').value || '').trim();
+    const company   = (document.getElementById('eiCompany').value || '').trim();
+    const phone     = (document.getElementById('eiPhone').value || '').trim();
+    const employees = parseInt(document.getElementById('eiEmployees').value, 10) || null;
+    const message   = (document.getElementById('eiMessage').value || '').trim();
+    const website   = (document.getElementById('eiWebsite')?.value || '').trim();
 
     if (!name || !email || !email.includes('@')) {
       setStatus('error', 'Please enter your full name and a valid work email.');
@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setStatus('', '');
 
     try {
-      var r = await fetch('/api/v1/enterprise/inquiry', {
+      const r = await fetch('/api/v1/enterprise/inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function () {
           website:        website  || null,
         }),
       });
-      var data = await r.json();
+      const data = await r.json();
       if (r.ok) {
         form.reset();
         submitBtn.style.display = 'none';

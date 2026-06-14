@@ -217,7 +217,7 @@ function initSearch() {
     }
     
     // Function to perform search
-    function performSearch(query) {
+    const performSearch = function(query) {
         // Hide results if query is empty
         if (!query || query.trim() === '') {
             searchResultsContainer.style.display = 'none';
@@ -249,7 +249,7 @@ function initSearch() {
     const viewAllTemplate = getDocData('searchView', 'View all %(count)s results');
 
     // Fallback search function for when g.search is not available
-    function fallbackSearch(query) {
+    const fallbackSearch = function(query) {
         // Simple client-side search through h1, h2, h3, and p elements
         const searchableElements = document.querySelectorAll('h1, h2, h3, p');
         const results = [];
@@ -279,7 +279,7 @@ function initSearch() {
     }
     
     // Helper function to find the nearest heading for a paragraph
-    function findNearestHeading(element) {
+    const findNearestHeading = function(element) {
         let currentElement = element.previousElementSibling;
         
         while (currentElement) {
@@ -294,7 +294,7 @@ function initSearch() {
     }
     
     // Function to display search results
-    function displaySearchResults(results, query) {
+    const displaySearchResults = function(results, query) {
         // Clear previous results
         searchResultsContainer.innerHTML = '';
         

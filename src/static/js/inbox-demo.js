@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var EMAILS = [
+  const EMAILS = [
     {
       sender: 'Sarah Chen', initial: 'S', avatarBg: '#EF4444',
       company: 'GrowthOps',
@@ -75,16 +75,16 @@
     },
   ];
 
-  var SLOTS = [
+  const SLOTS = [
     { label: 'Tue Apr 29', time: '10:00 AM' },
     { label: 'Tue Apr 29', time: '2:00 PM' },
     { label: 'Wed Apr 30', time: '10:00 AM' },
     { label: 'Wed Apr 30', time: '3:00 PM' },
   ];
-  var BOOKED_SLOT = 2; // Wed Apr 30 · 10:00 AM
+  const BOOKED_SLOT = 2; // Wed Apr 30 · 10:00 AM
 
   // ── CSS ────────────────────────────────────────────────────────
-  var CSS = [
+  const CSS = [
     '#inbox-demo,#inbox-demo *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:0}',
     '#inbox-demo{position:relative;width:100%;background:#fff;overflow:hidden;user-select:none;border-radius:inherit}',
 
@@ -191,10 +191,10 @@
   ].join('');
 
   // ── SVG helpers ────────────────────────────────────────────────
-  function mksvg(path, size, fill) {
+  const mksvg = function(path, size, fill) {
     return '<svg width="' + (size||13) + '" height="' + (size||13) + '" viewBox="0 0 24 24" fill="' + (fill||'currentColor') + '">' + path + '</svg>';
-  }
-  var P = {
+  };
+  const P = {
     pencil: '<path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/>',
     layers: '<path d="M11.99 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>',
     search: '<path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>',
@@ -204,10 +204,10 @@
   };
 
   // ── Build DOM ──────────────────────────────────────────────────
-  var container = document.getElementById('inbox-demo');
+  const container = document.getElementById('inbox-demo');
   if (!container) return;
 
-  var style = document.createElement('style');
+  const style = document.createElement('style');
   style.textContent = CSS;
   document.head.appendChild(style);
 
@@ -251,9 +251,9 @@
     '</div>';
 
   // ── Rows ───────────────────────────────────────────────────────
-  var list = document.getElementById('id-list');
+  const list = document.getElementById('id-list');
   EMAILS.forEach(function (e, i) {
-    var row = document.createElement('div');
+    const row = document.createElement('div');
     row.className = 'id-row ' + (e.unread ? 'unread' : 'read');
     row.id = 'id-row-' + i;
     row.innerHTML =
@@ -274,66 +274,66 @@
   });
 
   // ── Helpers ────────────────────────────────────────────────────
-  var timers = [];
-  function at(fn, ms) { timers.push(setTimeout(fn, ms)); }
-  function q(id) { return document.getElementById(id); }
+  let timers = [];
+  const at = function(fn, ms) { timers.push(setTimeout(fn, ms)); };
+  const q = function(id) { return document.getElementById(id); };
 
-  function resetAll() {
+  const resetAll = function() {
     timers.forEach(clearTimeout); timers = [];
     EMAILS.forEach(function (_, i) {
-      var c = q('id-cat-' + i); if (c) c.classList.remove('on');
-      var u = q('id-urg-' + i); if (u) u.classList.remove('on');
-      var r = q('id-row-' + i); if (r) r.classList.remove('lit');
+      const c = q('id-cat-' + i); if (c) c.classList.remove('on');
+      const u = q('id-urg-' + i); if (u) u.classList.remove('on');
+      const r = q('id-row-' + i); if (r) r.classList.remove('lit');
     });
-    var s = q('id-status');
+    const s = q('id-status');
     if (s) { s.classList.remove('on'); s.style.background = '#5B5BD6'; }
-    var v = q('id-view');
+    const v = q('id-view');
     if (v) { v.classList.remove('open'); v.innerHTML = ''; }
-  }
+  };
 
   // ── Scene 1: Triage + draft ────────────────────────────────────
-  function scene1(done) {
-    var STAGGER = 400, labelsStart = 1000;
-    var labelsEnd = labelsStart + EMAILS.length * STAGGER;
+  const scene1 = function(done) {
+    const STAGGER = 400, labelsStart = 1000;
+    const labelsEnd = labelsStart + EMAILS.length * STAGGER;
 
-    at(function () { var s = q('id-status'); if (s) s.classList.add('on'); }, 600);
+    at(function () { const s = q('id-status'); if (s) s.classList.add('on'); }, 600);
 
     EMAILS.forEach(function (_, i) {
       at(function () {
-        var c = q('id-cat-' + i); if (c) c.classList.add('on');
+        const c = q('id-cat-' + i); if (c) c.classList.add('on');
       }, labelsStart + i * STAGGER);
     });
 
-    at(function () { var u = q('id-urg-0'); if (u) u.classList.add('on'); }, labelsEnd + 150);
-    at(function () { var u = q('id-urg-1'); if (u) u.classList.add('on'); }, labelsEnd + 350);
+    at(function () { const u = q('id-urg-0'); if (u) u.classList.add('on'); }, labelsEnd + 150);
+    at(function () { const u = q('id-urg-1'); if (u) u.classList.add('on'); }, labelsEnd + 350);
 
     at(function () {
-      var s = q('id-status'), t = q('id-stxt');
+      const s = q('id-status'), t = q('id-stxt');
       if (s) s.style.background = '#059669';
       if (t) t.textContent = '✓ Triage complete — 2 urgent · 3 normal · 2 low priority';
     }, labelsEnd + 600);
 
-    var openAt = labelsEnd + 1800;
+    const openAt = labelsEnd + 1800;
     at(function () { openDraftEmail(0); }, openAt);
     at(function () { typeDraft(EMAILS[0].draft); }, openAt + 500);
 
-    var closeAt = openAt + 7200;
+    const closeAt = openAt + 7200;
     at(function () {
-      var v = q('id-view'); if (v) v.classList.remove('open');
-      var r = q('id-row-0'); if (r) r.classList.remove('lit');
-      var s = q('id-status'), t = q('id-stxt');
+      const v = q('id-view'); if (v) v.classList.remove('open');
+      const r = q('id-row-0'); if (r) r.classList.remove('lit');
+      const s = q('id-status'), t = q('id-stxt');
       if (s) { s.style.background = '#5B5BD6'; }
       if (t) t.textContent = 'InboxIQ is triaging your inbox…';
     }, closeAt);
 
     at(done, closeAt + 800);
-  }
+  };
 
-  function openDraftEmail(idx) {
-    var e = EMAILS[idx];
-    var r = q('id-row-' + idx); if (r) r.classList.add('lit');
-    var v = q('id-view'); if (!v) return;
-    var addr = e.sender.toLowerCase().replace(/'/g, '').replace(' ', '.') + '@' + e.company.toLowerCase().replace(' ', '') + '.com';
+  const openDraftEmail = function(idx) {
+    const e = EMAILS[idx];
+    const r = q('id-row-' + idx); if (r) r.classList.add('lit');
+    const v = q('id-view'); if (!v) return;
+    const addr = e.sender.toLowerCase().replace(/'/g, '').replace(' ', '.') + '@' + e.company.toLowerCase().replace(' ', '') + '.com';
 
     v.innerHTML =
       '<div class="id-vhead">' +
@@ -362,38 +362,38 @@
       '</div>';
 
     v.classList.add('open');
-  }
+  };
 
-  function typeDraft(text) {
-    var el = q('id-dbody'); if (!el) return;
-    var cursor = el.querySelector('.id-cursor');
-    var i = 0;
-    var iv = setInterval(function () {
+  const typeDraft = function(text) {
+    const el = q('id-dbody'); if (!el) return;
+    const cursor = el.querySelector('.id-cursor');
+    let i = 0;
+    const iv = setInterval(function () {
       if (!q('id-dbody') || i >= text.length) { clearInterval(iv); return; }
       el.insertBefore(document.createTextNode(text[i]), cursor);
       i++;
     }, 18);
     timers.push(iv);
-  }
+  };
 
   // ── Scene 2: Booking ───────────────────────────────────────────
-  function scene2(done) {
-    var e = EMAILS[2]; // Priya Patel — demo request
-    var addr = 'priya.patel@clarahealth.com';
+  const scene2 = function(done) {
+    const e = EMAILS[2]; // Priya Patel — demo request
+    const addr = 'priya.patel@clarahealth.com';
 
     // Highlight the demo request row
     at(function () {
-      var r = q('id-row-2'); if (r) r.classList.add('lit');
-      var s = q('id-status'), t = q('id-stxt');
+      const r = q('id-row-2'); if (r) r.classList.add('lit');
+      const s = q('id-status'), t = q('id-stxt');
       if (s) { s.classList.add('on'); s.style.background = '#5B5BD6'; }
       if (t) t.textContent = 'InboxIQ detected a meeting request in this email';
     }, 400);
 
     // Open email — body shows the auto-generated booking link, panel hidden
     at(function () {
-      var v = q('id-view'); if (!v) return;
+      const v = q('id-view'); if (!v) return;
 
-      var slotsHtml = SLOTS.map(function (s, i) {
+      const slotsHtml = SLOTS.map(function (s, i) {
         return '<div class="id-slot" id="id-slot-' + i + '"><span class="id-slot-date">' + s.label + '</span><span class="id-slot-time">' + s.time + '</span></div>';
       }).join('');
 
@@ -435,37 +435,37 @@
 
     // Status: booking link detected
     at(function () {
-      var t = q('id-stxt');
+      const t = q('id-stxt');
       if (t) t.textContent = 'Auto-booking link detected — click to open scheduler';
     }, 2000);
 
     // Hover over the booking link
     at(function () {
-      var lk = q('id-bklink'); if (lk) lk.classList.add('hover');
+      const lk = q('id-bklink'); if (lk) lk.classList.add('hover');
     }, 2300);
 
     // Click the booking link
     at(function () {
-      var lk = q('id-bklink');
+      const lk = q('id-bklink');
       if (lk) { lk.classList.remove('hover'); lk.classList.add('clicked'); }
     }, 2800);
 
     // Booking panel slides in
     at(function () {
-      var bp = q('id-bkpanel');
+      const bp = q('id-bkpanel');
       if (bp) { bp.style.opacity = '1'; bp.style.transform = 'translateY(0)'; }
-      var t = q('id-stxt');
+      const t = q('id-stxt');
       if (t) t.textContent = 'Opening booking page…';
     }, 3200);
 
     // Highlight chosen slot
     at(function () {
-      var sl = q('id-slot-' + BOOKED_SLOT); if (sl) sl.classList.add('on');
+      const sl = q('id-slot-' + BOOKED_SLOT); if (sl) sl.classList.add('on');
     }, 5100);
 
     // Swap booking panel to confirmation success state
     at(function () {
-      var bp = q('id-bkpanel');
+      const bp = q('id-bkpanel');
       if (bp) {
         bp.style.background = '#ECFDF5';
         bp.style.borderColor = '#6EE7B7';
@@ -477,30 +477,30 @@
             '<div style="font-size:11px;color:#6B7280">Invite sent to priya.patel@clarahealth.com</div>' +
           '</div>';
       }
-      var s = q('id-status'), t = q('id-stxt');
+      const s = q('id-status'), t = q('id-stxt');
       if (s) s.style.background = '#059669';
       if (t) t.textContent = '✓ Booking confirmed · calendar invite dispatched';
     }, 6700);
 
     // Close
     at(function () {
-      var v = q('id-view'); if (v) v.classList.remove('open');
-      var r = q('id-row-2'); if (r) r.classList.remove('lit');
-      var s = q('id-status'); if (s) s.classList.remove('on');
+      const v = q('id-view'); if (v) v.classList.remove('open');
+      const r = q('id-row-2'); if (r) r.classList.remove('lit');
+      const s = q('id-status'); if (s) s.classList.remove('on');
     }, 9200);
 
     at(done, 10000);
-  }
+  };
 
   // ── Main loop ──────────────────────────────────────────────────
-  function run() {
+  const run = function() {
     resetAll();
     scene1(function () {
       scene2(function () {
         at(run, 600);
       });
     });
-  }
+  };
 
   run();
 
