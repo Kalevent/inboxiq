@@ -21,7 +21,7 @@ def render_video(
     script: str,
     avatar_id: str,
     voice_id: str,
-    video_format: str = "mp4",
+    _video_format: str = "mp4",
     aspect_ratio: str = "16:9",
 ) -> Dict[str, Any]:
     """

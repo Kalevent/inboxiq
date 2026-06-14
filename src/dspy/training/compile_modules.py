@@ -78,7 +78,7 @@ def compile_visitor_qualification(training_data_path: str, output_dir: str):
             true_score = int(example.fit_score)
             pred_score = int(pred.fit_score)
             return abs(true_score - pred_score) <= 2
-        except:
+        except Exception:
             return False
 
     # Compile using BootstrapFewShot
@@ -117,7 +117,7 @@ def compile_interest_scoring(training_data_path: str, output_dir: str):
             true_score = int(example.intent_score)
             pred_score = int(pred.intent_score)
             return abs(true_score - pred_score) <= 2
-        except:
+        except Exception:
             return False
 
     config = dict(max_bootstrapped_demos=6, max_labeled_demos=6)
@@ -153,7 +153,7 @@ def compile_topic_generator(training_data_path: str, output_dir: str):
         try:
             topics = json.loads(pred.topics)
             return len(topics) > 0 and all('title' in t for t in topics)
-        except:
+        except Exception:
             return False
 
     config = dict(max_bootstrapped_demos=5, max_labeled_demos=5)

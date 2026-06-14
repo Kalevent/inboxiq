@@ -43,7 +43,7 @@ except ImportError:  # pragma: no cover - minimal stub
         async def __aenter__(self):
             return self
 
-        async def __aexit__(self, exc_type, exc, tb):
+        async def __aexit__(self, _exc_type, exc, tb):
             return False
 
         def raise_for_status(self):
@@ -56,7 +56,7 @@ except ImportError:  # pragma: no cover - minimal stub
         async def __aenter__(self):
             return self
 
-        async def __aexit__(self, exc_type, exc, tb):
+        async def __aexit__(self, _exc_type, exc, tb):
             return False
 
         def get(self, *_, **__):

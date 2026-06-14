@@ -34,7 +34,7 @@ TIMEOUT_SECONDS = 15
 
 
 class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: PLR0913
+    def redirect_request(self, req, _fp, code, msg, headers, _newurl):  # noqa: PLR0913
         return None
 
 

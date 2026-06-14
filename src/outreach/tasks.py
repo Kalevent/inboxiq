@@ -1,11 +1,18 @@
 """
 Celery tasks for automated email outreach campaigns.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from celery import shared_task
 from src.outreach.email import process_campaign_outreach, process_followup_emails
 from src.models.campaigns import EmailCampaign, EmailOutreach
 from src.extensions import db
 from datetime import datetime, timedelta
+
+if TYPE_CHECKING:
+    from src.models.tickets import Ticket
 
 
 @shared_task(name="outreach.process_all_campaigns", queue="leads")

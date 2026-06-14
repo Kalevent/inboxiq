@@ -93,7 +93,7 @@ def landing_page():
     """Dedicated Automation Studio landing page."""
     try:
         waitlist_count = AutomationStudioWaitlist.query.count()
-    except:
+    except Exception:
         waitlist_count = 0
 
     return render_template(

@@ -474,7 +474,7 @@ def get_recent_leads():
                 parsed = urlparse(url)
                 if parsed.scheme in ['http', 'https'] and parsed.netloc:
                     return url
-            except:
+            except Exception:
                 pass
         return None
 

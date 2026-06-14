@@ -134,7 +134,7 @@ def add_end_screen(video_id: str, cta_url: str) -> Dict[str, Any]:
         return {"status": "error", "error": str(exc)}
 
 
-def add_card(video_id: str, cta_url: str, offset_ms: int) -> Dict[str, Any]:
+def add_card(video_id: str, cta_url: str, _offset_ms: int) -> Dict[str, Any]:
     """Add a mid-video link card at offset_ms milliseconds."""
     if not os.getenv("YOUTUBE_CLIENT_ID"):
         return {"status": "error", "error": "YOUTUBE_CLIENT_ID not configured"}

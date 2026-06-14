@@ -698,7 +698,7 @@ def verify_contact(
             result["email_valid"] = True
             result["email_status"] = "valid"
             result["verification_method"] = "mx_check"
-        except:
+        except Exception:
             result["email_valid"] = False
             result["email_status"] = "risky"
 
