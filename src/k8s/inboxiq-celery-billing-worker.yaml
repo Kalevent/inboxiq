@@ -19,6 +19,8 @@ spec:
         app: inboxiq-celery-billing-worker
     spec:
       priorityClassName: inboxiq-high
+      securityContext:
+        runAsNonRoot: true
       containers:
         - name: billing-worker
           image: 094985084741.dkr.ecr.eu-west-2.amazonaws.com/inboxiq:${TAG_VALUE}

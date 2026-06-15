@@ -4,6 +4,11 @@ async function fetchJSON(url) {
   return res.json();
 }
 
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function renderList(id, items) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -625,19 +630,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const created = t.created_at ? new Date(t.created_at).toLocaleString() : '';
       const card = document.createElement('div');
       card.className = 'rounded-xl border border-slate-800 bg-slate-900/70 p-3 text-xs text-slate-200';
+      const safeUrl = t.provider_thread_url && /^https?:\/\//.test(t.provider_thread_url) ? escHtml(t.provider_thread_url) : null;
       card.innerHTML = `
         <div class="flex items-center justify-between mb-1">
-          <span class="font-semibold text-slate-100">${t.subject || 'Decision'}</span>
-          <span class="text-[11px] text-slate-400">${created}</span>
+          <span class="font-semibold text-slate-100">${escHtml(t.subject) || 'Decision'}</span>
+          <span class="text-[11px] text-slate-400">${escHtml(created)}</span>
         </div>
         <div class="grid grid-cols-2 gap-2 text-[11px]">
-          <div><span class="text-slate-400">Category:</span> ${t.category || '—'}</div>
-          <div><span class="text-slate-400">Priority:</span> ${t.priority || '—'}</div>
-          <div><span class="text-slate-400">Status:</span> ${t.status || '—'}</div>
-          <div><span class="text-slate-400">Channel:</span> ${t.channel || 'email'}</div>
+          <div><span class="text-slate-400">Category:</span> ${escHtml(t.category) || '—'}</div>
+          <div><span class="text-slate-400">Priority:</span> ${escHtml(t.priority) || '—'}</div>
+          <div><span class="text-slate-400">Status:</span> ${escHtml(t.status) || '—'}</div>
+          <div><span class="text-slate-400">Channel:</span> ${escHtml(t.channel) || 'email'}</div>
         </div>
-        ${t.ai_reason ? `<div class="text-[11px] text-slate-400 mt-1">Why: ${t.ai_reason}</div>` : ''}
-        ${t.provider_thread_url ? `<a class="text-indigo-300 hover:text-indigo-200 text-[11px] mt-1 inline-block" href="${t.provider_thread_url}" target="_blank" rel="noreferrer">Open source →</a>` : ''}
+        ${t.ai_reason ? `<div class="text-[11px] text-slate-400 mt-1">Why: ${escHtml(t.ai_reason)}</div>` : ''}
+        ${safeUrl ? `<a class="text-indigo-300 hover:text-indigo-200 text-[11px] mt-1 inline-block" href="${safeUrl}" target="_blank" rel="noreferrer">Open source →</a>` : ''}
       `;
       ticketResults.appendChild(card);
     });
