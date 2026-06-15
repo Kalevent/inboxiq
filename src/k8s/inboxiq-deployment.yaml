@@ -19,6 +19,8 @@ spec:
         app: inboxiq
     spec:
       priorityClassName: inboxiq-high
+      securityContext:
+        runAsNonRoot: true
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

@@ -16,6 +16,8 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9808"
     spec:
+      securityContext:
+        runAsNonRoot: true
       containers:
         - name: celery-exporter
           image: danihodovic/celery-exporter:0.10.5

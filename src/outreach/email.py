@@ -9,7 +9,7 @@ import boto3
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from uuid import uuid4
-from jinja2 import Template
+from jinja2.sandbox import SandboxedEnvironment
 from src.extensions import db
 from src.models.campaigns import EmailCampaign, EmailOutreach
 from src.models.leads import Lead
@@ -72,7 +72,8 @@ def render_template(template_str: str, variables: Dict[str, Any]) -> str:
     Returns:
         Rendered string
     """
-    template = Template(template_str)
+    env = SandboxedEnvironment()
+    template = env.from_string(template_str)
     return template.render(**variables)
 
 

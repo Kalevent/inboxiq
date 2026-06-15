@@ -642,6 +642,8 @@ def admin_published_posts():
 @jwt_required()
 def admin_delete_published_post(post_id):
     """Hard-delete a blog post by admin (including published posts)."""
+    if not _require_admin():
+        return jsonify({"error": "forbidden"}), 403
     from src.models.content import BlogPost
     from src.extensions import db
     post = BlogPost.query.filter_by(id=post_id).first()

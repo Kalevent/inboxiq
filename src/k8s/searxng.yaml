@@ -1,3 +1,7 @@
+# Required secret (create once):
+#   kubectl create secret generic searxng-secrets -n kaley \
+#     --from-literal=secret_key=$(openssl rand -hex 32)
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -12,7 +16,7 @@ data:
       port: 8080
       bind_address: 0.0.0.0
       base_url: "http://searxng.kaley.svc.cluster.local:8000/"
-      secret_key: "change-me-change-me-change-me"
+      secret_key: "${SEARXNG_SECRET_KEY}"
       limiter: false
       public: true
       image_proxy: false
@@ -64,14 +68,21 @@ spec:
         app: searxng
     spec:
       enableServiceLinks: false  # Prevents SEARXNG_PORT=tcp://... env var injection
+      securityContext:
+        runAsNonRoot: true
       containers:
       - name: searxng
-        image: searxng/searxng:latest
+        image: searxng/searxng:2024.12.1
         ports:
         - containerPort: 8080
         env:
         - name: SEARXNG_PORT
           value: "8080"
+        - name: SEARXNG_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: searxng-secrets
+              key: secret_key
         volumeMounts:
         - name: searxng-settings
           mountPath: /etc/searxng
